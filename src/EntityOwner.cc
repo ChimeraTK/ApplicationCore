@@ -205,7 +205,9 @@ namespace ChimeraTK {
         assert(existingChild != nullptr);
         submodule->findTagAndAppendToModule(
             //                                      true = eliminateFirstHierarchy, just add to existingChild
-            *existingChild, tag, eliminateAllHierarchies, true, negate, root, parentOfModuleToAddTo);
+            //                                                                if we add to existingChild, whe have to put to ITS parent here,
+            //                                                                which is moduleToAddTo
+            *existingChild, tag, eliminateAllHierarchies, true, negate, root, moduleToAddTo);
       }
       else {
         // does not yet exist: add as new submodule to the current module
@@ -227,7 +229,8 @@ namespace ChimeraTK {
           }
           else {
             throw logic_error(std::string("Module ") + virtualParent.getName() +
-                ": cannot have hierarchy modifier 'oneLevelUp' or oneUpAndHide in root of the application.");
+                ": cannot have hierarchy modifier 'oneLevelUp' or 'oneUpAndHide' in root of the application." +
+                "\nNon-virtual path to the offending module: " + getQualifiedName());
           }
         }
         else {

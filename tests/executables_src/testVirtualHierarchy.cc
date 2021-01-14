@@ -38,6 +38,53 @@ struct TestModule3 : public ctk::ApplicationModule {
   void mainLoop() override {}
 };
 
+// Typical connection scenario: One module provides inputs and outputs, and another wants to use them.
+// Hierarcy modifiers are used to move the variable group in the "using" module to the same variable with the same name in the virtual space.
+// Notice: For simplicity we  do not send initial values and have a circular dependency. This code never reaches the main loops.
+// We have to test two different scenarios: The module hierarchy modifyer is placed before and after the module with modifier.
+struct TestModuleWithVariableGroups : public ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+
+  struct /*GroupOneLevelUp*/ : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarOutput<int> var1InGroupOneLevelUp{this, "var1InGroupOneLevelUp", "", ""};
+    ctk::ScalarPushInput<int> var2InGroupOneLevelUp{this, "var2InGroupOneLevelUp", "", ""};
+  } groupOneLevelUp{this, "InnerModuleWithVariableGroups2", "", ctk::HierarchyModifier::oneLevelUp};
+
+  ctk::ScalarOutput<int> var3InGroupOneLevelUp{this, "var3InGroupOneLevelUp", "", ""};
+  ctk::ScalarPushInput<int> var4InGroupOneLevelUp{this, "var4InGroupOneLevelUp", "", ""};
+
+  // directly connect variales in the virtual level of the module group (always one up and hide in both modules)
+  struct /*GroupOneUpAndHide*/ : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarOutput<int> varInGroupOneUpAndHide{this, "var1InGroupOneUpAndHide", "", ""};
+    ctk::ScalarPushInput<int> var2InGroupOneUpAndHide{this, "var2InGroupOneUpAndHide", "", ""};
+  } groupOneUpAndHide{this, "YoullNeverSee", "", ctk::HierarchyModifier::oneUpAndHide};
+
+  void mainLoop() override {}
+};
+
+struct TestModuleWithVariableGroups2 : public ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPushInput<int> var1InGroupOneLevelUp{this, "var1InGroupOneLevelUp", "", ""};
+  ctk::ScalarOutput<int> var2InGroupOneLevelUp{this, "var2InGroupOneLevelUp", "", ""};
+
+  struct /*GroupOneLevelUp*/ : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarPushInput<int> var3InGroupOneLevelUp{this, "var3InGroupOneLevelUp", "", ""};
+    ctk::ScalarOutput<int> var4InGroupOneLevelUp{this, "var4InGroupOneLevelUp", "", ""};
+  } groupOneLevelUp{this, "InnerModuleWithVariableGroups1", "", ctk::HierarchyModifier::oneLevelUp};
+
+  struct /*GroupOneUpAndHide*/ : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarPushInput<int> varInGroupOneUpAndHide{this, "var1InGroupOneUpAndHide", "", ""};
+    ctk::ScalarOutput<int> var2InGroupOneUpAndHide{this, "var2InGroupOneUpAndHide", "", ""};
+  } groupOneUpAndHide{this, "IntentionallyNotYoullNeverSee", "", ctk::HierarchyModifier::oneUpAndHide};
+
+  void mainLoop() override {}
+};
+
 struct InnerGroup : public ctk::ModuleGroup {
   using ctk::ModuleGroup::ModuleGroup;
 
@@ -45,6 +92,8 @@ struct InnerGroup : public ctk::ModuleGroup {
   TestModule2 innerModuleOneUpAndHide{this, "innerModuleOneUpAndHide", "", ctk::HierarchyModifier::oneUpAndHide};
   TestModule3 innerModuleMoveToRoot{this, "innerModuleMoveToRoot", "", ctk::HierarchyModifier::moveToRoot};
   TestModule3 innerModuleSameNameAsGroup{this, "innerModuleGroup", "", ctk::HierarchyModifier::oneLevelUp};
+  TestModuleWithVariableGroups innerModuleWithVariableGroups{this, "InnerModuleWithVariableGroups1", ""};
+  TestModuleWithVariableGroups2 innerModuleWithVariableGroups2{this, "InnerModuleWithVariableGroups2", ""};
 };
 
 struct OuterGroup : public ctk::ModuleGroup {
@@ -142,8 +191,21 @@ BOOST_AUTO_TEST_CASE(testGetVirtualQualifiedName) {
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.outerModule.getVirtualQualifiedName(), "/testApp/outerModuleInGroup");
     BOOST_CHECK_EQUAL(
         app.outerModuleGroup1.innerGroup.getVirtualQualifiedName(), "/testApp/outerModuleGroup1/innerModuleGroup");
+
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModule.getVirtualQualifiedName(),
         "/testApp/outerModuleGroup1/innerModuleGroup/innerModule");
+    BOOST_CHECK_EQUAL(
+        app.outerModuleGroup1.innerGroup.innerModuleWithVariableGroups.groupOneLevelUp.getVirtualQualifiedName(),
+        "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups2");
+    BOOST_CHECK_EQUAL(
+        app.outerModuleGroup1.innerGroup.innerModuleWithVariableGroups.groupOneUpAndHide.getVirtualQualifiedName(),
+        "/testApp/outerModuleGroup1/innerModuleGroup");
+    BOOST_CHECK_EQUAL(
+        app.outerModuleGroup1.innerGroup.innerModuleWithVariableGroups2.groupOneLevelUp.getVirtualQualifiedName(),
+        "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups1");
+    BOOST_CHECK_EQUAL(
+        app.outerModuleGroup1.innerGroup.innerModuleWithVariableGroups2.groupOneUpAndHide.getVirtualQualifiedName(),
+        "/testApp/outerModuleGroup1/innerModuleGroup");
 
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModuleOneUpAndHide.getVirtualQualifiedName(),
         "/testApp/outerModuleGroup1");
@@ -197,9 +259,11 @@ BOOST_AUTO_TEST_CASE(testGetNetworkNodesOnVirtualHierarchy) {
   TestApplication app(ctk::HierarchyModifier::none);
   ctk::TestFacility test;
 
-  //app.cs.dump();
+  app.cs.dump();
+  //app.outerModuleGroup1.virtualise().dump();
 
   auto virtualisedApplication = app.findTag(".*");
+  //virtualisedApplication.dump();
 
   // Need to trip away "/appName/" in the submodule() calls
   size_t firstModuleOffsetInPath = ("/" + app.getName() + "/").size();
@@ -237,4 +301,88 @@ BOOST_AUTO_TEST_CASE(testGetNetworkNodesOnVirtualHierarchy) {
 
   node3Ref = virtualisedApplication["outerModuleGroup1"]["innerModuleGroup"]("input3");
   BOOST_CHECK(node3 == node3Ref);
+
+  auto pathToGroupWithOneLevelUp =
+      app.outerModuleGroup1.innerGroup.innerModuleWithVariableGroups.groupOneLevelUp.getVirtualQualifiedName();
+  ctk::Module& groupWithOneLevelUp = virtualisedApplication.submodule(
+      {pathToGroupWithOneLevelUp.begin() + firstModuleOffsetInPath, pathToGroupWithOneLevelUp.end()});
+  auto node4 = groupWithOneLevelUp("var1InGroupOneLevelUp");
+
+  auto node4Ref = virtualisedApplication["outerModuleGroup1"]["innerModuleGroup"]["InnerModuleWithVariableGroups2"](
+      "var1InGroupOneLevelUp");
+  BOOST_CHECK(node4 == node4Ref);
+
+  auto pathToGroupWithOneUpAndHide =
+      app.outerModuleGroup1.innerGroup.innerModuleWithVariableGroups.groupOneUpAndHide.getVirtualQualifiedName();
+  ctk::Module& groupWithOneUpAndHide = virtualisedApplication.submodule(
+      {pathToGroupWithOneUpAndHide.begin() + firstModuleOffsetInPath, pathToGroupWithOneUpAndHide.end()});
+  auto node6 = groupWithOneUpAndHide("var1InGroupOneUpAndHide");
+
+  auto node6Ref = virtualisedApplication["outerModuleGroup1"]["innerModuleGroup"]("var1InGroupOneUpAndHide");
+  BOOST_CHECK(node6 == node6Ref);
+}
+
+// helper class to avoid code duplications. Not a generic network node test but very special for
+// nodes with 1 app feeder, 1 app consumer and 1 cs consumer
+void testNetworkNode(ctk::VariableNetworkNode node, std::string feederName, std::string consumerName) {
+  std::cout << "checking network of " << node.getName() << std::endl;
+  auto& network = node.getOwner();
+  BOOST_CHECK_EQUAL(network.getFeedingNode().getQualifiedName(), feederName);
+  BOOST_CHECK_EQUAL(network.getConsumingNodes().size(), 2);
+  int appConsumerCounter{0};
+  for(auto& consumer : network.getConsumingNodes()) {
+    if(consumer.getType() == ctk::NodeType::Application) {
+      BOOST_CHECK_EQUAL(consumer.getQualifiedName(), consumerName);
+      ++appConsumerCounter;
+    }
+  }
+  BOOST_CHECK_EQUAL(appConsumerCounter, 1);
+}
+
+BOOST_AUTO_TEST_CASE(testNetworks) {
+  std::cout << "testNetworks" << std::endl;
+
+  // check that all variables that should be connected with the modifed hierarchies actually are tin the same network
+
+  TestApplication app(ctk::HierarchyModifier::none);
+  ctk::TestFacility test;
+
+  auto virtualisedApplication = app.findTag(".*");
+  //app.dumpConnections();
+
+  testNetworkNode(virtualisedApplication["outerModuleGroup1"]["innerModuleGroup"]("var1InGroupOneUpAndHide"),
+      "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups1/YoullNeverSee/"
+      "var1InGroupOneUpAndHide",
+      "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups2/IntentionallyNotYoullNeverSee/"
+      "var1InGroupOneUpAndHide");
+
+  testNetworkNode(virtualisedApplication["outerModuleGroup1"]["innerModuleGroup"]("var2InGroupOneUpAndHide"),
+      "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups2/IntentionallyNotYoullNeverSee/"
+      "var2InGroupOneUpAndHide",
+      "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups1/YoullNeverSee/"
+      "var2InGroupOneUpAndHide");
+
+  testNetworkNode(virtualisedApplication["outerModuleGroup1"]["innerModuleGroup"]["InnerModuleWithVariableGroups2"](
+                      "var1InGroupOneLevelUp"),
+      "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups1/InnerModuleWithVariableGroups2/"
+      "var1InGroupOneLevelUp",
+      "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups2/var1InGroupOneLevelUp");
+
+  testNetworkNode(virtualisedApplication["outerModuleGroup1"]["innerModuleGroup"]["InnerModuleWithVariableGroups2"](
+                      "var2InGroupOneLevelUp"),
+      "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups2/var2InGroupOneLevelUp",
+      "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups1/InnerModuleWithVariableGroups2/"
+      "var2InGroupOneLevelUp");
+
+  testNetworkNode(virtualisedApplication["outerModuleGroup1"]["innerModuleGroup"]["InnerModuleWithVariableGroups1"](
+                      "var3InGroupOneLevelUp"),
+      "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups1/var3InGroupOneLevelUp",
+      "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups2/InnerModuleWithVariableGroups1/"
+      "var3InGroupOneLevelUp");
+
+  testNetworkNode(virtualisedApplication["outerModuleGroup1"]["innerModuleGroup"]["InnerModuleWithVariableGroups1"](
+                      "var4InGroupOneLevelUp"),
+      "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups2/InnerModuleWithVariableGroups1/"
+      "var4InGroupOneLevelUp",
+      "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups1/var4InGroupOneLevelUp");
 }
