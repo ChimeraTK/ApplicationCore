@@ -37,6 +37,7 @@ target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_L
 
 # copy the (test) config files to the build directory for tests
 FILE( COPY config/ DESTINATION ${PROJECT_BINARY_DIR})
+FILE( COPY oven_sim/ DESTINATION ${PROJECT_BINARY_DIR})
 
 # Tests:
 # There are no dedicated tests for this demo. But we run the xml generator to
