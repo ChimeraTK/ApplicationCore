@@ -75,6 +75,7 @@ LoggingModule::LoggingModule(ctk::EntityOwner* owner, const std::string& name, c
         ApplicationModule(owner, name, description, hierarchyModifier, tags){
   auto virtualLogging = getOwner()->findTag("Logging");
   auto list = virtualLogging.getAccessorListRecursive();
+  if(list.empty()) std::cerr << "LoggingModule did not find any module that uses a Logger." << std::endl;
   for (auto it = list.begin(); it != list.end(); ++it){
     std::cout << "Registered module " << it->getOwningModule()->getName() << " for logging." << std::endl;
     auto acc = getAccessorPair(it->getOwningModule()->getName());
