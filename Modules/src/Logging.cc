@@ -44,7 +44,7 @@ std::string logging::getTime() {
 }
 
 Logger::Logger(ctk::Module* module)
-: message(module, "message", "", "Message of the module to the logging System", {"Logging", module->getName()}) {}
+: VariableGroup(module,"Logging" , "VariableGroup added by the Logger"), message(module, "message", "", "Message of the module to the logging System", {"Logging", module->getName()}) {}
 
 void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level) {
   if(message.isInitialised()) {
@@ -61,6 +61,24 @@ void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level)
   else {
     // only use the buffer until ctk initialized the process variables
     msg_buffer.push(std::to_string(level) + msg + "\n");
+  }
+}
+
+void Logger::prepare(){
+  // write initial value in order to bring LoggingModule to mainLoop()
+  message.write();
+}
+
+LoggingModule::LoggingModule(ctk::EntityOwner* owner, const std::string& name, const std::string& description,
+      ctk::HierarchyModifier hierarchyModifier,
+      const std::unordered_set<std::string>& tags):
+        ApplicationModule(owner, name, description, hierarchyModifier, tags){
+  auto virtualLogging = getOwner()->findTag("Logging");
+  auto list = virtualLogging.getAccessorListRecursive();
+  for (auto it = list.begin(); it != list.end(); ++it){
+    std::cout << "Registered module " << it->getOwningModule()->getName() << " for logging." << std::endl;
+    auto acc = getAccessorPair(it->getOwningModule()->getName());
+    (*it) >> acc;
   }
 }
 
@@ -121,6 +139,7 @@ void LoggingModule::mainLoop() {
   LogLevel level;
 
   while(1) {
+    //we skip the initial value since it is empty anyway and set in Logger::prepare
     auto id = group.readAny();
     if(id_list.count(id) == 0) {
       throw ChimeraTK::logic_error("Cannot find  element id"
