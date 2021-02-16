@@ -24,8 +24,21 @@ using namespace logging;
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
+struct DummyModule : ChimeraTK::ApplicationModule{
+  using ChimeraTK::ApplicationModule::ApplicationModule;
+  ChimeraTK::ScalarPushInput<int> input{this, "input", "", "dummy input"};
+
+  boost::shared_ptr<Logger> logger{new Logger(this)};
+
+  void mainLoop() override {
+    while(1){
+      input.read();
+    }
+  }
+};
+
 /**
- * Define a test app to test the SoftwareMasterModule.
+ * Define a test app to test the LoggingModule.
  *
  * A temporary directory /tmp/testLogging.XXXXXX will be created. Here XXXXXX will
  * be replaced by a unique string. Once the testApp object is deleted that directory is removed.
@@ -46,14 +59,13 @@ struct testApp : public ChimeraTK::Application {
     BOOST_CHECK_EQUAL(boost::filesystem::remove(dir), true);
   }
 
-  LoggingModule log{this, "LoggingModule", "LoggingModule test"};
+  DummyModule dummy{this, "Dummy", "Dummy"};
 
-  boost::shared_ptr<Logger> logger{new Logger(&log)};
+  LoggingModule log{this, "LoggingModule", "LoggingModule test"};
 
   ChimeraTK::ControlSystemModule cs;
 
   void defineConnections() override {
-    log.addSource(logger);
     log.findTag("CS").connectTo(cs);
   }
 
@@ -72,7 +84,7 @@ BOOST_AUTO_TEST_CASE(testLogMsg) {
   auto tailLength = tf.getScalar<uint>("maxTailLength");
   tailLength = 1;
   tailLength.write();
-  app.logger->sendMessage("test", LogLevel::DEBUG);
+  app.dummy.logger->sendMessage("test", LogLevel::DEBUG);
   tf.stepApplication();
   std::string ss = tf.readScalar<std::string>("logTail");
   BOOST_CHECK_EQUAL(ss.substr(ss.find("->") + 3), std::string("test\n"));
@@ -89,7 +101,7 @@ BOOST_AUTO_TEST_CASE(testLogfileFails) {
   logFile = tmpStr;
   logFile.write();
   // message not considered here but used to step through the application
-  app.logger->sendMessage("test", LogLevel::DEBUG);
+  app.dummy.logger->sendMessage("test", LogLevel::DEBUG);
   tf.stepApplication();
   std::string ss = (std::string)tf.readScalar<std::string>("logTail");
   std::vector<std::string> strs;
@@ -110,7 +122,7 @@ BOOST_AUTO_TEST_CASE(testLogfile) {
   logFile.write();
   app.fileCreated = true;
   // message not considered here but used to step through the application
-  app.logger->sendMessage("test", LogLevel::DEBUG);
+  app.dummy.logger->sendMessage("test", LogLevel::DEBUG);
   tf.stepApplication();
   std::fstream file;
   file.open(app.filename.c_str());
@@ -137,9 +149,9 @@ BOOST_AUTO_TEST_CASE(testLogging) {
   logLevel.write();
   tailLength = 2;
   tailLength.write();
-  app.logger->sendMessage("1st test message", LogLevel::DEBUG);
+  app.dummy.logger->sendMessage("1st test message", LogLevel::DEBUG);
   tf.stepApplication();
-  app.logger->sendMessage("2nd test message", LogLevel::DEBUG);
+  app.dummy.logger->sendMessage("2nd test message", LogLevel::DEBUG);
   tf.stepApplication();
   auto tail = tf.readScalar<std::string>("logTail");
   std::vector<std::string> result;
@@ -151,7 +163,7 @@ BOOST_AUTO_TEST_CASE(testLogging) {
   /**** Test log level ****/
   logLevel = 2;
   logLevel.write();
-  app.logger->sendMessage("3rd test message", LogLevel::DEBUG);
+  app.dummy.logger->sendMessage("3rd test message", LogLevel::DEBUG);
   tf.stepApplication();
   tail = tf.readScalar<std::string>("logTail");
   boost::algorithm::split(result, tail, boost::is_any_of("\n"));
@@ -162,13 +174,13 @@ BOOST_AUTO_TEST_CASE(testLogging) {
   tailLength = 3;
   tailLength.write();
   //  tf.stepApplication();
-  app.logger->sendMessage("4th test message", LogLevel::ERROR);
+  app.dummy.logger->sendMessage("4th test message", LogLevel::ERROR);
   tf.stepApplication();
   tail = tf.readScalar<std::string>("logTail");
   boost::algorithm::split(result, tail, boost::is_any_of("\n"));
   BOOST_CHECK_EQUAL(result.size(), 4);
 
-  app.logger->sendMessage("5th test message", LogLevel::ERROR);
+  app.dummy.logger->sendMessage("5th test message", LogLevel::ERROR);
   tf.stepApplication();
   tail = tf.readScalar<std::string>("logTail");
   boost::algorithm::split(result, tail, boost::is_any_of("\n"));

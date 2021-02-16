@@ -197,11 +197,6 @@ void LoggingModule::mainLoop() {
   }
 }
 
-void LoggingModule::addSource(boost::shared_ptr<Logger> logger) {
-  auto acc = getAccessorPair(logger->message.getOwner()->getName());
-  logger->message >> acc;
-}
-
 ctk::VariableNetworkNode LoggingModule::getAccessorPair(const std::string& sender) {
   auto it = std::find_if(sources.begin(), sources.end(), boost::bind(&MessageSource::sendingModule, _1) == sender);
   if(it == sources.end()) {
