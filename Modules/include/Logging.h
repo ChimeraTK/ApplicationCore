@@ -49,14 +49,19 @@
  *  The foreseen way of using the Logger is to add a Logger to a module that
  should send log messages.
  *
- *  The LoggingModule will take care of finding all Loggers used in the Application.
+ *  The LoggingModule will take care of finding all Loggers.
  *  Therefore, the LoggingModule needs to be constructed last - after all ApplicationModules
- *  using a Logger are constructed.
+ *  using a Logger are constructed. It will look in its owner for all accessors with tags that match the
+ *  tags given to the LoggingModule. Like that one can use tags in the Logger to assign senders for the LoggingModule
+ *  and in addition the LoggingModule can be placed inside a ModuleGroup to consider only accessors in that
+ *  group when setting up the connections.
+ *
  *  The following example shows how to integrate the Logging module and the
  Logging into an application (myApp) and one module sending
  *  messages (TestModule).
  *  \code
  *  sruct TestModule: public ChimeraTK::ApplicationModule{
+ *  // use default tag of the Logger -> "Logging"
  *  boost::shared_ptr<Logger> logger{new Logger(this)};
  *  ...
  *  };
@@ -68,6 +73,7 @@
  *  TestModule { this, "test", "" };
  *
  *  // needs to be added after all modules that use a Logger!
+ *  // Default tag of the LoggingModule is used -> "Logging"
  *  LoggingModule log { this, "LoggingModule", "LoggingModule test" };
  *  ...
  *  };
@@ -155,8 +161,9 @@ namespace logging {
      *
      * \param module The owning module that is using the Logger. It will appear as
      * sender in the LoggingModule, which is receiving messages from the Logger.
+     * \param tag A tag that is used to identify the Logger by the LoggingModule.
      */
-    Logger(ctk::Module* module);
+    Logger(ctk::Module* module, const std::string &tag = "Logging");
     /** Message to be send to the logging module */
     ctk::ScalarOutput<std::string> message;
 
@@ -175,7 +182,7 @@ namespace logging {
    *
    * A ChimeraTK module is producing messages, that are send to the LoggingModule
    * via the \c message variable. The message is then put into the logfile ring
-   * buffer and published in the \c LogFileTail. In addidtion the message can be
+   * buffer and published in the \c LogFileTail. In addition the message can be
    * put to an ostream. Available streams are:
    * - file stream
    * - cout/cerr
@@ -220,7 +227,7 @@ namespace logging {
    public:
     LoggingModule(ctk::EntityOwner* owner, const std::string& name, const std::string& description,
           ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-          const std::unordered_set<std::string>& tags = {});
+          const std::unordered_set<std::string>& tags = {"Logging"});
 
     LoggingModule(){}
 

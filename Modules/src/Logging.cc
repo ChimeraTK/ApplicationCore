@@ -43,8 +43,8 @@ std::string logging::getTime() {
   return str;
 }
 
-Logger::Logger(ctk::Module* module)
-: VariableGroup(module,"Logging" , "VariableGroup added by the Logger"), message(module, "message", "", "Message of the module to the logging System", {"Logging", module->getName()}) {}
+Logger::Logger(ctk::Module* module,const std::string &tag)
+: VariableGroup(module,"Logging" , "VariableGroup added by the Logger"), message(module, "message", "", "Message of the module to the logging System", {tag, module->getName()}) {}
 
 void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level) {
   if(message.isInitialised()) {
@@ -73,14 +73,18 @@ LoggingModule::LoggingModule(ctk::EntityOwner* owner, const std::string& name, c
       ctk::HierarchyModifier hierarchyModifier,
       const std::unordered_set<std::string>& tags):
         ApplicationModule(owner, name, description, hierarchyModifier, tags){
-  auto virtualLogging = getOwner()->findTag("Logging");
-  auto list = virtualLogging.getAccessorListRecursive();
-  if(list.empty()) std::cerr << "LoggingModule did not find any module that uses a Logger." << std::endl;
-  for (auto it = list.begin(); it != list.end(); ++it){
-    std::cout << "Registered module " << it->getOwningModule()->getName() << " for logging." << std::endl;
-    auto acc = getAccessorPair(it->getOwningModule()->getName());
-    (*it) >> acc;
+  for(auto tag : tags){
+    auto virtualLogging = getOwner()->findTag(tag);
+    auto list = virtualLogging.getAccessorListRecursive();
+    for (auto it = list.begin(); it != list.end(); ++it){
+      // do not add the module itself
+      if(it->getOwningModule()->getName() == name) continue;
+      std::cout << "Registered module " << it->getOwningModule()->getName() << " for logging." << std::endl;
+      auto acc = getAccessorPair(it->getOwningModule()->getName());
+      (*it) >> acc;
+    }
   }
+  if(sources.empty()) std::cerr << "LoggingModule did not find any module that uses a Logger." << std::endl;
 }
 
 void LoggingModule::broadcastMessage(std::string msg, const bool& isError) {
