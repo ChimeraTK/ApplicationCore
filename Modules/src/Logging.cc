@@ -78,7 +78,7 @@ LoggingModule::LoggingModule(ctk::EntityOwner* owner, const std::string& name, c
     auto list = virtualLogging.getAccessorListRecursive();
     for (auto it = list.begin(); it != list.end(); ++it){
       // do not add the module itself
-      if(it->getOwningModule()->getName() == name) continue;
+      if(it->getOwningModule() == this) continue;
       std::cout << "Registered module " << it->getOwningModule()->getName() << " for logging." << std::endl;
       auto acc = getAccessorPair(it->getOwningModule()->getName());
       (*it) >> acc;
