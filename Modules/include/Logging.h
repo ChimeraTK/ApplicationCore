@@ -45,36 +45,42 @@
  *  input variable tailLength. Other than that, messages are written to
  cout/cerr and/or a log file as explained above.
  *
- *  In order to add a source to the Logging module the method \c
- addSource(Logger*) is
- *  available.
+ *  A Logger class is used to send messages to the LoggingModule.
  *  The foreseen way of using the Logger is to add a Logger to a module that
  should send log messages.
- *  In the definition of connections of the application (\c defineConnections()
- ) one can add this source to the Logging module.
+ *
+ *  The LoggingModule will take care of finding all Loggers.
+ *  Therefore, the LoggingModule needs to be constructed last - after all ApplicationModules
+ *  using a Logger are constructed. It will look in its owner for all accessors with tags that match the
+ *  tags given to the LoggingModule. Like that one can use tags in the Logger to assign senders for the LoggingModule
+ *  and in addition the LoggingModule can be placed inside a ModuleGroup to consider only accessors in that
+ *  group when setting up the connections.
  *
  *  The following example shows how to integrate the Logging module and the
  Logging into an application (myApp) and one module sending
  *  messages (TestModule).
  *  \code
  *  sruct TestModule: public ChimeraTK::ApplicationModule{
+ *  // use default tag of the Logger -> "Logging"
  *  boost::shared_ptr<Logger> logger{new Logger(this)};
  *  ...
  *  };
  *  struct myApp : public ChimeraTK::Application{
  *
- *  LoggingModule log { this, "LoggingModule", "LoggingModule test" };
- *
+  *
  *  ChimeraTK::ControlSystemModule cs;
  *
  *  TestModule { this, "test", "" };
+ *
+ *  // needs to be added after all modules that use a Logger!
+ *  // Default tag of the LoggingModule is used -> "Logging"
+ *  LoggingModule log { this, "LoggingModule", "LoggingModule test" };
  *  ...
  *  };
  *
  *
  *  void myAPP::defineConnctions(){
  *  log.findTag("CS").connectTo(cs);
- *  log.addSource(&TestModule.logger)
  *  ...
  *  }
  *
@@ -135,7 +141,7 @@ namespace logging {
    * message is send in the mainLoop messages from defineConnections will never be
    * shown.
    */
-  class Logger {
+  class Logger : ctk::VariableGroup {
    private:
     std::queue<std::string> msg_buffer;
 
@@ -155,8 +161,9 @@ namespace logging {
      *
      * \param module The owning module that is using the Logger. It will appear as
      * sender in the LoggingModule, which is receiving messages from the Logger.
+     * \param tag A tag that is used to identify the Logger by the LoggingModule.
      */
-    Logger(ctk::Module* module);
+    Logger(ctk::Module* module, const std::string &tag = "Logging");
     /** Message to be send to the logging module */
     ctk::ScalarOutput<std::string> message;
 
@@ -166,6 +173,8 @@ namespace logging {
      *
      */
     void sendMessage(const std::string& msg, const logging::LogLevel& level);
+
+    void prepare() override;
   };
 
   /**
@@ -173,7 +182,7 @@ namespace logging {
    *
    * A ChimeraTK module is producing messages, that are send to the LoggingModule
    * via the \c message variable. The message is then put into the logfile ring
-   * buffer and published in the \c LogFileTail. In addidtion the message can be
+   * buffer and published in the \c LogFileTail. In addition the message can be
    * put to an ostream. Available streams are:
    * - file stream
    * - cout/cerr
@@ -185,6 +194,10 @@ namespace logging {
    * 3: none
    *
    * The logfile is given by the client using the logFile variable.
+   *
+   * \attention The LoggingModule should be added last to the Application. Doing so
+   * all logging messages added by Logger object will be collected and connected to
+   * the LoggingModule.
    */
   class LoggingModule : public ctk::ApplicationModule {
    private:
@@ -203,7 +216,7 @@ namespace logging {
     std::map<ChimeraTK::TransferElementID, MessageSource*> id_list;
 
     /** Number of messages stored in the tail */
-    size_t messageCounter;
+    size_t messageCounter{0};
 
     /** Broadcast message to cout/cerr and log file
      * \param msg The mesage
@@ -212,7 +225,11 @@ namespace logging {
     void broadcastMessage(std::string msg, const bool& isError = false);
 
    public:
-    using ctk::ApplicationModule::ApplicationModule;
+    LoggingModule(ctk::EntityOwner* owner, const std::string& name, const std::string& description,
+          ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+          const std::unordered_set<std::string>& tags = {"Logging"});
+
+    LoggingModule(){}
 
     ctk::ScalarPollInput<uint> targetStream{this, "targetStream", "",
         "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 "
@@ -234,9 +251,6 @@ namespace logging {
         this, "logTail", "", "Tail of the logging stream.", {"CS", "PROCESS", getName()}};
 
     std::unique_ptr<std::ofstream> file; ///< Log file where to write log messages
-
-    /** Add a Module as a source to this DAQ. */
-    void addSource(boost::shared_ptr<Logger> logger);
 
     void prepare() override;
 
