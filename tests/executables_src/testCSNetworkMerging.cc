@@ -11,12 +11,6 @@
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
-struct MyCs : public ctk::ControlSystemModule {
-  using ctk::ControlSystemModule::ControlSystemModule;
-
-  using ctk::ControlSystemModule::variables;
-};
-
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
@@ -25,8 +19,8 @@ struct TestApplication : public ctk::Application {
 
   void defineConnections() override {}
 
-  MyCs cs1;
-  MyCs cs2;
+  ctk::ControlSystemModule cs1;
+  ctk::ControlSystemModule cs2;
 
   struct IO : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -52,7 +46,7 @@ struct TestApplication : public ctk::Application {
 };
 
 BOOST_AUTO_TEST_CASE(testNetworkMerging1) { // Test merging works if if going in different directions
-
+  std::cout << "testNetworkMerging1" << std::endl;
   TestApplication app;
 
   auto pvManagers = ctk::createPVManager();
@@ -66,19 +60,21 @@ BOOST_AUTO_TEST_CASE(testNetworkMerging1) { // Test merging works if if going in
 }
 
 BOOST_AUTO_TEST_CASE(testNetworkMerging2) { // Test merging works if if going in different directions
+  std::cout << "testNetworkMerging2" << std::endl;
   TestApplication app;
 
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
   // Connect a push input to CS1 and a poll output to CS2 for the same variable, reverse order.
-  app.module1.data.input >> app.cs1("Foo");
-  app.module2.data.input >> app.cs1("Foo");
+  app.cs1("Foo") >> app.module1.data.input;
+  app.cs2("Foo") >> app.module2.data.input;
   app.initialise();
   app.run();
 }
 
 BOOST_AUTO_TEST_CASE(testNetworkMerging3) { // Test merging works if if going in different directions
+  std::cout << "testNetworkMerging3" << std::endl;
   TestApplication app;
 
   auto pvManagers = ctk::createPVManager();
@@ -92,6 +88,7 @@ BOOST_AUTO_TEST_CASE(testNetworkMerging3) { // Test merging works if if going in
 }
 
 BOOST_AUTO_TEST_CASE(testNetworkMerging4) { // Test merging works if if going in different directions
+  std::cout << "testNetworkMerging4" << std::endl;
   TestApplication app;
 
   auto pvManagers = ctk::createPVManager();
@@ -99,7 +96,5 @@ BOOST_AUTO_TEST_CASE(testNetworkMerging4) { // Test merging works if if going in
 
   // Connect a push input to CS1 and a poll output to CS2 for the same variable, reverse order.
   app.module1.data.output >> app.cs1("Foo");
-  app.module2.data.output >> app.cs2("Foo");
-  app.initialise();
-  app.run();
+  BOOST_CHECK_THROW(app.module2.data.output >> app.cs2("Foo"), ChimeraTK::logic_error);
 }
