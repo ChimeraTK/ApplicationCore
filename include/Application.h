@@ -328,6 +328,11 @@ namespace ChimeraTK {
      * key is the ID (address) of the externalTiggerImpl. */
     std::map<const void*, boost::shared_ptr<TriggerFanOut>> triggerMap;
 
+    /** Map of control system type VariableNetworkNodes handed out by ControlSystemModules. This is used to hand out
+     *  the same node again if the same variable is requested another time, to ensure the connections are registered in
+     *  the same network. */
+    std::map<std::string, VariableNetworkNode> controlSystemVariables;
+
     /** Create a new, empty network */
     VariableNetwork& createNetwork();
 
@@ -453,6 +458,8 @@ namespace ChimeraTK {
     friend class DeviceModule;  // needs access to testableMode_variables
     friend class DeviceModule;  // needs access to testableMode_variables
     friend class TriggerFanOut; // needs access to testableMode_variables
+
+    friend class ControlSystemModule; // needs access to controlSystemVariables
 
     template<typename UserType>
     friend class DebugPrintAccessorDecorator; // needs access to the idMap
