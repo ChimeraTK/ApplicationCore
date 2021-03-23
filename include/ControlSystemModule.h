@@ -30,7 +30,6 @@ namespace ChimeraTK {
       Module::operator=(std::move(other));
       variableNamePrefix = std::move(other.variableNamePrefix);
       subModules = std::move(other.subModules);
-      variables = std::move(other.variables);
       return *this;
     }
 
@@ -69,10 +68,6 @@ namespace ChimeraTK {
     // of this module
     mutable std::map<std::string, ControlSystemModule> subModules;
 
-    // List of variables accessed through the operator(). This is mutable since it
-    // is little more than a cache and thus does not change the logical state of
-    // this module
-    mutable std::map<std::string, VariableNetworkNode> variables;
   };
 
 } /* namespace ChimeraTK */
