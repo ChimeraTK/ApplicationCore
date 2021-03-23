@@ -63,7 +63,6 @@ BOOST_AUTO_TEST_CASE(testNetworkMerging1) { // Test merging works if if going in
   app.module2.data.output >> app.cs2("Foo");
   app.initialise();
   app.run();
-  MyCs::variables.clear();
 }
 
 BOOST_AUTO_TEST_CASE(testNetworkMerging2) { // Test merging works if if going in different directions
@@ -77,7 +76,6 @@ BOOST_AUTO_TEST_CASE(testNetworkMerging2) { // Test merging works if if going in
   app.module2.data.input >> app.cs1("Foo");
   app.initialise();
   app.run();
-  MyCs::variables.clear();
 }
 
 BOOST_AUTO_TEST_CASE(testNetworkMerging3) { // Test merging works if if going in different directions
@@ -91,7 +89,6 @@ BOOST_AUTO_TEST_CASE(testNetworkMerging3) { // Test merging works if if going in
   app.module2.data.output >> app.cs2("Foo");
   app.initialise();
   app.run();
-  MyCs::variables.clear();
 }
 
 BOOST_AUTO_TEST_CASE(testNetworkMerging4) { // Test merging works if if going in different directions
@@ -105,5 +102,4 @@ BOOST_AUTO_TEST_CASE(testNetworkMerging4) { // Test merging works if if going in
   app.module2.data.output >> app.cs2("Foo");
   app.initialise();
   app.run();
-  MyCs::variables.clear();
 }
