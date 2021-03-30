@@ -271,10 +271,11 @@ namespace ChimeraTK {
 
     while(true) {
       // [Spec: 2.3.1] (Re)-open the device.
-      owner->testableModeUnlock("Open/recover device");
       do {
+        owner->testableModeUnlock("Wait before open/recover device");
         usleep(500000);
         boost::this_thread::interruption_point();
+        owner->testableModeLock("Attempt open/recover device");
         try {
           device.open();
         }
@@ -290,7 +291,6 @@ namespace ChimeraTK {
           continue; // should not be necessary because isFunctional() should return false. But no harm in leaving it in.
         }
       } while(!device.isFunctional());
-      owner->testableModeLock("Initialise device");
 
       boost::unique_lock<boost::shared_mutex> errorLock(errorMutex);
 
