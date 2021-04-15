@@ -21,6 +21,7 @@
 #include "ModuleGroup.h"
 #include "ScalarAccessor.h"
 #include "VariableGroup.h"
+#include "HierarchyModifyingGroup.h"
 #include "VirtualModule.h"
 #include "ConfigReader.h"
 
