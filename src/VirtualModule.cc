@@ -15,8 +15,7 @@ namespace ChimeraTK {
 
   VirtualModule::VirtualModule(const VirtualModule& other) : Module(nullptr, other.getName(), other.getDescription()) {
     // since moduleList stores plain pointers, we need to regenerate this list
-    /// @todo find a better way than storing plain pointers!
-    for(auto& mod : other.submodules) addSubModule(mod);
+    for(auto& mod : other.submodules) addSubModule(mod); // this creates a copy (call by value)
     accessorList = other.accessorList;
     _hierarchyModifier = other._hierarchyModifier;
     _moduleType = other.getModuleType();
@@ -35,8 +34,7 @@ namespace ChimeraTK {
     // move-assign a plain new module
     Module::operator=(VirtualModule(other.getName(), other.getDescription(), other.getModuleType()));
     // since moduleList stores plain pointers, we need to regenerate this list
-    /// @todo find a better way than storing plain pointers!
-    for(auto& mod : other.submodules) addSubModule(mod);
+    for(auto& mod : other.submodules) addSubModule(mod); // this creates a copy (call by value)
     accessorList = other.accessorList;
     _hierarchyModifier = other._hierarchyModifier;
     return *this;
