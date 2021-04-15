@@ -51,6 +51,9 @@ namespace ChimeraTK {
      * list. */
     void addSubModule(VirtualModule module);
 
+    /** Remove a virtual sub-module with the given name if it currently exists. */
+    void removeSubModule(const std::string &name);
+
     /** Return the submodule with the given name. If it doesn't exist, create it
      * first. */
     VirtualModule& createAndGetSubmodule(const RegisterPath& moduleName);
@@ -62,6 +65,8 @@ namespace ChimeraTK {
     ModuleType getModuleType() const override { return _moduleType; }
 
     const Module& virtualise() const override;
+
+    void stripEmptyChildsRecursive();
 
    protected:
     std::list<VirtualModule> submodules;

@@ -108,13 +108,16 @@ namespace ChimeraTK {
     // add everything matching the tag to the virtual module and return it
     if(this == &Application::getInstance()) {
       // if this module is the top-level application, we need special treatment for HierarchyModifier::moveToRoot
-      findTagAndAppendToModule(module, tag, false, true, false, module, nullptr);
+      findTagAndAppendToModule(module, tag, false, true, false, module);
     }
     else {
       // Not the top-level module: Things that are moved to the top-level are simply discarded
       VirtualModule discard("discarded", "", ModuleType::Invalid);
-      findTagAndAppendToModule(module, tag, false, true, false, discard, nullptr);
+      findTagAndAppendToModule(module, tag, false, true, false, discard);
     }
+
+    // remove all empty virtual modules
+    module.stripEmptyChildsRecursive();
 
     return module;
   }
@@ -128,13 +131,17 @@ namespace ChimeraTK {
     // add everything matching the tag to the virtual module and return it
     if(this == &Application::getInstance()) {
       // if this module is the top-level application, we need special treatment for HierarchyModifier::moveToRoot
-      findTagAndAppendToModule(module, tag, false, true, true, module, nullptr);
+      findTagAndAppendToModule(module, tag, false, true, true, module);
     }
     else {
       // Not the top-level module: Things that are moved to the top-level are simply discarded
       VirtualModule discard("discarded", "", ModuleType::Invalid);
-      findTagAndAppendToModule(module, tag, false, true, true, discard, nullptr);
+      findTagAndAppendToModule(module, tag, false, true, true, discard);
     }
+
+    // remove all empty virtual modules
+    module.stripEmptyChildsRecursive();
+
     return module;
   }
 
@@ -142,45 +149,58 @@ namespace ChimeraTK {
 
   // The function adds virtual versions of the EntityOwner itself anf all its children to a virtual module (parent).
   void EntityOwner::findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag,
-      bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root,
-      VirtualModule* virtualGrandparent) const {
-    // This function adds the EntityOwner "this" (C++ hierarchy) and its children to the virtual hierarchy.
-    /// We must create a virtual version of "this".
-    VirtualModule virtualMe{_name, _description, getModuleType()};
+      bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const {
     // It might be that it is requested to hide ourselves. In this case we do not add
     // ourselves but directly put the children into the parent (or grand parent, depending on the hierarchy modifier).
-    // So we store which module to add to (either virtualMe, the virtual parent or virtual grand parent)
+    // So we store which module to add to (either a new virtual module, the virtual parent or virtual grand parent)
     VirtualModule* moduleToAddTo;
-    VirtualModule* parentOfModuleToAddTo;
 
-    bool needToAddMyself = false;
     // Check whether we are supposed to hide. This can be the case if
     // * the hierarchy modifier says so (hideThis or oneUpAndHide -> getEliminateHierarchy is true)
     // * flatten was called (eliminateAllHierarchies is true)
     // * the virtual hierarchy level of virtualMe already exists elsewhere and we just add our children to it
     if(!getEliminateHierarchy() && !eliminateAllHierarchies && !eliminateFirstHierarchy) {
-      // We are not hiding ourselves.
-      moduleToAddTo = &virtualMe;
-      parentOfModuleToAddTo = &virtualParent;
-      needToAddMyself = true;
+      // add the virtualMe to the right owner
+      if(_hierarchyModifier == HierarchyModifier::moveToRoot) {
+        moduleToAddTo = &root.createAndGetSubmodule(_name);
+      }
+      else if((_hierarchyModifier == HierarchyModifier::oneLevelUp) ||
+          (_hierarchyModifier == HierarchyModifier::oneUpAndHide)) {
+        auto virtualGrandparent =dynamic_cast<VirtualModule*>(virtualParent.getOwner());
+        if(virtualGrandparent == nullptr) {
+          throw logic_error(std::string("Module ") + virtualParent.getName() +
+              ": cannot have hierarchy modifier 'oneLevelUp' or 'oneUpAndHide' in root of the application." +
+              "\nNon-virtual path to the offending module: " + getQualifiedName());
+        }
+        moduleToAddTo = &virtualGrandparent->createAndGetSubmodule(_name);
+      }
+      else {
+        moduleToAddTo = &virtualParent.createAndGetSubmodule(_name);
+      }
     }
     else {
       // We are hiding. Find the correct ancestor to add to:
       if(_hierarchyModifier == HierarchyModifier::oneUpAndHide) {
         // don't just hide but also move one level up -> add to the grandparent
-        moduleToAddTo = virtualGrandparent;
-        parentOfModuleToAddTo = nullptr; //FIXME: oneLevelUp and oneUpAndHide cannit be nested
+        moduleToAddTo = dynamic_cast<VirtualModule*>(virtualParent.getOwner());
+        if(moduleToAddTo == nullptr) {
+          throw logic_error(std::string("Module ") + virtualParent.getName() +
+                ": cannot have hierarchy modifier 'oneLevelUp' or 'oneUpAndHide' in root of the application." +
+                "\nNon-virtual path to the offending module: " + getQualifiedName());
+        }
       }
       else {
-        // just hide -> add to the parent (could also an already existing objet with the same hierarchy level as virtualMe, where we just add to)
+        // just hide -> add to the parent (could also an already existing object with the same hierarchy level as virtualMe, where we just add to)
         moduleToAddTo = &virtualParent;
-        parentOfModuleToAddTo = virtualGrandparent;
       }
     }
 
+    // This should have already been caught by previous checks.
+    assert(moduleToAddTo != nullptr);
+
     // add nodes to the module if matching the tag
     std::regex expr(tag);
-    for(auto node : getAccessorList()) {
+    for(auto &node : getAccessorList()) {
       bool addNode = false;
       for(auto& nodeTag : node.getTags()) {
         if(std::regex_match(nodeTag, expr)) {
@@ -197,46 +217,8 @@ namespace ChimeraTK {
     // iterate through submodules
     // nomencature: submodule = EntityOwner in C++ hierarchy, child = VirtualModule in virtual hierarcy
     for(auto submodule : getSubmoduleList()) {
-      // check if submodule already exists by this name and its hierarchy should
-      // not be eliminated
-      if(!submodule->getEliminateHierarchy() && moduleToAddTo->hasSubmodule(submodule->getName())) {
-        // exists: add to the existing child
-        auto* existingChild = dynamic_cast<VirtualModule*>(moduleToAddTo->getSubmodule(submodule->getName()));
-        assert(existingChild != nullptr);
-        submodule->findTagAndAppendToModule(
-            //                                      true = eliminateFirstHierarchy, just add to existingChild
-            //                                                                if we add to existingChild, whe have to put to ITS parent here,
-            //                                                                which is moduleToAddTo
-            *existingChild, tag, eliminateAllHierarchies, true, negate, root, moduleToAddTo);
-      }
-      else {
-        // does not yet exist: add as new submodule to the current module
-        // (is also the case if the submodule is hidden and thus not added to the existingChild but the moduleToAddTo)
-        submodule->findTagAndAppendToModule(
-            *moduleToAddTo, tag, eliminateAllHierarchies, false, negate, root, parentOfModuleToAddTo);
-      }
-    }
-
-    if(needToAddMyself) {
-      if(virtualMe.getAccessorList().size() > 0 || virtualMe.getSubmoduleList().size() > 0) {
-        if(_hierarchyModifier == HierarchyModifier::moveToRoot) {
-          root.addSubModule(virtualMe);
-        }
-        else if((_hierarchyModifier == HierarchyModifier::oneLevelUp) ||
-            (_hierarchyModifier == HierarchyModifier::oneUpAndHide)) {
-          if(virtualGrandparent != nullptr) { // the root does not have a parent. Could be nullptr.
-            virtualGrandparent->addSubModule(virtualMe);
-          }
-          else {
-            throw logic_error(std::string("Module ") + virtualParent.getName() +
-                ": cannot have hierarchy modifier 'oneLevelUp' or 'oneUpAndHide' in root of the application." +
-                "\nNon-virtual path to the offending module: " + getQualifiedName());
-          }
-        }
-        else {
-          virtualParent.addSubModule(virtualMe);
-        }
-      }
+      // Duplicate childs will not be created, since createAndGetSubmodule() prevents that.
+      submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies, false, negate, root);
     }
   }
 
