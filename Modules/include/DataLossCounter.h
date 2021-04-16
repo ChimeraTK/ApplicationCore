@@ -24,27 +24,24 @@ namespace ChimeraTK {
      *  resp. relative path. Note that relative paths are relative to the DataLossCounter itself.
      */
     DataLossCounter(EntityOwner* owner, const std::string& name, const std::string& description,
-                    const std::string &pathToTrigger,
-                    HierarchyModifier hierarchyModifier = HierarchyModifier::none,
-                    const std::unordered_set<std::string>& tags = {})
-     : ApplicationModule(owner, name, description, hierarchyModifier, tags),
-       triggerGroup(this, pathToTrigger), trigger(triggerGroup.trigger)
-    {}
+        const std::string& pathToTrigger, HierarchyModifier hierarchyModifier = HierarchyModifier::none,
+        const std::unordered_set<std::string>& tags = {})
+    : ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger),
+      trigger(triggerGroup.trigger) {}
 
     /// Deprecated form of the constructor for backwards compatibility only.
     [[deprecated]] DataLossCounter(EntityOwner* owner, const std::string& name, const std::string& description,
-                    HierarchyModifier hierarchyModifier = HierarchyModifier::none,
-                    const std::unordered_set<std::string>& tags = {})
-     : ApplicationModule(owner, name, description, hierarchyModifier, tags),
-       triggerGroup_compat(this, "TriggerGroup", "", HierarchyModifier::hideThis), trigger(triggerGroup_compat.trigger)
-    {}
+        HierarchyModifier hierarchyModifier = HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
+    : ApplicationModule(owner, name, description, hierarchyModifier, tags),
+      triggerGroup_compat(this, "TriggerGroup", "", HierarchyModifier::hideThis), trigger(triggerGroup_compat.trigger) {
+    }
 
     DataLossCounter() {}
 
     struct TriggerGroup : HierarchyModifyingGroup {
       TriggerGroup(EntityOwner* owner, const std::string& pathToTrigger)
       : HierarchyModifyingGroup(owner, HierarchyModifyingGroup::getPathName(pathToTrigger), ""),
-        trigger{this,  HierarchyModifyingGroup::getUnqualifiedName(pathToTrigger), "", "Trigger input"} {}
+        trigger{this, HierarchyModifyingGroup::getUnqualifiedName(pathToTrigger), "", "Trigger input"} {}
 
       TriggerGroup() {}
 
@@ -57,7 +54,7 @@ namespace ChimeraTK {
     } triggerGroup_compat;
 
     // This is for backwards compatibility!
-    ScalarPushInput<TRIGGERTYPE> &trigger;
+    ScalarPushInput<TRIGGERTYPE>& trigger;
 
     ScalarOutput<uint64_t> lostDataInLastTrigger{this, "lostDataInLastTrigger", "",
         "Number of data transfers during "

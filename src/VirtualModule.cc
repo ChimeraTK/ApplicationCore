@@ -119,7 +119,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VirtualModule::removeSubModule(const std::string &name) {
+  void VirtualModule::removeSubModule(const std::string& name) {
     for(auto module = submodules.begin(); module != submodules.end(); ++module) {
       if(module->getName() == name) {
         unregisterModule(&*module);
@@ -162,13 +162,13 @@ namespace ChimeraTK {
 
   void VirtualModule::stripEmptyChildsRecursive() {
     // first recurse into childs, to make sure to remove all we an
-    for(auto &child : submodules) {
+    for(auto& child : submodules) {
       child.stripEmptyChildsRecursive();
     }
 
     // strip empty virtual childs
     // Note: getSubmoduleList() returns a copy of the list, hence it is ok to call removeSubModule() in the loop here!
-    for(auto &child : getSubmoduleList()) {
+    for(auto& child : getSubmoduleList()) {
       if(child->getAccessorList().size() == 0 && child->getSubmoduleList().size() == 0) {
         removeSubModule(child->getName());
       }

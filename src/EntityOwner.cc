@@ -166,7 +166,7 @@ namespace ChimeraTK {
       }
       else if((_hierarchyModifier == HierarchyModifier::oneLevelUp) ||
           (_hierarchyModifier == HierarchyModifier::oneUpAndHide)) {
-        auto virtualGrandparent =dynamic_cast<VirtualModule*>(virtualParent.getOwner());
+        auto virtualGrandparent = dynamic_cast<VirtualModule*>(virtualParent.getOwner());
         if(virtualGrandparent == nullptr) {
           throw logic_error(std::string("Module ") + virtualParent.getName() +
               ": cannot have hierarchy modifier 'oneLevelUp' or 'oneUpAndHide' in root of the application." +
@@ -185,8 +185,8 @@ namespace ChimeraTK {
         moduleToAddTo = dynamic_cast<VirtualModule*>(virtualParent.getOwner());
         if(moduleToAddTo == nullptr) {
           throw logic_error(std::string("Module ") + virtualParent.getName() +
-                ": cannot have hierarchy modifier 'oneLevelUp' or 'oneUpAndHide' in root of the application." +
-                "\nNon-virtual path to the offending module: " + getQualifiedName());
+              ": cannot have hierarchy modifier 'oneLevelUp' or 'oneUpAndHide' in root of the application." +
+              "\nNon-virtual path to the offending module: " + getQualifiedName());
         }
       }
       else {
@@ -200,7 +200,7 @@ namespace ChimeraTK {
 
     // add nodes to the module if matching the tag
     std::regex expr(tag);
-    for(auto &node : getAccessorList()) {
+    for(auto& node : getAccessorList()) {
       bool addNode = false;
       for(auto& nodeTag : node.getTags()) {
         if(std::regex_match(nodeTag, expr)) {

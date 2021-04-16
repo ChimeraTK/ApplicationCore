@@ -8,7 +8,7 @@
 namespace ChimeraTK {
 
   HierarchyModifyingGroup::HierarchyModifyingGroup(EntityOwner* owner, std::string qualifiedName,
-    const std::string& description, const std::unordered_set<std::string>& tags)
+      const std::string& description, const std::unordered_set<std::string>& tags)
   : VariableGroup() // must not use the standard constructor here and instead instead things on our own
   {
     if(!dynamic_cast<ApplicationModule*>(owner) && !dynamic_cast<VariableGroup*>(owner)) {
@@ -16,8 +16,8 @@ namespace ChimeraTK {
     }
 
     // special treatment for extra slashes at the end: remove them to avoid extra empty-named hierarchies
-    while(qualifiedName.substr(qualifiedName.size()-1) == "/") {
-      qualifiedName = qualifiedName.substr(0, qualifiedName.size()-1);
+    while(qualifiedName.substr(qualifiedName.size() - 1) == "/") {
+      qualifiedName = qualifiedName.substr(0, qualifiedName.size() - 1);
     }
 
     _name = getUnqualifiedName(qualifiedName);
@@ -39,28 +39,28 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  std::string HierarchyModifyingGroup::getUnqualifiedName(const std::string &qualifiedName) {
+  std::string HierarchyModifyingGroup::getUnqualifiedName(const std::string& qualifiedName) {
     auto found = qualifiedName.find_last_of("/");
     if(found == std::string::npos) return qualifiedName;
-    return qualifiedName.substr(found+1);
+    return qualifiedName.substr(found + 1);
   }
 
   /********************************************************************************************************************/
 
-  std::string HierarchyModifyingGroup::getPathName(const std::string &qualifiedName) {
+  std::string HierarchyModifyingGroup::getPathName(const std::string& qualifiedName) {
     auto found = qualifiedName.find_last_of("/");
     if(found == std::string::npos) return "";
-    return qualifiedName.substr(0,found);
+    return qualifiedName.substr(0, found);
   }
 
   /********************************************************************************************************************/
 
-  EntityOwner* HierarchyModifyingGroup::makeOwnerTree(EntityOwner *originalOwner, const std::string &qualifiedName) {
+  EntityOwner* HierarchyModifyingGroup::makeOwnerTree(EntityOwner* originalOwner, const std::string& qualifiedName) {
     std::vector<std::string> splittedPath;
     boost::split(splittedPath, qualifiedName, boost::is_any_of("/"));
     bool moveToRoot = false;
     size_t index = 0;
-    for(auto &pathElement : splittedPath) {
+    for(auto& pathElement : splittedPath) {
       ++index;
       if(pathElement.size() == 0) {
         // If first element is an empty string, the qualifiedName starts with a slash, which means the entire tree
@@ -80,7 +80,7 @@ namespace ChimeraTK {
       }
 
       // Create variable group
-      EntityOwner *theOwner;
+      EntityOwner* theOwner;
       if(_ownerTree.size() == 0) {
         // The first group must be owned by the original owner passed to the contructor of the
         // HierarchyModifyingGroup
@@ -125,4 +125,4 @@ namespace ChimeraTK {
     return &_ownerTree.back();
   }
 
-}
+} // namespace ChimeraTK

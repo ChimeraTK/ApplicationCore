@@ -60,34 +60,30 @@ struct TestApplication : public ctk::Application {
 /* Helper for tests: Allows to test the virtual hierarchy quickly, assuming each test case uses a separate tag
  * and each tag/test case has exactly one variable. */
 struct TestHelper {
+  TestHelper(TestApplication& app, const std::string tag) : root(app.findTag(tag)) {
+    current = &root;
+    //root.dump();
+  }
 
-  TestHelper(TestApplication &app, const std::string tag) : root(app.findTag(tag)) {
-    {
-      current = &root;
-      //root.dump();
-    }
+  TestHelper submodule(const std::string& name) {
+    BOOST_REQUIRE(current->getSubmoduleList().size() == 1);
+    BOOST_CHECK(current->getAccessorList().size() == 0);
+    auto child = current->getSubmoduleList().front();
+    BOOST_CHECK(child->getName() == name);
+    return TestHelper(root, child);
+  }
 
-    TestHelper submodule(const std::string& name) {
-      BOOST_REQUIRE(current->getSubmoduleList().size() == 1);
-      BOOST_CHECK(current->getAccessorList().size() == 0);
-      auto child = current->getSubmoduleList().front();
-      BOOST_CHECK(child->getName() == name);
-      return TestHelper(root,child);
-    }
+  void accessor(ctk::VariableNetworkNode node) {
+    BOOST_CHECK(current->getSubmoduleList().size() == 0);
+    BOOST_REQUIRE(current->getAccessorList().size() == 1);
+    BOOST_CHECK(current->getAccessorList().front() == node);
+  }
 
-    void accessor(ctk::VariableNetworkNode node) {
-      BOOST_CHECK(current->getSubmoduleList().size() == 0);
-      BOOST_REQUIRE(current->getAccessorList().size() == 1);
-      BOOST_CHECK(current->getAccessorList().front() == node);
-    }
+ protected:
+  TestHelper(ctk::VirtualModule& _root, ctk::Module* _current) : root(_root), current(_current) {}
 
-  protected:
-
-    TestHelper(ctk::VirtualModule &_root, ctk::Module *_current)
-    : root(_root), current(_current) {}
-
-    ctk::VirtualModule root;
-    ctk::Module *current{nullptr};
+  ctk::VirtualModule root;
+  ctk::Module* current{nullptr};
 };
 
 /*********************************************************************************************************************/
@@ -95,79 +91,92 @@ struct TestHelper {
 BOOST_AUTO_TEST_CASE(VariableGroupLike) {
   std::cout << "*** VariableGroupLike" << std::endl;
   TestApplication app;
-  TestHelper(app,"TagA").submodule("TestModule").submodule("VariableGroupLike").accessor(app.testModule.a.myVar);
+  TestHelper(app, "TagA").submodule("TestModule").submodule("VariableGroupLike").accessor(app.testModule.a.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(MoveToRoot) {
   std::cout << "*** MoveToRoot" << std::endl;
   TestApplication app;
-  TestHelper(app,"TagB").submodule("MoveToRoot").accessor(app.testModule.b.myVar);
+  TestHelper(app, "TagB").submodule("MoveToRoot").accessor(app.testModule.b.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(oneUp) {
   std::cout << "*** ../oneUp" << std::endl;
   TestApplication app;
-  TestHelper(app,"TagC").submodule("oneUp").accessor(app.testModule.c.myVar);
+  TestHelper(app, "TagC").submodule("oneUp").accessor(app.testModule.c.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(dotdot) {
   std::cout << "*** .." << std::endl;
   TestApplication app;
-  TestHelper(app,"TagD").accessor(app.testModule.d.myVar);
+  TestHelper(app, "TagD").accessor(app.testModule.d.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(local_hierarchy) {
   std::cout << "*** local/hierarchy" << std::endl;
   TestApplication app;
-  TestHelper(app,"TagE").submodule("TestModule").submodule("local").submodule("hierarchy").accessor(app.testModule.e.myVar);
+  TestHelper(app, "TagE")
+      .submodule("TestModule")
+      .submodule("local")
+      .submodule("hierarchy")
+      .accessor(app.testModule.e.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(AtRoot_hierarchy) {
   std::cout << "*** /AtRoot/hierarchy" << std::endl;
   TestApplication app;
-  TestHelper(app,"TagF").submodule("AtRoot").submodule("hierarchy").accessor(app.testModule.f.myVar);
+  TestHelper(app, "TagF").submodule("AtRoot").submodule("hierarchy").accessor(app.testModule.f.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(oneUp_hierarchy) {
   std::cout << "*** ../oneUp/hierarchy" << std::endl;
   TestApplication app;
-  TestHelper(app,"TagG").submodule("oneUp").submodule("hierarchy").accessor(app.testModule.g.myVar);
+  TestHelper(app, "TagG").submodule("oneUp").submodule("hierarchy").accessor(app.testModule.g.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(local_very_deep_hierarchy) {
   std::cout << "*** local/very/deep/hierarchy" << std::endl;
   TestApplication app;
-  TestHelper(app,"TagH")
+  TestHelper(app, "TagH")
+      .submodule("local")
+      .submodule("very")
+      .submodule("deep")
+      .submodule("hierarchy")
+      .accessor(app.testModule.h.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(root_very_deep_hierarchy) {
   std::cout << "*** /root/very/deep/hierarchy" << std::endl;
   TestApplication app;
-  TestHelper(app,"TagI")
+  TestHelper(app, "TagI").submodule("very").submodule("deep").submodule("hierarchy").accessor(app.testModule.i.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(oneUp_very_deep_hierarchy) {
   std::cout << "*** ../oneUp/very/deep/hierarchy" << std::endl;
   TestApplication app;
-  TestHelper(app,"TagJ")
+  TestHelper(app, "TagJ").submodule("very").submodule("deep").submodule("hierarchy").accessor(app.testModule.j.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(extra_slashes_everywhere) {
   std::cout << "*** //extra//slashes////everywhere///" << std::endl;
   TestApplication app;
-  TestHelper(app,"TagK").submodule("extra").submodule("slashes").submodule("everywhere").accessor(app.testModule.k.myVar);
+  TestHelper(app, "TagK")
+      .submodule("extra")
+      .submodule("slashes")
+      .submodule("everywhere")
+      .accessor(app.testModule.k.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(twoUp) {
   std::cout << "*** twoUp" << std::endl;
   TestApplication app;
-  TestHelper(app,"TagL").submodule("twoUp").accessor(app.testModule.extraHierarchy.l.myVar);
+  TestHelper(app, "TagL").submodule("twoUp").accessor(app.testModule.extraHierarchy.l.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(hierarchy_with_dots_anywhere) {
   std::cout << "*** hierarchy/with/../dots/../../anywhere/.." << std::endl;
   TestApplication app;
-  TestHelper(app,"TagM").submodule("TestModule").accessor(app.testModule.m.myVar);
+  TestHelper(app, "TagM").submodule("TestModule").accessor(app.testModule.m.myVar);
 }
 
 /*********************************************************************************************************************/
@@ -187,13 +196,12 @@ struct TestApplication_empty : public ctk::Application {
   } testModuleGroup{this, "TestModuleGroup", "The test module group"};
 };
 
-
 BOOST_AUTO_TEST_CASE(ownership_exception) {
   std::cout << "*** ownership_exception" << std::endl;
   TestApplication_empty app;
   BOOST_CHECK_THROW(TestGroup tg(&app, "TestGroup", "Cannot be directly owned by Application"), ctk::logic_error);
-  BOOST_CHECK_THROW(TestGroup tg(&app.testModuleGroup, "TestGroup", "Cannot be directly owned by ModuleGroup"),
-                    ctk::logic_error);
+  BOOST_CHECK_THROW(
+      TestGroup tg(&app.testModuleGroup, "TestGroup", "Cannot be directly owned by ModuleGroup"), ctk::logic_error);
 }
 
 /*********************************************************************************************************************/
@@ -205,7 +213,7 @@ BOOST_AUTO_TEST_CASE(bad_path_exception) {
   BOOST_CHECK_THROW(TestGroup tg(&app.testModule, "/..", "This is not allowed either"), ctk::logic_error);
 
   TestGroup tg(&app.testModule, "/somthing/less/../../../obvious", "This is also not allowed");
-  BOOST_CHECK_THROW(app.findTag(".*") , ctk::logic_error);
+  BOOST_CHECK_THROW(app.findTag(".*"), ctk::logic_error);
 }
 
 /*********************************************************************************************************************/

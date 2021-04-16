@@ -18,39 +18,37 @@ namespace ChimeraTK {
    *  VariableGroup.
    */
   struct HierarchyModifyingGroup : VariableGroup {
+    HierarchyModifyingGroup(EntityOwner* owner, std::string qualifiedName, const std::string& description,
+        const std::unordered_set<std::string>& tags = {});
 
-      HierarchyModifyingGroup(EntityOwner* owner, std::string qualifiedName, const std::string& description,
-          const std::unordered_set<std::string>& tags = {});
+    HierarchyModifyingGroup() {}
 
-      HierarchyModifyingGroup() {}
+    ~HierarchyModifyingGroup() override;
 
-      ~HierarchyModifyingGroup() override;
-
-      /**
+    /**
        *  Return the last component of the given qualified path name.
        *  Example: "/some/deep/hierarchy/levels" would return "levels"
        *
        *  This function is useful together with getPathName(), when a qualified variable name is given, and a
        *  HierarchyModifyingGroup with the variable inside needs to be created.
        */
-      static std::string getUnqualifiedName(const std::string &qualifiedName);
+    static std::string getUnqualifiedName(const std::string& qualifiedName);
 
-      /**
+    /**
        *  Return all but the last components of the given qualified name.
        *  Example: "/some/deep/hierarchy/levels" would return "/some/deep/hierarchy"
        *
        *  This function is useful together with getUnqualifiedName(), when a qualified variable name is given, and a
        *  HierarchyModifyingGroup with the variable inside needs to be created.
        */
-      static std::string getPathName(const std::string &qualifiedName);
+    static std::string getPathName(const std::string& qualifiedName);
 
-    protected:
+   protected:
+    EntityOwner* makeOwnerTree(EntityOwner* originalOwner, const std::string& qualifiedName);
 
-      EntityOwner* makeOwnerTree(EntityOwner *originalOwner, const std::string &qualifiedName);
-
-      std::list<VariableGroup> _ownerTree;
+    std::list<VariableGroup> _ownerTree;
   };
 
-}
+} // namespace ChimeraTK
 
 #endif // HIERARCHYMODIFYINGGROUP_H
