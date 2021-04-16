@@ -26,7 +26,7 @@ namespace ChimeraTK {
   VariableNetworkNode ControlSystemModule::operator()(
       const std::string& variableName, const std::type_info& valueType, size_t nElements) const {
     assert(variableName.find_first_of("/") == std::string::npos);
-    auto &variables = Application::getInstance().controlSystemVariables;
+    auto& variables = Application::getInstance().controlSystemVariables;
     auto fqn = variableNamePrefix / variableName;
     if(variables.count(fqn) == 0) {
       variables[fqn] = {fqn, {VariableDirection::invalid, false}, valueType, nElements};
@@ -52,10 +52,10 @@ namespace ChimeraTK {
 
   std::list<VariableNetworkNode> ControlSystemModule::getAccessorList() const {
     std::list<VariableNetworkNode> list;
-    auto &variables = Application::getInstance().controlSystemVariables;
+    auto& variables = Application::getInstance().controlSystemVariables;
     for(auto& v : variables) {
       // check if variable has the right prefix
-      auto idx = v.first.rfind("/");        // position of last slash
+      auto idx = v.first.rfind("/"); // position of last slash
       if(v.first.compare(0, idx, variableNamePrefix)) {
         // All characters until the last slash are equal to our variableNamePrefix: The variable belongs to our module.
         list.push_back(v.second);

@@ -17,7 +17,8 @@
 namespace ChimeraTK {
 
   template<typename UserType>
-  using ConsumerImplementationPairs = std::list<std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, VariableNetworkNode>>;
+  using ConsumerImplementationPairs =
+      std::list<std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, VariableNetworkNode>>;
 
   /** Base class for several implementations which distribute values from one
    * feeder to multiple consumers */

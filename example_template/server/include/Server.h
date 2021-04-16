@@ -10,7 +10,6 @@
 
 #include "TemplateModule.h"
 
-
 namespace ctk = ChimeraTK;
 
 /**
@@ -24,7 +23,6 @@ namespace ctk = ChimeraTK;
  * (either provided by a Device or a ChimeraTK::PeriodicTrigger).
  */
 struct Server : public ctk::Application {
-
   Server() : ctk::Application("ApplicationCore_TemplateServer") {}
   ~Server() override { shutdown(); }
 

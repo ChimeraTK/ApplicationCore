@@ -43,8 +43,9 @@ std::string logging::getTime() {
   return str;
 }
 
-Logger::Logger(ctk::Module* module,const std::string &tag)
-: VariableGroup(module,"Logging" , "VariableGroup added by the Logger"), message(module, "message", "", "Message of the module to the logging System", {tag, module->getName()}) {}
+Logger::Logger(ctk::Module* module, const std::string& tag)
+: VariableGroup(module, "Logging", "VariableGroup added by the Logger"),
+  message(module, "message", "", "Message of the module to the logging System", {tag, module->getName()}) {}
 
 void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level) {
   if(message.isInitialised()) {
@@ -64,19 +65,18 @@ void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level)
   }
 }
 
-void Logger::prepare(){
+void Logger::prepare() {
   // write initial value in order to bring LoggingModule to mainLoop()
   message.write();
 }
 
 LoggingModule::LoggingModule(ctk::EntityOwner* owner, const std::string& name, const std::string& description,
-      ctk::HierarchyModifier hierarchyModifier,
-      const std::unordered_set<std::string>& tags):
-        ApplicationModule(owner, name, description, hierarchyModifier, tags){
-  for(auto tag : tags){
+    ctk::HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
+: ApplicationModule(owner, name, description, hierarchyModifier, tags) {
+  for(auto tag : tags) {
     auto virtualLogging = getOwner()->findTag(tag);
     auto list = virtualLogging.getAccessorListRecursive();
-    for (auto it = list.begin(); it != list.end(); ++it){
+    for(auto it = list.begin(); it != list.end(); ++it) {
       // do not add the module itself
       if(it->getOwningModule() == this) continue;
       std::cout << "Registered module " << it->getOwningModule()->getName() << " for logging." << std::endl;

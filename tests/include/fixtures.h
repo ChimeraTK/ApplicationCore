@@ -16,14 +16,11 @@
 
 #include <future>
 
-
 struct PollModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
   ChimeraTK::ScalarPollInput<int> pollInput{this, "REG1", "", "", {"DEVICE"}};
   std::promise<void> p;
-  void mainLoop() override {
-    p.set_value();
-  }
+  void mainLoop() override { p.set_value(); }
 };
 
 struct PushModule : ChimeraTK::ApplicationModule {
@@ -34,18 +31,14 @@ struct PushModule : ChimeraTK::ApplicationModule {
   } reg1{this, "REG1", ""};
 
   std::promise<void> p;
-  void mainLoop() override {
-    p.set_value();
-  }
+  void mainLoop() override { p.set_value(); }
 };
 
-struct UpdateModule:ChimeraTK::ApplicationModule{
+struct UpdateModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
   ChimeraTK::ScalarOutput<int> deviceRegister{this, "REG1", "", "", {"DEVICE"}};
   std::promise<void> p;
-  void mainLoop() override {
-    p.set_value();
-  }
+  void mainLoop() override { p.set_value(); }
 };
 
 struct DummyApplication : ChimeraTK::Application {
@@ -77,7 +70,6 @@ struct fixture_with_poll_and_push_input {
     exceptionDummyRegister(deviceBackend->getRawAccessor("", "REG1")) {
     deviceBackend->open();
     testFacitiy.runApplication();
-
 
     status.replace(testFacitiy.getScalar<int>(
         ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "status"));

@@ -32,9 +32,8 @@ namespace ChimeraTK {
         const std::unordered_set<std::string>& tags = {});
 
     /** Deprecated form of the constructor. Use the new signature instead. */
-    [[deprecated]]
-    VariableGroup(EntityOwner* owner, const std::string& name, const std::string& description, bool eliminateHierarchy,
-        const std::unordered_set<std::string>& tags = {});
+    [[deprecated]] VariableGroup(EntityOwner* owner, const std::string& name, const std::string& description,
+        bool eliminateHierarchy, const std::unordered_set<std::string>& tags = {});
 
     /** Default constructor: Allows late initialisation of VariableGroups (e.g.
      * when creating arrays of VariableGroups).

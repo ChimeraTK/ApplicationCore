@@ -30,8 +30,8 @@ struct TestApp : public Application {
     } b{this, "B", ""};
 
     void mainLoop() override {
-      while(true){
-        b.in = 2*int(self.in);
+      while(true) {
+        b.in = 2 * int(self.in);
         b.in.write();
         self.in.read();
       }
@@ -54,8 +54,8 @@ struct TestApp : public Application {
     ScalarOutput<int> out{this, "output", "", ""};
 
     void mainLoop() override {
-      while (true) {
-        out = 3*int(self.in);
+      while(true) {
+        out = 3 * int(self.in);
         out.write();
         self.in.read();
       }
@@ -77,9 +77,9 @@ BOOST_AUTO_TEST_CASE(testBIsHidden) {
   testFacility.writeScalar<int>("/A/input", 5);
   testFacility.stepApplication();
 
-  BOOST_CHECK_EQUAL(testFacility.readScalar<int>("B/input"),10); // A multiplies with 2
+  BOOST_CHECK_EQUAL(testFacility.readScalar<int>("B/input"), 10); // A multiplies with 2
   // this checks two things:
   // 1. B/output has been moved to root
   // 2. B/B/input has been moved to B/input and connected through the CS with the output of A
-  BOOST_CHECK_EQUAL(testFacility.readScalar<int>("output"),30); // B multiplies with 3
+  BOOST_CHECK_EQUAL(testFacility.readScalar<int>("output"), 30); // B multiplies with 3
 }

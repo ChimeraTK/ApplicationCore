@@ -173,7 +173,7 @@ namespace ChimeraTK {
 
     bool varExists = boost::fusion::any(variableMap.table, FunctorGetTypeForName{this, name, typeOfVar});
 
-    if(!varExists){
+    if(!varExists) {
       throw(ChimeraTK::logic_error("ConfigReader: Cannot find a scalar "
                                    "configuration variable of the name '" +
           name + "' in the config file '" + _fileName + "'."));
@@ -193,7 +193,7 @@ namespace ChimeraTK {
 
     bool varExists = boost::fusion::any(arrayMap.table, FunctorGetTypeForName{this, name, typeOfVar});
 
-    if(!varExists){
+    if(!varExists) {
       throw(ChimeraTK::logic_error("ConfigReader: Cannot find a array "
                                    "configuration variable of the name '" +
           name + "' in the config file '" + _fileName + "'."));

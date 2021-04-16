@@ -67,7 +67,6 @@ namespace ChimeraTK {
     // it is little more than a cache and thus does not change the logical state
     // of this module
     mutable std::map<std::string, ControlSystemModule> subModules;
-
   };
 
 } /* namespace ChimeraTK */

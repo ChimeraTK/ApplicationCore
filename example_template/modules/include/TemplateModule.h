@@ -3,13 +3,11 @@
 
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 
-
 namespace ctk = ChimeraTK;
 
 struct TemplateModule : public ctk::ApplicationModule {
-
   using ctk::ApplicationModule::ApplicationModule;
-  ~TemplateModule(){}
+  ~TemplateModule() {}
 
   void mainLoop() override;
 };

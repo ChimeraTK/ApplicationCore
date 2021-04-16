@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMultiplePublications, T, test_types) {
   app.testModule.feeder >> app.cs("myFeeder2");
   app.testModule.feeder >> app.cs("myFeeder3");
   app.initialise();
-  app.run(); // make the connections and start the FanOut threads
+  app.run();                             // make the connections and start the FanOut threads
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   auto myFeeder0 = pvManagers.first->getProcessArray<T>("/myFeeder0");

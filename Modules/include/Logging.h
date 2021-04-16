@@ -163,7 +163,7 @@ namespace logging {
      * sender in the LoggingModule, which is receiving messages from the Logger.
      * \param tag A tag that is used to identify the Logger by the LoggingModule.
      */
-    Logger(ctk::Module* module, const std::string &tag = "Logging");
+    Logger(ctk::Module* module, const std::string& tag = "Logging");
     /** Message to be send to the logging module */
     ctk::ScalarOutput<std::string> message;
 
@@ -226,10 +226,10 @@ namespace logging {
 
    public:
     LoggingModule(ctk::EntityOwner* owner, const std::string& name, const std::string& description,
-          ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-          const std::unordered_set<std::string>& tags = {"Logging"});
+        ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+        const std::unordered_set<std::string>& tags = {"Logging"});
 
-    LoggingModule(){}
+    LoggingModule() {}
 
     ctk::ScalarPollInput<uint> targetStream{this, "targetStream", "",
         "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 "

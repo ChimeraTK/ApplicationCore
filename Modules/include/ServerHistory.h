@@ -145,7 +145,8 @@ namespace ChimeraTK { namespace history {
      * Overload that calls virtualiseFromCatalog. Parameter see addSource(const Module&...)
      * \param submodule If only a submodule should be added give the name. It does not work do create a submodule of the DeviceModule itself!
      */
-    void addSource(const DeviceModule& source, const RegisterPath& namePrefix, const std::string &submodule = "", const VariableNetworkNode& trigger = {});
+    void addSource(const DeviceModule& source, const RegisterPath& namePrefix, const std::string& submodule = "",
+        const VariableNetworkNode& trigger = {});
 
    public:
     void prepare() override;

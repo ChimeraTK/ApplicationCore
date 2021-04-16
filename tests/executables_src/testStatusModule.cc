@@ -74,13 +74,13 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
 
   // drop in a disable test.
   auto disable = test.getScalar<int>("/Monitor/disable");
-  disable=1;
+  disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
-  disable=0;
+  disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
@@ -94,13 +94,13 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
   // drop in a disable test.
-  disable=1;
+  disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
-  disable=0;
+  disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
@@ -121,13 +121,13 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
 
   // drop in a disable test.
-  disable=1;
+  disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
-  disable=0;
+  disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
@@ -214,13 +214,13 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
 
   // drop in a disable test.
   auto disable = test.getScalar<int>("/Monitor/disable");
-  disable=1;
+  disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
-  disable=0;
+  disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
@@ -234,13 +234,13 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
   // drop in a disable test.
-  disable=1;
+  disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
-  disable=0;
+  disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
@@ -261,13 +261,13 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
 
   // drop in a disable test.
-  disable=1;
+  disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
-  disable=0;
+  disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
@@ -367,13 +367,13 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
 
   // drop in a disable test.
   auto disable = test.getScalar<int>("/Monitor/disable");
-  disable=1;
+  disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
-  disable=0;
+  disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
@@ -387,13 +387,13 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
 
   // drop in a disable test.
-  disable=1;
+  disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
-  disable=0;
+  disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
@@ -414,13 +414,13 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
 
   // drop in a disable test.
-  disable=1;
+  disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
-  disable=0;
+  disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
@@ -564,13 +564,13 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
 
   // drop in a disable test.
   auto disable = test.getScalar<int>("/Monitor/disable");
-  disable=1;
+  disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
-  disable=0;
+  disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
@@ -585,13 +585,13 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
 
   // drop in a disable test.
-  disable=1;
+  disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
-  disable=0;
+  disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
@@ -654,13 +654,13 @@ BOOST_AUTO_TEST_CASE(testStateMonitor) {
 
   // drop in a disable test.
   auto disable = test.getScalar<int>("/Monitor/disable");
-  disable=1;
+  disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
-  disable=0;
+  disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
@@ -674,13 +674,13 @@ BOOST_AUTO_TEST_CASE(testStateMonitor) {
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
 
   // drop in a disable test.
-  disable=1;
+  disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
-  disable=0;
+  disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
@@ -694,7 +694,7 @@ BOOST_AUTO_TEST_CASE(testStateMonitor) {
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
   // State change while disabled is detected.
-  disable=1;
+  disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
@@ -709,12 +709,11 @@ BOOST_AUTO_TEST_CASE(testStateMonitor) {
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
 
   // after enabling the FAULT becomes visible
-  disable=0;
+  disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
-
 
   // check that the tags are applied correctly
   BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));

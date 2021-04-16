@@ -137,11 +137,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   template<typename TYPE>
-  ReadSplitArrayModule<TYPE>::ReadSplitArrayModule(EntityOwner* owner,
-      const std::string& name,
-      const std::string& description,
-      size_t nGroups,
-      size_t nElemsPerGroup)
+  ReadSplitArrayModule<TYPE>::ReadSplitArrayModule(EntityOwner* owner, const std::string& name,
+      const std::string& description, size_t nGroups, size_t nElemsPerGroup)
   : ApplicationModule(owner, name, description), input(this, "input", "", nGroups * nElemsPerGroup, "Input array"),
     _nGroups(nGroups), _nElemsPerGroup(nElemsPerGroup) {
     for(size_t i = 0; i < _nGroups; ++i) {

@@ -68,8 +68,8 @@ namespace ChimeraTK { namespace history {
     }
   }
 
-  void ServerHistory::addSource(
-      const DeviceModule& source, const RegisterPath& namePrefix, const std::string &submodule, const VariableNetworkNode& trigger) {
+  void ServerHistory::addSource(const DeviceModule& source, const RegisterPath& namePrefix,
+      const std::string& submodule, const VariableNetworkNode& trigger) {
     auto mod = source.virtualiseFromCatalog();
     if(submodule.empty())
       addSource(mod, namePrefix, trigger);

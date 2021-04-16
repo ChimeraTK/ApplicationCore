@@ -40,7 +40,7 @@ namespace ChimeraTK {
     }
     if(nConfigReaders != 1) {
       std::string message = "ApplicationModule::appConfig() called but " + std::to_string(nConfigReaders) +
-                            " instances of ChimeraTK::ConfigReader have been found.";
+          " instances of ChimeraTK::ConfigReader have been found.";
       // Printing the message as well; there is a situation when running under Boost::Test where this
       // is caught by Boost and causes a weird destructor message from AppBase.cc instead with no means of
       // finding out the actual error

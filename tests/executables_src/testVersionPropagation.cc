@@ -18,7 +18,6 @@
 namespace ctk = ChimeraTK;
 using Fixture = fixture_with_poll_and_push_input<false>;
 
-
 BOOST_FIXTURE_TEST_SUITE(versionPropagation, Fixture)
 
 BOOST_AUTO_TEST_CASE(versionPropagation_testPolledRead) {

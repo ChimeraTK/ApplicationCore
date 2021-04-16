@@ -1328,7 +1328,7 @@ void Application::CircularDependencyDetector::registerDependencyWait(VariableNet
 
       throw ChimeraTK::logic_error("Cirular dependency of ApplicationModules while waiting for initial values");
     }
-    else{
+    else {
       // Give other threads a chance to add to the wait map
       lock.unlock();
       usleep(10000);
