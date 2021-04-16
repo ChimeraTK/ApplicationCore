@@ -15,8 +15,7 @@ namespace ChimeraTK {
 
   VirtualModule::VirtualModule(const VirtualModule& other) : Module(nullptr, other.getName(), other.getDescription()) {
     // since moduleList stores plain pointers, we need to regenerate this list
-    /// @todo find a better way than storing plain pointers!
-    for(auto& mod : other.submodules) addSubModule(mod);
+    for(auto& mod : other.submodules) addSubModule(mod); // this creates a copy (call by value)
     accessorList = other.accessorList;
     _hierarchyModifier = other._hierarchyModifier;
     _moduleType = other.getModuleType();
@@ -24,7 +23,10 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VirtualModule::~VirtualModule() {}
+  VirtualModule::~VirtualModule() {
+    // do not unregister owner in Module destructor
+    _owner = nullptr;
+  }
 
   /*********************************************************************************************************************/
 
@@ -32,8 +34,7 @@ namespace ChimeraTK {
     // move-assign a plain new module
     Module::operator=(VirtualModule(other.getName(), other.getDescription(), other.getModuleType()));
     // since moduleList stores plain pointers, we need to regenerate this list
-    /// @todo find a better way than storing plain pointers!
-    for(auto& mod : other.submodules) addSubModule(mod);
+    for(auto& mod : other.submodules) addSubModule(mod); // this creates a copy (call by value)
     accessorList = other.accessorList;
     _hierarchyModifier = other._hierarchyModifier;
     return *this;
@@ -102,6 +103,7 @@ namespace ChimeraTK {
       // Submodule doesn'st exist already: register the given module as a new submodule
       submodules.push_back(module);
       registerModule(&(submodules.back()));
+      submodules.back()._owner = this;
     }
     else {
       // Submodule does exist already: copy content into the existing submodule
@@ -111,6 +113,18 @@ namespace ChimeraTK {
       }
       for(auto& acc : module.getAccessorList()) {
         theSubmodule.addAccessor(acc);
+      }
+    }
+  }
+
+  /*********************************************************************************************************************/
+
+  void VirtualModule::removeSubModule(const std::string& name) {
+    for(auto module = submodules.begin(); module != submodules.end(); ++module) {
+      if(module->getName() == name) {
+        unregisterModule(&*module);
+        submodules.erase(module);
+        break;
       }
     }
   }
@@ -141,6 +155,23 @@ namespace ChimeraTK {
       auto firstSubmodule = std::string(moduleName).substr(0, slash);
       auto remainingSubmodules = std::string(moduleName).substr(slash + 1);
       return createAndGetSubmodule(firstSubmodule).createAndGetSubmoduleRecursive(remainingSubmodules);
+    }
+  }
+
+  /*********************************************************************************************************************/
+
+  void VirtualModule::stripEmptyChildsRecursive() {
+    // first recurse into childs, to make sure to remove all we an
+    for(auto& child : submodules) {
+      child.stripEmptyChildsRecursive();
+    }
+
+    // strip empty virtual childs
+    // Note: getSubmoduleList() returns a copy of the list, hence it is ok to call removeSubModule() in the loop here!
+    for(auto& child : getSubmoduleList()) {
+      if(child->getAccessorList().size() == 0 && child->getSubmoduleList().size() == 0) {
+        removeSubModule(child->getName());
+      }
     }
   }
 
