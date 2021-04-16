@@ -62,7 +62,7 @@ struct TestApplication : public ctk::Application {
 struct TestHelper {
   TestHelper(TestApplication& app, const std::string tag) : root(app.findTag(tag)) {
     current = &root;
-    //root.dump();
+    root.dump();
   }
 
   TestHelper submodule(const std::string& name) {
@@ -138,6 +138,7 @@ BOOST_AUTO_TEST_CASE(local_very_deep_hierarchy) {
   std::cout << "*** local/very/deep/hierarchy" << std::endl;
   TestApplication app;
   TestHelper(app, "TagH")
+      .submodule("TestModule")
       .submodule("local")
       .submodule("very")
       .submodule("deep")
@@ -148,13 +149,23 @@ BOOST_AUTO_TEST_CASE(local_very_deep_hierarchy) {
 BOOST_AUTO_TEST_CASE(root_very_deep_hierarchy) {
   std::cout << "*** /root/very/deep/hierarchy" << std::endl;
   TestApplication app;
-  TestHelper(app, "TagI").submodule("very").submodule("deep").submodule("hierarchy").accessor(app.testModule.i.myVar);
+  TestHelper(app, "TagI")
+      .submodule("root")
+      .submodule("very")
+      .submodule("deep")
+      .submodule("hierarchy")
+      .accessor(app.testModule.i.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(oneUp_very_deep_hierarchy) {
   std::cout << "*** ../oneUp/very/deep/hierarchy" << std::endl;
   TestApplication app;
-  TestHelper(app, "TagJ").submodule("very").submodule("deep").submodule("hierarchy").accessor(app.testModule.j.myVar);
+  TestHelper(app, "TagJ")
+      .submodule("oneUp")
+      .submodule("very")
+      .submodule("deep")
+      .submodule("hierarchy")
+      .accessor(app.testModule.j.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(extra_slashes_everywhere) {
@@ -212,6 +223,7 @@ BOOST_AUTO_TEST_CASE(bad_path_exception) {
   BOOST_CHECK_THROW(TestGroup tg(&app.testModule, "/../cannot/work", "This is not allowed"), ctk::logic_error);
   BOOST_CHECK_THROW(TestGroup tg(&app.testModule, "/..", "This is not allowed either"), ctk::logic_error);
 
+  // this only failes when it is actaully used
   TestGroup tg(&app.testModule, "/somthing/less/../../../obvious", "This is also not allowed");
   BOOST_CHECK_THROW(app.findTag(".*"), ctk::logic_error);
 }
