@@ -363,3 +363,34 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testPseudoArray, T, test_types) {
   app.testModule.consumingPush.read();
   BOOST_CHECK(app.testModule.consumingPush == 33);
 }
+
+/*********************************************************************************************************************/
+/* test case for "merging" two networks */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(testMergeNetworks, T, test_types) {
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+
+  TestApplication<T> app;
+  // This creates a first network
+  app.testModule.feedingPush >> app.testModule.consumingPush;
+  // This creates a second network with only consumers
+  app.testModule.consumingPush2 >> app.testModule.consumingPush3;
+  // This merges the two networks
+  app.testModule.consumingPush >> app.testModule.consumingPush2;
+
+
+  // run the app
+  app.initialise();
+  app.run();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+
+  // test data transfer
+  app.testModule.feedingPush = 44;
+  app.testModule.feedingPush.write();
+  BOOST_CHECK(app.testModule.consumingPush.readLatest() == true);
+  BOOST_CHECK(app.testModule.consumingPush == 44);
+  BOOST_CHECK(app.testModule.consumingPush2.readLatest() == true);
+  BOOST_CHECK(app.testModule.consumingPush2 == 44);
+  BOOST_CHECK(app.testModule.consumingPush3.readLatest() == true);
+  BOOST_CHECK(app.testModule.consumingPush3 == 44);
+}

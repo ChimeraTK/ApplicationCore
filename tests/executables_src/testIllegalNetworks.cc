@@ -149,24 +149,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDifferentNrElements, T, test_types) {
 }
 
 /*********************************************************************************************************************/
-/* test case for "merging" two networks */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testMergeNetworks, T, test_types) {
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
-
-  TestApplication<T> app;
-  app.testModule.feedingPush >> app.testModule.consumingPush;
-  app.testModule.consumingPush2 >> app.testModule.consumingPush3;
-  try {
-    app.testModule.consumingPush >> app.testModule.consumingPush2;
-    BOOST_ERROR("Exception expected.");
-  }
-  catch(ChimeraTK::logic_error& e) {
-    BOOST_CHECK_NO_THROW(e.what(););
-  }
-}
-
-/*********************************************************************************************************************/
 /* test case for constant as trigger */
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantTrigger, T, test_types) {

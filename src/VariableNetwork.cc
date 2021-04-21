@@ -312,7 +312,7 @@ namespace ChimeraTK {
 
   bool VariableNetwork::merge(VariableNetwork& other) {
     // check if merging is possible
-    if(hasFeedingNode() || !other.hasFeedingNode()) {
+    if(hasFeedingNode() && other.hasFeedingNode()) {
       if((getFeedingNode().getType() == NodeType::ControlSystem &&
              other.getFeedingNode().getType() == NodeType::ControlSystem) ||
           (getFeedingNode().getType() != NodeType::ControlSystem &&
