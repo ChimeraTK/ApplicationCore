@@ -23,8 +23,6 @@ namespace ChimeraTK {
 
     HierarchyModifyingGroup() {}
 
-    ~HierarchyModifyingGroup() override;
-
     /**
        *  Return the last component of the given qualified path name.
        *  Example: "/some/deep/hierarchy/levels" would return "levels"
@@ -44,9 +42,12 @@ namespace ChimeraTK {
     static std::string getPathName(const std::string& qualifiedName);
 
    protected:
-    EntityOwner* makeOwnerTree(EntityOwner* originalOwner, const std::string& qualifiedName);
 
-    std::list<VariableGroup> _ownerTree;
+    void findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag,
+        bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const override;
+
+    bool moveToRoot{false};
+    std::vector<std::string> _splittedPath;
   };
 
 } // namespace ChimeraTK
