@@ -56,7 +56,7 @@ namespace ChimeraTK {
 
   std::string HierarchyModifyingGroup::getPathName(const std::string& qualifiedName) {
     auto found = qualifiedName.find_last_of("/");
-    if(found == std::string::npos) return "";
+    if(found == std::string::npos) return ".";
     return qualifiedName.substr(0, found);
   }
 
