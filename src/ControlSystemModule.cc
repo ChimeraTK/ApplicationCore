@@ -55,7 +55,7 @@ namespace ChimeraTK {
     auto& variables = Application::getInstance().controlSystemVariables;
     for(auto& v : variables) {
       // check if variable has the right prefix
-      auto idx = v.first.rfind("/"); // position of last slash
+      auto idx = v.first.rfind("/"); // position of last slasht
       if(!v.first.compare(0, idx, variableNamePrefix)) {
         // All characters until the last slash are equal to our variableNamePrefix: The variable belongs to our module.
         list.push_back(v.second);
