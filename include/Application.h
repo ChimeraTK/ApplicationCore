@@ -45,8 +45,6 @@ namespace ChimeraTK {
      * characters. Use only alphanumeric characters and underscores. */
     Application(const std::string& name);
 
-    ~Application() {}
-
     using ApplicationBase::getName;
 
     /** This will remove the global pointer to the instance and allows creating
