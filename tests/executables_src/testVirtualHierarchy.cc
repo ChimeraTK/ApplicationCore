@@ -186,33 +186,33 @@ BOOST_AUTO_TEST_CASE(testGetVirtualQualifiedName) {
     ctk::TestFacility test;
 
     //app.cs.dump();
-    BOOST_CHECK_EQUAL(app.outerModule.getVirtualQualifiedName(), "/testApp/outerModule");
-    BOOST_CHECK_EQUAL(app.outerModuleGroup1.getVirtualQualifiedName(), "/testApp/outerModuleGroup1");
-    BOOST_CHECK_EQUAL(app.outerModuleGroup1.outerModule.getVirtualQualifiedName(), "/testApp/outerModuleInGroup");
+    BOOST_CHECK_EQUAL(app.outerModule.getVirtualQualifiedName(), "/outerModule");
+    BOOST_CHECK_EQUAL(app.outerModuleGroup1.getVirtualQualifiedName(), "/outerModuleGroup1");
+    BOOST_CHECK_EQUAL(app.outerModuleGroup1.outerModule.getVirtualQualifiedName(), "/outerModuleInGroup");
     BOOST_CHECK_EQUAL(
-        app.outerModuleGroup1.innerGroup.getVirtualQualifiedName(), "/testApp/outerModuleGroup1/innerModuleGroup");
+        app.outerModuleGroup1.innerGroup.getVirtualQualifiedName(), "/outerModuleGroup1/innerModuleGroup");
 
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModule.getVirtualQualifiedName(),
-        "/testApp/outerModuleGroup1/innerModuleGroup/innerModule");
+        "/outerModuleGroup1/innerModuleGroup/innerModule");
     BOOST_CHECK_EQUAL(
         app.outerModuleGroup1.innerGroup.innerModuleWithVariableGroups.groupOneLevelUp.getVirtualQualifiedName(),
-        "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups2");
+        "/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups2");
     BOOST_CHECK_EQUAL(
         app.outerModuleGroup1.innerGroup.innerModuleWithVariableGroups.groupOneUpAndHide.getVirtualQualifiedName(),
-        "/testApp/outerModuleGroup1/innerModuleGroup");
+        "/outerModuleGroup1/innerModuleGroup");
     BOOST_CHECK_EQUAL(
         app.outerModuleGroup1.innerGroup.innerModuleWithVariableGroups2.groupOneLevelUp.getVirtualQualifiedName(),
-        "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups1");
+        "/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups1");
     BOOST_CHECK_EQUAL(
         app.outerModuleGroup1.innerGroup.innerModuleWithVariableGroups2.groupOneUpAndHide.getVirtualQualifiedName(),
-        "/testApp/outerModuleGroup1/innerModuleGroup");
+        "/outerModuleGroup1/innerModuleGroup");
 
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModuleOneUpAndHide.getVirtualQualifiedName(),
-        "/testApp/outerModuleGroup1");
+        "/outerModuleGroup1");
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModuleMoveToRoot.getVirtualQualifiedName(),
-        "/testApp/innerModuleMoveToRoot");
+        "/innerModuleMoveToRoot");
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModuleSameNameAsGroup.getVirtualQualifiedName(),
-        "/testApp/outerModuleGroup1/innerModuleGroup");
+        "/outerModuleGroup1/innerModuleGroup");
   }
 
   {
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE(testGetVirtualQualifiedName) {
     ctk::TestFacility test;
 
     //    app.cs.dump();
-    BOOST_CHECK_EQUAL(app.outerModule.getVirtualQualifiedName(), "/testApp");
+    BOOST_CHECK_EQUAL(app.outerModule.getVirtualQualifiedName(), "/");
   }
 
   // Modifiers oneLevelUp and oneUpAndHide need to be catched by getVirtualQualifiedName, if used on
@@ -242,14 +242,14 @@ BOOST_AUTO_TEST_CASE(testGetVirtualQualifiedName) {
     ctk::TestFacility test;
 
     //    app.cs.dump();
-    BOOST_CHECK_EQUAL(app.outerModule.getVirtualQualifiedName(), "/testApp/outerModule");
+    BOOST_CHECK_EQUAL(app.outerModule.getVirtualQualifiedName(), "/outerModule");
     auto virtualisedApp = app.findTag(".*");
     BOOST_CHECK_NO_THROW(virtualisedApp["outerModule"]);
     BOOST_CHECK_NO_THROW(virtualisedApp["innerModuleMoveToRoot"]);
 
-    BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.getVirtualQualifiedName(), "/testApp/innerModuleGroup");
+    BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.getVirtualQualifiedName(), "/innerModuleGroup");
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModule.getVirtualQualifiedName(),
-        "/testApp/innerModuleGroup/innerModule");
+        "/innerModuleGroup/innerModule");
   }
 }
 
@@ -265,15 +265,11 @@ BOOST_AUTO_TEST_CASE(testGetNetworkNodesOnVirtualHierarchy) {
   auto virtualisedApplication = app.findTag(".*");
   //virtualisedApplication.dump();
 
-  // Need to trip away "/appName/" in the submodule() calls
-  size_t firstModuleOffsetInPath = ("/" + app.getName() + "/").size();
-
   auto pathToInnerModuleOneUpAndHide =
       app.outerModuleGroup1.innerGroup.innerModuleOneUpAndHide.getVirtualQualifiedName();
 
   // Get submodule by the virtual path
-  ctk::Module& module = virtualisedApplication.submodule(
-      {pathToInnerModuleOneUpAndHide.begin() + firstModuleOffsetInPath, pathToInnerModuleOneUpAndHide.end()});
+  ctk::Module& module = virtualisedApplication.submodule(pathToInnerModuleOneUpAndHide);
   auto node2 = module("input2");
   BOOST_CHECK_EQUAL(node2.getName(), "input2");
 
@@ -284,8 +280,7 @@ BOOST_AUTO_TEST_CASE(testGetNetworkNodesOnVirtualHierarchy) {
   // Repeat test for other modules: Module moved to root
   auto pathToInnerModuleMoveToRoot = app.outerModuleGroup1.innerGroup.innerModuleMoveToRoot.getVirtualQualifiedName();
 
-  ctk::Module& innerModuleMoveToRoot = virtualisedApplication.submodule(
-      {pathToInnerModuleMoveToRoot.begin() + firstModuleOffsetInPath, pathToInnerModuleMoveToRoot.end()});
+  ctk::Module& innerModuleMoveToRoot = virtualisedApplication.submodule(pathToInnerModuleMoveToRoot);
   auto node3 = innerModuleMoveToRoot("input3");
 
   auto node3Ref = virtualisedApplication["innerModuleMoveToRoot"]("input3");
@@ -295,8 +290,7 @@ BOOST_AUTO_TEST_CASE(testGetNetworkNodesOnVirtualHierarchy) {
   auto pathToInnerModuleSameNameAsGroup =
       app.outerModuleGroup1.innerGroup.innerModuleSameNameAsGroup.getVirtualQualifiedName();
 
-  ctk::Module& innerModuleSameNameAsGroup = virtualisedApplication.submodule(
-      {pathToInnerModuleSameNameAsGroup.begin() + firstModuleOffsetInPath, pathToInnerModuleSameNameAsGroup.end()});
+  ctk::Module& innerModuleSameNameAsGroup = virtualisedApplication.submodule(pathToInnerModuleSameNameAsGroup);
   node3 = innerModuleSameNameAsGroup("input3");
 
   node3Ref = virtualisedApplication["outerModuleGroup1"]["innerModuleGroup"]("input3");
@@ -304,8 +298,7 @@ BOOST_AUTO_TEST_CASE(testGetNetworkNodesOnVirtualHierarchy) {
 
   auto pathToGroupWithOneLevelUp =
       app.outerModuleGroup1.innerGroup.innerModuleWithVariableGroups.groupOneLevelUp.getVirtualQualifiedName();
-  ctk::Module& groupWithOneLevelUp = virtualisedApplication.submodule(
-      {pathToGroupWithOneLevelUp.begin() + firstModuleOffsetInPath, pathToGroupWithOneLevelUp.end()});
+  ctk::Module& groupWithOneLevelUp = virtualisedApplication.submodule(pathToGroupWithOneLevelUp);
   auto node4 = groupWithOneLevelUp("var1InGroupOneLevelUp");
 
   auto node4Ref = virtualisedApplication["outerModuleGroup1"]["innerModuleGroup"]["InnerModuleWithVariableGroups2"](
@@ -314,8 +307,7 @@ BOOST_AUTO_TEST_CASE(testGetNetworkNodesOnVirtualHierarchy) {
 
   auto pathToGroupWithOneUpAndHide =
       app.outerModuleGroup1.innerGroup.innerModuleWithVariableGroups.groupOneUpAndHide.getVirtualQualifiedName();
-  ctk::Module& groupWithOneUpAndHide = virtualisedApplication.submodule(
-      {pathToGroupWithOneUpAndHide.begin() + firstModuleOffsetInPath, pathToGroupWithOneUpAndHide.end()});
+  ctk::Module& groupWithOneUpAndHide = virtualisedApplication.submodule(pathToGroupWithOneUpAndHide);
   auto node6 = groupWithOneUpAndHide("var1InGroupOneUpAndHide");
 
   auto node6Ref = virtualisedApplication["outerModuleGroup1"]["innerModuleGroup"]("var1InGroupOneUpAndHide");

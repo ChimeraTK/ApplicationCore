@@ -39,7 +39,7 @@ struct OuterGroup : public ctk::ModuleGroup {
 
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testApp") {}
-  ~TestApplication() { shutdown(); }
+  ~TestApplication() override { shutdown(); }
 
   OuterGroup outerModuleGroup1{this, "outerModuleGroup1", "", ctk::HierarchyModifier::none};
   //OuterGroup outerModuleGroup2{this, "outerModuleGroup2", "", ctk::HierarchyModifier::hideThis};

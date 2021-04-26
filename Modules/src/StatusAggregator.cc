@@ -13,23 +13,20 @@ namespace ChimeraTK {
     auto virtualisedApplication = Application::getInstance().findTag(".*");
     auto virtualPathToThis = getVirtualQualifiedName();
 
-    // Remove application name and name of leaf node from the path
-    auto pathBegin = virtualPathToThis.find_first_not_of("/" + Application::getInstance().getName() + "/");
+    // Remove name of leaf node from the path
     auto pathEnd = virtualPathToThis.find_last_of("/") - 1;
-
-    auto pathWithoutAppAndLeafNode{virtualPathToThis.substr(pathBegin, pathEnd - pathBegin + 1)};
+    auto pathWithoutLeafNode{virtualPathToThis.substr(0, pathEnd + 1)};
 
     std::list<VariableNetworkNode> allAccessors;
     std::list<Module*> allSubmodules;
-    if(pathWithoutAppAndLeafNode == getName()) {
+    if(pathWithoutLeafNode == "") {
       // Path to this module, the parent is the Application
       //FIXME Not using getAccessorListRecursive here, yet, because it crashes
       allAccessors = virtualisedApplication.getAccessorList();
       allSubmodules = virtualisedApplication.getSubmoduleList();
     }
     else {
-      Module& virtualParent =
-          virtualisedApplication.submodule(virtualPathToThis.substr(pathBegin, pathEnd - pathBegin + 1));
+      Module& virtualParent = virtualisedApplication.submodule(pathWithoutLeafNode);
 
       virtualParent.dump();
 

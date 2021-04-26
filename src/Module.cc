@@ -176,7 +176,7 @@ namespace ChimeraTK {
     bool rootReached{false};
     do {
       if(currentLevelModule == &Application::getInstance()) {
-        rootReached = true;
+        break;
       }
 
       auto currentLevelModifier = currentLevelModule->getHierarchyModifier();
@@ -197,9 +197,9 @@ namespace ChimeraTK {
           skipNextLevel = true;
           break;
         case HierarchyModifier::moveToRoot:
-          virtualQualifiedName =
-              "/" + Application::getInstance().getName() + "/" + currentLevelModule->getName() + virtualQualifiedName;
+          virtualQualifiedName = "/" + currentLevelModule->getName() + virtualQualifiedName;
           rootReached = true;
+          break;
       }
 
       if(skipNextLevel) {
@@ -216,6 +216,8 @@ namespace ChimeraTK {
         currentLevelModule = dynamic_cast<const Module*>(currentLevelModule)->getOwner();
       }
     } while(!rootReached);
+
+    if(virtualQualifiedName == "") virtualQualifiedName = "/";
 
     return virtualQualifiedName;
   }
