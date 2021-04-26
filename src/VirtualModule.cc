@@ -107,7 +107,7 @@ namespace ChimeraTK {
     }
     else {
       // Submodule does exist already: copy content into the existing submodule
-      VirtualModule& theSubmodule = dynamic_cast<VirtualModule&>(submodule(module.getName()));
+      VirtualModule theSubmodule = dynamic_cast<VirtualModule&>(submodule(module.getName()));
       for(auto& submod : module.getSubmoduleList()) {
         theSubmodule.addSubModule(dynamic_cast<VirtualModule&>(*submod));
       }

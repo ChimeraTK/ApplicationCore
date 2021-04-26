@@ -102,7 +102,8 @@ namespace ChimeraTK {
     /** Convenience function which works similar as the subscript operator []. In contrast to the operator, this
      *  function allows to specify directly the name of a sub-submodule on a deeper hierarchy level. The call to
      *  submodule("livingroom/temperature") is equivalent to ["livingroom"]["temperature"]. */
-    Module& submodule(const std::string& moduleName) const;
+    const Module& submodule(std::string_view moduleName) const;
+    Module& submodule(std::string_view moduleName);
 
     /** Return the virtual version of this module and its sub-modules, i.e.
      * eliminate hierarchies where requested and apply other dynamic model

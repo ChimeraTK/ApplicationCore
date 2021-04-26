@@ -159,15 +159,27 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  Module& Module::submodule(const std::string& moduleName) const {
+  const Module& Module::submodule(std::string_view moduleName) const {
+    // strip leading slash if present
+    while(moduleName[0] == '/') moduleName.remove_prefix(1);
+    // an empty string or a "/" refers to the module itself
+    if(moduleName.size() == 0) return *this;
+    // search for first slash
     size_t slash = moduleName.find_first_of("/");
     // no slash found: call subscript operator
-    if(slash == std::string::npos) return (*this)[moduleName];
+    if(slash == std::string::npos) return (*this)[std::string(moduleName)];
     // slash found: split module name at slash
-    std::string upperModuleName = moduleName.substr(0, slash);
-    std::string remainingModuleNames = moduleName.substr(slash + 1);
-    return (*this)[upperModuleName].submodule(remainingModuleNames);
+    auto upperModuleName = moduleName.substr(0, slash);
+    auto remainingModuleNames = moduleName.substr(slash + 1);
+    return (*this)[std::string(upperModuleName)].submodule(remainingModuleNames);
   }
+
+  Module& Module::submodule(std::string_view moduleName) {
+    // According to Scott Meyers "Effective C++", the const cast is fine here
+    return const_cast<Module &>(static_cast<const Module &>(*this).submodule(moduleName));
+  }
+
+  /*********************************************************************************************************************/
 
   std::string Module::getVirtualQualifiedName() const {
     std::string virtualQualifiedName{""};
