@@ -400,6 +400,14 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
     accessor->setDataValidity(DataValidity::faulty);
   }
 
+  // decorate push-type feeders with testable mode decorator, if needed
+  if(testableMode) {
+    if(mode == UpdateMode::push && direction.dir == VariableDirection::feeding) {
+      auto varId = getNextVariableId();
+      accessor = boost::make_shared<TestableModeAccessorDecorator<UserType>>(accessor, true, false, varId,varId);
+    }
+  }
+
   return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, node);
 }
 
