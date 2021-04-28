@@ -233,6 +233,7 @@ namespace ChimeraTK {
     friend class VariableNetworkNode;
     friend class VariableNetworkGraphDumpingVisitor;
     friend class XMLGeneratorVisitor;
+    friend class ConnectingDeviceModule;
 
     template<typename UserType>
     friend class Accessor;

@@ -5,12 +5,12 @@
  *      Author: Martin Hierholzer
  */
 
-//#include <ChimeraTK/Device.h>
 #include <ChimeraTK/DeviceBackend.h>
 
 #include "Application.h"
 #include "DeviceModule.h"
-//#include "ControlSystemModule.h"
+#include "ModuleGroup.h"
+#include "HierarchyModifyingGroup.h"
 
 namespace ChimeraTK {
 
@@ -461,8 +461,6 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  /*********************************************************************************************************************/
-
   void DeviceModule::run() {
     // start the module thread
     assert(!moduleThread.joinable());
@@ -503,22 +501,88 @@ namespace ChimeraTK {
     deviceBecameFunctional >> cs["Devices"][deviceAliasOrURI_withoutSlashes]("deviceBecameFunctional");
   }
 
+  /*********************************************************************************************************************/
+
   void DeviceModule::addInitialisationHandler(std::function<void(DeviceModule*)> initialisationHandler) {
     initialisationHandlers.push_back(initialisationHandler);
   }
+
+  /*********************************************************************************************************************/
 
   void DeviceModule::addRecoveryAccessor(boost::shared_ptr<RecoveryHelper> recoveryAccessor) {
     recoveryHelpers.push_back(recoveryAccessor);
   }
 
+  /*********************************************************************************************************************/
+
   uint64_t DeviceModule::writeOrder() { return ++writeOrderCounter; }
+
+  /*********************************************************************************************************************/
 
   boost::shared_lock<boost::shared_mutex> DeviceModule::getRecoverySharedLock() {
     return boost::shared_lock<boost::shared_mutex>(recoveryMutex);
   }
 
+  /*********************************************************************************************************************/
+
   boost::shared_lock<boost::shared_mutex> DeviceModule::getInitialValueSharedLock() {
     return boost::shared_lock<boost::shared_mutex>(initialValueMutex);
   }
+
+  /*********************************************************************************************************************/
+  /*********************************************************************************************************************/
+
+  ConnectingDeviceModule::ConnectingDeviceModule(EntityOwner* owner, const std::string& _deviceAliasOrCDD,
+      const std::string &_triggerPath, std::function<void(DeviceModule*)> initialisationHandler,
+      const std::string &_pathInDevice)
+  : ModuleGroup(owner, "**ConnectingDeviceModule**", "")
+  {
+    // create DeviceModule if not yet in the _deviceModuleMap
+    auto &dmm = Application::getInstance().deviceModuleMap;
+    if(dmm.find(_deviceAliasOrCDD) == dmm.end()) {
+      _dmHolder = boost::make_shared<DeviceModule>(&Application::getInstance(), _deviceAliasOrCDD, initialisationHandler);
+      dmm[_deviceAliasOrCDD] = _dmHolder.get();
+    }
+    _dm = dmm.at(_deviceAliasOrCDD);
+
+    // determine path to connect to
+    pathToConnectTo = "/";
+    auto *group = dynamic_cast<ModuleGroup*>(owner);
+    if(group) {
+      pathToConnectTo = group->getVirtualQualifiedName();
+    }
+
+    // set other information required for the connection later
+    triggerPath = _triggerPath;
+    pathInDevice = _pathInDevice;
+    if(triggerPath[0] != '/'){
+      throw ChimeraTK::logic_error("DeviceModule triggerPath must be absolute!");
+    }
+  }
+
+  /*********************************************************************************************************************/
+
+  void ConnectingDeviceModule::defineConnections() {
+    // split up triggerPath
+    auto path = HierarchyModifyingGroup::getPathName(triggerPath);
+    auto name = HierarchyModifyingGroup::getUnqualifiedName(triggerPath);
+
+    // get the virtualised version of the device for the given pathInDevice
+    auto source = _dm->virtualiseFromCatalog();
+    if(pathInDevice != "/") {
+      source = dynamic_cast<const VirtualModule&>(source.submodule(pathInDevice));
+    }
+
+    // connect to the control system ad the given pathToConnectTo
+    ControlSystemModule cs;
+    if(pathToConnectTo == "/") {
+      source.connectTo(cs, cs.submodule(path)(name));
+    }
+    else {
+      source.connectTo(cs.submodule(pathToConnectTo), cs.submodule(path)(name));
+    }
+  }
+
+  /*********************************************************************************************************************/
 
 } // namespace ChimeraTK

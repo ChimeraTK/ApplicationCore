@@ -18,6 +18,7 @@
 #include <ChimeraTK/ForwardDeclarations.h>
 #include <ChimeraTK/RegisterPath.h>
 #include <ChimeraTK/Device.h>
+#include "ModuleGroup.h"
 
 namespace ChimeraTK {
   class Application;
@@ -60,11 +61,20 @@ namespace ChimeraTK {
    */
   class DeviceModule : public Module {
    public:
-    /** Constructor: The device represented by this DeviceModule is identified by
-     * either the device alias found in the DMAP file or directly an URI.
-     * A callback function to initialise the device can be registered as an optional argument (see addInitialisationHandler()
-     * for more information).*/
-    DeviceModule(Application* application, const std::string& deviceAliasOrURI,
+
+    /**
+     *  Create (non-connecting) DeviceModule
+     *
+     *  The device represented by this DeviceModule is identified by either the device alias found in the DMAP file or
+     *  directly a CDD.
+     *
+     *  A callback function to initialise the device can be registered as an optional argument (see
+     *  addInitialisationHandler() for more information).
+     *
+     *  Connecting the device to other modules is up to the user, hence using this class directly is discouraged in
+     *  new applications. Instead use the ConnectingDeviceModule.
+     */
+    DeviceModule(Application* application, const std::string& deviceAliasOrCDD,
         std::function<void(DeviceModule*)> initialisationHandler = nullptr);
 
     /** Destructor */
@@ -287,6 +297,57 @@ namespace ChimeraTK {
 
     template<typename T>
     friend class ExceptionHandlingDecorator;
+
+    friend class ConnectingDeviceModule;
+  };
+
+  /*********************************************************************************************************************/
+
+  /**
+   */
+  class ConnectingDeviceModule : public ModuleGroup {
+   public:
+    /**
+    *  Create ConnectingDeviceModule which is connected to the control system at the path of the owner.
+    *
+    *  deviceAliasOrURI: identifies the device by either the alias found in the DMAP file or directly a CDD.
+    *
+    *  triggerPath specifies a control system variable which is used as a trigger where needed.
+    *
+    *  initialisationHandler specifies a callback function to initialise the device (optional, default is none).
+    *
+    *  pathInDevice specifies a module in the device register hierarchy which should be used and connected to the
+    *  control system (optional, default is "/" which connects the entire device).
+    *
+    *  Note about typical usage: A DeviceModule constructed with this constructer is often owned by the ModuleGroup
+    *  which is using this device. The device should be a logical name mapped device so the variable hierarchy of the
+    *  ModuleGroup and the Device can be matched. The logical device may be subdivided into several parts, e.g. if
+    *  different parts of the device are used by independent ModuleGroups, or if different triggers are required. This
+    *  is possible by use of the pathInDevice prefix. To avoid the creation of multiple DeviceBackends for the same
+    *  device (which may not even be possible for some transport protocols) make sure that the device CDD is identical
+    *  for all instances (the alias name does not matter, so multiple DMAP file entires pointing to the same device
+    *  are possible if needed).
+    *
+    *  Keep in mind that mulitple DeviceModules will perform independent and asynchronous recovery procedures after
+    *  an exception, even when pointing to the same device.
+    */
+    ConnectingDeviceModule(EntityOwner* owner, const std::string& deviceAliasOrCDD, const std::string &triggerPath,
+        std::function<void(DeviceModule*)> initialisationHandler = nullptr, const std::string &pathInDevice = "/");
+
+   protected:
+
+    void defineConnections() override;
+
+    std::string pathToConnectTo;
+    std::string triggerPath;
+    std::string pathInDevice;
+
+    /// The DeviceModule represented by this ConnectingDeviceModule
+    DeviceModule *_dm;
+
+    /// Shared pointer holding the DeviceModule if (and only if) this ConnectingDeviceModule owns the DeviceModule
+    boost::shared_ptr<DeviceModule> _dmHolder;
+
   };
 
 } /* namespace ChimeraTK */
