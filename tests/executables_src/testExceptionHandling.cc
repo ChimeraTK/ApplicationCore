@@ -1,7 +1,10 @@
 #define BOOST_TEST_MODULE testExceptionHandling
 
 #include <boost/mpl/list.hpp>
+
+#define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 
 #include <chrono>
 #include <cstring>
@@ -866,7 +869,7 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   test.setScalarDefault("/Device2/Integers/unsigned16", static_cast<uint16_t>(DEFAULT));
   test.setScalarDefault("/Device2/Integers/signed8", static_cast<int8_t>(DEFAULT));
   test.setScalarDefault("/Device2/Integers/unsigned8", static_cast<uint8_t>(DEFAULT));
-  test.setScalarDefault("/Device2/FixedPoint/value", static_cast<double>(DEFAULT));
+  test.setScalarDefault("/Device2/FixedPoint/value", static_cast<float>(DEFAULT));
   test.setScalarDefault("/Device2/Deep/Hierarchies/Need/Tests/As/well", static_cast<int32_t>(DEFAULT));
   test.setScalarDefault("/Device2/Deep/Hierarchies/Need/Another/test", static_cast<int32_t>(DEFAULT));
   test.setScalarDefault("/Device3/MODULE/REG4", static_cast<int32_t>(DEFAULT));

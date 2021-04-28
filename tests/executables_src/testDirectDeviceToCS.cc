@@ -7,8 +7,11 @@
 
 #define BOOST_TEST_MODULE testDirectDeviceToCS
 
-#include <boost/mpl/list.hpp>
+#define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
+
+#include <boost/mpl/list.hpp>
 
 #include "Application.h"
 #include "ControlSystemModule.h"
@@ -212,7 +215,7 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
   auto devuint16 = dev.getScalarRegisterAccessor<uint16_t>("/Integers/unsigned16");
   auto devint8 = dev.getScalarRegisterAccessor<int8_t>("/Integers/signed8");
   auto devuint8 = dev.getScalarRegisterAccessor<uint8_t>("/Integers/unsigned8");
-  auto devfloat = dev.getScalarRegisterAccessor<double>("/FixedPoint/value");
+  auto devfloat = dev.getScalarRegisterAccessor<float>("/FixedPoint/value");
   auto devDeep1 = dev.getScalarRegisterAccessor<int32_t>("/Deep/Hierarchies/Need/Tests/As/well");
   auto devDeep2 = dev.getScalarRegisterAccessor<int32_t>("/Deep/Hierarchies/Need/Another/test");
   auto csActuator = test.getScalar<int32_t>("/MyModule/actuator");
@@ -223,7 +226,7 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
   auto csuint16 = test.getScalar<uint16_t>("/Integers/unsigned16");
   auto csint8 = test.getScalar<int8_t>("/Integers/signed8");
   auto csuint8 = test.getScalar<uint8_t>("/Integers/unsigned8");
-  auto csfloat = test.getScalar<double>("/FixedPoint/value");
+  auto csfloat = test.getScalar<float>("/FixedPoint/value");
   auto csDeep1 = test.getScalar<int32_t>("/Deep/Hierarchies/Need/Tests/As/well");
   auto csDeep2 = test.getScalar<int32_t>("/Deep/Hierarchies/Need/Another/test");
   test.runApplication();

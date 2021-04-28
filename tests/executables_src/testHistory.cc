@@ -7,10 +7,13 @@
 
 #define BOOST_TEST_MODULE HistoryTest
 
-#include <fstream>
-#include <boost/test/included/unit_test.hpp>
-#include <boost/thread.hpp>
+#define BOOST_NO_EXCEPTIONS
 #include <boost/test/unit_test.hpp>
+#include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
+
+#include <fstream>
+#include <boost/thread.hpp>
 #include <boost/mpl/list.hpp>
 
 #include "ServerHistory.h"
@@ -256,7 +259,7 @@ BOOST_AUTO_TEST_CASE(testDeviceHistory) {
   // check new history buffer that ends with 42
   std::vector<double> v_ref(20);
   v_ref.back() = 42;
-  auto v = tf.readArray<double>("history/Device/signed32");
+  auto v = tf.readArray<float>("history/Device/signed32");
   BOOST_CHECK_EQUAL_COLLECTIONS(v.begin(), v.end(), v_ref.begin(), v_ref.end());
 
   // Trigger the reading of the device
@@ -267,7 +270,7 @@ BOOST_AUTO_TEST_CASE(testDeviceHistory) {
 
   // check new history buffer that ends with 42,42
   *(v_ref.end() - 2) = 42;
-  v = tf.readArray<double>("history/Device/signed32");
+  v = tf.readArray<float>("history/Device/signed32");
   BOOST_CHECK_EQUAL_COLLECTIONS(v.begin(), v.end(), v_ref.begin(), v_ref.end());
 
   dev.write("/FixedPoint/value", 43);
@@ -281,6 +284,6 @@ BOOST_AUTO_TEST_CASE(testDeviceHistory) {
   // check new history buffer that ends with 42,42,43
   *(v_ref.end() - 1) = 43;
   *(v_ref.end() - 3) = 42;
-  v = tf.readArray<double>("history/Device/signed32");
+  v = tf.readArray<float>("history/Device/signed32");
   BOOST_CHECK_EQUAL_COLLECTIONS(v.begin(), v.end(), v_ref.begin(), v_ref.end());
 }
