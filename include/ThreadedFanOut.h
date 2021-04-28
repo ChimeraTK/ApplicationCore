@@ -80,7 +80,11 @@ namespace ChimeraTK {
     }
 
     VersionNumber readInitialValues() {
+      Application::testableModeUnlock("readInitialValues");
       FanOut<UserType>::impl->read();
+      if(!Application::testableModeTestLock()) {
+        Application::testableModeLock("readInitialValues");
+      }
       return FanOut<UserType>::impl->getVersionNumber();
     }
 
