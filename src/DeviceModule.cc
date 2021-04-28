@@ -505,7 +505,7 @@ namespace ChimeraTK {
       deviceAliasOrURI_withoutSlashes[i] = '_';
     }
 
-    // Connect deviceError module to the control system
+    // Connect device status module to the control system
     ControlSystemModule cs;
     deviceError.connectTo(cs["Devices"][deviceAliasOrURI_withoutSlashes]);
     deviceBecameFunctional >> cs["Devices"][deviceAliasOrURI_withoutSlashes]("deviceBecameFunctional");
