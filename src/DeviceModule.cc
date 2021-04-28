@@ -188,7 +188,17 @@ namespace ChimeraTK {
           }
         }
         else { // fractional
-          valTyp = &typeid(double);
+          // Maximum number of decimal digits to display a float without loss in non-exponential display, including
+          // sign, leading 0, decimal dot and one extra digit to avoid rounding issues (hence the +4).
+          // This computation matches the one performed in the NumericAddressedBackend catalogue.
+          size_t floatMaxDigits = std::max(std::log10(std::numeric_limits<float>::max()),
+                                           -std::log10(std::numeric_limits<float>::denorm_min())) + 4;
+          if(dd.nDigits() > floatMaxDigits) {
+            valTyp = &typeid(double);
+          }
+          else {
+            valTyp = &typeid(float);
+          }
         }
       }
       else if(dd.fundamentalType() == RegisterInfo::FundamentalType::boolean) {
