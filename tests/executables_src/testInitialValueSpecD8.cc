@@ -1,7 +1,6 @@
 #define BOOST_TEST_MODULE testInitialValues
 
 #include <boost/mpl/list.hpp>
-#include <boost/test/included/unit_test.hpp>
 
 #include <chrono>
 #include <future>
@@ -16,6 +15,8 @@
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
 //#include "check_timeout.h"
+
+#include <boost/test/included/unit_test.hpp>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
