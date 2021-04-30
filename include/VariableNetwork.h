@@ -23,6 +23,7 @@
 namespace ChimeraTK {
 
   class AccessorBase;
+  class FanOutBase;
 
   /** This class describes a network of variables all connected to each other. */
   class VariableNetwork {
@@ -137,6 +138,12 @@ namespace ChimeraTK {
      * is made. */
     bool merge(VariableNetwork& other);
 
+    /** Set FanOut used to realise this network */
+    void setFanOut(const boost::shared_ptr<FanOutBase> &fanOut) { _fanOut = fanOut; }
+
+    /** Return FanOut used to realise this network if present, empty shared_ptr otherwise. */
+    boost::shared_ptr<FanOutBase> getFanOut() const { return _fanOut.lock(); }
+
    protected:
     /** List of nodes in the network */
     std::list<VariableNetworkNode> nodeList;
@@ -165,6 +172,10 @@ namespace ChimeraTK {
 
     /** Flag if the network connections have been created already */
     bool flagIsCreated{false};
+
+    /** The fan out to realise this network. Only valid if a FanOut is needed. */
+    boost::weak_ptr<FanOutBase> _fanOut;
+
   };
 
 } /* namespace ChimeraTK */

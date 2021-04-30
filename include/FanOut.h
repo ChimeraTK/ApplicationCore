@@ -20,14 +20,19 @@ namespace ChimeraTK {
   using ConsumerImplementationPairs =
       std::list<std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, VariableNetworkNode>>;
 
+  /** Type independent base */
+  class FanOutBase {
+   public:
+    virtual ~FanOutBase() {}
+    virtual void removeSlave(const boost::shared_ptr<ChimeraTK::TransferElement> &slave) = 0;
+  };
+
   /** Base class for several implementations which distribute values from one
    * feeder to multiple consumers */
   template<typename UserType>
-  class FanOut {
+  class FanOut : public FanOutBase {
    public:
     FanOut(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl) : impl(feedingImpl) {}
-
-    virtual ~FanOut() {}
 
     /** Add a slave to the FanOut. Only sending end-points of a consuming node may
      * be added. */
@@ -53,6 +58,23 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error(what.c_str());
       }
       slaves.push_back(slave);
+    }
+
+    // remove a slave identified by its consuming node from the FanOut
+    void removeSlave(const boost::shared_ptr<ChimeraTK::TransferElement> &slave) override {
+      // make sure the slave is actually currently in the list, and get it by the right typ
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave_typed;
+      for(auto &s : slaves) {
+        if(s == slave) {
+          slave_typed = s;
+          break;
+        }
+      }
+      assert(slave_typed != nullptr);
+
+      size_t nOld = slaves.size();
+      slaves.remove(slave_typed);
+      assert(slaves.size() == nOld-1);
     }
 
     // interrupt the input and all slaves

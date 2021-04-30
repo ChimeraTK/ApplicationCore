@@ -62,6 +62,8 @@ namespace ChimeraTK {
 
     void initialise() override;
 
+    void optimiseUnmappedVariables(const std::set<std::string>& names) override;
+
     void run() override;
 
     /** Instead of running the application, just initialise it and output the

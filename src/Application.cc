@@ -91,6 +91,31 @@ void Application::initialise() {
 
 /*********************************************************************************************************************/
 
+void Application::optimiseUnmappedVariables(const std::set<std::string>& names) {
+  std::cout << "================================================================" << std::endl;
+  for(auto &pv : names) {
+    std::cout << pv << std::endl;
+    auto &node = controlSystemVariables.at(pv);
+    auto &network = node.getOwner();
+    if(network.getFeedingNode() == node) {
+      // cannot optimise if network is fed by unmapped control system variable (anyway not eating CPU ressources)
+      continue;
+    }
+    if(network.getConsumingNodes().size() == 1) {
+      // TODO: Optimise also this case by replacing feeding accessor with ConstantAccessor
+      continue;
+    }
+    // more than one consumer: we have a fan out -> remove control system consumer from it.
+    auto fanOut = network.getFanOut();
+    assert(fanOut != nullptr);
+    fanOut->removeSlave(_processVariableManager->getProcessVariable(pv));
+
+  }
+  std::cout << "================================================================" << std::endl;
+}
+
+/*********************************************************************************************************************/
+
 /** Functor class to create a constant for otherwise unconnected variables,
  * suitable for boost::fusion::for_each(). */
 namespace {
@@ -835,6 +860,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           auto consumerImplPair = ConsumerImplementationPairs<UserType>{{consumingImpl, consumer}};
           auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, network, consumerImplPair);
           internalModuleList.push_back(fanOut);
+          network.setFanOut(fanOut);
         }
 
         connectionMade = true;
@@ -870,6 +896,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
             internalModuleList.push_back(triggerFanOut);
           }
           fanOut = triggerFanOut->addNetwork(feedingImpl, consumerImplementationPairs);
+          network.setFanOut(fanOut);
         }
         else if(useFeederTrigger) {
           if(enableDebugMakeConnections) {
@@ -891,6 +918,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           }
           internalModuleList.push_back(threadedFanOut);
           fanOut = threadedFanOut;
+          network.setFanOut(fanOut);
         }
         else {
           if(enableDebugMakeConnections) {
@@ -900,6 +928,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
                                                     // catch this
           consumingFanOut = boost::make_shared<ConsumingFanOut<UserType>>(feedingImpl, consumerImplementationPairs);
           fanOut = consumingFanOut;
+          network.setFanOut(fanOut);
 
           // TODO Is this correct? we already added all consumer as slaves in the fanout  constructor.
           //      Maybe assert that we only have a single poll-type node (is there a check in checkConnections?)
@@ -963,6 +992,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
             boost::make_shared<FeedingFanOut<UserType>>(feeder.getName(), feeder.getUnit(), feeder.getDescription(),
                 feeder.getNumberOfElements(), feeder.getDirection().withReturn, consumerImplementationPairs);
         feeder.setAppAccessorImplementation<UserType>(fanOut);
+        network.setFanOut(fanOut);
 
         connectionMade = true;
       }
