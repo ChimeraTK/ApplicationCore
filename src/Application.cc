@@ -92,9 +92,7 @@ void Application::initialise() {
 /*********************************************************************************************************************/
 
 void Application::optimiseUnmappedVariables(const std::set<std::string>& names) {
-  std::cout << "================================================================" << std::endl;
   for(auto &pv : names) {
-    std::cout << pv << std::endl;
     auto &node = controlSystemVariables.at(pv);
     auto &network = node.getOwner();
     if(network.getFeedingNode() == node) {
@@ -109,9 +107,7 @@ void Application::optimiseUnmappedVariables(const std::set<std::string>& names) 
     auto fanOut = network.getFanOut();
     assert(fanOut != nullptr);
     fanOut->removeSlave(_processVariableManager->getProcessVariable(pv));
-
   }
-  std::cout << "================================================================" << std::endl;
 }
 
 /*********************************************************************************************************************/
