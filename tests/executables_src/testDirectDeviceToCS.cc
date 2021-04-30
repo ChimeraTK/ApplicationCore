@@ -7,10 +7,6 @@
 
 #define BOOST_TEST_MODULE testDirectDeviceToCS
 
-#define BOOST_NO_EXCEPTIONS
-#include <boost/test/included/unit_test.hpp>
-#undef BOOST_NO_EXCEPTIONS
-
 #include <boost/mpl/list.hpp>
 
 #include "Application.h"
@@ -20,6 +16,10 @@
 #include "TestFacility.h"
 #include <ChimeraTK/Device.h>
 #include "check_timeout.h"
+
+#define BOOST_NO_EXCEPTIONS
+#include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;

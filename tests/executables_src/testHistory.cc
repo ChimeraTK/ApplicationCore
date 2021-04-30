@@ -7,11 +7,6 @@
 
 #define BOOST_TEST_MODULE HistoryTest
 
-#define BOOST_NO_EXCEPTIONS
-#include <boost/test/unit_test.hpp>
-#include <boost/test/included/unit_test.hpp>
-#undef BOOST_NO_EXCEPTIONS
-
 #include <fstream>
 #include <boost/thread.hpp>
 #include <boost/mpl/list.hpp>
@@ -19,6 +14,11 @@
 #include "ServerHistory.h"
 
 #include "TestFacility.h"
+
+#define BOOST_NO_EXCEPTIONS
+#include <boost/test/unit_test.hpp>
+#include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 
