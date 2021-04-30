@@ -2,10 +2,6 @@
 
 #include <boost/mpl/list.hpp>
 
-#define BOOST_NO_EXCEPTIONS
-#include <boost/test/included/unit_test.hpp>
-#undef BOOST_NO_EXCEPTIONS
-
 #include <chrono>
 #include <cstring>
 #include <future>
@@ -23,6 +19,11 @@
 #include "TestFacility.h"
 #include "check_timeout.h"
 #include "fixtures.h"
+
+// this #include must come last
+#define BOOST_NO_EXCEPTIONS
+#include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
