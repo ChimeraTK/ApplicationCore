@@ -55,6 +55,13 @@ Application::Application(const std::string& name) : ApplicationBase(name), Entit
 
 /*********************************************************************************************************************/
 
+void Application::defineConnections() {
+  ControlSystemModule cs;
+  findTag(".*").connectTo(cs);
+}
+
+/*********************************************************************************************************************/
+
 void Application::initialise() {
   if(initialiseCalled) {
     throw ChimeraTK::logic_error("Application::initialise() was already called before.");

@@ -56,9 +56,9 @@ namespace ChimeraTK {
      * at least no longer used). */
     void shutdown() override;
 
-    /** Define the connections between process variables. Must be implemented by
-     * the application developer. */
-    virtual void defineConnections() = 0;
+    /** Define the connections between process variables. Can be implemented by the application developer. The default
+     *  implementation will connect the entire application with the control system (virtual hierarchy). */
+    virtual void defineConnections();
 
     void initialise() override;
 
