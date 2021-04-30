@@ -597,7 +597,7 @@ struct Fixture_noTestableMode {
     CHECK_EQUAL_TIMEOUT((device2Status.readLatest(), device2Status), 0, 100000);
 
     // Making sure the default is written to the device before proceeding.
-    auto m1o1 = device1DummyBackend->getRegisterAccessor<int>("m1/o1", 1, 0, false);
+    auto m1o1 = device1DummyBackend->getRegisterAccessor<int>("m1/o1", 1, 0, {});
     CHECK_EQUAL_TIMEOUT((m1o1->read(), m1o1->accessData(0)), DEFAULT, 10000);
   }
 
