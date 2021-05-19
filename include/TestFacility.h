@@ -229,6 +229,9 @@ namespace ChimeraTK {
     /** Set default value for scalar process variable. */
     template<typename T>
     void setScalarDefault(const ChimeraTK::RegisterPath& name, const T& value) {
+      if(Application::getInstance().testFacilityRunApplicationCalled) {
+        throw ChimeraTK::logic_error("TestFacility::setScalarDefault() called after runApplication().");
+      }
       std::vector<T> vv;
       vv.push_back(value);
       setArrayDefault(name, vv);
@@ -237,6 +240,9 @@ namespace ChimeraTK {
     /** Set default value for array process variable. */
     template<typename T>
     void setArrayDefault(const ChimeraTK::RegisterPath& name, const std::vector<T>& value) {
+      if(Application::getInstance().testFacilityRunApplicationCalled) {
+        throw ChimeraTK::logic_error("TestFacility::setArrayDefault() called after runApplication().");
+      }
       // check if PV exists
       auto pv = pvManager->getProcessArray<T>(name);
       if(pv == nullptr) {
