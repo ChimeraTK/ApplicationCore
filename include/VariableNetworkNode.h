@@ -133,6 +133,9 @@ namespace ChimeraTK {
      * enforce this!*/
     void addTag(const std::string& tag);
 
+    /** Returns true if a circular dependency has been detected and the node is a consumer. */
+    bool isCircularInput();
+
     /** Getter for the properties */
     NodeType getType() const;
     UpdateMode getMode() const;
