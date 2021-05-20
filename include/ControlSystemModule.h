@@ -56,6 +56,8 @@ namespace ChimeraTK {
 
     std::list<Module*> getSubmoduleList() const override;
 
+    std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override;
+
    protected:
     /** Constructor: the variableNamePrefix will be prepended to all control system variable names (separated by a
      *  slash). Applications should use the [] operator to obtain submodules instead. */

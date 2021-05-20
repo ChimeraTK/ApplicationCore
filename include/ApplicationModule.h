@@ -82,6 +82,8 @@ namespace ChimeraTK {
       if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
     }
 
+    std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override;
+
    protected:
     /** Wrapper around mainLoop(), to execute additional tasks in the thread
      * before entering the main loop */

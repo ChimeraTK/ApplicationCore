@@ -44,6 +44,11 @@ namespace ChimeraTK {
     DataValidity getDataValidity() const override { throw; }
     void incrementDataFaultCounter() override { throw; }
     void decrementDataFaultCounter() override { throw; }
+    std::list<EntityOwner*> getInputModulesRecursively([[maybe_unused]] std::list<EntityOwner*> startList) override {
+      throw ChimeraTK::logic_error("getInputModulesRecursively() called on an InternalModule (ThreadedFanout or "
+                                   "TriggerFanout). This is probably "
+                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
+    }
   };
 
 } /* namespace ChimeraTK */

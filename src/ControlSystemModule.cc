@@ -74,4 +74,13 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  std::list<EntityOwner*> ControlSystemModule::getInputModulesRecursively(std::list<EntityOwner*> startList) {
+    // The ControlSystemModule is the end of the recursion, and is not considered recursive to itself.
+    // There will always be circular connections to the CS module which does not pose a problem.
+    // Just return the startList without adding anything (not even the CS module itself)
+    return startList;
+  }
+
+  /*********************************************************************************************************************/
+
 } // namespace ChimeraTK

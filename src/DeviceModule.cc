@@ -192,7 +192,8 @@ namespace ChimeraTK {
           // sign, leading 0, decimal dot and one extra digit to avoid rounding issues (hence the +4).
           // This computation matches the one performed in the NumericAddressedBackend catalogue.
           size_t floatMaxDigits = std::max(std::log10(std::numeric_limits<float>::max()),
-                                           -std::log10(std::numeric_limits<float>::denorm_min())) + 4;
+                                      -std::log10(std::numeric_limits<float>::denorm_min())) +
+              4;
           if(dd.nDigits() > floatMaxDigits) {
             valTyp = &typeid(double);
           }
@@ -543,21 +544,21 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   ConnectingDeviceModule::ConnectingDeviceModule(EntityOwner* owner, const std::string& _deviceAliasOrCDD,
-      const std::string &_triggerPath, std::function<void(DeviceModule*)> initialisationHandler,
-      const std::string &_pathInDevice)
-  : ModuleGroup(owner, "**ConnectingDeviceModule**", "")
-  {
+      const std::string& _triggerPath, std::function<void(DeviceModule*)> initialisationHandler,
+      const std::string& _pathInDevice)
+  : ModuleGroup(owner, "**ConnectingDeviceModule**", "") {
     // create DeviceModule if not yet in the _deviceModuleMap
-    auto &dmm = Application::getInstance().deviceModuleMap;
+    auto& dmm = Application::getInstance().deviceModuleMap;
     if(dmm.find(_deviceAliasOrCDD) == dmm.end()) {
-      _dmHolder = boost::make_shared<DeviceModule>(&Application::getInstance(), _deviceAliasOrCDD, initialisationHandler);
+      _dmHolder =
+          boost::make_shared<DeviceModule>(&Application::getInstance(), _deviceAliasOrCDD, initialisationHandler);
       dmm[_deviceAliasOrCDD] = _dmHolder.get();
     }
     _dm = dmm.at(_deviceAliasOrCDD);
 
     // determine path to connect to
     pathToConnectTo = "/";
-    auto *group = dynamic_cast<ModuleGroup*>(owner);
+    auto* group = dynamic_cast<ModuleGroup*>(owner);
     if(group) {
       pathToConnectTo = group->getVirtualQualifiedName();
     }
@@ -565,7 +566,7 @@ namespace ChimeraTK {
     // set other information required for the connection later
     triggerPath = _triggerPath;
     pathInDevice = _pathInDevice;
-    if(triggerPath[0] != '/'){
+    if(triggerPath[0] != '/') {
       throw ChimeraTK::logic_error("DeviceModule triggerPath must be absolute!");
     }
   }
@@ -591,6 +592,15 @@ namespace ChimeraTK {
     else {
       source.connectTo(cs.submodule(pathToConnectTo), cs.submodule(path)(name));
     }
+  }
+
+  /*********************************************************************************************************************/
+
+  std::list<EntityOwner*> DeviceModule::getInputModulesRecursively(std::list<EntityOwner*> startList) {
+    // The DeviceModule is the end of the recursion, and is not considered recursive to itself.
+    // There will always be circular connections to the CS module which does not pose a problem.
+    // Just return the startList without adding anything (not even the DeviceModule itself)
+    return startList;
   }
 
   /*********************************************************************************************************************/

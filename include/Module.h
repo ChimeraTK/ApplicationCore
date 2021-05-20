@@ -160,6 +160,9 @@ namespace ChimeraTK {
     DataValidity getDataValidity() const override { return _owner->getDataValidity(); }
     void incrementDataFaultCounter() override { _owner->incrementDataFaultCounter(); }
     void decrementDataFaultCounter() override { _owner->decrementDataFaultCounter(); }
+    std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override {
+      return _owner->getInputModulesRecursively(startList);
+    }
 
     /** Find ApplicationModule owner. If "this" is an ApplicationModule, "this" is returned. If "this" is a
      *  VariableGroup, the tree of owners is followed, until the ApplicationModule is found. If "this" is neither an

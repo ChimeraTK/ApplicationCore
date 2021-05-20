@@ -208,8 +208,10 @@ namespace ChimeraTK {
      *  incrementDataFaultCounter(). */
     virtual void decrementDataFaultCounter() = 0;
 
-   protected:
+    /** Use pointer to the module as unique identifier.*/
+    virtual std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) = 0;
 
+   protected:
     /** Add the part of the tree structure matching the given tag to a
      * VirtualModule. Users normally will use findTag() instead. "tag" is
      * interpreted as a regular expression (see std::regex_match). */

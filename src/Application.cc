@@ -92,9 +92,9 @@ void Application::initialise() {
 /*********************************************************************************************************************/
 
 void Application::optimiseUnmappedVariables(const std::set<std::string>& names) {
-  for(auto &pv : names) {
-    auto &node = controlSystemVariables.at(pv);
-    auto &network = node.getOwner();
+  for(auto& pv : names) {
+    auto& node = controlSystemVariables.at(pv);
+    auto& network = node.getOwner();
     if(network.getFeedingNode() == node) {
       // cannot optimise if network is fed by unmapped control system variable (anyway not eating CPU ressources)
       continue;
@@ -432,7 +432,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   if(testableMode) {
     if(mode == UpdateMode::push && direction.dir == VariableDirection::feeding) {
       auto varId = getNextVariableId();
-      accessor = boost::make_shared<TestableModeAccessorDecorator<UserType>>(accessor, true, false, varId,varId);
+      accessor = boost::make_shared<TestableModeAccessorDecorator<UserType>>(accessor, true, false, varId, varId);
     }
   }
 
@@ -625,6 +625,11 @@ void Application::makeConnections() {
   for(auto& network : networkList) {
     makeConnectionsForNetwork(network);
   }
+
+  // check for circular dependencies
+  for(auto& network : networkList) {
+    markCircularConsumers(network);
+  }
 }
 
 /*********************************************************************************************************************/
@@ -779,6 +784,14 @@ void Application::makeConnectionsForNetwork(VariableNetwork& network) {
 
   // mark the network as created
   network.markCreated();
+}
+
+/*********************************************************************************************************************/
+
+void Application::markCircularConsumers(VariableNetwork& network) {
+  for(auto& node : network.getConsumingNodes()) {
+    node.scanForCircularDepencency();
+  }
 }
 
 /*********************************************************************************************************************/

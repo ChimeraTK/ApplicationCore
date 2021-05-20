@@ -61,7 +61,6 @@ namespace ChimeraTK {
    */
   class DeviceModule : public Module {
    public:
-
     /**
      *  Create (non-connecting) DeviceModule
      *
@@ -209,6 +208,8 @@ namespace ChimeraTK {
      */
     boost::shared_lock<boost::shared_mutex> getInitialValueSharedLock();
 
+    std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override;
+
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the
     // device's catalogue
@@ -331,11 +332,10 @@ namespace ChimeraTK {
     *  Keep in mind that mulitple DeviceModules will perform independent and asynchronous recovery procedures after
     *  an exception, even when pointing to the same device.
     */
-    ConnectingDeviceModule(EntityOwner* owner, const std::string& deviceAliasOrCDD, const std::string &triggerPath,
-        std::function<void(DeviceModule*)> initialisationHandler = nullptr, const std::string &pathInDevice = "/");
+    ConnectingDeviceModule(EntityOwner* owner, const std::string& deviceAliasOrCDD, const std::string& triggerPath,
+        std::function<void(DeviceModule*)> initialisationHandler = nullptr, const std::string& pathInDevice = "/");
 
    protected:
-
     void defineConnections() override;
 
     std::string pathToConnectTo;
@@ -343,11 +343,10 @@ namespace ChimeraTK {
     std::string pathInDevice;
 
     /// The DeviceModule represented by this ConnectingDeviceModule
-    DeviceModule *_dm;
+    DeviceModule* _dm;
 
     /// Shared pointer holding the DeviceModule if (and only if) this ConnectingDeviceModule owns the DeviceModule
     boost::shared_ptr<DeviceModule> _dmHolder;
-
   };
 
 } /* namespace ChimeraTK */

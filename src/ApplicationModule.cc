@@ -7,6 +7,8 @@
 
 #include "ApplicationCore.h"
 #include "ConfigReader.h"
+#include <iterator>
+#include <list>
 
 namespace ChimeraTK {
 
@@ -121,11 +123,51 @@ namespace ChimeraTK {
     Application::testableModeUnlock("terminate");
   }
 
+  /*********************************************************************************************************************/
+
   void ApplicationModule::incrementDataFaultCounter() { ++dataFaultCounter; }
 
   void ApplicationModule::decrementDataFaultCounter() {
     assert(dataFaultCounter > 0);
     --dataFaultCounter;
   }
+
+  /*********************************************************************************************************************/
+
+  std::list<EntityOwner*> ApplicationModule::getInputModulesRecursively(std::list<EntityOwner*> startList) {
+    // If this module is already in the list we found a circular dependency.
+    // Add this module again, so the caller will see also see the circle, and return.
+    if(std::count(startList.begin(), startList.end(), this)) {
+      startList.push_back(this);
+      return startList;
+    }
+
+    // loop all inputs
+    startList.push_back(this); // first we add this module to the start list. We will call all inputs with it.
+    std::list<EntityOwner*> returnList{
+        startList}; // prepare the return list. Deltas from the inputs will be added to it.
+    for(auto& accessor : this->getAccessorListRecursive()) {
+      if(accessor.getDirection().dir != VariableDirection::consuming) continue; // not an input (consuming from network)
+
+      // find the feeder in the network
+      auto feeder = accessor.getOwner().getFeedingNode();
+      auto feedingModule = feeder.getOwningModule();
+      if(!feedingModule) {
+        std::cout << "Scanning recursively: feeder " << feeder.getName() << " does not have an owner!" << std::endl;
+        continue;
+      }
+
+      auto thisInputsRecursiveModuleList = feedingModule->getInputModulesRecursively(startList);
+      // only add the modules that were added by the recursive search to the output list
+      assert(startList.size() <= thisInputsRecursiveModuleList.size());
+      auto copyStartIter = thisInputsRecursiveModuleList.begin();
+      std::advance(copyStartIter, startList.size());
+
+      returnList.insert(returnList.end(), copyStartIter, thisInputsRecursiveModuleList.end());
+    }
+    return returnList;
+  }
+
+  /*********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

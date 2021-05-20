@@ -272,6 +272,10 @@ namespace ChimeraTK {
     /** Make the connections for a single network */
     void makeConnectionsForNetwork(VariableNetwork& network);
 
+    /** Scan for circular dependencies and mark all affcted consuming nodes.
+     *  This can only be done after all connections have been established. */
+    void markCircularConsumers(VariableNetwork& network);
+
     /** UserType-dependent part of makeConnectionsForNetwork() */
     template<typename UserType>
     void typedMakeConnection(VariableNetwork& network);
@@ -482,6 +486,10 @@ namespace ChimeraTK {
     }
     void decrementDataFaultCounter() override {
       throw ChimeraTK::logic_error("decrementDataFaultCounter() called on the application. This is probably "
+                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
+    }
+    std::list<EntityOwner*> getInputModulesRecursively([[maybe_unused]] std::list<EntityOwner*> startList) override {
+      throw ChimeraTK::logic_error("getInputModulesRecursively() called on the application. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
   };
