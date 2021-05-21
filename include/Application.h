@@ -274,7 +274,7 @@ namespace ChimeraTK {
 
     /** Scan for circular dependencies and mark all affcted consuming nodes.
      *  This can only be done after all connections have been established. */
-    void markCircularConsumers(VariableNetwork& network);
+    void markCircularConsumers(VariableNetwork& variableNetwork);
 
     /** UserType-dependent part of makeConnectionsForNetwork() */
     template<typename UserType>
@@ -452,6 +452,16 @@ namespace ChimeraTK {
 
     /** Version number used at application start, e.g. to propagate initial values */
     VersionNumber _startVersion;
+
+    /** Map of atomic invalidity counters for each circular dependency network.
+     *  The key is the hash of network which serves as a unique identifier.
+     *   The invalidity counter is atomic so it can be accessed from all modules in the network.
+     */
+    std::map<size_t, std::atomic<uint64_t>> circularNetworkInvalidityCounters;
+
+    /** The networks of circlular dependencies, reachable by their hash, which serves as unique ID
+     */
+    std::map<size_t, std::list<EntityOwner*>> circularDependencyNetworks;
 
     template<typename UserType>
     friend class TestableModeAccessorDecorator; // needs access to the

@@ -788,12 +788,16 @@ void Application::makeConnectionsForNetwork(VariableNetwork& network) {
 
 /*********************************************************************************************************************/
 
-void Application::markCircularConsumers(VariableNetwork& network) {
-  for(auto& node : network.getConsumingNodes()) {
-    node.scanForCircularDepencency();
+void Application::markCircularConsumers(VariableNetwork& variableNetwork) {
+  for(auto& node : variableNetwork.getConsumingNodes()) {
+    // A variable network is a tree-like network of VariableNetworkNodes (one feeder and one or more multiple consumers)
+    // A circlular network is a list of modules (EntityOwners) which have a circular dependency
+    auto circularNetwork = node.scanForCircularDepencency();
+    auto circularNetworkHash = boost::hash_range(circularNetwork.begin(), circularNetwork.end());
+    circularDependencyNetworks[circularNetworkHash] = circularNetwork;
+    circularNetworkInvalidityCounters[circularNetworkHash] = 0;
   }
 }
-
 /*********************************************************************************************************************/
 
 template<typename UserType>

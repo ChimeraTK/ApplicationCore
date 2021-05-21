@@ -139,7 +139,7 @@ namespace ChimeraTK {
     /** Scan the networks and set the isCircularInput() flags if circular depencencies are detected.
      *  Must only be called on consuming nodes.
      */
-    void scanForCircularDepencency();
+    std::list<EntityOwner*> scanForCircularDepencency();
 
     /** Getter for the properties */
     NodeType getType() const;
@@ -275,8 +275,8 @@ namespace ChimeraTK {
     /** Pointer to the module owning this node */
     EntityOwner* owningModule{nullptr};
 
-    /** Flag wheter this is an input which is part of a circular dependency. */
-    bool isCircularInput{false};
+    /** Hash which idientifies a circular network. I if the node is not part if a circular dependency. */
+    size_t circularNetworkHash{0};
   };
 
   /*********************************************************************************************************************/

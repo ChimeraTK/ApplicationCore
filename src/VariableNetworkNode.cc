@@ -12,6 +12,7 @@
 #include "VariableNetworkNodeDumpingVisitor.h"
 #include "Visitor.h"
 #include "VariableGroup.h"
+#include <boost/container_hash/hash.hpp>
 
 namespace ChimeraTK {
 
@@ -376,7 +377,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool VariableNetworkNode::isCircularInput() { return pdata->isCircularInput; }
+  bool VariableNetworkNode::isCircularInput() { return pdata->circularNetworkHash != 0; }
 
   /*********************************************************************************************************************/
 
@@ -385,14 +386,14 @@ namespace ChimeraTK {
     if(type == EntityOwner::ModuleType::VariableGroup) return "VariableGroup";
     return "don't care";
   }
-  void VariableNetworkNode::scanForCircularDepencency() {
+  std::list<EntityOwner*> VariableNetworkNode::scanForCircularDepencency() {
     // find the feeder of the network
     auto feeder = getOwner().getFeedingNode();
     auto feedingModule = feeder.getOwningModule();
     // CS modules and device modules don't have an owning module. They stop the circle anyway. So if either the feeder or the
     // receiver (this) don't have an owning module, there is nothing to do here.
     if(!feedingModule || !getOwningModule()) {
-      return;
+      return {};
     }
     assert(getDirection().dir == VariableDirection::consuming);
 
@@ -409,8 +410,17 @@ namespace ChimeraTK {
     assert(nInstancesFound >= 1); // the start list must not have been deleted in the call
     // The owning module has been found again when scanning inputs recursively -> There is a circular dependency
     if(nInstancesFound > 1) {
-      pdata->isCircularInput = true;
+      // clean up the circular network we found and return it.
+      inputModuleList.sort();
+      inputModuleList.unique();
+
+      // Remember that we are part of a circle, and of which circle
+      pdata->circularNetworkHash = boost::hash_range(inputModuleList.begin(), inputModuleList.end());
+      return inputModuleList;
     }
+
+    // No circlular network. Return an empty list.
+    return {};
   }
 
   /*********************************************************************************************************************/
