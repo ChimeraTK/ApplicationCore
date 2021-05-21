@@ -152,8 +152,8 @@ namespace ChimeraTK {
       // find the feeder in the network
       auto feeder = accessor.getOwner().getFeedingNode();
       auto feedingModule = feeder.getOwningModule();
+      // CS module and DeviceModule nodes don't have an owning module set. As they stop the recursion anyway we just continue.
       if(!feedingModule) {
-        std::cout << "Scanning recursively: feeder " << feeder.getName() << " does not have an owner!" << std::endl;
         continue;
       }
 

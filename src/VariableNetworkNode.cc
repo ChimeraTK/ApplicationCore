@@ -389,18 +389,13 @@ namespace ChimeraTK {
     // find the feeder of the network
     auto feeder = getOwner().getFeedingNode();
     auto feedingModule = feeder.getOwningModule();
-    if(!feedingModule) {
-      std::cout << "feeder " << feeder.getName() << " does not have an owner!" << std::endl;
+    // CS modules and device modules don't have an owning module. They stop the circle anyway. So if either the feeder or the
+    // receiver (this) don't have an owning module, there is nothing to do here.
+    if(!feedingModule || !getOwningModule()) {
       return;
     }
-    if(!getOwningModule()) {
-      std::cout << "network node " << getName() << " " << getPublicName() << " does not have an owner!" << std::endl;
-      return;
-    }
-    if(getDirection().dir != VariableDirection::consuming) {
-      std::cout << "Error: scanForCircularDepedencies called for feeder " << getName() << std::endl;
-      return;
-    }
+    assert(getDirection().dir == VariableDirection::consuming);
+
     auto owningModule = getOwningModule();
     // if the entity owner is a variable group we must go up the hierarchy until we find the applciation module
     while(owningModule->getModuleType() == EntityOwner::ModuleType::VariableGroup) {
@@ -408,14 +403,8 @@ namespace ChimeraTK {
       owningModule = variableGroup->getOwner();
     }
     assert(owningModule->getModuleType() == EntityOwner::ModuleType::ApplicationModule);
-    std::cout << "Node " << getName() << " has owning module " << owningModule << " type "
-              << printModuleType(owningModule->getModuleType()) << std::endl;
     auto inputModuleList = feedingModule->getInputModulesRecursively({owningModule});
-    std::cout << " ** Found recusive modules " << std::endl;
 
-    for(auto module : inputModuleList) {
-      std::cout << module << "  " << module->getName() << " " << printModuleType(module->getModuleType()) << std::endl;
-    }
     auto nInstancesFound = std::count(inputModuleList.begin(), inputModuleList.end(), owningModule);
     assert(nInstancesFound >= 1); // the start list must not have been deleted in the call
     // The owning module has been found again when scanning inputs recursively -> There is a circular dependency

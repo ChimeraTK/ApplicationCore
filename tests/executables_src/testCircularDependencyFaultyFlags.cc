@@ -37,7 +37,6 @@ struct TestModuleBase : ctk::ApplicationModule {
     outputGroup(this, outputName, "", ctk::HierarchyModifier::oneLevelUp) {}
 
   void mainLoop() override {
-    std::cout << "This is " << getName() << std::endl;
     while(true) {
       circularOutput1 = static_cast<int>(inputGroup.circularInput1);
       outputGroup.circularOutput2 = static_cast<int>(circularInput2);

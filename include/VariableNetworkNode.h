@@ -137,6 +137,7 @@ namespace ChimeraTK {
     bool isCircularInput();
 
     /** Scan the networks and set the isCircularInput() flags if circular depencencies are detected.
+     *  Must only be called on consuming nodes.
      */
     void scanForCircularDepencency();
 
