@@ -377,7 +377,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool VariableNetworkNode::isCircularInput() { return pdata->circularNetworkHash != 0; }
+  bool VariableNetworkNode::isCircularInput() const { return pdata->circularNetworkHash != 0; }
 
   /*********************************************************************************************************************/
 

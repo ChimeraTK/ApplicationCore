@@ -96,6 +96,7 @@ BOOST_AUTO_TEST_CASE(TestCircularInputDetection) {
   ctk::TestFacility test;
 
   test.runApplication();
+  app.dumpConnections();
 
   // just test that the circular inputs have been detected correctly
   BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.A.inputGroup.circularInput1).isCircularInput() == true);

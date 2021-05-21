@@ -736,12 +736,20 @@ void Application::optimiseConnections() {
 
 /*********************************************************************************************************************/
 
-void Application::dumpConnections(std::ostream& stream) {                                         // LCOV_EXCL_LINE
-  stream << "==== List of all variable connections of the current Application ====" << std::endl; // LCOV_EXCL_LINE
-  for(auto& network : networkList) {                                                              // LCOV_EXCL_LINE
-    network.dump("", stream);                                                                     // LCOV_EXCL_LINE
-  }                                                                                               // LCOV_EXCL_LINE
-  stream << "=====================================================================" << std::endl; // LCOV_EXCL_LINE
+void Application::dumpConnections(std::ostream& stream) {                                          // LCOV_EXCL_LINE
+  stream << "==== List of all variable connections of the current Application =====" << std::endl; // LCOV_EXCL_LINE
+  for(auto& network : networkList) {                                                               // LCOV_EXCL_LINE
+    network.dump("", stream);                                                                      // LCOV_EXCL_LINE
+  }                                                                                                // LCOV_EXCL_LINE
+  stream << "==== List of all circlular connections in the current Application ====" << std::endl; // LCOV_EXCL_LINE
+  for(auto& circularDependency : circularDependencyNetworks) {
+    stream << "Circular dependency network " << circularDependency.first << " : ";
+    for(auto& module : circularDependency.second) {
+      stream << module->getName() << ", ";
+    }
+    stream << std::endl;
+  }
+  stream << "======================================================================" << std::endl; // LCOV_EXCL_LINE
 } // LCOV_EXCL_LINE
 
 void Application::dumpConnectionGraph(const std::string& fileName) {
@@ -793,9 +801,11 @@ void Application::markCircularConsumers(VariableNetwork& variableNetwork) {
     // A variable network is a tree-like network of VariableNetworkNodes (one feeder and one or more multiple consumers)
     // A circlular network is a list of modules (EntityOwners) which have a circular dependency
     auto circularNetwork = node.scanForCircularDepencency();
-    auto circularNetworkHash = boost::hash_range(circularNetwork.begin(), circularNetwork.end());
-    circularDependencyNetworks[circularNetworkHash] = circularNetwork;
-    circularNetworkInvalidityCounters[circularNetworkHash] = 0;
+    if(circularNetwork.size() > 0) {
+      auto circularNetworkHash = boost::hash_range(circularNetwork.begin(), circularNetwork.end());
+      circularDependencyNetworks[circularNetworkHash] = circularNetwork;
+      circularNetworkInvalidityCounters[circularNetworkHash] = 0;
+    }
   }
 }
 /*********************************************************************************************************************/

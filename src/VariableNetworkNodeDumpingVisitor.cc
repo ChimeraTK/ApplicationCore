@@ -40,6 +40,11 @@ namespace ChimeraTK {
     stream() << "]";
     stream() << _separator;
 
+    if(t.isCircularInput()) {
+      stream() << "circular dependency " << t.pdata->circularNetworkHash;
+      stream() << _separator;
+    }
+
     stream() << std::endl;
   }
 
