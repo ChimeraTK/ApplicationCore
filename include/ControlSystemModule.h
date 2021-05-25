@@ -58,6 +58,8 @@ namespace ChimeraTK {
 
     std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override;
 
+    size_t getCircularNetworkHash() override;
+
    protected:
     /** Constructor: the variableNamePrefix will be prepended to all control system variable names (separated by a
      *  slash). Applications should use the [] operator to obtain submodules instead. */

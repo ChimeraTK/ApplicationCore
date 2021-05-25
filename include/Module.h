@@ -164,6 +164,8 @@ namespace ChimeraTK {
       return _owner->getInputModulesRecursively(startList);
     }
 
+    size_t getCircularNetworkHash() override { return _owner->getCircularNetworkHash(); }
+
     /** Find ApplicationModule owner. If "this" is an ApplicationModule, "this" is returned. If "this" is a
      *  VariableGroup, the tree of owners is followed, until the ApplicationModule is found. If "this" is neither an
      *  ApplicationModule nor a VariableGroup, a ChimeraTK::logic_error is thrown. */

@@ -170,4 +170,18 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  size_t ApplicationModule::getCircularNetworkHash() { return _circularNetworkHash; }
+
+  /*********************************************************************************************************************/
+
+  void ApplicationModule::setCircularNetworkHash(size_t circularNetworkHash) {
+    if(_circularNetworkHash != 0 && _circularNetworkHash != circularNetworkHash) {
+      throw ChimeraTK::logic_error(
+          "Error: setCircularNetworkHash() called with different values for EntityOwner \"" + _name + "\" ");
+    }
+    _circularNetworkHash = circularNetworkHash;
+  }
+
+  /*********************************************************************************************************************/
+
 } /* namespace ChimeraTK */

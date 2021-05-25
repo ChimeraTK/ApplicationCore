@@ -13,6 +13,7 @@
 #include <boost/thread.hpp>
 
 #include "ModuleImpl.h"
+#include "Application.h"
 
 namespace ChimeraTK {
 
@@ -72,7 +73,18 @@ namespace ChimeraTK {
     VersionNumber getCurrentVersionNumber() const override { return currentVersionNumber; }
 
     DataValidity getDataValidity() const override {
-      return (dataFaultCounter == 0) ? DataValidity::ok : DataValidity::faulty;
+      if(dataFaultCounter == 0) return DataValidity::ok;
+      if(_circularNetworkHash != 0) {
+        // In a circular dependency network, internal inputs are ignored.
+        // If all external inputs (including the ones from this module) are OK, the
+        // data valitity is set to OK.
+        if(Application::getInstance().circularNetworkInvalidityCounters[_circularNetworkHash] == 0) {
+          return DataValidity::ok;
+        }
+      }
+      else { // not a circular network
+        return DataValidity::faulty;
+      }
     }
 
     void incrementDataFaultCounter() override;
@@ -83,6 +95,13 @@ namespace ChimeraTK {
     }
 
     std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override;
+
+    size_t getCircularNetworkHash() override;
+
+    /** Set the ID of the circular dependency network. This function can be called multiple times and throws if the
+     *  value is not identical.
+     */
+    void setCircularNetworkHash(size_t circularNetworkHash);
 
    protected:
     /** Wrapper around mainLoop(), to execute additional tasks in the thread
@@ -98,6 +117,9 @@ namespace ChimeraTK {
 
     /** Number of inputs which report DataValidity::faulty. */
     size_t dataFaultCounter{0};
+
+    /** Unique ID for the circular dependency network. 0 if the EntityOwner is not in a circular dependency network. */
+    size_t _circularNetworkHash{0};
   };
 
 } /* namespace ChimeraTK */

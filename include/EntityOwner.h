@@ -211,6 +211,11 @@ namespace ChimeraTK {
     /** Use pointer to the module as unique identifier.*/
     virtual std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) = 0;
 
+    /** Get the ID of the circular dependency network (0 if none). This information is only available after
+     *  the Application has finalised all connections.
+     */
+    virtual size_t getCircularNetworkHash() = 0;
+
    protected:
     /** Add the part of the tree structure matching the given tag to a
      * VirtualModule. Users normally will use findTag() instead. "tag" is

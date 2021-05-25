@@ -49,6 +49,11 @@ namespace ChimeraTK {
                                    "TriggerFanout). This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
+    size_t getCircularNetworkHash() override {
+      throw ChimeraTK::logic_error("getCircularNetworkHash() called on an InternalModule (ThreadedFanout or "
+                                   "TriggerFanout). This is probably "
+                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
+    }
   };
 
 } /* namespace ChimeraTK */

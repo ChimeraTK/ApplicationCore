@@ -17,8 +17,9 @@ namespace ChimeraTK {
   template<typename T>
   class MetaDataPropagatingRegisterDecorator : public NDRegisterAccessorDecorator<T, T> {
    public:
-    MetaDataPropagatingRegisterDecorator(const boost::shared_ptr<NDRegisterAccessor<T>>& target, EntityOwner* owner)
-    : NDRegisterAccessorDecorator<T, T>(target), _owner(owner) {}
+    MetaDataPropagatingRegisterDecorator(
+        const boost::shared_ptr<NDRegisterAccessor<T>>& target, EntityOwner* owner, bool isCircularInput)
+    : NDRegisterAccessorDecorator<T, T>(target), _owner(owner), _isCircularInput(isCircularInput) {}
 
     void doPreRead(TransferType type) override { NDRegisterAccessorDecorator<T, T>::doPreRead(type); }
 
@@ -27,6 +28,7 @@ namespace ChimeraTK {
 
    protected:
     EntityOwner* _owner;
+    bool _isCircularInput;
 
     /** value of validity flag from last read operation */
     DataValidity lastValidity{DataValidity::ok};

@@ -1,5 +1,7 @@
 #include "MetaDataPropagatingRegisterDecorator.h"
 #include "EntityOwner.h"
+#include "Application.h"
+#include <boost/pointer_cast.hpp>
 
 namespace ChimeraTK {
 
@@ -12,12 +14,26 @@ namespace ChimeraTK {
       _owner->setCurrentVersionNumber(this->getVersionNumber());
     }
 
-    // Check if the data validity flag changed. If yes, propagate this information to the owning module.
+    //    // circular inputs ignore the data validity flag if there are no invalid external inputs to the circular network
+    //    if(_isCircularInput &&
+    //        Application::getInstance().circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()] != 0) {
+    //      _dataValidity = DataValidity::ok;
+    //    }
+
+    // Check if the data validity flag changed. If yes, propagate this information to the owning module and the application
     if(_dataValidity != lastValidity) {
-      if(_dataValidity == DataValidity::faulty)
+      if(_dataValidity == DataValidity::faulty) { // data validity changes to faulty
         _owner->incrementDataFaultCounter();
-      else
+        // external inpput in a circular dependency network
+        if(_owner->getCircularNetworkHash() && !_isCircularInput)
+          ++(Application::getInstance().circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
+      }
+      else { // data validity changed to OK
         _owner->decrementDataFaultCounter();
+        // external inpput in a circular dependency network
+        if(_owner->getCircularNetworkHash() && !_isCircularInput)
+          --(Application::getInstance().circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
+      }
       lastValidity = _dataValidity;
     }
   }
