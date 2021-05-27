@@ -231,10 +231,19 @@ BOOST_FIXTURE_TEST_CASE(OneInvalidVariable, CircularAppTestFixcture<TestApplicat
   a.write();
   C_trigger.write();
   test.stepApplication();
-  readAllLatest();
 
+  readAllLatest();
   checkAllDataValidity(ctk::DataValidity::faulty);
 
+  // getting a valid variable in the same module does not resolve the flag
+  b.write();
+  C_trigger.write();
+  test.stepApplication();
+
+  readAllLatest();
+  checkAllDataValidity(ctk::DataValidity::faulty);
+
+  // now resolve the faulty condition
   a.setDataValidity(ctk::DataValidity::ok);
   a.write();
   test.stepApplication();
@@ -260,5 +269,88 @@ BOOST_FIXTURE_TEST_CASE(OneInvalidVariable, CircularAppTestFixcture<TestApplicat
   test.stepApplication();
   readAllLatest();
 
+  checkAllDataValidity(ctk::DataValidity::ok);
+}
+
+BOOST_FIXTURE_TEST_CASE(TwoFaultyInOneModule, CircularAppTestFixcture<TestApplication1>) {
+  a.setDataValidity(ctk::DataValidity::faulty);
+  a.write();
+  C_trigger.write();
+  test.stepApplication();
+  // new in this test: an additional variable comes in while the internal and other external inputs are invalid
+  b.setDataValidity(ctk::DataValidity::faulty);
+  b.write();
+  C_trigger.write();
+  test.stepApplication();
+
+  // just a cross check
+  readAllLatest();
+  checkAllDataValidity(ctk::DataValidity::faulty);
+
+  a.setDataValidity(ctk::DataValidity::ok);
+  a.write();
+  C_trigger.write();
+  test.stepApplication();
+
+  // everything still faulty as b is faulty
+  readAllLatest();
+  checkAllDataValidity(ctk::DataValidity::faulty);
+
+  b.setDataValidity(ctk::DataValidity::ok);
+  b.write();
+  C_trigger.write();
+  test.stepApplication();
+
+  readAllLatest();
+  checkAllDataValidity(ctk::DataValidity::ok);
+}
+
+BOOST_FIXTURE_TEST_CASE(TwoFaultyInTwoModules, CircularAppTestFixcture<TestApplication1>) {
+  a.setDataValidity(ctk::DataValidity::faulty);
+  a.write();
+  C_trigger.write();
+  test.stepApplication();
+  // new in this test: the trigger in C bring an additional invalidity flag.
+  a.write();
+  C_trigger.setDataValidity(ctk::DataValidity::faulty);
+  C_trigger.write();
+  test.stepApplication();
+
+  // just a cross check
+  readAllLatest();
+  checkAllDataValidity(ctk::DataValidity::faulty);
+
+  a.setDataValidity(ctk::DataValidity::ok);
+  a.write();
+  C_trigger.write();
+  test.stepApplication();
+
+  // everything still faulty as b is faulty
+  readAllLatest();
+  checkAllDataValidity(ctk::DataValidity::faulty);
+
+  a.write();
+  C_trigger.setDataValidity(ctk::DataValidity::ok);
+  C_trigger.write();
+  test.stepApplication();
+
+  readAllLatest();
+  // the first half of the circle is not OK yet because no external triggers have arrived at A since
+  // the faultly condition was resolved
+  BOOST_CHECK(A_out1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(B_out1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(B_in2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(C_in2.dataValidity() == ctk::DataValidity::faulty);
+  // the outputs of C, D and the circularResult have not been written yet
+  BOOST_CHECK(C_out1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(D_out1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(A_in2.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(D_in2.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(circleResult.dataValidity() == ctk::DataValidity::ok);
+
+  // writing a  resolves the remainging variables
+  a.write();
+  test.stepApplication();
+  readAllLatest();
   checkAllDataValidity(ctk::DataValidity::ok);
 }
