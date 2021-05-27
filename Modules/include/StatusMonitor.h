@@ -32,10 +32,9 @@ For more info see \ref statusmonitordoc
  * conditions reports four different states.
 */
 #include "ApplicationCore.h"
-namespace ChimeraTK {
+#include "StatusAggregator.h"
 
-  /** There are four states that can be reported*/
-  enum States { OFF, OK, WARNING, FAULT };
+namespace ChimeraTK {
 
   /** Common base for StatusMonitors
    *
@@ -44,7 +43,7 @@ namespace ChimeraTK {
    *  facilitates checking for the type in the StatusAggregator, which
    *  needs to identify any StatusMonitor.
    */
-  struct StatusMonitor : public ApplicationModule {
+  struct StatusMonitor : ApplicationModule {
     StatusMonitor(EntityOwner* owner, const std::string& name, const std::string& description, const std::string& input,
         const std::string& output, HierarchyModifier modifier, const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {}, const std::unordered_set<std::string>& tags = {})
@@ -61,8 +60,8 @@ namespace ChimeraTK {
 
     const std::string _input;
 
-    /**One of four possible states to be reported*/
-    ScalarOutput<uint16_t> status;
+    /** Status to be reported */
+    StatusOutput status;
 
     /** Disable the monitor. The status will always be OFF. You don't have to connect this input.
      *  When there is no feeder, ApplicationCore will connect it to a constant feeder with value 0, hence the monitor is always enabled.
@@ -118,16 +117,16 @@ namespace ChimeraTK {
       while(true) {
         // evaluate and publish first, then read and wait. This takes care of the publishing the initial variables
         if(StatusMonitorImpl<T>::disable != 0) {
-          StatusMonitorImpl<T>::status = OFF;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::OFF;
         }
         else if(StatusMonitorImpl<T>::oneUp.watch >= fault) {
-          StatusMonitorImpl<T>::status = FAULT;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::FAULT;
         }
         else if(StatusMonitorImpl<T>::oneUp.watch >= warning) {
-          StatusMonitorImpl<T>::status = WARNING;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::WARNING;
         }
         else {
-          StatusMonitorImpl<T>::status = OK;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::OK;
         }
         StatusMonitorImpl<T>::status.write();
         group.readAny();
@@ -151,16 +150,16 @@ namespace ChimeraTK {
       ReadAnyGroup group{StatusMonitorImpl<T>::oneUp.watch, StatusMonitorImpl<T>::disable, warning, fault};
       while(true) {
         if(StatusMonitorImpl<T>::disable != 0) {
-          StatusMonitorImpl<T>::status = OFF;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::OFF;
         }
         else if(StatusMonitorImpl<T>::oneUp.watch <= fault) {
-          StatusMonitorImpl<T>::status = FAULT;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::FAULT;
         }
         else if(StatusMonitorImpl<T>::oneUp.watch <= warning) {
-          StatusMonitorImpl<T>::status = WARNING;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::WARNING;
         }
         else {
-          StatusMonitorImpl<T>::status = OK;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::OK;
         }
         StatusMonitorImpl<T>::status.write();
         group.readAny();
@@ -197,20 +196,20 @@ namespace ChimeraTK {
           warningLowerThreshold, faultUpperThreshold, faultLowerThreshold};
       while(true) {
         if(StatusMonitorImpl<T>::disable != 0) {
-          StatusMonitorImpl<T>::status = OFF;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::OFF;
         }
         // Check for fault limits first. Like this they supersede the warning,
         // even if they are stricter then the warning limits (mis-configuration)
         else if(StatusMonitorImpl<T>::oneUp.watch <= faultLowerThreshold ||
             StatusMonitorImpl<T>::oneUp.watch >= faultUpperThreshold) {
-          StatusMonitorImpl<T>::status = FAULT;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::FAULT;
         }
         else if(StatusMonitorImpl<T>::oneUp.watch <= warningLowerThreshold ||
             StatusMonitorImpl<T>::oneUp.watch >= warningUpperThreshold) {
-          StatusMonitorImpl<T>::status = WARNING;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::WARNING;
         }
         else {
-          StatusMonitorImpl<T>::status = OK;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::OK;
         }
         StatusMonitorImpl<T>::status.write();
         group.readAny();
@@ -233,13 +232,13 @@ namespace ChimeraTK {
       ReadAnyGroup group{StatusMonitorImpl<T>::oneUp.watch, StatusMonitorImpl<T>::disable, requiredValue};
       while(true) {
         if(StatusMonitorImpl<T>::disable != 0) {
-          StatusMonitorImpl<T>::status = OFF;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::OFF;
         }
         else if(StatusMonitorImpl<T>::oneUp.watch != requiredValue) {
-          StatusMonitorImpl<T>::status = FAULT;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::FAULT;
         }
         else {
-          StatusMonitorImpl<T>::status = OK;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::OK;
         }
         StatusMonitorImpl<T>::status.write();
         group.readAny();
@@ -264,17 +263,23 @@ namespace ChimeraTK {
       ReadAnyGroup group{StatusMonitorImpl<T>::oneUp.watch, StatusMonitorImpl<T>::disable, nominalState};
       while(true) {
         if(StatusMonitorImpl<T>::disable != 0) {
-          StatusMonitorImpl<T>::status = OFF;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::OFF;
         }
         else if(StatusMonitorImpl<T>::oneUp.watch != nominalState) {
-          StatusMonitorImpl<T>::status = FAULT;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::FAULT;
         }
-        else if(nominalState == OK || nominalState == OFF) {
+        else if(nominalState == static_cast<T>(StatusOutput::Status::OK) ||
+            nominalState == static_cast<T>(StatusOutput::Status::OFF)) {
+          // TODO FIXME This comparison does not make sense. nominalState is of type T and not a Status. T could also
+          // be an std::string, or have any integer value out of range of the Status value range.
+          // If nominalState and watch are supposed to be just on or off, the type must be fixed or at least restricted.
+          // Also these are just two states, while Status knows 4 states, so this is still not the same type!
+          // I propose to remove the entire StateMonitor and use the ExactMonitor instead.
           StatusMonitorImpl<T>::status = nominalState;
         }
         else {
           //no correct value
-          StatusMonitorImpl<T>::status = FAULT;
+          StatusMonitorImpl<T>::status = StatusOutput::Status::FAULT;
         }
         StatusMonitorImpl<T>::status.write();
         group.readAny();

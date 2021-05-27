@@ -59,18 +59,18 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/Monitor/status"));
+  auto status = test.getScalar<int32_t>(std::string("/Monitor/status"));
   status.readLatest();
 
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   //   //just below the warning level
   watch = 49.99;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // drop in a disable test.
   auto disable = test.getScalar<int>("/Monitor/disable");
@@ -78,67 +78,67 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // slightly above at the upper warning threshold (exact is not good due to rounding errors in floats/doubles)
   watch = 50.01;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   // drop in a disable test.
   disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   //just below the fault threshold,. still warning
   watch = 59.99;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   // slightly above at the upper fault threshold (exact is not good due to rounding errors in floats/doubles)
   watch = 60.01;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // drop in a disable test.
   disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   //increase well above the upper fault level
   watch = 65;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // now check that changing the status is updated correctly if we change the limits
 
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   //increase warning value greater than watch
   warning = 66;
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // Set the upper fault limit below the upper warning limit and below the current temperature. The warning is not active, but the fault.
   // Although this is not a reasonable configuration the fault limit must superseed the warning and the status has to be fault.
@@ -164,11 +164,11 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   fault.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // check that the tags are applied correctly
-  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));
-  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MonitorOutput/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<int32_t>("/MyNiceMonitorCopy/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<int32_t>("/MonitorOutput/Monitor/status"));
   BOOST_CHECK_EQUAL(watch, test.readScalar<double>("/MyNiceMonitorCopy/watch"));
   BOOST_CHECK_EQUAL(fault, test.readScalar<double>("/MonitorParameters/Monitor/upperFaultThreshold"));
   BOOST_CHECK_EQUAL(warning, test.readScalar<double>("/MonitorParameters/Monitor/upperWarningThreshold"));
@@ -199,18 +199,18 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/Monitor/status"));
+  auto status = test.getScalar<int32_t>(std::string("/Monitor/status"));
   status.readLatest();
 
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // just abow the lower warning limit
   watch = 41;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // drop in a disable test.
   auto disable = test.getScalar<int>("/Monitor/disable");
@@ -218,88 +218,88 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   //exactly at the lower warning limit
   watch = 40;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   // drop in a disable test.
   disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   //just above the lower fault limit
   watch = 31;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   //exactly at the lower fault limit (only well defined for int)
   watch = 30;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // drop in a disable test.
   disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   //way bellow the lower fault limit
   watch = 12;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // move the temperature back to the good range and check that the status updates correctly when changing the limits
   watch = 41;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // change upper warning limit
   warning = 42;
   warning.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   // rise the temperature above the lower warning limit
   watch = 43;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // Set the lower fault limit above the lower warning limit. The warning is not active, but the fault.
   // Although this is not a reasonable configuration the fault limit must superseed the warning and the status has to be fault.
@@ -307,11 +307,11 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   fault.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // check that the tags are applied correctly
-  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));
-  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MonitorOutput/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<int32_t>("/MyNiceMonitorCopy/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<int32_t>("/MonitorOutput/Monitor/status"));
   BOOST_CHECK_EQUAL(watch, test.readScalar<uint>("/MyNiceMonitorCopy/watch"));
   BOOST_CHECK_EQUAL(fault, test.readScalar<uint>("/MonitorParameters/Monitor/lowerFaultThreshold"));
   BOOST_CHECK_EQUAL(warning, test.readScalar<uint>("/MonitorParameters/Monitor/lowerWarningThreshold"));
@@ -353,17 +353,17 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/Monitor/status"));
+  auto status = test.getScalar<int32_t>(std::string("/Monitor/status"));
   status.readLatest();
 
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   //just below the warning level
   watch = 49;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // drop in a disable test.
   auto disable = test.getScalar<int>("/Monitor/disable");
@@ -371,123 +371,123 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   //exactly at the upper warning threshold (only well defined for int)
   watch = 50;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   // drop in a disable test.
   disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   //just below the fault threshold,. still warning
   watch = 59;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   //exactly at the upper warning threshold (only well defined for int)
   watch = 60;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // drop in a disable test.
   disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   //increase well above the upper fault level
   watch = 65;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   //back to ok, just abow the lower warning limit
   watch = 41;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   //exactly at the lower warning limit
   watch = 40;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   //just above the lower fault limit
   watch = 31;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   //exactly at the lower fault limit (only well defined for int)
   watch = 30;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   //way bellow the lower fault limit
   watch = 12;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // Put the value back to the good range, then check that chaning the threshold also updated the status
   watch = 49;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // change upper warning limit
   warningUpperLimit = 48;
   warningUpperLimit.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   // lower the temperature below the upper warning limit
   watch = 47;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // Set the upper fault limit below the upper warning limit. The warning is not active, but the fault.
   // Although this is not a reasonable configuration the fault limit must superseed the warning and the status has to be fault.
@@ -495,28 +495,28 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   faultUpperLimit.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // move the temperature back to the good range and repeat for the lower limits
   watch = 41;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // change upper warning limit
   warningLowerLimit = 42;
   warningLowerLimit.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::WARNING);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
   // rise the temperature above the lower warning limit
   watch = 43;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // Set the lower fault limit above the lower warning limit. The warning is not active, but the fault.
   // Although this is not a reasonable configuration the fault limit must superseed the warning and the status has to be fault.
@@ -524,11 +524,11 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   faultLowerLimit.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // check that the tags are applied correctly
-  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));
-  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MonitorOutput/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<int32_t>("/MyNiceMonitorCopy/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<int32_t>("/MonitorOutput/Monitor/status"));
   BOOST_CHECK_EQUAL(watch, test.readScalar<int>("/MyNiceMonitorCopy/watch"));
   BOOST_CHECK_EQUAL(faultLowerLimit, test.readScalar<int>("/MonitorParameters/Monitor/lowerFaultThreshold"));
   BOOST_CHECK_EQUAL(warningLowerLimit, test.readScalar<int>("/MonitorParameters/Monitor/lowerWarningThreshold"));
@@ -556,11 +556,11 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/Monitor/status"));
+  auto status = test.getScalar<int32_t>(std::string("/Monitor/status"));
   status.readLatest();
 
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // drop in a disable test.
   auto disable = test.getScalar<int>("/Monitor/disable");
@@ -568,13 +568,13 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   //set watch value different than required value
   watch = 41.4;
@@ -582,27 +582,27 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in FAULT state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // drop in a disable test.
   disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   watch = 40.9;
   watch.write();
   test.stepApplication();
   status.readLatest();
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   //set requiredValue value different than watch value
   requiredValue = 41.3;
@@ -610,7 +610,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   //set requiredValue value equals to watch value
   requiredValue = 40.9;
@@ -618,11 +618,11 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in WARNING state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // check that the tags are applied correctly
-  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));
-  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MonitorOutput/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<int32_t>("/MyNiceMonitorCopy/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<int32_t>("/MonitorOutput/Monitor/status"));
   BOOST_CHECK_EQUAL(watch, test.readScalar<float>("/MyNiceMonitorCopy/watch"));
   BOOST_CHECK_EQUAL(requiredValue, test.readScalar<float>("/MonitorParameters/Monitor/requiredValue"));
 }
@@ -647,10 +647,10 @@ BOOST_AUTO_TEST_CASE(testStateMonitor) {
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<uint16_t>(std::string("/Monitor/status"));
+  auto status = test.getScalar<int32_t>(std::string("/Monitor/status"));
   status.readLatest();
   //should be in OK state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // drop in a disable test.
   auto disable = test.getScalar<int>("/Monitor/disable");
@@ -658,47 +658,47 @@ BOOST_AUTO_TEST_CASE(testStateMonitor) {
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OK);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   watch = 0;
   watch.write();
   test.stepApplication();
   status.readLatest();
   //should be in FAULT state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // drop in a disable test.
   disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   stateValue = 0;
   stateValue.write();
   test.stepApplication();
   status.readLatest();
   //should be in OFF state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   // State change while disabled is detected.
   disable = 1;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   // it is still disabled
   stateValue = 1; // should be OK, but watch is still 0  => result would be FAULT if it was not disabled
@@ -706,18 +706,18 @@ BOOST_AUTO_TEST_CASE(testStateMonitor) {
   test.stepApplication();
   status.readLatest();
   //should be in OFF state.
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::OFF);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OFF));
 
   // after enabling the FAULT becomes visible
   disable = 0;
   disable.write();
   test.stepApplication();
   status.readLatest();
-  BOOST_CHECK_EQUAL(status, ChimeraTK::States::FAULT);
+  BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // check that the tags are applied correctly
-  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MyNiceMonitorCopy/Monitor/status"));
-  BOOST_CHECK_EQUAL(status, test.readScalar<uint16_t>("/MonitorOutput/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<int32_t>("/MyNiceMonitorCopy/Monitor/status"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<int32_t>("/MonitorOutput/Monitor/status"));
   BOOST_CHECK_EQUAL(watch, test.readScalar<uint8_t>("/MyNiceMonitorCopy/watch"));
   BOOST_CHECK_EQUAL(stateValue, test.readScalar<uint8_t>("/MonitorParameters/Monitor/nominalState"));
 }

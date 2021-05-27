@@ -1,12 +1,15 @@
 
-#define BOOST_TEST_MODULE testStatusAggregator
-#include <boost/test/included/unit_test.hpp>
-
+#include "StatusMonitor.h"
 #include "StatusAggregator.h"
 
 #include "Application.h"
 #include "ModuleGroup.h"
 #include "TestFacility.h"
+
+#define BOOST_NO_EXCEPTIONS
+#define BOOST_TEST_MODULE testStatusAggregator
+#include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 
@@ -14,7 +17,6 @@ namespace ctk = ChimeraTK;
 
 struct OuterGroup : public ctk::ModuleGroup {
   using ctk::ModuleGroup::ModuleGroup;
-  virtual ~OuterGroup() {}
 
   ctk::StateMonitor<uint8_t> outerStateMonitor{this, "outerStateMonitor", "", "watch", "status",
       ctk::HierarchyModifier::none, {"OUTER_MON_OUTPUT"}, {"OUTER_MON_PARAMS"}, {"OUTER_MON_INPUT"}};
@@ -47,12 +49,8 @@ struct TestApplication : public ctk::Application {
   ctk::StateMonitor<uint8_t> globalStateMonitor{this, "globalStateMonitor", "", "stateWatch", "stateStatus",
       ctk::HierarchyModifier::none, {"GLOBAL_MON_OUTPUT"}, {"GLOBAL_MON_PARAMS"}, {"GLOBAL_MON_INPUT"}};
 
-  ctk::ControlSystemModule cs;
-
   ctk::StatusAggregator globalStatusAggregator{this, "globalStatusAggregator", "Global StatusAggregator of testApp",
       "globalStatus", ctk::HierarchyModifier::none, {"STATUS"}};
-
-  void defineConnections() { findTag(".*").connectTo(cs); }
 };
 
 BOOST_AUTO_TEST_CASE(testStatusAggregator) {
@@ -61,6 +59,21 @@ BOOST_AUTO_TEST_CASE(testStatusAggregator) {
   TestApplication app;
 
   ctk::TestFacility test;
+
+  auto innerNoneInput = test.getScalar<uint8_t>("/outerModuleGroup1/innerModuleGroup/watch");
+  auto innerHideThisInput = test.getScalar<uint8_t>("/outerModuleGroup1/watch");
+  auto innerStateMonitorOneUp = test.getScalar<uint8_t>("/outerModuleGroup1/watch");
+  auto outerInput = test.getScalar<uint8_t>("/outerModuleGroup1/watch");
+  auto outerAggregated = test.getScalar<int32_t>("/outerModuleGroup1/outerStatusAggregator/groupStatus");
+
   test.runApplication();
-  //app.cs.dump();
+
+  // FIXME test initial value propagation
+
+  innerNoneInput = 1;
+  innerNoneInput.write();
+  test.stepApplication();
+
+  //BOOST_CHECK(outerAggregated.readLatest() == true);
+  //BOOST_CHECK_EQUAL(int(outerAggregated), 0);
 }
