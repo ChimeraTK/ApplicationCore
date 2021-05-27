@@ -378,7 +378,14 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool VariableNetworkNode::isCircularInput() const { return pdata->circularNetworkHash != 0; }
+  bool VariableNetworkNode::isCircularInput() const {
+    if(!pdata) {
+      std::cout << "pdata is nullprt in COMPLETELY UNKNOWN" << std::endl;
+      return false;
+    }
+    std::cout << pdata->name << " has network hash " << pdata->circularNetworkHash << std::endl;
+    return pdata->circularNetworkHash != 0;
+  }
 
   /*********************************************************************************************************************/
 
@@ -420,6 +427,17 @@ namespace ChimeraTK {
       // we already did the assertion that the owning module is an application module above, so we can static cast here
       auto applicationModule = static_cast<ApplicationModule*>(owningModule);
       applicationModule->setCircularNetworkHash(pdata->circularNetworkHash);
+
+      // Find the MetaDataPropagatingRegisterDecorator which is involed and set the _isCurularInput flag
+      auto internalTargetElements = getAppAccessorNoType().getInternalElements();
+      // This is a list of all the nested decorators, so we will find the right point to cast
+      for(auto& elem : internalTargetElements) {
+        auto flagProvider = boost::dynamic_pointer_cast<MetaDataPropagationFlagProvider>(elem);
+        if(flagProvider) {
+          flagProvider->_isCircularInput = true;
+        }
+      }
+
       return inputModuleList;
     }
 

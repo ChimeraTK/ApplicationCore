@@ -40,6 +40,10 @@ struct TestModuleBase : ctk::ApplicationModule {
     while(true) {
       circularOutput1 = static_cast<int>(inputGroup.circularInput1);
       outputGroup.circularOutput2 = static_cast<int>(circularInput2);
+      std::cout << "This is " << _name << " writing. DataValidity is "
+                << (getDataValidity() == ctk::DataValidity::ok ? "OK" : "Faulty") << std::endl;
+      std::cout << "inputGroup.circularInput1 is "
+                << (inputGroup.circularInput1.dataValidity() == ctk::DataValidity::ok ? "OK" : "Faulty") << std::endl;
       writeAll();
       readAll();
     }
@@ -52,29 +56,67 @@ struct ModuleA : TestModuleBase {
 
   ctk::ScalarPushInput<int> a{this, "a", "", ""};
   ctk::ScalarPushInput<int> b{this, "b", "", ""};
+  ctk::ScalarOutput<int> circleResult{this, "circleResult", "", ""};
 
   void prepare() override { writeAll(); }
 
   void mainLoop() override {
-    auto rag = readAnyGroup();
+    // The circular inputs always are both coming as a pair, but we only want to write once.
+    // Hence we only put one of them into the ReadAnyGroup and always read the second one manually if the first one
+    // is read by the group.
+    ctk::ReadAnyGroup rag({a, b, inputGroup.circularInput1});
 
     while(true) {
-      rag.readAny(); // we con't care which input has been read. Just update all content
+      auto id = rag.readAny();
 
-      circularOutput1 = static_cast<int>(inputGroup.circularInput1) + a;
-      outputGroup.circularOutput2 = static_cast<int>(circularInput2) + b;
+      // A module with circular inputs and readAny must always actively break the circle. Otherwise for each external
+      // input and n-1 internal inputs and additional data element is inserted into the circle, which will let queues
+      // run over and re-trigger the circle all the time.
+      // This is a very typical scenario for circular connections: A module gets some input, triggers a helper module
+      // which calculates a value that is read back by the first module, and then the first module continues without
+      // re-triggering the circle.
 
-      writeAll();
-    }
-  }
-};
+      assert((id == a.getId() || id == b.getId()) || id == inputGroup.circularInput1.getId() ||
+          id == circularInput2.getId());
+
+      if(id == inputGroup.circularInput1.getId()) {
+        // Read the other circular input as well. They always come in pairs.
+        circularInput2.read();
+      }
+
+      if(id == a.getId() || id == b.getId()) {
+        circularOutput1 = static_cast<int>(inputGroup.circularInput1) + a;
+        outputGroup.circularOutput2 = static_cast<int>(circularInput2) + b;
+
+        circularOutput1.write();
+        outputGroup.circularOutput2.write();
+      }
+      else { // new data is from the circular inputs
+        circleResult = static_cast<int>(inputGroup.circularInput1) + circularInput2;
+        circleResult.write();
+      }
+
+    } // while(true)
+  }   // mainLoop
+};    // ModuleA
 
 /// ModuleC has a trigger together with a readAll.; (it's a trigger for the circle because there is always something at the circular inputs)
 struct ModuleC : TestModuleBase {
   using TestModuleBase::TestModuleBase;
   ctk::ScalarPushInput<int> trigger{this, "trigger", "", ""};
 
-  // no need to override the main loop again. Nothing to do with the data content of the trigger, and readAll() considers it.
+  // Special loop to guarantee that the internal inputs are read first, so we don't have unread data in the queue and can use the testable mode
+  void mainLoop() override {
+    while(true) {
+      circularOutput1 = static_cast<int>(inputGroup.circularInput1);
+      outputGroup.circularOutput2 = static_cast<int>(circularInput2);
+      writeAll();
+      //readAll();
+      inputGroup.circularInput1.read();
+      circularInput2.read();
+      trigger.read();
+    }
+  }
 };
 
 struct TestApplication1 : ctk::Application {
@@ -91,12 +133,73 @@ struct TestApplication1 : ctk::Application {
   ctk::ControlSystemModule cs;
 };
 
+template<typename APP_TYPE>
+struct CircularAppTestFixcture {
+  APP_TYPE app;
+  ctk::TestFacility test;
+
+  ctk::ScalarRegisterAccessor<int> a;
+  ctk::ScalarRegisterAccessor<int> b;
+  ctk::ScalarRegisterAccessor<int> C_trigger;
+  ctk::ScalarRegisterAccessor<int> A_out1;
+  ctk::ScalarRegisterAccessor<int> B_out1;
+  ctk::ScalarRegisterAccessor<int> C_out1;
+  ctk::ScalarRegisterAccessor<int> D_out1;
+  ctk::ScalarRegisterAccessor<int> A_in2;
+  ctk::ScalarRegisterAccessor<int> B_in2;
+  ctk::ScalarRegisterAccessor<int> C_in2;
+  ctk::ScalarRegisterAccessor<int> D_in2;
+  ctk::ScalarRegisterAccessor<int> circleResult;
+
+  void readAllLatest() {
+    A_out1.readLatest();
+    B_out1.readLatest();
+    C_out1.readLatest();
+    D_out1.readLatest();
+    A_in2.readLatest();
+    B_in2.readLatest();
+    C_in2.readLatest();
+    D_in2.readLatest();
+    circleResult.readLatest();
+  }
+
+  void checkAllDataValidity(ctk::DataValidity validity) {
+    BOOST_CHECK(A_out1.dataValidity() == validity);
+    BOOST_CHECK(B_out1.dataValidity() == validity);
+    BOOST_CHECK(C_out1.dataValidity() == validity);
+    BOOST_CHECK(D_out1.dataValidity() == validity);
+    BOOST_CHECK(A_in2.dataValidity() == validity);
+    BOOST_CHECK(B_in2.dataValidity() == validity);
+    BOOST_CHECK(C_in2.dataValidity() == validity);
+    BOOST_CHECK(D_in2.dataValidity() == validity);
+    BOOST_CHECK(circleResult.dataValidity() == validity);
+  }
+
+  CircularAppTestFixcture() {
+    test.runApplication();
+    std::cout << "App running" << std::endl;
+    a.replace(test.getScalar<int>("A/a"));
+    b.replace(test.getScalar<int>("A/b"));
+    C_trigger.replace(test.getScalar<int>("C/trigger"));
+    A_out1.replace(test.getScalar<int>("A/circularOutput1"));
+    B_out1.replace(test.getScalar<int>("B/circularOutput1"));
+    C_out1.replace(test.getScalar<int>("C/circularOutput1"));
+    D_out1.replace(test.getScalar<int>("D/circularOutput1"));
+    A_in2.replace(test.getScalar<int>("A/circularInput2"));
+    B_in2.replace(test.getScalar<int>("B/circularInput2"));
+    C_in2.replace(test.getScalar<int>("C/circularInput2"));
+    D_in2.replace(test.getScalar<int>("D/circularInput2"));
+    circleResult.replace(test.getScalar<int>("A/circleResult"));
+  }
+};
+
 BOOST_AUTO_TEST_CASE(TestCircularInputDetection) {
   TestApplication1 app;
   ctk::TestFacility test;
 
   test.runApplication();
   app.dumpConnections();
+  //app.dump();
 
   // just test that the circular inputs have been detected correctly
   BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.A.inputGroup.circularInput1).isCircularInput() == true);
@@ -121,4 +224,41 @@ BOOST_AUTO_TEST_CASE(TestCircularInputDetection) {
   BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.circularInput2).isCircularInput() == true);
   BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.circularOutput1).isCircularInput() == false);
   BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.outputGroup.circularOutput2).isCircularInput() == false);
+}
+
+BOOST_FIXTURE_TEST_CASE(OneInvalidVariable, CircularAppTestFixcture<TestApplication1>) {
+  a.setDataValidity(ctk::DataValidity::faulty);
+  a.write();
+  C_trigger.write();
+  test.stepApplication();
+  readAllLatest();
+
+  checkAllDataValidity(ctk::DataValidity::faulty);
+
+  a.setDataValidity(ctk::DataValidity::ok);
+  a.write();
+  test.stepApplication();
+
+  readAllLatest();
+  // we check in the app that the input is still invalid, not in the CS
+  BOOST_CHECK(app.A.inputGroup.circularInput1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(app.A.circularInput2.dataValidity() == ctk::DataValidity::faulty);
+  // the circular outputs of A and B are now valid
+  BOOST_CHECK(A_out1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(B_out1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(B_in2.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(C_in2.dataValidity() == ctk::DataValidity::ok);
+  // the outputs of C, D and the circularResult have not been written yet
+  BOOST_CHECK(C_out1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(D_out1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(A_in2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(D_in2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(circleResult.dataValidity() == ctk::DataValidity::faulty);
+
+  // Now trigger C. The whole circle resolves
+  C_trigger.write();
+  test.stepApplication();
+  readAllLatest();
+
+  checkAllDataValidity(ctk::DataValidity::ok);
 }

@@ -183,5 +183,22 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
+  DataValidity ApplicationModule::getDataValidity() const {
+    if(dataFaultCounter == 0) return DataValidity::ok;
+    if(_circularNetworkHash != 0) {
+      // In a circular dependency network, internal inputs are ignored.
+      // If all external inputs (including the ones from this module) are OK, the
+      // data valitity is set to OK.
+      std::cout << "This is " << _name << " having circular network counter "
+                << Application::getInstance().circularNetworkInvalidityCounters[_circularNetworkHash] << std::endl;
+      if(Application::getInstance().circularNetworkInvalidityCounters[_circularNetworkHash] == 0) {
+        return DataValidity::ok;
+      }
+    }
+    // not a circular network or invalidity counter not 0 -> keep the faulty flag
+    return DataValidity::faulty;
+  }
+
+  /*********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

@@ -72,20 +72,7 @@ namespace ChimeraTK {
 
     VersionNumber getCurrentVersionNumber() const override { return currentVersionNumber; }
 
-    DataValidity getDataValidity() const override {
-      if(dataFaultCounter == 0) return DataValidity::ok;
-      if(_circularNetworkHash != 0) {
-        // In a circular dependency network, internal inputs are ignored.
-        // If all external inputs (including the ones from this module) are OK, the
-        // data valitity is set to OK.
-        if(Application::getInstance().circularNetworkInvalidityCounters[_circularNetworkHash] == 0) {
-          return DataValidity::ok;
-        }
-      }
-      else { // not a circular network
-        return DataValidity::faulty;
-      }
-    }
+    DataValidity getDataValidity() const override;
 
     void incrementDataFaultCounter() override;
     void decrementDataFaultCounter() override;
