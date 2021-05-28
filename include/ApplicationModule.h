@@ -14,6 +14,7 @@
 
 #include "ModuleImpl.h"
 #include "Application.h"
+#include "CircularDependencyRecursionBreaker.h"
 
 namespace ChimeraTK {
 
@@ -107,6 +108,8 @@ namespace ChimeraTK {
 
     /** Unique ID for the circular dependency network. 0 if the EntityOwner is not in a circular dependency network. */
     size_t _circularNetworkHash{0};
+
+    detail::CircularDependencyRecursionBreaker _recursionBreaker;
   };
 
 } /* namespace ChimeraTK */
