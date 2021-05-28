@@ -367,12 +367,21 @@ BOOST_FIXTURE_TEST_CASE(TwoFaultyInTwoModules, CircularAppTestFixcture<TestAppli
 // Don't try to pass any data through the network. It will be stuck because there are no real main loops. Only the initial value is passed (write exaclty once, then never read).
 // It's just used to test the static circular network detection.
 
-struct AA : ctk::ApplicationModule {
+struct TestModuleBase2 : ctk::ApplicationModule {
   using ApplicationModule::ApplicationModule;
+
+  // available in all modules
+  ctk::ScalarPushInput<int> fromCS{this, "fromCS", "", ""};
+
+  // default main loop which provides initial values, but does not read or write anything else
+  void mainLoop() override { writeAll(); }
+};
+
+struct AA : TestModuleBase2 {
+  using TestModuleBase2::TestModuleBase2;
 
   ctk::ScalarPushInput<int> fromEE{this, "fromEE", "", ""};
   ctk::ScalarPushInput<int> fromDD{this, "fromDD", "", ""};
-  ctk::ScalarPushInput<int> fromCS{this, "fromCS", "", ""};
 
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
@@ -383,11 +392,10 @@ struct AA : ctk::ApplicationModule {
   void mainLoop() override {}
 };
 
-struct BB : ctk::ApplicationModule {
-  using ApplicationModule::ApplicationModule;
+struct BB : TestModuleBase2 {
+  using TestModuleBase2::TestModuleBase2;
 
   ctk::ScalarPushInput<int> fromAA{this, "fromAA", "", ""};
-  ctk::ScalarPushInput<int> fromCS{this, "fromCS", "", ""};
 
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
@@ -398,29 +406,23 @@ struct BB : ctk::ApplicationModule {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromBB{this, "fromBB", "", ""};
   } outputGroup2{this, "EE", "", ctk::HierarchyModifier::oneLevelUp};
-
-  void mainLoop() override { writeAll(); }
 };
 
-struct EE : ctk::ApplicationModule {
-  using ApplicationModule::ApplicationModule;
+struct EE : TestModuleBase2 {
+  using TestModuleBase2::TestModuleBase2;
 
   ctk::ScalarPushInput<int> fromBB{this, "fromBB", "", ""};
-  ctk::ScalarPushInput<int> fromCS{this, "fromCS", "", ""};
 
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromEE{this, "fromEE", "", ""};
   } outputGroup{this, "AA", "", ctk::HierarchyModifier::oneLevelUp};
-
-  void mainLoop() override { writeAll(); }
 };
 
-struct CC : ctk::ApplicationModule {
-  using ApplicationModule::ApplicationModule;
+struct CC : TestModuleBase2 {
+  using TestModuleBase2::TestModuleBase2;
 
   ctk::ScalarPushInput<int> fromBB{this, "fromBB", "", ""};
-  ctk::ScalarPushInput<int> fromCS{this, "fromCS", "", ""};
 
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
@@ -431,37 +433,54 @@ struct CC : ctk::ApplicationModule {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromCC{this, "fromCC", "", ""};
   } outputGroup2{this, "FF", "", ctk::HierarchyModifier::oneLevelUp};
-
-  void mainLoop() override { writeAll(); }
 };
 
-struct DD : ctk::ApplicationModule {
-  using ApplicationModule::ApplicationModule;
+struct DD : TestModuleBase2 {
+  using TestModuleBase2::TestModuleBase2;
 
   ctk::ScalarPushInput<int> fromCC{this, "fromCC", "", ""};
   ctk::ScalarPushInput<int> fromFF{this, "fromFF", "", ""};
-  ctk::ScalarPushInput<int> fromCS{this, "fromCS", "", ""};
 
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromDD{this, "fromDD", "", ""};
   } outputGroup{this, "AA", "", ctk::HierarchyModifier::oneLevelUp};
-
-  void mainLoop() override { writeAll(); }
 };
 
-struct FF : ctk::ApplicationModule {
-  using ApplicationModule::ApplicationModule;
+struct FF : TestModuleBase2 {
+  using TestModuleBase2::TestModuleBase2;
 
   ctk::ScalarPushInput<int> fromCC{this, "fromCC", "", ""};
-  ctk::ScalarPushInput<int> fromCS{this, "fromCS", "", ""};
 
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromFF{this, "fromFF", "", ""};
   } outputGroup{this, "DD", "", ctk::HierarchyModifier::oneLevelUp};
+};
 
-  void mainLoop() override { writeAll(); }
+struct GG : TestModuleBase2 {
+  using TestModuleBase2::TestModuleBase2;
+
+  ctk::ScalarPushInput<int> fromHH{this, "fromHH", "", ""};
+
+  struct /*OutputGroup*/ : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarOutput<int> fromGG{this, "fromGG", "", ""};
+  } outputGroup{this, "HH", "", ctk::HierarchyModifier::oneLevelUp};
+
+  void prepare() override { writeAll(); } // break circular waiting for initial values
+  void mainLoop() override {}
+};
+
+struct HH : TestModuleBase2 {
+  using TestModuleBase2::TestModuleBase2;
+
+  ctk::ScalarPushInput<int> fromGG{this, "fromGG", "", ""};
+
+  struct /*OutputGroup*/ : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarOutput<int> fromHH{this, "fromHH", "", ""};
+  } outputGroup{this, "GG", "", ctk::HierarchyModifier::oneLevelUp};
 };
 
 struct TestApplication2 : ctk::Application {
@@ -476,8 +495,15 @@ struct TestApplication2 : ctk::Application {
   DD dd{this, "DD", ""};
   EE ee{this, "EE", ""};
   FF ff{this, "FF", ""};
+  GG gg{this, "GG", ""};
+  HH hh{this, "HH", ""};
 
   ctk::ControlSystemModule cs;
+
+ public:
+  std::map<size_t, std::list<EntityOwner*>> getCircularDependencyNetworks() {
+    return Application::circularDependencyNetworks;
+  }
 };
 
 BOOST_AUTO_TEST_CASE(TestCircularInputDetection2) {
@@ -486,4 +512,62 @@ BOOST_AUTO_TEST_CASE(TestCircularInputDetection2) {
 
   test.runApplication();
   app.dumpConnections();
+
+  // Check that all inputs have been identified correctly
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.aa.fromEE).isCircularInput() == true);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.aa.fromDD).isCircularInput() == true);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.aa.fromCS).isCircularInput() == false);
+
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.bb.fromAA).isCircularInput() == true);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.bb.fromCS).isCircularInput() == false);
+
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.cc.fromBB).isCircularInput() == true);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.cc.fromCS).isCircularInput() == false);
+
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.cc.fromBB).isCircularInput() == true);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.cc.fromCS).isCircularInput() == false);
+
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.dd.fromCC).isCircularInput() == true);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.dd.fromFF).isCircularInput() == true);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.dd.fromCS).isCircularInput() == false);
+
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.ee.fromBB).isCircularInput() == true);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.ee.fromCS).isCircularInput() == false);
+
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.ff.fromCC).isCircularInput() == true);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.ff.fromCS).isCircularInput() == false);
+
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.gg.fromHH).isCircularInput() == true);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.gg.fromCS).isCircularInput() == false);
+
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.hh.fromGG).isCircularInput() == true);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.hh.fromCS).isCircularInput() == false);
+
+  // Check that the networks have been identified correctly
+  auto circularNetworks = app.getCircularDependencyNetworks();
+  BOOST_CHECK_EQUAL(circularNetworks.size(), 2);
+  for(auto& networkIter : app.getCircularDependencyNetworks()) {
+    auto& id = networkIter.first;
+    auto& network = networkIter.second;
+    // networks have the correct size
+    if(network.size() == 6) {
+      std::list<ctk::EntityOwner*> modules = {&app.aa, &app.bb, &app.cc, &app.dd, &app.ee, &app.ff};
+      for(auto module : modules) {
+        // all modules are in the network
+        BOOST_CHECK(std::count(network.begin(), network.end(), module) == 1);
+        // each module has the correct network associated
+        BOOST_CHECK_EQUAL(module->getCircularNetworkHash(), id);
+      }
+    }
+    else if(network.size() == 2) {
+      std::list<ctk::EntityOwner*> modules = {&app.gg, &app.hh};
+      for(auto module : modules) {
+        BOOST_CHECK(std::count(network.begin(), network.end(), module) == 1);
+        BOOST_CHECK_EQUAL(module->getCircularNetworkHash(), id);
+      }
+    }
+    else {
+      BOOST_CHECK_MESSAGE(false, "Network with wrong number of modules detected: " + std::to_string(network.size()));
+    }
+  }
 }
