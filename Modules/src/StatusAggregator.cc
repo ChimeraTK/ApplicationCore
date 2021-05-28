@@ -1,4 +1,5 @@
 #include "StatusAggregator.h"
+#include "ControlSystemModule.h"
 
 #include <list>
 #include <regex>
@@ -8,88 +9,194 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   StatusAggregator::StatusAggregator(EntityOwner* owner, const std::string& name, const std::string& description,
-      const std::string& output, HierarchyModifier modifier, const std::unordered_set<std::string>& tags)
-  : ApplicationModule(owner, name, description, modifier, tags), status(this, output, "", "", {}) {
+      PriorityMode mode, const std::unordered_set<std::string>& tagsToAggregate,
+      const std::unordered_set<std::string>& outputTags)
+  : ApplicationModule(owner, "aggregator", description, HierarchyModifier::hideThis, outputTags), _output(this, name),
+    _mode(mode), _tagsToAggregate(tagsToAggregate) {
+    // add reserved tag tagAggregatedStatus to the status output, so it can be detected by other StatusAggregators
+    _output.status.addTag(tagAggregatedStatus);
+
+    // search the variable tree for StatusOutputs and create the matching inputs
     populateStatusInput();
+
+    // check maximum size of tagsToAggregate
+    if(tagsToAggregate.size() > 1) {
+      throw ChimeraTK::logic_error("StatusAggregator: List of tagsToAggregate must contain at most one tag.");
+    }
   }
 
   /********************************************************************************************************************/
 
   void StatusAggregator::populateStatusInput() {
-    std::cout << "Populating aggregator " << getName() << ", fully qualified name is: " << getQualifiedName()
-              << std::endl;
+    scanAndPopulateFromHierarchyLevel(*getOwner(), ".");
 
-    // Search for the StatusOutput's reserved tag
-    VirtualModule searchBase = getOwner()->findTag(StatusOutput::tagStatusOutput);
-
-    // Search also for all tags the StatusAggregator has. The result is an AND condition of all tags, which is applied
-    // as a requirement for all aggregated StatusOutputs.
-    searchBase = searchBase.findTag(StatusOutput::tagStatusOutput);
-    scanAndPopulateFromHierarchyLevel(searchBase, true);
-
-    std::cout << std::endl << std::endl;
+    // Check if no inputs are present (nothing found to aggregate)
+    if(_inputs.empty()) {
+      throw ChimeraTK::logic_error("StatusAggregator " + VariableNetworkNode(_output.status).getQualifiedName() +
+          " has not found anything to aggregate.");
+    }
   }
 
   /********************************************************************************************************************/
 
-  void StatusAggregator::scanAndPopulateFromHierarchyLevel(const Module& virtualModule, bool firstLevel) {
-    bool statusAggregatorFound = false;
+  void StatusAggregator::scanAndPopulateFromHierarchyLevel(EntityOwner& module, const std::string& namePrefix) {
+    // Search for StatusOutputs to aggregate
+    for(auto& node : module.getAccessorList()) {
+      // Filter required tags
+      // Note: findTag() cannot be used instead, since the search must be done on the original C++ hierarchy. Otherwise
+      // it is not possible to identify which StatusOutputs are aggregated by other StatusAggregators.
+      const auto& tags = node.getTags();
+      if(tags.find(StatusOutput::tagStatusOutput) == tags.end()) {
+        // StatusOutput's reserved tag not present: not a StatusOutput
+        continue;
+      }
+      bool skip = false;
+      for(const auto& tag : _tagsToAggregate) {
+        // Each tag attached to this StatusAggregator must be present at all StatusOutputs to be aggregated
+        if(tags.find(tag) == tags.end()) {
+          skip = true;
+          break;
+        }
+      }
+      if(skip) continue;
 
-    // First, search for other StatusAggregators
-    for(const auto& node : virtualModule.getAccessorList()) {
       // All variables with the StatusOutput::tagStatusOutput need to be feeding, otherwise someone has used the tag
       // wrongly
       if(node.getDirection().dir != VariableDirection::feeding) {
         throw ChimeraTK::logic_error("BUG DETECTED: StatusOutput's reserved tag has been found on a consumer.");
       }
 
-      // Check whether another StatusAggregator has been found
-      auto tags = node.getTags();
-      if(tags.find(tagAggregatedStatus) != tags.end()) {
-        if(statusAggregatorFound) {
-          throw ChimeraTK::logic_error("StatusAggregator: Colliding instances found.");
-        }
-        statusAggregatorFound = true;
-      }
-      if(!statusAggregatorFound) continue;
-
-      // Make sure no other StatusAggregator is found on the same level as *this
-      if(firstLevel) {
-        if(node.getOwningModule() != this) {
-          throw ChimeraTK::logic_error("StatusAggregator: Colliding instance found on the same hierarchy level.");
-        }
-
-        // do not include our own aggregated output
-        statusAggregatorFound = false;
-        continue;
-      }
-
       // Create matching input for the found StatusOutput of the other StatusAggregator
-      std::cout << "Other StatusAggregator found: " << node.getQualifiedName() << std::endl;
-      inputs.emplace_back(this, node.getQualifiedName());
+      _inputs.emplace_back(this, node.getName(), "", std::unordered_set<std::string>{tagInternalVars});
+      node >> _inputs.back();
     }
 
-    // If another StatusAggregator has been found, do not recurse further down this branch
-    if(statusAggregatorFound) {
-      return;
+    // Search for StatusAggregators among submodules
+    const auto& ml = module.getSubmoduleList();
+    for(const auto& submodule : ml) {
+      // do nothing, if it is *this
+      if(submodule == this) continue;
+
+      auto* aggregator = dynamic_cast<StatusAggregator*>(submodule);
+      if(aggregator != nullptr) {
+        // never aggregate on the same level
+        if(aggregator->getOwner() == getOwner()) {
+          continue;
+        }
+
+        // if another StatusAggregator has been found, check tags
+        bool skip = false;
+        const auto& tags = aggregator->_tagsToAggregate;
+        for(const auto& tag : _tagsToAggregate) {
+          // Each tag attached to this StatusAggregator must be present at all StatusOutputs to be aggregated
+          if(tags.find(tag) == tags.end()) {
+            skip = true;
+            break;
+          }
+        }
+        if(skip) continue;
+
+        // aggregate the StatusAggregator's result
+        auto node = VariableNetworkNode(aggregator->_output.status);
+        _inputs.emplace_back(this, node.getName(), "", std::unordered_set<std::string>{tagInternalVars});
+        node >> _inputs.back();
+        return;
+      }
     }
 
-    // No other StatusAggregator found: add all StatusOutputs
-    for(const auto& node : virtualModule.getAccessorList()) {
-      // Create matching input for the found StatusOutput
-      std::cout << "StatusOutput found: " << node.getQualifiedName() << std::endl;
-      inputs.emplace_back(this, node.getQualifiedName());
-    }
-
-    // ... and recurse into sub-modules
-    for(const auto& submodule : virtualModule.getSubmoduleList()) {
-      scanAndPopulateFromHierarchyLevel(*submodule, false);
+    // If no (matching) StatusAggregator is found, recurse into sub-modules
+    for(const auto& submodule : ml) {
+      if(dynamic_cast<StatusAggregator*>(submodule) != nullptr) continue; // StatusAggregators are already handled
+      scanAndPopulateFromHierarchyLevel(*submodule, namePrefix + "/" + submodule->getName());
     }
   }
 
   /********************************************************************************************************************/
 
-  void StatusAggregator::mainLoop() {}
+  int StatusAggregator::getPriority(StatusOutput::Status status) {
+    auto is = int32_t(status);
+
+    // Note, without alteration of the value, we have the PriorityMode::fwko
+    if(_mode == PriorityMode::fwok) {
+      // swap 0 <-> 1
+      if(is == 0) {
+        is = 1;
+      }
+      else if(is == 1) {
+        is = 0;
+      }
+    }
+    else if(_mode == PriorityMode::ofwk) {
+      // subtract 1, then change -1 into 3
+      --is;
+      if(is == -1) is = 3;
+    }
+    else if(_mode == PriorityMode::fw_warn_mixed) {
+      // change 0,1 into -1 (cf. special meaning of -1)
+      if(is <= 1) is = -1;
+    }
+
+    return is;
+  }
+
+  /********************************************************************************************************************/
+
+  void StatusAggregator::mainLoop() {
+    auto rag = readAnyGroup();
+    bool initialValue = true;
+    while(true) {
+      // find highest priority status of all inputs
+      StatusOutput::Status status;
+      bool statusSet = false; // flag whether status has been set from an input already
+      for(auto& input : _inputs) {
+        auto prio = getPriority(input);
+        if(!statusSet || prio > getPriority(status)) {
+          status = input;
+          statusSet = true;
+        }
+        else if(prio == -1) { //  -1 means, we need to warn about mixed values
+          if(getPriority(status) == -1 && input != status) {
+            status = StatusOutput::Status::WARNING;
+          }
+        }
+      }
+      assert(statusSet);
+
+      // write status only if changed, but always write initial value out
+      if(status != _output.status || initialValue) {
+        _output.status = status;
+        _output.status.write();
+        initialValue = false;
+      }
+
+      // wait for changed inputs
+      rag.readAny();
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  void StatusAggregator::findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag,
+      bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const {
+    // Change behaviour to exclude the auto-generated inputs which are connected to the data sources. Otherwise those
+    // variables might get published twice to the control system, if findTag(".*") is used to connect the entire
+    // application to the control system.
+    // This is a temporary solution. In future, instead the inputs should be generated at the same place in the
+    // hierarchy as the source variable, and the connetion should not be made by the module itself. This currently would
+    // be complicated to implement, since it is difficult to find the correct virtual name for the variables.
+
+    struct MyVirtualModule : VirtualModule {
+      using VirtualModule::VirtualModule;
+      using VirtualModule::findTagAndAppendToModule;
+    };
+
+    MyVirtualModule tempParent("tempRoot", "", ModuleType::ApplicationModule);
+    MyVirtualModule tempRoot("tempRoot", "", ModuleType::ApplicationModule);
+    EntityOwner::findTagAndAppendToModule(
+        tempParent, tagInternalVars, eliminateAllHierarchies, eliminateFirstHierarchy, true, tempRoot);
+    tempParent.findTagAndAppendToModule(virtualParent, tag, false, true, negate, root);
+    tempRoot.findTagAndAppendToModule(root, tag, false, true, negate, root);
+  }
 
   /********************************************************************************************************************/
 

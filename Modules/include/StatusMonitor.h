@@ -32,7 +32,7 @@ For more info see \ref statusmonitordoc
  * conditions reports four different states.
 */
 #include "ApplicationCore.h"
-#include "StatusAggregator.h"
+#include "StatusAccessor.h"
 
 namespace ChimeraTK {
 
@@ -48,7 +48,7 @@ namespace ChimeraTK {
         const std::string& output, HierarchyModifier modifier, const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {}, const std::unordered_set<std::string>& tags = {})
     : ApplicationModule(owner, name, description, modifier, tags), _parameterTags(parameterTags), _input(input),
-      status(this, output, "", "", outputTags) {}
+      status(this, output, "", outputTags) {}
 
     StatusMonitor(StatusMonitor&&) = default;
 
