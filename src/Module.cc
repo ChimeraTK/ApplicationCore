@@ -38,8 +38,7 @@ namespace ChimeraTK {
     EntityOwner::operator=(std::move(other));
     _owner = other._owner;
     if(_owner != nullptr) _owner->registerModule(this, false);
-    // note: the other module unregisters itself in its destructor - will will be
-    // called next after any move operation
+    // note: the other module unregisters itself in its destructor - which will be called next after any move operation
     return *this;
   }
   /*********************************************************************************************************************/
