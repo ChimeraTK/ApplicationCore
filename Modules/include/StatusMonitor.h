@@ -246,46 +246,6 @@ namespace ChimeraTK {
     }
   };
 
-  /** Module for On/off status monitoring.
- * If value monitored is different then desired state (on/off) a fault
- * will be reported, otherwise OFF(0) or OK(1) depending on state.
- */
-  template<typename T>
-  struct StateMonitor : public StatusMonitorImpl<T> {
-    using StatusMonitorImpl<T>::StatusMonitorImpl;
-
-    /// The state that we are supposed to have
-    ScalarPushInput<T> nominalState{this, "nominalState", "", "", StatusMonitor::_parameterTags};
-
-    /**This is where state evaluation is done*/
-    void mainLoop() {
-      /** If there is a change either in value monitored or in state, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitorImpl<T>::oneUp.watch, StatusMonitorImpl<T>::disable, nominalState};
-      while(true) {
-        if(StatusMonitorImpl<T>::disable != 0) {
-          StatusMonitorImpl<T>::status = StatusOutput::Status::OFF;
-        }
-        else if(StatusMonitorImpl<T>::oneUp.watch != nominalState) {
-          StatusMonitorImpl<T>::status = StatusOutput::Status::FAULT;
-        }
-        else if(nominalState == static_cast<T>(StatusOutput::Status::OK) ||
-            nominalState == static_cast<T>(StatusOutput::Status::OFF)) {
-          // TODO FIXME This comparison does not make sense. nominalState is of type T and not a Status. T could also
-          // be an std::string, or have any integer value out of range of the Status value range.
-          // If nominalState and watch are supposed to be just on or off, the type must be fixed or at least restricted.
-          // Also these are just two states, while Status knows 4 states, so this is still not the same type!
-          // I propose to remove the entire StateMonitor and use the ExactMonitor instead.
-          StatusMonitorImpl<T>::status = nominalState;
-        }
-        else {
-          //no correct value
-          StatusMonitorImpl<T>::status = StatusOutput::Status::FAULT;
-        }
-        StatusMonitorImpl<T>::status.write();
-        group.readAny();
-      }
-    }
-  };
 } // namespace ChimeraTK
 
 #endif // CHIMERATK_STATUS_MONITOR_H
