@@ -40,10 +40,7 @@ struct TestModuleBase : ctk::ApplicationModule {
     while(true) {
       circularOutput1 = static_cast<int>(inputGroup.circularInput1);
       outputGroup.circularOutput2 = static_cast<int>(circularInput2);
-      std::cout << "This is " << _name << " writing. DataValidity is "
-                << (getDataValidity() == ctk::DataValidity::ok ? "OK" : "Faulty") << std::endl;
-      std::cout << "inputGroup.circularInput1 is "
-                << (inputGroup.circularInput1.dataValidity() == ctk::DataValidity::ok ? "OK" : "Faulty") << std::endl;
+
       writeAll();
       readAll();
     }
@@ -177,7 +174,6 @@ struct CircularAppTestFixcture {
 
   CircularAppTestFixcture() {
     test.runApplication();
-    std::cout << "App running" << std::endl;
     a.replace(test.getScalar<int>("A/a"));
     b.replace(test.getScalar<int>("A/b"));
     C_trigger.replace(test.getScalar<int>("C/trigger"));
@@ -198,7 +194,7 @@ BOOST_AUTO_TEST_CASE(TestCircularInputDetection) {
   ctk::TestFacility test;
 
   test.runApplication();
-  app.dumpConnections();
+  //app.dumpConnections();
   //app.dump();
 
   // just test that the circular inputs have been detected correctly
@@ -511,7 +507,7 @@ BOOST_AUTO_TEST_CASE(TestCircularInputDetection2) {
   ctk::TestFacility test;
 
   test.runApplication();
-  app.dumpConnections();
+  //app.dumpConnections();
 
   // Check that all inputs have been identified correctly
   BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.aa.fromEE).isCircularInput() == true);

@@ -200,8 +200,6 @@ namespace ChimeraTK {
       // In a circular dependency network, internal inputs are ignored.
       // If all external inputs (including the ones from this module) are OK, the
       // data valitity is set to OK.
-      std::cout << "This is " << _name << " having circular network counter "
-                << Application::getInstance().circularNetworkInvalidityCounters[_circularNetworkHash] << std::endl;
       if(Application::getInstance().circularNetworkInvalidityCounters[_circularNetworkHash] == 0) {
         return DataValidity::ok;
       }

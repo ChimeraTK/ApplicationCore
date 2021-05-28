@@ -379,22 +379,10 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool VariableNetworkNode::isCircularInput() const {
-    if(!pdata) {
-      std::cout << "pdata is nullprt in COMPLETELY UNKNOWN" << std::endl;
-      return false;
-    }
-    std::cout << pdata->name << " has network hash " << pdata->circularNetworkHash << std::endl;
-    return pdata->circularNetworkHash != 0;
-  }
+  bool VariableNetworkNode::isCircularInput() const { return pdata->circularNetworkHash != 0; }
 
   /*********************************************************************************************************************/
 
-  std::string printModuleType(EntityOwner::ModuleType type) {
-    if(type == EntityOwner::ModuleType::ApplicationModule) return "ApplicationModule";
-    if(type == EntityOwner::ModuleType::VariableGroup) return "VariableGroup";
-    return "don't care";
-  }
   std::list<EntityOwner*> VariableNetworkNode::scanForCircularDepencency() {
     // We are starting a new scan. Reset the indicator for already found circular dependencies.
     detail::CircularDependencyRecursionBreaker::startNewScan();

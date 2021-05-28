@@ -20,10 +20,7 @@ namespace ChimeraTK {
       if(_dataValidity == DataValidity::faulty) { // data validity changes to faulty
         _owner->incrementDataFaultCounter();
         // external inpput in a circular dependency network
-        std::cout << "changed validity for " << _target->getName() << " in circular network "
-                  << _owner->getCircularNetworkHash() << std::endl;
         if(_owner->getCircularNetworkHash() && !_isCircularInput) {
-          std::cout << "This is " << _target->getName() << " increasing invalidity counter" << std::endl;
           ++(Application::getInstance().circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
         }
       }
@@ -31,7 +28,6 @@ namespace ChimeraTK {
         _owner->decrementDataFaultCounter();
         // external inpput in a circular dependency network
         if(_owner->getCircularNetworkHash() && !_isCircularInput) {
-          std::cout << "This is " << _target->getName() << " decreasing invalidity counter" << std::endl;
           --(Application::getInstance().circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
         }
       }
