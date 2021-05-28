@@ -354,3 +354,124 @@ BOOST_FIXTURE_TEST_CASE(TwoFaultyInTwoModules, CircularAppTestFixcture<TestAppli
   readAllLatest();
   checkAllDataValidity(ctk::DataValidity::ok);
 }
+
+// A more complicated network with three entangled circles and one separate circle
+// AA-->BB-->CC-->DD-->AA    /->HH
+// ^     |   |     ^       GG<-/
+// |-EE<-|   |->FF-|
+
+// Don't try to pass any data through the network. It will be stuck because there are no main loops. It's just used to test the static circular network detection.
+
+struct AA : ctk::ApplicationModule {
+  using ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPushInput<int> fromEE{this, "fromEE", "", ""};
+  ctk::ScalarPushInput<int> fromDD{this, "fromDD", "", ""};
+
+  struct /*OutputGroup*/ : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarOutput<int> fromAA{this, "fromAA", "", ""};
+  } outputGroup{this, "BB", "", ctk::HierarchyModifier::oneLevelUp};
+
+  void mainLoop() override {}
+};
+
+struct BB : ctk::ApplicationModule {
+  using ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPushInput<int> fromAA{this, "fromAA", "", ""};
+
+  struct /*OutputGroup*/ : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarOutput<int> fromBB{this, "fromBB", "", ""};
+  } outputGroup{this, "CC", "", ctk::HierarchyModifier::oneLevelUp};
+
+  struct /*OutputGroup*/ : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarOutput<int> fromBB{this, "fromBB", "", ""};
+  } outputGroup2{this, "EE", "", ctk::HierarchyModifier::oneLevelUp};
+
+  void mainLoop() override {}
+};
+
+struct EE : ctk::ApplicationModule {
+  using ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPushInput<int> fromBB{this, "fromBB", "", ""};
+
+  struct /*OutputGroup*/ : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarOutput<int> fromEE{this, "fromEE", "", ""};
+  } outputGroup{this, "AA", "", ctk::HierarchyModifier::oneLevelUp};
+
+  void mainLoop() override {}
+};
+
+struct CC : ctk::ApplicationModule {
+  using ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPushInput<int> fromBB{this, "fromBB", "", ""};
+
+  struct /*OutputGroup*/ : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarOutput<int> fromCC{this, "fromCC", "", ""};
+  } outputGroup{this, "DD", "", ctk::HierarchyModifier::oneLevelUp};
+
+  struct /*OutputGroup*/ : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarOutput<int> fromCC{this, "fromCC", "", ""};
+  } outputGroup2{this, "FF", "", ctk::HierarchyModifier::oneLevelUp};
+
+  void mainLoop() override {}
+};
+
+struct DD : ctk::ApplicationModule {
+  using ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPushInput<int> fromCC{this, "fromCC", "", ""};
+  ctk::ScalarPushInput<int> fromFF{this, "fromFF", "", ""};
+
+  struct /*OutputGroup*/ : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarOutput<int> fromDD{this, "fromDD", "", ""};
+  } outputGroup{this, "AA", "", ctk::HierarchyModifier::oneLevelUp};
+
+  void mainLoop() override {}
+};
+
+struct FF : ctk::ApplicationModule {
+  using ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPushInput<int> fromCC{this, "fromCC", "", ""};
+
+  struct /*OutputGroup*/ : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarOutput<int> fromFF{this, "fromFF", "", ""};
+  } outputGroup{this, "DD", "", ctk::HierarchyModifier::oneLevelUp};
+
+  void mainLoop() override {}
+};
+
+struct TestApplication2 : ctk::Application {
+  TestApplication2() : Application("connectionTestSuite") {}
+  ~TestApplication2() { shutdown(); }
+
+  void defineConnections() { findTag(".*").connectTo(cs); }
+
+  AA aa{this, "AA", ""};
+  BB bb{this, "BB", ""};
+  CC cc{this, "CC", ""};
+  DD dd{this, "DD", ""};
+  EE ee{this, "EE", ""};
+  FF ff{this, "FF", ""};
+
+  ctk::ControlSystemModule cs;
+};
+
+BOOST_AUTO_TEST_CASE(TestCircularInputDetection2) {
+  TestApplication2 app;
+  ctk::TestFacility test;
+
+  test.runApplication();
+  app.dumpConnections();
+}
