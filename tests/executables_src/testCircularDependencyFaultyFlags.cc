@@ -355,24 +355,31 @@ BOOST_FIXTURE_TEST_CASE(TwoFaultyInTwoModules, CircularAppTestFixcture<TestAppli
   checkAllDataValidity(ctk::DataValidity::ok);
 }
 
-// A more complicated network with three entangled circles and one separate circle
+// A more complicated network with three entangled circles and one separate circle.
 // AA-->BB-->CC-->DD-->AA    /->HH
 // ^     |   |     ^       GG<-/
 // |-EE<-|   |->FF-|
+//
+// The important part of this test is to check that the whole network AA,..,FF is always detected for each input,
+// even if the scan is only for a variable that starts the scan in only in a local circle (like AA/fromEE).
+// In addition it tests that not everything is mixed into a single circular network (GG,HH is detected as separate circular network).
 
-// Don't try to pass any data through the network. It will be stuck because there are no main loops. It's just used to test the static circular network detection.
+// Don't try to pass any data through the network. It will be stuck because there are no real main loops. Only the initial value is passed (write exaclty once, then never read).
+// It's just used to test the static circular network detection.
 
 struct AA : ctk::ApplicationModule {
   using ApplicationModule::ApplicationModule;
 
   ctk::ScalarPushInput<int> fromEE{this, "fromEE", "", ""};
   ctk::ScalarPushInput<int> fromDD{this, "fromDD", "", ""};
+  ctk::ScalarPushInput<int> fromCS{this, "fromCS", "", ""};
 
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromAA{this, "fromAA", "", ""};
   } outputGroup{this, "BB", "", ctk::HierarchyModifier::oneLevelUp};
 
+  void prepare() override { writeAll(); } // break circular waiting for initial values
   void mainLoop() override {}
 };
 
@@ -380,6 +387,7 @@ struct BB : ctk::ApplicationModule {
   using ApplicationModule::ApplicationModule;
 
   ctk::ScalarPushInput<int> fromAA{this, "fromAA", "", ""};
+  ctk::ScalarPushInput<int> fromCS{this, "fromCS", "", ""};
 
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
@@ -391,26 +399,28 @@ struct BB : ctk::ApplicationModule {
     ctk::ScalarOutput<int> fromBB{this, "fromBB", "", ""};
   } outputGroup2{this, "EE", "", ctk::HierarchyModifier::oneLevelUp};
 
-  void mainLoop() override {}
+  void mainLoop() override { writeAll(); }
 };
 
 struct EE : ctk::ApplicationModule {
   using ApplicationModule::ApplicationModule;
 
   ctk::ScalarPushInput<int> fromBB{this, "fromBB", "", ""};
+  ctk::ScalarPushInput<int> fromCS{this, "fromCS", "", ""};
 
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromEE{this, "fromEE", "", ""};
   } outputGroup{this, "AA", "", ctk::HierarchyModifier::oneLevelUp};
 
-  void mainLoop() override {}
+  void mainLoop() override { writeAll(); }
 };
 
 struct CC : ctk::ApplicationModule {
   using ApplicationModule::ApplicationModule;
 
   ctk::ScalarPushInput<int> fromBB{this, "fromBB", "", ""};
+  ctk::ScalarPushInput<int> fromCS{this, "fromCS", "", ""};
 
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
@@ -422,7 +432,7 @@ struct CC : ctk::ApplicationModule {
     ctk::ScalarOutput<int> fromCC{this, "fromCC", "", ""};
   } outputGroup2{this, "FF", "", ctk::HierarchyModifier::oneLevelUp};
 
-  void mainLoop() override {}
+  void mainLoop() override { writeAll(); }
 };
 
 struct DD : ctk::ApplicationModule {
@@ -430,26 +440,28 @@ struct DD : ctk::ApplicationModule {
 
   ctk::ScalarPushInput<int> fromCC{this, "fromCC", "", ""};
   ctk::ScalarPushInput<int> fromFF{this, "fromFF", "", ""};
+  ctk::ScalarPushInput<int> fromCS{this, "fromCS", "", ""};
 
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromDD{this, "fromDD", "", ""};
   } outputGroup{this, "AA", "", ctk::HierarchyModifier::oneLevelUp};
 
-  void mainLoop() override {}
+  void mainLoop() override { writeAll(); }
 };
 
 struct FF : ctk::ApplicationModule {
   using ApplicationModule::ApplicationModule;
 
   ctk::ScalarPushInput<int> fromCC{this, "fromCC", "", ""};
+  ctk::ScalarPushInput<int> fromCS{this, "fromCS", "", ""};
 
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromFF{this, "fromFF", "", ""};
   } outputGroup{this, "DD", "", ctk::HierarchyModifier::oneLevelUp};
 
-  void mainLoop() override {}
+  void mainLoop() override { writeAll(); }
 };
 
 struct TestApplication2 : ctk::Application {
