@@ -9,8 +9,10 @@ namespace ChimeraTK {
 > **NOTICE FOR FUTURE RELEASES: AVOID CHANGING THE NUMBERING!** The tests refer to the sections, incl. links and unlinked references from tests or other parts of the specification. These break, or even worse become wrong, when they are not changed consistenty!
 
 1. General idea
----------------
+---------------------------------------
 
+\anchor dataValidity_1
+ 
 - 1.1 In ApplicationCore each variable has a data validiy flag attached to it. DataValidity can be 'ok' or 'faulty'.
 - 1.2 This flag is automatically propagated: If any of the inputs of an ApplicationModule is faulty, the data validity of the module becomes faulty, which means
 all outputs of this module will automatically be flagged as faulty.
@@ -35,13 +37,13 @@ all outputs of this module will automatically be flagged as faulty.
 - 2.1.2 The decorator knows about the module it is connected to. It is called the 'owner'.
 
 - 2.1.3 **read:** For each read operation it checks the incoming data validity and increases/decreases the data fault counter of the owner.
-- 2.1.5 **write:** When writing, the decorator is checking the validity of the owner and the individual flag of the output set by the user. Only if both are 'ok' the output validity is 'ok', otherwise the outgoing data is send as 'faulty'.
+- \anchor dataValidity_2_1_5 2.1.5 **write:** When writing, the decorator is checking the validity of the owner and the individual flag of the output set by the user. Only if both are 'ok' the output validity is 'ok', otherwise the outgoing data is send as 'faulty'.
 
 ### 2.2 removed
 
 ### 2.3 ApplicationModule
 
-- 2.3.1 Each ApplicationModule has one data fault counter variable which is increased/decreased by EntityOwner::incrementDataFaultCounter() and  EntityOwner::decrementDataFaultCounter.
+-  \anchor dataValidity_2_3_1  2.3.1 Each ApplicationModule has one data fault counter variable which is increased/decreased by EntityOwner::incrementDataFaultCounter() and  EntityOwner::decrementDataFaultCounter.
 - 2.3.2 All inputs and outputs have a MetaDataPropagatingRegisterDecorator.
 - \anchor dataValidity_2_3_3 2.3.3 The main loop of the module usualy does not care about data validity. If any input is invalid, all outputs are automatically invalid \ref dataValidity_comment_2_3_3a "(*)". The loop just runs through normaly, even if an input has invalid data. \ref dataValidity_comment_2_3_3b "(*)"
 - 2.3.4 Inside the ApplicationModule main loop the module's data fault counter is accessible. The user can increment and decrement it, but has to be careful to do this in pairs. The more common use case will be to query the module's data validity.
@@ -84,6 +86,48 @@ See @ref spec_execptionHandling.
 -------------------------
 
 - 3.1 The decorators which manipulate the data fault counter are responsible for counting up and down in pairs, such that the counter goes back to 0 if all data is ok, and never becomes negative.
+
+4. Circular dependencies
+------------------------
+
+If modules have circular dependencies, the algorithm described in \ref dataValidity_1 "section 1" leads to a self-excited loop: Once the DataValidity::invalid flag has made a full circle, there is always at least on input with invalid data in each module and you can't get rid of it any more. To break this circle, the following additional behaviour is implemented:
+
+### 4.1 General behaviour
+
+- 4.1.1 Inputs which are part of a circular dependency are marked as _circular input_. Inputs which are coming from other applicatiation modules
+ which are not part of the circle, from the control system module or from device modules are considered _external inputs_.
+- \anchor dataValidity_4_1_2 4.1.2 All modules which have a circular dependency form a _circular network_.
+     - 4.1.2.1 Also entangled circles of different variables which intersect in some of the modules are part of the same circular network.
+     - 4.1.2.2 There can be multiple disconnected circular networks in an application.
+- 4.1.3 Circular inputs and circular networks are identified at application start after the variable networks are established.
+- \anchor dataValidity_4_1_4 4.1.4 As long as at least one _external input_ of any module in the _circular network_ is invalid, the invalidity flag is propagated as described in
+ \ref dataValidity_1 "1."
+- \anchor dataValidity_4_1_5 4.1.5 Once all _external inputs_ of one _circular network_ are back to DataValidity::ok, all _circular inputs_ of the _circular network_ ignore the
+invalid flag and also switch to DataValidity::ok. This breaks the circle.
+- \anchor dataValidity_4_1_6 4.1.6 If all inputs of a module have DataValidity::ok, the module's output validity is also DataValidity::ok, even if other modules in
+the _circular network_ have _external inputs_ which are invalid.
+- The ControlSystemModule and DeviceModules are never part of a circular dependency.
+
+### 4.2 Side effects and race conditions
+
+- \anchor dataValidity_4_2_1 4.2.1 If a process variable has a fluctuating error state (e.g. alternating validity `ok` and `faulty`) and is the only external input, the faulty flag
+is ignored in the _circular inputs_ of all modules each time the last received value of that particular variable has DataValidity::ok. (The data validity is set to `ok` "too early")
+- 4.2.2 If it is strictly required that a DataValidity::faulty flag is always transported because critical decisions depend on it, circular dependencies must be avoided in the application.
+- 4.2.3 Lets assume two _external inputs_ in two modules are invalid. These inputs are in different circles, but the circles are inirectly connected through a third circle, which all together form one circular. If now one of those inputs goes back to DataValidity::ok, the parcicular circle does not have an _external input_ which is `faulty`, however the module does not go back to DataValidity::ok because the _circular network_ still has a faulty _external input_. This might be considered as resolving the invalidity "too late", but it is consistent because data might have propagated from that part of the _circular network_.
+
+### 4.3 Technical implementation
+
+- \anchor dataValidity_4_3_1 4.3.1 In addition to the owner (see \ref dataValidity_2_3_1 "2.3.1"), the _circular network_ (\ref dataValidity_4_1_2 "4.1.2") also get an invalidity counter.(\ref dataValidity_comment_4_3_1 "*").
+- 4.3.2 Each module and each _circular input_ knows its _circular network_.
+- 4.3.3 If an _external input_ receives data, it increases/decreases the _circular network_'s invalidity counter, together with the owner's invaliditys counter.
+- 4.3.4 If a module estimates its validity (as used in \ref dataValidity_2_1_5 "2.1.5"), it returns
+    - `DataValidity::ok` if the module's internal invalidity counter is 0 (\ref dataValidity_4_1_6 "4.1.6")
+    - `DataValidity::ok` if the module's internal invalidity counter is not 0 and the _circular network_'s invalidity counter is 0 (\ref dataValidity_4_1_5 "4.1.5")
+    - `DataValidity::faulty` if both counters are not 0 (\ref dataValidity_4_1_4 "4.1.4")
+
+#### Comments
+
+-  \anchor dataValidity_comment_4_3_1 \ref dataValidity_4_3_1 "4.3.1" This counter has to be atomic because it is accessed from different module threads.
 
 */
 
