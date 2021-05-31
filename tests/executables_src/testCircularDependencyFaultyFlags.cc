@@ -189,6 +189,12 @@ struct CircularAppTestFixcture {
   }
 };
 
+/** \anchor dataValidity_test_TestCircularInputDetection
+ * Tests Technical specification: data validity propagation
+ *  * \ref dataValidity_4_1_1 "4.1.1"  Inputs which are part of a circular dependency are marked as circular input.
+ *  * \ref dataValidity_4_1_1_1 "4.1.1.1"  (partly, DeviceModule and other ApplciationModules not tested) Inputs from CS are external inputs.
+ *  * \ref dataValidity_4_1_2 "4.1.2"  All modules which have a circular dependency form a circular network.
+ */
 BOOST_AUTO_TEST_CASE(TestCircularInputDetection) {
   TestApplication1 app;
   ctk::TestFacility test;
@@ -222,6 +228,13 @@ BOOST_AUTO_TEST_CASE(TestCircularInputDetection) {
   BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.outputGroup.circularOutput2).isCircularInput() == false);
 }
 
+/** \anchor dataValidity_test_OneInvalidVariable
+ * Tests Technical specification: data validity propagation
+ *  * \ref dataValidity_4_1_4 "4.1.4"  Propagation of the invalidity flag in a circle.
+ *  * \ref dataValidity_4_1_5 "4.1.5"  Breaking the circular dependency.
+ *
+ *  This test intentionally does set more than one external input to faulty to make it easier to see where problems are coming from.
+ */
 BOOST_FIXTURE_TEST_CASE(OneInvalidVariable, CircularAppTestFixcture<TestApplication1>) {
   a.setDataValidity(ctk::DataValidity::faulty);
   a.write();
@@ -268,6 +281,10 @@ BOOST_FIXTURE_TEST_CASE(OneInvalidVariable, CircularAppTestFixcture<TestApplicat
   checkAllDataValidity(ctk::DataValidity::ok);
 }
 
+/** \anchor dataValidity_test_TwoFaultyInOneModule
+ * Tests Technical specification: data validity propagation
+ *  * \ref dataValidity_4_1_5 "4.1.5"  Breaking the circular dependency only when all variables go to ok.
+ */
 BOOST_FIXTURE_TEST_CASE(TwoFaultyInOneModule, CircularAppTestFixcture<TestApplication1>) {
   a.setDataValidity(ctk::DataValidity::faulty);
   a.write();
@@ -301,6 +318,11 @@ BOOST_FIXTURE_TEST_CASE(TwoFaultyInOneModule, CircularAppTestFixcture<TestApplic
   checkAllDataValidity(ctk::DataValidity::ok);
 }
 
+/** \anchor dataValidity_test_TwoFaultyInTwoModules
+ * Tests Technical specification: data validity propagation
+ *  * \ref dataValidity_4_2_3 "4.2.3"  Modules do no go to OK if all its external inputs are OK
+ *                                     if other modules in the circular  network have external inputs which are faulty.
+ */
 BOOST_FIXTURE_TEST_CASE(TwoFaultyInTwoModules, CircularAppTestFixcture<TestApplication1>) {
   a.setDataValidity(ctk::DataValidity::faulty);
   a.write();
@@ -337,7 +359,7 @@ BOOST_FIXTURE_TEST_CASE(TwoFaultyInTwoModules, CircularAppTestFixcture<TestAppli
   BOOST_CHECK(B_out1.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(B_in2.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(C_in2.dataValidity() == ctk::DataValidity::faulty);
-  // the outputs of C, D and the circularResult have not been written yet
+  // the outputs of C, D and the circularResult have already been written yet
   BOOST_CHECK(C_out1.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK(D_out1.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK(A_in2.dataValidity() == ctk::DataValidity::ok);
@@ -502,6 +524,12 @@ struct TestApplication2 : ctk::Application {
   }
 };
 
+/** \anchor dataValidity_test_TestCircularInputDetection2
+ * Tests Technical specification: data validity propagation
+ *  * \ref dataValidity_4_1_2_1 "4.1.2.1" Entangled circles belonhg to the same circular network.
+ *  * \ref dataValidity_4_1_2_2 "4.1.2.2" There can be multiple disconnected circular networks.
+ *  * \ref dataValidity_4_3_2 "4.3.2" Each module and each circular input knows its circular network.
+ */
 BOOST_AUTO_TEST_CASE(TestCircularInputDetection2) {
   TestApplication2 app;
   ctk::TestFacility test;
