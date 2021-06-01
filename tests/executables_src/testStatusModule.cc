@@ -40,6 +40,10 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   std::cout << "testMaxMonitor" << std::endl;
   TestApplication<ctk::MaxMonitor<double_t>> app;
 
+  // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
+  auto tags = ctk::VariableNetworkNode(app.monitor.status).getTags();
+  BOOST_CHECK(tags.find(ctk::StatusOutput::tagStatusOutput) != tags.end());
+
   ctk::TestFacility test;
   test.runApplication();
   //app.cs.dump();
@@ -179,6 +183,10 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   std::cout << "testMinMonitor" << std::endl;
 
   TestApplication<ctk::MinMonitor<uint>> app;
+
+  // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
+  auto tags = ctk::VariableNetworkNode(app.monitor.status).getTags();
+  BOOST_CHECK(tags.find(ctk::StatusOutput::tagStatusOutput) != tags.end());
 
   ctk::TestFacility test;
   test.runApplication();
@@ -322,6 +330,10 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
 BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   std::cout << "testRangeMonitor" << std::endl;
   TestApplication<ctk::RangeMonitor<int>> app;
+
+  // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
+  auto tags = ctk::VariableNetworkNode(app.monitor.status).getTags();
+  BOOST_CHECK(tags.find(ctk::StatusOutput::tagStatusOutput) != tags.end());
 
   ctk::TestFacility test;
   test.runApplication();
@@ -541,6 +553,10 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
 BOOST_AUTO_TEST_CASE(testExactMonitor) {
   std::cout << "testExactMonitor" << std::endl;
   TestApplication<ctk::ExactMonitor<float>> app;
+
+  // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
+  auto tags = ctk::VariableNetworkNode(app.monitor.status).getTags();
+  BOOST_CHECK(tags.find(ctk::StatusOutput::tagStatusOutput) != tags.end());
 
   ctk::TestFacility test;
   test.runApplication();
