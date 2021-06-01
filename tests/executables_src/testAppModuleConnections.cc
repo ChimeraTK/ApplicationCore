@@ -7,10 +7,7 @@
 
 #include <future>
 
-#define BOOST_TEST_MODULE testAppModuleConnections
-
 #include <boost/mpl/list.hpp>
-#include <boost/test/included/unit_test.hpp>
 
 #include <ChimeraTK/BackendFactory.h>
 
@@ -18,6 +15,11 @@
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
 #include "ScalarAccessor.h"
+
+#define BOOST_NO_EXCEPTIONS
+#define BOOST_TEST_MODULE testAppModuleConnections
+#include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -393,4 +395,22 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMergeNetworks, T, test_types) {
   BOOST_CHECK(app.testModule.consumingPush2 == 44);
   BOOST_CHECK(app.testModule.consumingPush3.readLatest() == true);
   BOOST_CHECK(app.testModule.consumingPush3 == 44);
+}
+
+/*********************************************************************************************************************/
+/* test automatic constants by variable names */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(testAutoConstants, T, test_types) {
+  std::cout << "*** testAutoConstants<" << typeid(T).name() << ">" << std::endl;
+
+  TestApplication<T> app;
+  T theValue = 42;
+  app.testModule.consumingPush.setMetaData(ctk::EntityOwner::constant(theValue), "", "");
+  app.initialise();
+  app.run();
+
+  // make sure the module's mainLoop() is entered, so inital values are propagated
+  app.testModule.mainLoopStarted.wait();
+
+  BOOST_CHECK_EQUAL(T(app.testModule.consumingPush), theValue);
 }

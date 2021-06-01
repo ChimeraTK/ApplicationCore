@@ -243,6 +243,12 @@ namespace ChimeraTK {
     template<typename UserType>
     friend class ExceptionHandlingDecorator;
 
+    /**
+     *  Find PVs which should be constant. The names of these PVs start with "@CONST@" followed by the value. If such
+     *  a name is found, a feeding constant variable is created.
+     */
+    void findConstantNodes();
+
     /** Finalise connections, i.e. decide still-undecided details mostly for
      * Device and ControlSystem variables */
     void finaliseNetworks();

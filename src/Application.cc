@@ -78,6 +78,9 @@ void Application::initialise() {
     devModule.second->defineConnections();
   }
 
+  // find and handle constant nodes
+  findConstantNodes();
+
   // connect any unconnected accessors with constant values
   processUnconnectedNodes();
 
@@ -303,6 +306,9 @@ void Application::generateXML() {
   for(auto& devModule : deviceModuleMap) {
     devModule.second->defineConnections();
   }
+
+  // find and handle constant nodes
+  findConstantNodes();
 
   // also search for unconnected nodes - this is here only executed to print the
   // warnings
@@ -609,6 +615,7 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
 /*********************************************************************************************************************/
 
 void Application::makeConnections() {
+
   // finalise connections: decide still-undecided details, in particular for
   // control-system and device varibales, which get created "on the fly".
   finaliseNetworks();
@@ -634,6 +641,65 @@ void Application::makeConnections() {
 
 /*********************************************************************************************************************/
 
+void Application::findConstantNodes() {
+  for(auto& module : getSubmoduleListRecursive()) {
+    for(auto& accessor : module->getAccessorList()) {
+      if(accessor.getName().substr(0, 7) == "@CONST@") {
+        VariableNetworkNode node(accessor);
+
+        // must be a consumer node
+        if(node.getDirection().dir != VariableDirection::consuming) {
+          std::cout << "Variable name '@CONST@' found for a feeding type node:" << std::endl;
+          node.dump();
+          if(node.hasOwner()) {
+            std::cout << "In network:" << std::endl;
+            node.getOwner().dump();
+          }
+          throw ChimeraTK::logic_error("Variable name '@CONST@' found for a feeding type node.");
+        }
+
+        // must have no feeder, a constant feeder, or a control-system feeder
+        if(node.hasOwner() && node.getOwner().hasFeedingNode() &&
+            node.getOwner().getFeedingNode().getType() != NodeType::Constant &&
+            node.getOwner().getFeedingNode().getType() != NodeType::ControlSystem) {
+          std::cout << "Error: Variable name '@CONST@' found with wrong feeder type:" << std::endl;
+          node.getOwner().getFeedingNode().dump();
+          std::cout << "In network:" << std::endl;
+          node.getOwner().dump();
+          throw ChimeraTK::logic_error("Variable name '@CONST@' found with wrong feeder type");
+        }
+
+        if(node.hasOwner()) {
+          // The @CONST@ variable names do not distinguish types, hence we can have differently typed consumers in our
+          // network. To mitigate this issue, we remove the node from the existing network before creating a new one
+          // below
+          auto& network = node.getOwner();
+          network.removeNode(node);
+          // if network has no consumer left, abolish it
+          if(network.countConsumingNodes() == 0) {
+            // remove feeder if existing
+            if(network.hasFeedingNode()) {
+              auto feeder = network.getFeedingNode();
+              network.removeNode(feeder);
+            }
+            // remove network from application
+            networkList.remove(network);
+          }
+        }
+
+        // Connect node with constant (in a new VariableNetwork)
+        callForType(node.getValueType(), [&node](auto t) {
+          using UserType = decltype(t);
+          auto value = userTypeToUserType<UserType>(node.getName().substr(7));
+          makeConstant(value) >> node;
+        });
+      }
+    }
+  }
+}
+
+/*********************************************************************************************************************/
+
 void Application::finaliseNetworks() {
   // check for control system variables which should be made bidirectional
   for(auto& network : networkList) {
@@ -641,9 +707,10 @@ void Application::finaliseNetworks() {
     for(auto& consumer : network.getConsumingNodes()) {
       if(consumer.getDirection().withReturn) ++nBidir;
     }
-    if(nBidir != 1)
-      continue; // only if there is exactly one node with return channel we need
-                // to guess its peer
+    if(nBidir != 1) {
+      // only if there is exactly one node with return channel we need to guess its peer
+      continue;
+    }
     if(network.getFeedingNode().getType() != NodeType::ControlSystem) {
       // only a feeding control system variable can be made bidirectional
       continue;
