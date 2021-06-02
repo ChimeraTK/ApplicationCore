@@ -141,6 +141,9 @@ namespace ChimeraTK {
      */
     std::list<EntityOwner*> scanForCircularDepencency();
 
+    /** Get the unique ID of the circular network. It is 0 if the node is not part of a circular network.*/
+    size_t getCircularNetworkHash() const;
+
     /** Getter for the properties */
     NodeType getType() const;
     UpdateMode getMode() const;
@@ -275,7 +278,7 @@ namespace ChimeraTK {
     /** Pointer to the module owning this node */
     EntityOwner* owningModule{nullptr};
 
-    /** Hash which idientifies a circular network. I if the node is not part if a circular dependency. */
+    /** Hash which idientifies a circular network. 0 if the node is not part if a circular dependency. */
     size_t circularNetworkHash{0};
   };
 
@@ -345,6 +348,8 @@ namespace ChimeraTK {
   void VariableNetworkNode::setAppAccessorImplementation(boost::shared_ptr<NDRegisterAccessor<UserType>> impl) const {
     auto decorated = boost::make_shared<MetaDataPropagatingRegisterDecorator<UserType>>(impl, getOwningModule());
     getAppAccessor<UserType>().replace(decorated);
+    auto flagProvider = boost::dynamic_pointer_cast<MetaDataPropagationFlagProvider>(decorated);
+    assert(flagProvider);
   }
 
 } /* namespace ChimeraTK */

@@ -478,6 +478,10 @@ namespace ChimeraTK {
 
     template<typename UserType>
     friend class DebugPrintAccessorDecorator; // needs access to the idMap
+    template<typename UserType>
+    friend class MetaDataPropagatingRegisterDecorator; // needs to access circularNetworkInvalidityCounters
+    friend class ApplicationModule;                    // needs to access circularNetworkInvalidityCounters
+
     VersionNumber getCurrentVersionNumber() const override {
       throw ChimeraTK::logic_error("getCurrentVersionNumber() called on the application. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
@@ -500,6 +504,10 @@ namespace ChimeraTK {
     }
     std::list<EntityOwner*> getInputModulesRecursively([[maybe_unused]] std::list<EntityOwner*> startList) override {
       throw ChimeraTK::logic_error("getInputModulesRecursively() called on the application. This is probably "
+                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
+    }
+    size_t getCircularNetworkHash() override {
+      throw ChimeraTK::logic_error("getCircularNetworkHash() called on the application. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
   };

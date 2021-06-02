@@ -13,6 +13,8 @@
 #include "Visitor.h"
 #include "VariableGroup.h"
 #include <boost/container_hash/hash.hpp>
+#include "ApplicationModule.h"
+#include "CircularDependencyDetectionRecursionStopper.h"
 
 namespace ChimeraTK {
 
@@ -381,12 +383,10 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  std::string printModuleType(EntityOwner::ModuleType type) {
-    if(type == EntityOwner::ModuleType::ApplicationModule) return "ApplicationModule";
-    if(type == EntityOwner::ModuleType::VariableGroup) return "VariableGroup";
-    return "don't care";
-  }
   std::list<EntityOwner*> VariableNetworkNode::scanForCircularDepencency() {
+    // We are starting a new scan. Reset the indicator for already found circular dependencies.
+    detail::CircularDependencyDetectionRecursionStopper::startNewScan();
+
     // find the feeder of the network
     auto feeder = getOwner().getFeedingNode();
     auto feedingModule = feeder.getOwningModule();
@@ -416,6 +416,20 @@ namespace ChimeraTK {
 
       // Remember that we are part of a circle, and of which circle
       pdata->circularNetworkHash = boost::hash_range(inputModuleList.begin(), inputModuleList.end());
+      // we already did the assertion that the owning module is an application module above, so we can static cast here
+      auto applicationModule = static_cast<ApplicationModule*>(owningModule);
+      applicationModule->setCircularNetworkHash(pdata->circularNetworkHash);
+
+      // Find the MetaDataPropagatingRegisterDecorator which is involed and set the _isCurularInput flag
+      auto internalTargetElements = getAppAccessorNoType().getInternalElements();
+      // This is a list of all the nested decorators, so we will find the right point to cast
+      for(auto& elem : internalTargetElements) {
+        auto flagProvider = boost::dynamic_pointer_cast<MetaDataPropagationFlagProvider>(elem);
+        if(flagProvider) {
+          flagProvider->_isCircularInput = true;
+        }
+      }
+
       return inputModuleList;
     }
 
@@ -445,5 +459,9 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetworkNode::setPublicName(const std::string& name) const { pdata->publicName = name; }
+
+  /*********************************************************************************************************************/
+
+  size_t VariableNetworkNode::getCircularNetworkHash() const { return pdata->circularNetworkHash; }
 
 } // namespace ChimeraTK

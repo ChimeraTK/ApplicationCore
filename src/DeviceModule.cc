@@ -605,4 +605,13 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  size_t DeviceModule::getCircularNetworkHash() {
+    throw ChimeraTK::logic_error("getCircularNetworkHash() called on a DeviceModule. This is probably "
+                                 "caused by incorrect ownership of variables/accessors or VariableGroups.");
+  }
+
+  /*********************************************************************************************************************/
+
+  /*********************************************************************************************************************/
+
 } // namespace ChimeraTK

@@ -210,6 +210,8 @@ namespace ChimeraTK {
 
     std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override;
 
+    size_t getCircularNetworkHash() override;
+
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the
     // device's catalogue

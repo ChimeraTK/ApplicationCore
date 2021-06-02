@@ -13,6 +13,8 @@
 #include <boost/thread.hpp>
 
 #include "ModuleImpl.h"
+#include "Application.h"
+#include "CircularDependencyDetectionRecursionStopper.h"
 
 namespace ChimeraTK {
 
@@ -71,9 +73,7 @@ namespace ChimeraTK {
 
     VersionNumber getCurrentVersionNumber() const override { return currentVersionNumber; }
 
-    DataValidity getDataValidity() const override {
-      return (dataFaultCounter == 0) ? DataValidity::ok : DataValidity::faulty;
-    }
+    DataValidity getDataValidity() const override;
 
     void incrementDataFaultCounter() override;
     void decrementDataFaultCounter() override;
@@ -83,6 +83,13 @@ namespace ChimeraTK {
     }
 
     std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override;
+
+    size_t getCircularNetworkHash() override;
+
+    /** Set the ID of the circular dependency network. This function can be called multiple times and throws if the
+     *  value is not identical.
+     */
+    void setCircularNetworkHash(size_t circularNetworkHash);
 
    protected:
     /** Wrapper around mainLoop(), to execute additional tasks in the thread
@@ -98,6 +105,14 @@ namespace ChimeraTK {
 
     /** Number of inputs which report DataValidity::faulty. */
     size_t dataFaultCounter{0};
+
+    /** Unique ID for the circular dependency network. 0 if the EntityOwner is not in a circular dependency network. */
+    size_t _circularNetworkHash{0};
+
+    /** Helper needed to stop the recusion when detecting circular dependency networks.
+     *  Only used in the setp phase.
+     */
+    detail::CircularDependencyDetectionRecursionStopper _recursionStopper;
   };
 
 } /* namespace ChimeraTK */

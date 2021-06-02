@@ -83,4 +83,11 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  size_t ControlSystemModule::getCircularNetworkHash() {
+    throw ChimeraTK::logic_error("getCircularNetworkHash() called on the ControlSystemModule. This is probably "
+                                 "caused by incorrect ownership of variables/accessors or VariableGroups.");
+  }
+
+  /*********************************************************************************************************************/
+
 } // namespace ChimeraTK
