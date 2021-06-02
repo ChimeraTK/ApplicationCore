@@ -8,6 +8,8 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   /**
    *  A HierarchyModifyingGroup is a VariableGroup which can easily appear at a different place in the hierarchy by
    *  specifying a qualified name. The qualifiedName can contain multiple hierarchy levels separated by slashes "/".
@@ -49,6 +51,27 @@ namespace ChimeraTK {
     bool moveToRoot{false};
     std::vector<std::string> _splittedPath;
   };
+
+  /********************************************************************************************************************/
+
+  /**
+   *  Convenience version of the HierarchyModifyingGroup with exactly one variable inside. The constructor takes the
+   *  qualified name of the variable and splits it internally into the path name (for the HierarchyModifyingGroup) and
+   *  the unqialified variable name.
+   *  
+   *  The template argument must be one of the Scalar*Input, ScalarOutput classes resp. their Array counterparts.
+   */
+  template<typename ACCESSOR>
+  struct ModifyHierarchy : HierarchyModifyingGroup {
+    template<typename... Types>
+    ModifyHierarchy(Module* owner, const std::string& qualifiedName, Types... args)
+    : HierarchyModifyingGroup(owner, HierarchyModifyingGroup::getPathName(qualifiedName), ""),
+      value(this, HierarchyModifyingGroup::getUnqualifiedName(qualifiedName), args...) {}
+
+    ACCESSOR value;
+  };
+
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK
 

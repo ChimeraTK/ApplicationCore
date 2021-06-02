@@ -9,8 +9,8 @@
 #include "ApplicationModule.h"
 #include "ControlSystemModule.h"
 #include "ScalarAccessor.h"
-#include "TestFacility.h"
 #include "StatusMonitor.h"
+#include "TestFacility.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -19,9 +19,9 @@ namespace ctk = ChimeraTK;
 template<typename T>
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
-  ~TestApplication() { shutdown(); }
+  ~TestApplication() override { shutdown(); }
 
-  void defineConnections() {
+  void defineConnections() override {
     findTag(".*").connectTo(cs);                              // publish everything to CS
     findTag("MY_MONITOR").connectTo(cs["MyNiceMonitorCopy"]); // cable again, checking that the tag is applied correctly
     findTag("MON_PARAMS")
@@ -32,6 +32,24 @@ struct TestApplication : public ctk::Application {
   ctk::ControlSystemModule cs;
   T monitor{this, "Monitor", "Now this is a nice monitor...", "watch", "status", ChimeraTK::HierarchyModifier::none,
       {"MON_OUTPUT"}, {"MON_PARAMS"}, {"MY_MONITOR"}};
+};
+
+/* dummy application - for new StatusMonitor interface */
+template<typename T>
+struct TestApplicationNewInterface : public ctk::Application {
+  TestApplicationNewInterface() : Application("testSuite") {}
+  ~TestApplicationNewInterface() override { shutdown(); }
+
+  void defineConnections() override {
+    findTag(".*").connectTo(cs); // publish everything to CS
+    findTag("MON_PARAMS")
+        .connectTo(cs["MonitorParameters"]); // cable the parameters in addition (checking that tags are set correctly)
+    findTag("MON_OUTPUT")
+        .connectTo(cs["MonitorOutput"]); // cable the parameters in addition (checking that tags are set correctly)
+  }
+  ctk::ControlSystemModule cs;
+  T monitor{this, "/input/path", "/output/path", "/parameters", "Now this is a nice monitor...",
+      ctk::TAGS{"MON_OUTPUT"}, ctk::TAGS{"MON_PARAMS"}};
 };
 
 /*********************************************************************************************************************/
@@ -552,34 +570,34 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
 
 BOOST_AUTO_TEST_CASE(testExactMonitor) {
   std::cout << "testExactMonitor" << std::endl;
-  TestApplication<ctk::ExactMonitor<float>> app;
+  TestApplicationNewInterface<ctk::ExactMonitor<int64_t>> app;
 
   // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
-  auto tags = ctk::VariableNetworkNode(app.monitor.status).getTags();
+  auto tags = ctk::VariableNetworkNode(app.monitor.status.value).getTags();
   BOOST_CHECK(tags.find(ctk::StatusOutput::tagStatusOutput) != tags.end());
 
   ctk::TestFacility test;
   test.runApplication();
   //app.dumpConnections();
 
-  auto requiredValue = test.getScalar<float>(std::string("/Monitor/requiredValue"));
-  requiredValue = 40.9;
+  auto requiredValue = test.getScalar<int64_t>(std::string("/parameters/requiredValue"));
+  requiredValue = 409;
   requiredValue.write();
   test.stepApplication();
 
-  auto watch = test.getScalar<float>(std::string("/watch"));
-  watch = 40.9;
+  auto watch = test.getScalar<int64_t>(std::string("/input/path"));
+  watch = 409;
   watch.write();
   test.stepApplication();
 
-  auto status = test.getScalar<int32_t>(std::string("/Monitor/status"));
+  auto status = test.getScalar<int32_t>(std::string("/output/path"));
   status.readLatest();
 
   //should be in OK state.
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // drop in a disable test.
-  auto disable = test.getScalar<int>("/Monitor/disable");
+  auto disable = test.getScalar<int>("/parameters/disable");
   disable = 1;
   disable.write();
   test.stepApplication();
@@ -593,7 +611,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   //set watch value different than required value
-  watch = 41.4;
+  watch = 414;
   watch.write();
   test.stepApplication();
   status.readLatest();
@@ -613,7 +631,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
-  watch = 40.9;
+  watch = 409;
   watch.write();
   test.stepApplication();
   status.readLatest();
@@ -621,7 +639,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   //set requiredValue value different than watch value
-  requiredValue = 41.3;
+  requiredValue = 413;
   requiredValue.write();
   test.stepApplication();
   status.readLatest();
@@ -629,7 +647,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   //set requiredValue value equals to watch value
-  requiredValue = 40.9;
+  requiredValue = 409;
   requiredValue.write();
   test.stepApplication();
   status.readLatest();
@@ -637,10 +655,12 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // check that the tags are applied correctly
-  BOOST_CHECK_EQUAL(status, test.readScalar<int32_t>("/MyNiceMonitorCopy/Monitor/status"));
-  BOOST_CHECK_EQUAL(status, test.readScalar<int32_t>("/MonitorOutput/Monitor/status"));
-  BOOST_CHECK_EQUAL(watch, test.readScalar<float>("/MyNiceMonitorCopy/watch"));
-  BOOST_CHECK_EQUAL(requiredValue, test.readScalar<float>("/MonitorParameters/Monitor/requiredValue"));
+  BOOST_CHECK_EQUAL(status, test.readScalar<int32_t>("/MonitorOutput/output/path"));
+  BOOST_CHECK_EQUAL(requiredValue, test.readScalar<int64_t>("/MonitorParameters/parameters/requiredValue"));
+  disable = 1;
+  disable.write();
+  test.stepApplication();
+  BOOST_CHECK_EQUAL(disable, test.readScalar<int>("/MonitorParameters/parameters/disable"));
 }
 
 /*********************************************************************************************************************/
