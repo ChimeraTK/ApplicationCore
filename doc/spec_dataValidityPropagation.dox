@@ -104,21 +104,21 @@ If modules have circular dependencies, the algorithm described in \ref dataValid
 - \anchor dataValidity_4_1_4 4.1.4 As long as at least one _external input_ of any module in the _circular network_ is invalid, the invalidity flag is propagated as described in
  \ref dataValidity_1 "1." [\ref dataValidity_test_OneInvalidVariable "T"]
 - \anchor dataValidity_4_1_5 4.1.5 Once all _external inputs_ of one _circular network_ are back to DataValidity::ok, all _circular inputs_ of the _circular network_ ignore the
-invalid flag and also switch to DataValidity::ok. This breaks the circle. [\ref dataValidity_test_OneInvalidVariable "T"] [\ref dataValidity_test_TwoFaultyInOneModule "T"]
+invalid flag and also switch to DataValidity::ok. This breaks the self-exciting loop. [\ref dataValidity_test_OneInvalidVariable "T"] [\ref dataValidity_test_TwoFaultyInOneModule "T"]
 - \anchor dataValidity_4_1_6 4.1.6 If all inputs of a module have DataValidity::ok, the module's output validity is also DataValidity::ok, even if other modules in
 the _circular network_ have _external inputs_ which are invalid.
 - \anchor dataValidity_4_1_7 4.1.7 The ControlSystemModule and DeviceModules are never part of a circular dependency.[\ref dataValidity_test_TestCircularInputDetection2 "T" (only CS module)]
+- \anchor dataValidity_4_1_8 4.1.8 If the user code of a module progammatically sets one of its outpts to `faulty`, this is treated as if an _external input_ was invalid.[\ref dataValidity_test_outputManuallyFaulty "T" (only CS module)]
 
 ### 4.2 Side effects and race conditions
 
-- \anchor dataValidity_4_2_1 4.2.1 If a process variable has a fluctuating error state (e.g. alternating validity `ok` and `faulty`) and is the only external input, the faulty flag
-is ignored in the _circular inputs_ of all modules each time the last received value of that particular variable has DataValidity::ok. (The data validity is set to `ok` "too early") 
+- \anchor dataValidity_4_2_1 4.2.1 The data validity of circular inputs is ignored as soon as all external inputs are back to `ok`, even if the data with the invalidity flag has not been propagated in the whole circle yet. (The data validity is set to `ok` "too early") 
 - 4.2.2 If it is strictly required that a DataValidity::faulty flag is always transported because critical decisions depend on it, circular dependencies must be avoided in the application.
-- \anchor dataValidity_4_2_3 4.2.3 Lets assume two _external inputs_ in two modules are invalid. These inputs are in different circles, but the circles are inirectly connected through a third circle, which all together form one circular. If now one of those inputs goes back to DataValidity::ok, the parcicular circle does not have an _external input_ which is `faulty`, however the module does not go back to DataValidity::ok because the _circular network_ still has a faulty _external input_. This might be considered as resolving the invalidity "too late", but it is consistent because data might have propagated from that part of the _circular network_, whether this is from a different sub-circle or not. [\ref dataValidity_test_TwoFaultyInTwoModules "T"]
+- \anchor dataValidity_4_2_3 4.2.3 When an _external input_ changes validity from `faulty` to `ok`, the invalidity at the _circular inputs_ of that module might or might not be ignored, depending on the other _external inputs_ of the _circular network_. In large, entangled networks, where the remaining faulty _external input_ is "far away", this might give the impression the the invalidity is resovled "too late". However, it is consistent. Only if ALL external inputs in the _circular network_ are `ok`, the self-exciting loop may be broken. [\ref dataValidity_test_TwoFaultyInTwoModules "T"]
 
 ### 4.3 Technical implementation
 
-- \anchor dataValidity_4_3_1 4.3.1 In addition to the owner (see \ref dataValidity_2_3_1 "2.3.1"), the _circular network_ (\ref dataValidity_4_1_2 "4.1.2") also get an invalidity counter.(\ref dataValidity_comment_4_3_1 "*").
+- \anchor dataValidity_4_3_1 4.3.1 In addition to the owner (see \ref dataValidity_2_3_1 "2.3.1"), the _circular network_ (\ref dataValidity_4_1_2 "4.1.2") also gets an atomic invalidity counter.(\ref dataValidity_comment_4_3_1 "*").
 - \anchor dataValidity_4_3_2 4.3.2 Each module and each _circular input_ knows its _circular network_ [\ref dataValidity_test_TestCircularInputDetection2 "T"]
 - 4.3.3 If an _external input_ receives data, it increases/decreases the _circular network_'s invalidity counter, together with the owner's invaliditys counter.
 - 4.3.4 If a module estimates its validity (as used in \ref dataValidity_2_1_5 "2.1.5"), it returns
