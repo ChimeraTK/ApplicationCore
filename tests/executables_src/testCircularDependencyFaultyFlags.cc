@@ -135,18 +135,18 @@ struct CircularAppTestFixcture {
   APP_TYPE app;
   ctk::TestFacility test;
 
-  ctk::ScalarRegisterAccessor<int> a;
-  ctk::ScalarRegisterAccessor<int> b;
-  ctk::ScalarRegisterAccessor<int> C_trigger;
-  ctk::ScalarRegisterAccessor<int> A_out1;
-  ctk::ScalarRegisterAccessor<int> B_out1;
-  ctk::ScalarRegisterAccessor<int> C_out1;
-  ctk::ScalarRegisterAccessor<int> D_out1;
-  ctk::ScalarRegisterAccessor<int> A_in2;
-  ctk::ScalarRegisterAccessor<int> B_in2;
-  ctk::ScalarRegisterAccessor<int> C_in2;
-  ctk::ScalarRegisterAccessor<int> D_in2;
-  ctk::ScalarRegisterAccessor<int> circleResult;
+  ctk::ScalarRegisterAccessor<int> a{test.getScalar<int>("A/a")};
+  ctk::ScalarRegisterAccessor<int> b{test.getScalar<int>("A/b")};
+  ctk::ScalarRegisterAccessor<int> C_trigger{test.getScalar<int>("C/trigger")};
+  ctk::ScalarRegisterAccessor<int> A_out1{test.getScalar<int>("A/circularOutput1")};
+  ctk::ScalarRegisterAccessor<int> B_out1{test.getScalar<int>("B/circularOutput1")};
+  ctk::ScalarRegisterAccessor<int> C_out1{test.getScalar<int>("C/circularOutput1")};
+  ctk::ScalarRegisterAccessor<int> D_out1{test.getScalar<int>("D/circularOutput1")};
+  ctk::ScalarRegisterAccessor<int> A_in2{test.getScalar<int>("A/circularInput2")};
+  ctk::ScalarRegisterAccessor<int> B_in2{test.getScalar<int>("B/circularInput2")};
+  ctk::ScalarRegisterAccessor<int> C_in2{test.getScalar<int>("C/circularInput2")};
+  ctk::ScalarRegisterAccessor<int> D_in2{test.getScalar<int>("D/circularInput2")};
+  ctk::ScalarRegisterAccessor<int> circleResult{test.getScalar<int>("A/circleResult")};
 
   void readAllLatest() {
     A_out1.readLatest();
