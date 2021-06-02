@@ -42,7 +42,7 @@ namespace ChimeraTK {
    protected:
     EntityOwner* _owner;
 
-    /** value of validity flag from last read operation */
+    /** value of validity flag from last read or write operation */
     DataValidity lastValidity{DataValidity::ok};
 
     using TransferElement::_dataValidity;

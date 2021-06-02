@@ -318,6 +318,80 @@ BOOST_FIXTURE_TEST_CASE(TwoFaultyInOneModule, CircularAppTestFixcture<TestApplic
   checkAllDataValidity(ctk::DataValidity::ok);
 }
 
+/** \anchor dataValidity_test_outputManuallyFaulty
+ * Tests Technical specification: data validity propagation
+ *  * \ref dataValidity_4_1_8 "4.1.8"  Programmatically setting an output to faulty behaves like external input faulty.
+ */
+BOOST_FIXTURE_TEST_CASE(OutputManuallyFaulty, CircularAppTestFixcture<TestApplication1>) {
+  app.A.circularOutput1.setDataValidity(ctk::DataValidity::faulty);
+  a.write();
+  test.stepApplication();
+
+  readAllLatest();
+  // The data validity flag is not ignored, although only circular inputs are invalid
+  // B transports the flag. The A.outputGroup.circularOutput2 is still valid because all inputs are valid.
+  BOOST_CHECK(A_out1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(B_out1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(B_in2.dataValidity() == ctk::DataValidity::ok); // this is A.outputGroup.circularOutput2
+  BOOST_CHECK(C_in2.dataValidity() == ctk::DataValidity::faulty);
+  // the outputs of C, D and the circularResult have already been written yet
+  BOOST_CHECK(C_out1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(D_out1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(A_in2.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(D_in2.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(circleResult.dataValidity() == ctk::DataValidity::ok);
+
+  C_trigger.write();
+  test.stepApplication();
+
+  // Now the whole circle is invalid, except for A.outputGroup.circularOutput2 which has not been written again yet.
+  // (Module A stops the circular propagation because it is using readAny(), which otherwises would lead to more and more
+  //  data packages piling up in the cirle because each external read adds one)
+  readAllLatest();
+  BOOST_CHECK(A_out1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(B_out1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(B_in2.dataValidity() == ctk::DataValidity::ok); // this is A.outputGroup.circularOutput2
+  BOOST_CHECK(C_in2.dataValidity() == ctk::DataValidity::faulty);
+  // the outputs of C, D and the circularResult have already been written yet
+  BOOST_CHECK(C_out1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(D_out1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(A_in2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(D_in2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(circleResult.dataValidity() == ctk::DataValidity::faulty);
+
+  // If we now complete the circle again, the faulty flag is propagated everywhere
+  a.write();
+  C_trigger.write();
+  test.stepApplication();
+
+  readAllLatest();
+  checkAllDataValidity(ctk::DataValidity::faulty);
+
+  // Check that the situation resolved when the data validity of the output is back to ok
+  app.A.circularOutput1.setDataValidity(ctk::DataValidity::ok);
+  a.write();
+  test.stepApplication();
+
+  readAllLatest();
+  // Module A goes to valid immediately and ignored the invalid circular inputs
+  BOOST_CHECK(A_out1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(B_out1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(B_in2.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(C_in2.dataValidity() == ctk::DataValidity::ok);
+  // the outputs of C, D and the circularResult have not been written yet
+  BOOST_CHECK(C_out1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(D_out1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(A_in2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(D_in2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(circleResult.dataValidity() == ctk::DataValidity::faulty);
+
+  C_trigger.write();
+  test.stepApplication();
+
+  readAllLatest();
+  checkAllDataValidity(ctk::DataValidity::ok);
+}
+
 /** \anchor dataValidity_test_TwoFaultyInTwoModules
  * Tests Technical specification: data validity propagation
  *  * \ref dataValidity_4_2_3 "4.2.3"  Modules do no go to OK if all its external inputs are OK

@@ -39,6 +39,20 @@ namespace ChimeraTK {
   void MetaDataPropagatingRegisterDecorator<T>::doPreWrite(TransferType type, VersionNumber versionNumber) {
     // We cannot use NDRegisterAccessorDecorator<T> here because we need a different implementation of setting the target data validity.
     // So we have a complete implemetation here.
+
+    if(_owner->getCircularNetworkHash() && _dataValidity != lastValidity) {
+      // In circular dependency networks an output which actively has DataValidity::faulty set by the user logic is handled
+      // as if an external input was invalid -> increase or decrease the network's invalidity counter accordingly
+      if(_dataValidity == DataValidity::faulty) { // data validity changes to faulty
+        ++(Application::getInstance().circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
+      }
+      else {
+        --(Application::getInstance().circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
+      }
+      lastValidity = _dataValidity;
+    }
+
+    // Now propagate the flag and the data to the target and perform the write
     if(_dataValidity == DataValidity::faulty) { // the application has manualy set the validity to faulty
       _target->setDataValidity(DataValidity::faulty);
     }
