@@ -1,5 +1,5 @@
-#ifndef CIRCULARDEPENDENCYRECURSIONBREAKER_H
-#define CIRCULARDEPENDENCYRECURSIONBREAKER_H
+#ifndef CIRCULAR_DEPENDENCY_DETECTION_RECURSION_STOPPER_H
+#define CIRCULAR_DEPENDENCY_DETECTION_RECURSION_STOPPER_H
 
 #include <cstddef>
 
@@ -22,7 +22,7 @@ namespace ChimeraTK { namespace detail {
    * After the call of startNewScan(), recusionDetected() returns false until setRecursionDetected() is called.
    * If recursionDetected() after construction before calling startNewScan, an exeption is thrown.
    */
-  class CircularDependencyRecursionBreaker {
+  class CircularDependencyDetectionRecursionStopper {
     static size_t _globalScanCounter;
     size_t _localScanCounter;
 
@@ -34,4 +34,4 @@ namespace ChimeraTK { namespace detail {
 
 }} // namespace ChimeraTK::detail
 
-#endif // CIRCULARDEPENDENCYRECURSIONBREAKER_H
+#endif // CIRCULAR_DEPENDENCY_DETECTION_RECURSION_STOPPER_H

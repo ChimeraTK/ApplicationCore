@@ -14,7 +14,7 @@
 
 #include "ModuleImpl.h"
 #include "Application.h"
-#include "CircularDependencyRecursionBreaker.h"
+#include "CircularDependencyDetectionRecursionStopper.h"
 
 namespace ChimeraTK {
 
@@ -109,7 +109,10 @@ namespace ChimeraTK {
     /** Unique ID for the circular dependency network. 0 if the EntityOwner is not in a circular dependency network. */
     size_t _circularNetworkHash{0};
 
-    detail::CircularDependencyRecursionBreaker _recursionBreaker;
+    /** Helper needed to stop the recusion when detecting circular dependency networks.
+     *  Only used in the setp phase.
+     */
+    detail::CircularDependencyDetectionRecursionStopper _recursionStopper;
   };
 
 } /* namespace ChimeraTK */

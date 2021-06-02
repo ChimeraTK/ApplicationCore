@@ -14,7 +14,7 @@
 #include "VariableGroup.h"
 #include <boost/container_hash/hash.hpp>
 #include "ApplicationModule.h"
-#include "CircularDependencyRecursionBreaker.h"
+#include "CircularDependencyDetectionRecursionStopper.h"
 
 namespace ChimeraTK {
 
@@ -385,7 +385,7 @@ namespace ChimeraTK {
 
   std::list<EntityOwner*> VariableNetworkNode::scanForCircularDepencency() {
     // We are starting a new scan. Reset the indicator for already found circular dependencies.
-    detail::CircularDependencyRecursionBreaker::startNewScan();
+    detail::CircularDependencyDetectionRecursionStopper::startNewScan();
 
     // find the feeder of the network
     auto feeder = getOwner().getFeedingNode();

@@ -135,14 +135,14 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   std::list<EntityOwner*> ApplicationModule::getInputModulesRecursively(std::list<EntityOwner*> startList) {
-    if(_recursionBreaker.recursionDetected()) {
+    if(_recursionStopper.recursionDetected()) {
       return startList;
     }
 
     // If this module is already in the list we found a circular dependency.
     // Remember this for the next time the recursive scan calls this function
     if(std::count(startList.begin(), startList.end(), this)) {
-      _recursionBreaker.setRecursionDetected();
+      _recursionStopper.setRecursionDetected();
     }
 
     // Whether a cirular depencency has been detected or not, we must loop all inputs and add this module to the list so the calling
