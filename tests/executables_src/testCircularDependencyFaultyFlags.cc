@@ -7,6 +7,7 @@
 #include "ScalarAccessor.h"
 #include "ControlSystemModule.h"
 #include "TestFacility.h"
+#include "HierarchyModifyingGroup.h"
 namespace ctk = ChimeraTK;
 
 // The basic setup has 4 modules connected in a circle
@@ -116,17 +117,29 @@ struct ModuleC : TestModuleBase {
   }
 };
 
+/// Involve the DeviceModule. Here are some variables from a test device.
+struct ModuleD : TestModuleBase {
+  using TestModuleBase::TestModuleBase;
+  ctk::ModifyHierarchy<ctk::ScalarPollInput<int>> i1{this, "/m1/i1", "", ""};
+  ctk::ModifyHierarchy<ctk::ScalarPollInput<int>> i3{this, "/m1/i3", "", ""};
+  ctk::ModifyHierarchy<ctk::ScalarOutput<int>> o1{this, "/m1/o1", "", ""};
+};
+
 struct TestApplication1 : ctk::Application {
   TestApplication1() : Application("testSuite") {}
   ~TestApplication1() { shutdown(); }
 
-  void defineConnections() { findTag(".*").connectTo(cs); }
+  void defineConnections() {
+    findTag(".*").connectTo(cs);
+    device.connectTo(cs);
+  }
 
   ModuleA A{"D", "B", this, "A", ""}; // reads like: This is A, gets input from D and writes to B
   TestModuleBase B{"A", "C", this, "B", ""};
   ModuleC C{"B", "D", this, "C", ""};
-  TestModuleBase D{"C", "A", this, "D", ""};
+  ModuleD D{"C", "A", this, "D", ""};
 
+  ctk::DeviceModule device{this, "(dummy?map=testDataValidity1.map)"};
   ctk::ControlSystemModule cs;
 };
 
@@ -172,21 +185,7 @@ struct CircularAppTestFixcture {
     BOOST_CHECK(circleResult.dataValidity() == validity);
   }
 
-  CircularAppTestFixcture() {
-    test.runApplication();
-    a.replace(test.getScalar<int>("A/a"));
-    b.replace(test.getScalar<int>("A/b"));
-    C_trigger.replace(test.getScalar<int>("C/trigger"));
-    A_out1.replace(test.getScalar<int>("A/circularOutput1"));
-    B_out1.replace(test.getScalar<int>("B/circularOutput1"));
-    C_out1.replace(test.getScalar<int>("C/circularOutput1"));
-    D_out1.replace(test.getScalar<int>("D/circularOutput1"));
-    A_in2.replace(test.getScalar<int>("A/circularInput2"));
-    B_in2.replace(test.getScalar<int>("B/circularInput2"));
-    C_in2.replace(test.getScalar<int>("C/circularInput2"));
-    D_in2.replace(test.getScalar<int>("D/circularInput2"));
-    circleResult.replace(test.getScalar<int>("A/circleResult"));
-  }
+  CircularAppTestFixcture() { test.runApplication(); }
 };
 
 /** \anchor dataValidity_test_TestCircularInputDetection
@@ -226,6 +225,10 @@ BOOST_AUTO_TEST_CASE(TestCircularInputDetection) {
   BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.circularInput2).isCircularInput() == true);
   BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.circularOutput1).isCircularInput() == false);
   BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.outputGroup.circularOutput2).isCircularInput() == false);
+  // although there are inputs from and outputs to the same device this is not part of the circular network
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.i1.value).isCircularInput() == false);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.i3.value).isCircularInput() == false);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.o1.value).isCircularInput() == false);
 }
 
 /** \anchor dataValidity_test_OneInvalidVariable
