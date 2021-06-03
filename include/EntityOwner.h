@@ -216,6 +216,17 @@ namespace ChimeraTK {
      */
     virtual size_t getCircularNetworkHash() = 0;
 
+    /**
+     *  Create a variable name which will be automatically connected with a constant value. This can be used when
+     *  instantiating generic modules which expect a parameter by variable name, when the parameter shall be set to
+     *  a constant value.
+     *
+     *  This function is a static member of the EntityOwner, since it is normally called in constructors of 
+     *  EntityOwners.
+     */
+    template<typename T>
+    static std::string constant(T value);
+
    protected:
     /** Add the part of the tree structure matching the given tag to a
      * VirtualModule. Users normally will use findTag() instead. "tag" is
@@ -253,6 +264,13 @@ namespace ChimeraTK {
 
     bool hasReachedTestableMode();
   };
+
+  /********************************************************************************************************************/
+
+  template<typename T>
+  std::string EntityOwner::constant(T value) {
+    return "@CONST@" + userTypeToUserType<std::string>(value);
+  }
 
 } /* namespace ChimeraTK */
 
