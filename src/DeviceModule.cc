@@ -291,7 +291,7 @@ namespace ChimeraTK {
           device.open();
         }
         catch(ChimeraTK::runtime_error& e) {
-          assert(deviceError.status != 0); // any error must already be reported...
+          assert(deviceError.status != StatusOutput::Status::OK); // any error must already be reported...
           if(std::string(deviceError.message) != e.what()) {
             std::cerr << "Device " << deviceAliasOrURI << " reports error: " << e.what() << std::endl;
             // set proper error message in very first attempt to open the device
@@ -335,7 +335,7 @@ namespace ChimeraTK {
         }
       }
       catch(ChimeraTK::runtime_error& e) {
-        assert(deviceError.status != 0); // any error must already be reported...
+        assert(deviceError.status != StatusOutput::Status::OK); // any error must already be reported...
         // update error message, since it might have been changed...
         if(std::string(deviceError.message) != e.what()) {
           std::cerr << "Device " << deviceAliasOrURI << " reports error: " << e.what() << std::endl;
@@ -388,7 +388,7 @@ namespace ChimeraTK {
       }
 
       // [Spec: 2.3.5] Reset exception state and wait for the next error to be reported.
-      deviceError.status = 0;
+      deviceError.status = StatusOutput::Status::OK;
       deviceError.message = "";
       deviceError.setCurrentVersionNumber({});
       deviceError.writeAll();
@@ -435,7 +435,7 @@ namespace ChimeraTK {
 
       // [ExceptionHandling Spec: C.3.3.14] report exception to the control system
       std::cerr << "Device " << deviceAliasOrURI << " reports error: " << error << std::endl;
-      deviceError.status = 1;
+      deviceError.status = StatusOutput::Status::FAULT;
       deviceError.message = error;
       deviceError.setCurrentVersionNumber({});
       deviceError.writeAll();
@@ -457,7 +457,7 @@ namespace ChimeraTK {
     }
 
     // Set initial status to error
-    deviceError.status = 1;
+    deviceError.status = StatusOutput::Status::FAULT;
     deviceError.message = "Attempting to open device...";
     deviceError.setCurrentVersionNumber({});
     deviceError.writeAll();
