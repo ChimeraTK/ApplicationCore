@@ -300,7 +300,8 @@ namespace ChimeraTK {
         }
 
         // update only if status has changed, but always in case of initial value
-        if(status.value != newStatus || status.value.getVersionNumber() == VersionNumber{nullptr}) {
+        if(status.value != newStatus || getDataValidity() != status.value.dataValidity() ||
+            status.value.getVersionNumber() == VersionNumber{nullptr}) {
           status.value = newStatus;
           status.value.write();
         }

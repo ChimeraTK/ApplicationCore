@@ -61,13 +61,20 @@ BOOST_AUTO_TEST_CASE(testSingleNoTags) {
 
   auto status = test.getScalar<int>("/Aggregated/status");
 
-  // write initial values (all in Status::OFF = 0)
+  // write initial values
+  app.s.status = ctk::StatusOutput::Status::OFF;
   app.s.status.write();
+  app.outerGroup.s1.status = ctk::StatusOutput::Status::OFF;
   app.outerGroup.s1.status.write();
+  app.outerGroup.s2.status = ctk::StatusOutput::Status::OFF;
   app.outerGroup.s2.status.write();
+  app.outerGroup.innerGroup1.s.status = ctk::StatusOutput::Status::OFF;
   app.outerGroup.innerGroup1.s.status.write();
+  app.outerGroup.innerGroup1.deep.status = ctk::StatusOutput::Status::OFF;
   app.outerGroup.innerGroup1.deep.status.write();
+  app.outerGroup.innerGroup2.s.status = ctk::StatusOutput::Status::OFF;
   app.outerGroup.innerGroup2.s.status.write();
+  app.outerGroup.innerGroup2.deep.status = ctk::StatusOutput::Status::OFF;
   app.outerGroup.innerGroup2.deep.status.write();
 
   test.runApplication();
@@ -234,8 +241,10 @@ BOOST_AUTO_TEST_CASE(testTwoLevels) {
   auto status = test.getScalar<int>("/Aggregated/status");
   auto extraStatus = test.getScalar<int>("/Aggregated/extraStatus");
 
-  // write initial values [default/0 value is OFF]
+  // write initial values
+  app.s.status = ctk::StatusOutput::Status::OFF;
   app.s.status.write();
+  app.outerGroup.s2.status = ctk::StatusOutput::Status::OFF;
   app.outerGroup.s2.status.write();
   // Set one of the inputs for the extraAggregator to fault, which has no effect, since one other is OFF which is
   // prioritised. If the top-level aggregator would wrongly aggregate this input directly, it would go to FAULT.

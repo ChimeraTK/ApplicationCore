@@ -114,29 +114,15 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   int StatusAggregator::getPriority(StatusOutput::Status status) {
-    auto is = int32_t(status);
+    using Status = StatusOutput::Status;
 
-    // Note, without alteration of the value, we have the PriorityMode::fwko
-    if(_mode == PriorityMode::fwok) {
-      // swap 0 <-> 1
-      if(is == 0) {
-        is = 1;
-      }
-      else if(is == 1) {
-        is = 0;
-      }
-    }
-    else if(_mode == PriorityMode::ofwk) {
-      // subtract 1, then change -1 into 3
-      --is;
-      if(is == -1) is = 3;
-    }
-    else if(_mode == PriorityMode::fw_warn_mixed) {
-      // change 0,1 into -1 (cf. special meaning of -1)
-      if(is <= 1) is = -1;
-    }
+    const std::map<PriorityMode, std::map<Status, int32_t>> map_priorities{
+        {PriorityMode::fwko, {{Status::OK, 1}, {Status::FAULT, 3}, {Status::OFF, 0}, {Status::WARNING, 2}}},
+        {PriorityMode::fwok, {{Status::OK, 0}, {Status::FAULT, 3}, {Status::OFF, 1}, {Status::WARNING, 2}}},
+        {PriorityMode::ofwk, {{Status::OK, 0}, {Status::FAULT, 2}, {Status::OFF, 3}, {Status::WARNING, 1}}},
+        {PriorityMode::fw_warn_mixed, {{Status::OK, -1}, {Status::FAULT, 3}, {Status::OFF, -1}, {Status::WARNING, 2}}}};
 
-    return is;
+    return map_priorities.at(_mode).at(status);
   }
 
   /********************************************************************************************************************/
@@ -163,7 +149,7 @@ namespace ChimeraTK {
       assert(statusSet);
 
       // write status only if changed, but always write initial value out
-      if(status != _output.status || initialValue) {
+      if(status != _output.status || getDataValidity() != _output.status.dataValidity() || initialValue) {
         _output.status = status;
         _output.status.write();
         initialValue = false;
