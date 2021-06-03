@@ -26,7 +26,7 @@ namespace ChimeraTK {
      *  
      *  Note: The values are exposed to the control system and hence are part of the public interface!
      */
-    enum class Status : int32_t { OFF = 0, OK = 1, WARNING = 2, FAULT = 3 };
+    enum class Status : int32_t { OK = 0, FAULT = 1, OFF = 2, WARNING = 3 };
   };
 
   /** Special StatusAccessor - used to avoid code duplication in StatusOutput, StatusPushInput and StatusPollInput. */
