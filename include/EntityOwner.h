@@ -20,10 +20,15 @@ namespace ChimeraTK {
   class Module;
   class VirtualModule;
 
-  /** Base class for owners of other EntityOwners (e.g. Modules) and Accessors.
-   * @todo Rename this class to "Owner" and make it more generic. It should
-   * basically just implement the "Composite Pattern". The classes AccessorBase,
-   * Module and Owner should have a common base class called "Component".
+  /** 
+   *  Convenience type definition which can optionally be used as a shortcut for the type which defines a list of
+   *  tags.
+   */
+  using TAGS = const std::unordered_set<std::string>;
+
+  /** 
+   *  Base class for owners of other EntityOwners (e.g. Modules) and Accessors.
+   *  FIXME: Unify with Module class (not straight forward!).
    */
   class EntityOwner {
    public:

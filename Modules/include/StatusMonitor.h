@@ -42,6 +42,8 @@ namespace ChimeraTK {
    *  type of the variable to be monitored. A non-template base class
    *  facilitates checking for the type in the StatusAggregator, which
    *  needs to identify any StatusMonitor.
+   *  
+   *  FIXME This distinction between StatusMonitorImpl and StatusMonitor is no longer required. Merge the classes!
    */
   struct StatusMonitor : ApplicationModule {
     StatusMonitor(EntityOwner* owner, const std::string& name, const std::string& description, const std::string& input,
@@ -217,30 +219,91 @@ namespace ChimeraTK {
     }
   };
 
-  /** Module for status monitoring of an exact value.
- * If value monitored is not exactly the same. an fault state will be
- * reported.*/
+  /** 
+   *  Module for status monitoring of an exact value.
+   *  
+   *  If monitored input value is not exactly the same as the requiredValue, a fault state will be reported. If the
+   *  parameter variable "disable" is set to a non-zero value, the monitoring is disabled and the output status is
+   *  always OFF.
+   *  
+   *  Note: It is strongly recommended to use this monitor only for integer data types or strings, as floating point
+   *  data types should never be compared with exact equality.
+   */
   template<typename T>
-  struct ExactMonitor : public StatusMonitorImpl<T> {
-    using StatusMonitorImpl<T>::StatusMonitorImpl;
-    /**FAULT state if value is not equal to requiredValue*/
-    ScalarPushInput<T> requiredValue{this, "requiredValue", "", "", StatusMonitor::_parameterTags};
+  struct ExactMonitor : ApplicationModule {
+    /** 
+     *  Constructor for exact monitoring module.
+     *  
+     *  inputPath: qualified path of the variable to monitor
+     *  outputPath: qualified path of the status output variable
+     *  parameterPath: qualified path of the VariableGroup holding the parameter variables requiredValue and disable
+     *  
+     *  All qualified paths can be either relative or absolute to the given owner. See HierarchyModifyingGroup for
+     *  more details.
+     */
+    ExactMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+        const std::string& parameterPath, const std::string& description,
+        const std::unordered_set<std::string>& outputTags = {},
+        const std::unordered_set<std::string>& parameterTags = {})
+    : ExactMonitor(owner, inputPath, outputPath, parameterPath + "/requiredValue", parameterPath + "/disable",
+          description, outputTags, parameterTags) {}
 
-    /**This is where state evaluation is done*/
+    /** 
+     *  Constructor for exact monitoring module.
+     *  
+     *  inputPath: qualified path of the variable to monitor
+     *  outputPath: qualified path of the status output variable
+     *  requiredValuePath: qualified path of the parameter variable requiredValue
+     *  disablePath: qualified path of the parameter variable disable
+     *  
+     *  All qualified paths can be either relative or absolute to the given owner. See HierarchyModifyingGroup for
+     *  more details.
+     */
+    ExactMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+        const std::string& requiredValuePath, const std::string& disablePath, const std::string& description,
+        const std::unordered_set<std::string>& outputTags = {},
+        const std::unordered_set<std::string>& parameterTags = {})
+    : ApplicationModule(owner, "hidden", description, HierarchyModifier::hideThis),
+      watch(this, inputPath, "", "Value to monitor"),
+      requiredValue(this, requiredValuePath, "", "Value to compare with", parameterTags),
+      disable(this, disablePath, "", "Disable the status monitor", parameterTags),
+      status(this, outputPath, "Resulting status", outputTags) {}
+
+    ExactMonitor() = default;
+
+    /** Variable to monitor */
+    ModifyHierarchy<ScalarPushInput<T>> watch;
+
+    /** The required value to compare with */
+    ModifyHierarchy<ScalarPushInput<T>> requiredValue;
+
+    /** Disable/enable the entire status monitor */
+    ModifyHierarchy<ScalarPushInput<int>> disable;
+
+    /** Result of the monitor */
+    ModifyHierarchy<StatusOutput> status;
+
+    /** This is where state evaluation is done */
     void mainLoop() {
-      /** If there is a change either in value monitored or in requiredValue, the status is re-evaluated*/
-      ReadAnyGroup group{StatusMonitorImpl<T>::oneUp.watch, StatusMonitorImpl<T>::disable, requiredValue};
+      // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
+      ReadAnyGroup group{watch.value, disable.value, requiredValue.value};
       while(true) {
-        if(StatusMonitorImpl<T>::disable != 0) {
-          StatusMonitorImpl<T>::status = StatusOutput::Status::OFF;
+        StatusOutput::Status newStatus;
+        if(disable.value != 0) {
+          newStatus = StatusOutput::Status::OFF;
         }
-        else if(StatusMonitorImpl<T>::oneUp.watch != requiredValue) {
-          StatusMonitorImpl<T>::status = StatusOutput::Status::FAULT;
+        else if(watch.value != requiredValue.value) {
+          newStatus = StatusOutput::Status::FAULT;
         }
         else {
-          StatusMonitorImpl<T>::status = StatusOutput::Status::OK;
+          newStatus = StatusOutput::Status::OK;
         }
-        StatusMonitorImpl<T>::status.write();
+
+        // update only if status has changed, but always in case of initial value
+        if(status.value != newStatus || status.value.getVersionNumber() == VersionNumber{nullptr}) {
+          status.value = newStatus;
+          status.value.write();
+        }
         group.readAny();
       }
     }
