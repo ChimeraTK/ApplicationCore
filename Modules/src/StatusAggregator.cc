@@ -149,7 +149,7 @@ namespace ChimeraTK {
       assert(statusSet);
 
       // write status only if changed, but always write initial value out
-      if(status != _output.status || initialValue) {
+      if(status != _output.status || getDataValidity() != _output.status.dataValidity() || initialValue) {
         _output.status = status;
         _output.status.write();
         initialValue = false;
