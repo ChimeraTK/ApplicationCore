@@ -19,6 +19,7 @@
 #include <ChimeraTK/RegisterPath.h>
 #include <ChimeraTK/Device.h>
 #include "ModuleGroup.h"
+#include "StatusAccessor.h"
 
 namespace ChimeraTK {
   class Application;
@@ -236,8 +237,8 @@ namespace ChimeraTK {
      * DeviceModule::defineConnections() */
     struct DeviceError : public VariableGroup {
       using VariableGroup::VariableGroup;
-      ScalarOutput<int> status{this, "status", "", ""};
-      ScalarOutput<std::string> message{this, "message", "", ""};
+      StatusOutput status{this, "status", "Device status"};
+      ScalarOutput<std::string> message{this, "message", "", "Error message"};
     };
     DeviceError deviceError{this, "DeviceError", "Error status of the device"};
 
