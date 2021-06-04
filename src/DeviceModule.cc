@@ -546,7 +546,7 @@ namespace ChimeraTK {
   ConnectingDeviceModule::ConnectingDeviceModule(EntityOwner* owner, const std::string& _deviceAliasOrCDD,
       const std::string& _triggerPath, std::function<void(DeviceModule*)> initialisationHandler,
       const std::string& _pathInDevice)
-  : ModuleGroup(owner, "**ConnectingDeviceModule**", "") {
+  : ModuleGroup(owner, "**ConnectingDeviceModule**", ""), _initHandler(initialisationHandler) {
     // create DeviceModule if not yet in the _deviceModuleMap
     auto& dmm = Application::getInstance().deviceModuleMap;
     if(dmm.find(_deviceAliasOrCDD) == dmm.end()) {
@@ -555,9 +555,6 @@ namespace ChimeraTK {
       dmm[_deviceAliasOrCDD] = _dmHolder.get();
     }
     _dm = dmm.at(_deviceAliasOrCDD);
-    if(initialisationHandler != nullptr) {
-      _dm->addInitialisationHandler(initialisationHandler);
-    }
 
     // determine path to connect to
     pathToConnectTo = "/";
@@ -577,6 +574,11 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void ConnectingDeviceModule::defineConnections() {
+    // add initialisation handler, if requested
+    if(_initHandler != nullptr) {
+      _dm->addInitialisationHandler(_initHandler);
+    }
+
     // split up triggerPath
     auto path = HierarchyModifyingGroup::getPathName(triggerPath);
     auto name = HierarchyModifyingGroup::getUnqualifiedName(triggerPath);
