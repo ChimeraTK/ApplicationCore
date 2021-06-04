@@ -348,6 +348,11 @@ namespace ChimeraTK {
     /// The DeviceModule represented by this ConnectingDeviceModule
     DeviceModule* _dm;
 
+    /// Initialisation handler to add to the DeviceModule. This must be done only in defineConnections(), as otherwise
+    /// the initialisation handler would need to be removed in the destructor which is not possible. Not doing so at
+    /// least creates issues with move operations, especially if the initialisation handler points to a moved object.
+    std::function<void(DeviceModule*)> _initHandler;
+
     /// Shared pointer holding the DeviceModule if (and only if) this ConnectingDeviceModule owns the DeviceModule
     boost::shared_ptr<DeviceModule> _dmHolder;
   };
