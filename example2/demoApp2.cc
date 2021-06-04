@@ -6,12 +6,12 @@ namespace ctk = ChimeraTK;
 
 struct Controller : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
-  ctk::ScalarPollInput<double> sp{this, "temperatureSetpoint", "degC", "Description"};
-  ctk::ScalarPushInput<double> rb{this, "temperatureReadback", "degC", "..."};
-  ctk::ScalarOutput<double> cur{this, "heatingCurrent", "mA", "..."};
+  ctk::ScalarPollInput<float> sp{this, "temperatureSetpoint", "degC", "Description"};
+  ctk::ScalarPushInput<float> rb{this, "temperatureReadback", "degC", "..."};
+  ctk::ScalarOutput<float> cur{this, "heatingCurrent", "mA", "..."};
 
   void mainLoop() {
-    const double gain = 100.0;
+    const float gain = 100.0;
     while(true) {
       readAll(); // waits until rb updated, then reads sp
 
