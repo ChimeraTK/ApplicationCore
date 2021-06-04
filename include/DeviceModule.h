@@ -335,7 +335,7 @@ namespace ChimeraTK {
     *  Keep in mind that mulitple DeviceModules will perform independent and asynchronous recovery procedures after
     *  an exception, even when pointing to the same device.
     */
-    ConnectingDeviceModule(EntityOwner* owner, const std::string& deviceAliasOrCDD, const std::string& triggerPath,
+    ConnectingDeviceModule(EntityOwner* owner, const std::string& deviceAliasOrCDD, const std::string& triggerPath = {},
         std::function<void(DeviceModule*)> initialisationHandler = nullptr, const std::string& pathInDevice = "/");
 
    protected:

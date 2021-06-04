@@ -1,6 +1,10 @@
 #define BOOST_TEST_MODULE testPropagateDataFaultFlag
 
+// Tests never terminate when an exception is caught and BOOST_NO_EXCEPTIONS is set, but the exeption's what() message is printed.
+// Without the define the what() message is not printed, but the test ist not stuck... I leave it commented but in the code so you activate when debugging.
+//#define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
+//#undef BOOST_NO_EXCEPTIONS
 
 #include "ApplicationModule.h"
 #include "VariableGroup.h"
@@ -129,18 +133,12 @@ struct TestApplication1 : ctk::Application {
   TestApplication1() : Application("testSuite") {}
   ~TestApplication1() { shutdown(); }
 
-  void defineConnections() {
-    findTag(".*").connectTo(cs);
-    device.connectTo(cs);
-  }
-
   ModuleA A{"D", "B", this, "A", ""}; // reads like: This is A, gets input from D and writes to B
   TestModuleBase B{"A", "C", this, "B", ""};
   ModuleC C{"B", "D", this, "C", ""};
   ModuleD D{"C", "A", this, "D", ""};
 
-  ctk::DeviceModule device{this, "(dummy?map=testDataValidity1.map)"};
-  ctk::ControlSystemModule cs;
+  ctk::ConnectingDeviceModule device{this, "(dummy?map=testDataValidity1.map)"};
 };
 
 template<typename APP_TYPE>
@@ -582,8 +580,6 @@ struct TestApplication2 : ctk::Application {
   TestApplication2() : Application("connectionTestSuite") {}
   ~TestApplication2() { shutdown(); }
 
-  void defineConnections() { findTag(".*").connectTo(cs); }
-
   AA aa{this, "AA", ""};
   BB bb{this, "BB", ""};
   CC cc{this, "CC", ""};
@@ -593,9 +589,8 @@ struct TestApplication2 : ctk::Application {
   GG gg{this, "GG", ""};
   HH hh{this, "HH", ""};
 
-  ctk::ControlSystemModule cs;
-
  public:
+  // get a copy of the protected circularDependencyNetworks
   std::map<size_t, std::list<EntityOwner*>> getCircularDependencyNetworks() {
     return Application::circularDependencyNetworks;
   }
