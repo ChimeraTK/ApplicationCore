@@ -550,11 +550,14 @@ namespace ChimeraTK {
     // create DeviceModule if not yet in the _deviceModuleMap
     auto& dmm = Application::getInstance().deviceModuleMap;
     if(dmm.find(_deviceAliasOrCDD) == dmm.end()) {
-      _dmHolder =
-          boost::make_shared<DeviceModule>(&Application::getInstance(), _deviceAliasOrCDD, initialisationHandler);
+      // Add initialisation handler below, since we also need to add it if the DeviceModule already exists
+      _dmHolder = boost::make_shared<DeviceModule>(&Application::getInstance(), _deviceAliasOrCDD, nullptr);
       dmm[_deviceAliasOrCDD] = _dmHolder.get();
     }
     _dm = dmm.at(_deviceAliasOrCDD);
+    if(initialisationHandler != nullptr) {
+      _dm->addInitialisationHandler(initialisationHandler);
+    }
 
     // determine path to connect to
     pathToConnectTo = "/";
