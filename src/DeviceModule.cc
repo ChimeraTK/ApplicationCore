@@ -569,7 +569,7 @@ namespace ChimeraTK {
     // set other information required for the connection later
     triggerPath = _triggerPath;
     pathInDevice = _pathInDevice;
-    if(triggerPath[0] != '/') {
+    if(triggerPath.size() != 0 && triggerPath[0] != '/') {
       throw ChimeraTK::logic_error("DeviceModule triggerPath must be absolute!");
     }
   }
@@ -587,13 +587,14 @@ namespace ChimeraTK {
       source = dynamic_cast<const VirtualModule&>(source.submodule(pathInDevice));
     }
 
-    // connect to the control system ad the given pathToConnectTo
+    // connect to the control system at the given pathToConnectTo
     ControlSystemModule cs;
-    if(pathToConnectTo == "/") {
-      source.connectTo(cs, cs.submodule(path)(name));
+    auto& connectionTarget = (pathToConnectTo == "/" ? cs : cs.submodule(pathToConnectTo));
+    if(triggerPath.size() != 0) {
+      source.connectTo(connectionTarget, cs.submodule(path)(name));
     }
     else {
-      source.connectTo(cs.submodule(pathToConnectTo), cs.submodule(path)(name));
+      source.connectTo(connectionTarget); // connection without trigger
     }
   }
 
