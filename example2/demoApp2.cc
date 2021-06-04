@@ -22,7 +22,7 @@ struct Controller : public ctk::ApplicationModule {
 };
 
 struct ExampleApp : public ctk::Application {
-  ExampleApp() : Application("demoApp2") {}
+  ExampleApp() : Application("demoApp2") { ChimeraTK::setDMapFilePath("example2.dmap"); }
   ~ExampleApp() { shutdown(); }
 
   // We can pick any name for the module. "Oven" is what we want to see in the CS
@@ -30,18 +30,7 @@ struct ExampleApp : public ctk::Application {
 
   ctk::PeriodicTrigger timer{this, "Timer", "Periodic timer for the controller", 1000};
 
-  ctk::DeviceModule oven{this, "oven"};
-  ctk::ControlSystemModule cs;
-
-  void defineConnections();
+  ctk::ConnectingDeviceModule oven{this, "oven", "/Timer/tick"};
 };
+
 static ExampleApp theExampleApp;
-
-void ExampleApp::defineConnections() {
-  ChimeraTK::setDMapFilePath("example2.dmap");
-
-  // Connect everything to the CS (except for the device, which is special)
-  findTag(".*").connectTo(cs);
-  // Connect device's "heater" to "Oven" in the CS, and use timer.tick as trigger
-  oven["heater"].connectTo(cs["Oven"], timer.tick);
-}
