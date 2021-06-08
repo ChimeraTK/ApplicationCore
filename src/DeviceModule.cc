@@ -431,14 +431,17 @@ namespace ChimeraTK {
         --owner->testableMode_counter;
       }
 
-      errorLock.unlock(); // we must not hold the lock while waiting for the synchronousTransferCounter to go back to 0
-
       // [ExceptionHandling Spec: C.3.3.14] report exception to the control system
       std::cerr << "Device " << deviceAliasOrURI << " reports error: " << error << std::endl;
       deviceError.status = StatusOutput::Status::FAULT;
       deviceError.message = error;
       deviceError.setCurrentVersionNumber({});
       deviceError.writeAll();
+
+      // We must not hold the lock while waiting for the synchronousTransferCounter to go back to 0. Only release it
+      // after deviceError has been written, so the CircularDependencyDetector can read the error message from its
+      // thread for printing.
+      errorLock.unlock();
 
       // [ExceptionHandling Spec: C.3.3.15] Wait for all synchronous transfers to finish before starting recovery.
       while(synchronousTransferCounter > 0) {

@@ -260,6 +260,9 @@ void Application::run() {
       waitForTestableMode(module);
     }
   }
+
+  // Launch circular dependency detector thread
+  circularDependencyDetector.startDetectBlockedModules();
 }
 
 /*********************************************************************************************************************/
@@ -1410,19 +1413,25 @@ void Application::unregisterDeviceModule(DeviceModule* deviceModule) {
 
 void Application::CircularDependencyDetector::registerDependencyWait(VariableNetworkNode& node) {
   assert(node.getType() == NodeType::Application);
-  if(node.getOwner().getFeedingNode().getType() != NodeType::Application) return;
   std::unique_lock<std::mutex> lock(_mutex);
 
   auto* dependent = dynamic_cast<Module*>(node.getOwningModule())->findApplicationModule();
+
+  // register the waiting node in the map (used for the detectBlockedModules() thread). This is done also for Device
+  // variables etc.
+  _awaitedNodes[dependent] = node;
+
+  // checking of direct circular dependencies is only done for Application-type feeders
+  if(node.getOwner().getFeedingNode().getType() != NodeType::Application) return;
   auto* dependency = dynamic_cast<Module*>(node.getOwner().getFeedingNode().getOwningModule())->findApplicationModule();
 
   // If a module depends on itself, the detector would always detect a circular dependency, even if it is resolved
   // by writing initial values in prepare(). Hence we do not check anything in this case.
   if(dependent == dependency) return;
 
-  // register the dependency wait in the map
-  _waitMap[dependent] = dependency;
+  // Register dependent-dependency relation in map
   _awaitedVariables[dependent] = node.getQualifiedName();
+  _waitMap[dependent] = dependency;
 
   // check for circular dependencies
   auto* depdep = dependency;
@@ -1488,9 +1497,128 @@ void Application::CircularDependencyDetector::printWaiters() {
 
 void Application::CircularDependencyDetector::unregisterDependencyWait(VariableNetworkNode& node) {
   assert(node.getType() == NodeType::Application);
-  if(node.getOwner().getFeedingNode().getType() != NodeType::Application) return;
   std::lock_guard<std::mutex> lock(_mutex);
   auto* mod = dynamic_cast<Module*>(node.getOwningModule())->findApplicationModule();
   _waitMap.erase(mod);
   _awaitedVariables.erase(mod);
+  _awaitedNodes.erase(mod);
 }
+
+/*********************************************************************************************************************/
+
+void Application::CircularDependencyDetector::startDetectBlockedModules() {
+  _thread = std::thread([this] { detectBlockedModules(); });
+}
+
+/*********************************************************************************************************************/
+
+void Application::CircularDependencyDetector::detectBlockedModules() {
+  auto& app = Application::getInstance();
+  size_t iteration = 0;
+  while(true) {
+    // wait some time to slow down this check
+    std::this_thread::sleep_for(std::chrono::seconds(60));
+
+    // check for modules which did not yet reach their mainLoop
+    bool allModulesEnteredMainLoop = true;
+    for(auto* module : app.getSubmoduleListRecursive()) {
+      // Note: We are "abusing" this flag which was introduced for the testable mode. It actually just shows whether
+      // the mainLoop() has benn called already (resp. will be called very soon). It is not depending on the
+      // testableMode. FIXME: Rename this flag!
+      if(module->hasReachedTestableMode()) {
+        continue;
+      }
+
+      // Found a module which is still waiting for initial values
+      allModulesEnteredMainLoop = false;
+
+      // require lock against concurrent accesses on the maps
+      std::lock_guard<std::mutex> lock(_mutex);
+
+      // Check if module has registered a dependency wait. If not, situation will either resolve soon or module will
+      // register a dependency wait soon. Both cases can be found in the next interation.
+      if(_awaitedNodes.find(module) == _awaitedNodes.end()) continue;
+
+      auto* appModule = dynamic_cast<ApplicationModule*>(module);
+      if(!appModule) {
+        // only ApplicationModule can have hasReachedTestableMode() == true, so it should not happen
+        std::cout << "CircularDependencyDetector found non-application module: " << module->getQualifiedName()
+                  << std::endl;
+        continue;
+      }
+
+      // Iteratively seach for reason the module blocks
+      std::function<void(const VariableNetworkNode& node)> iterativeSearch = [&](const VariableNetworkNode& node) {
+        const auto& feeder = node.getOwner().getFeedingNode();
+        if(feeder.getType() == NodeType::Application) {
+          // fed by other ApplicationModule: check if that one is waiting, too
+          auto* feedingAppModule = dynamic_cast<Module*>(feeder.getOwningModule())->findApplicationModule();
+          if(feedingAppModule->hasReachedTestableMode()) {
+            // the feeding module has started its mainLoop(), but not sent us an initial value
+            // FIXME: There is a race condition, if the situation has right now resolved and the feeding module just
+            // not yet sent the initial value. Ideally we should wait another iteration before printing warnings!
+            if(_modulesWeHaveWarnedAbout.find(feedingAppModule) == _modulesWeHaveWarnedAbout.end()) {
+              _modulesWeHaveWarnedAbout.insert(feedingAppModule);
+              std::cout << "Note: ApplicationModule " << appModule->getQualifiedName() << " is waiting for an "
+                        << "initial value, because " << feedingAppModule->getQualifiedName() << " has not yet sent one."
+                        << std::endl;
+            }
+            return;
+          }
+          if(_awaitedNodes.find(feedingAppModule) == _awaitedNodes.end()) {
+            // The other module is not right now waiting. It will either enter the mainLoop soon, or start waiting soon.
+            // Let's just wait another iteration.
+            return;
+          }
+          // The other module is right now waiting: continue iterative search
+          iterativeSearch(_awaitedNodes.at(feedingAppModule));
+        }
+        else if(feeder.getType() == NodeType::Device) {
+          // fed by device
+          const auto& deviceName = feeder.getDeviceAlias();
+          if(_devicesWeHaveWarnedAbout.find(deviceName) == _devicesWeHaveWarnedAbout.end()) {
+            _devicesWeHaveWarnedAbout.insert(deviceName);
+            std::cout << "Note: Still waiting for device " << deviceName << " to come up";
+            auto* dm = Application::getInstance().deviceModuleMap[deviceName];
+            std::unique_lock dmLock(dm->errorMutex);
+            if(dm->deviceHasError) {
+              std::cout << " (" << std::string(dm->deviceError.message) << ")";
+            }
+            std::cout << "..." << std::endl;
+          }
+        }
+        else {
+          // fed by anything else
+          if(_otherThingsWeHaveWarnedAbout.find(feeder.getType()) == _otherThingsWeHaveWarnedAbout.end()) {
+            _otherThingsWeHaveWarnedAbout.insert(feeder.getType());
+            std::cout << "At least one ApplicationModule (" << appModule->getQualifiedName() << " is waiting for an "
+                      << "initial value from NodeType " << int(feeder.getType()) << "." << std::endl;
+            std::cout << "This is probably a BUG in the ChimeraTK framework." << std::endl;
+            std::cout << "Network:" << std::endl;
+            feeder.getOwner().dump();
+          }
+        }
+      };
+      iterativeSearch(_awaitedNodes.at(appModule));
+    }
+
+    // if all modules are in the mainLoop, stop this thread
+    if(allModulesEnteredMainLoop) break;
+
+    if(++iteration == 2) {
+      printWaiters();
+    }
+  }
+
+  std::cout << "All application modules are running." << std::endl;
+
+  // free some memory
+  _waitMap.clear();
+  _awaitedVariables.clear();
+  _awaitedNodes.clear();
+  _modulesWeHaveWarnedAbout.clear();
+  _devicesWeHaveWarnedAbout.clear();
+  _otherThingsWeHaveWarnedAbout.clear();
+}
+
+/*********************************************************************************************************************/

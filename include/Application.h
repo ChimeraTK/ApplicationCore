@@ -220,12 +220,24 @@ namespace ChimeraTK {
       /// non-Application-typed nodes are ignored.
       void unregisterDependencyWait(VariableNetworkNode& node);
 
+      /// Print modules which are currently waiting for initial values.
       void printWaiters();
 
+      /// Start detection thread
+      void startDetectBlockedModules();
+
      protected:
+      /// Function executed in thread
+      void detectBlockedModules();
+
       std::mutex _mutex;
       std::map<ApplicationModule*, ApplicationModule*> _waitMap;
       std::map<ApplicationModule*, std::string> _awaitedVariables;
+      std::map<EntityOwner*, VariableNetworkNode> _awaitedNodes;
+      std::unordered_set<ApplicationModule*> _modulesWeHaveWarnedAbout;
+      std::unordered_set<std::string> _devicesWeHaveWarnedAbout;
+      std::unordered_set<NodeType> _otherThingsWeHaveWarnedAbout;
+      std::thread _thread;
 
     } circularDependencyDetector;
 
