@@ -50,7 +50,7 @@ class TestTransferGroupDummy : public ChimeraTK::DummyBackend {
     return boost::shared_ptr<DeviceBackend>(new TestTransferGroupDummy(parameters.front()));
   }
 
-  void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) override {
+  void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override {
     last_bar = bar;
     last_address = address;
     last_sizeInBytes = sizeInBytes;
@@ -59,8 +59,8 @@ class TestTransferGroupDummy : public ChimeraTK::DummyBackend {
   }
 
   std::atomic<size_t> numberOfTransfers{0};
-  std::atomic<uint8_t> last_bar;
-  std::atomic<uint32_t> last_address;
+  std::atomic<uint64_t> last_bar;
+  std::atomic<uint64_t> last_address;
   std::atomic<size_t> last_sizeInBytes;
 };
 
