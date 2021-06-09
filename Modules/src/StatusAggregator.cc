@@ -129,7 +129,7 @@ namespace ChimeraTK {
 
   void StatusAggregator::mainLoop() {
     auto rag = readAnyGroup();
-    bool initialValue = true;
+    DataValidity lastStatusValidity = DataValidity::ok;
     while(true) {
       // find highest priority status of all inputs
       StatusOutput::Status status;
@@ -149,10 +149,11 @@ namespace ChimeraTK {
       assert(statusSet);
 
       // write status only if changed, but always write initial value out
-      if(status != _output.status || getDataValidity() != _output.status.dataValidity() || initialValue) {
+      if(status != _output.status || _output.status.getVersionNumber() == VersionNumber{nullptr} ||
+          getDataValidity() != lastStatusValidity) {
         _output.status = status;
         _output.status.write();
-        initialValue = false;
+        lastStatusValidity = getDataValidity();
       }
 
       // wait for changed inputs
