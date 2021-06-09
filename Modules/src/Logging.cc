@@ -202,7 +202,8 @@ void LoggingModule::mainLoop() {
 }
 
 ctk::VariableNetworkNode LoggingModule::getAccessorPair(const std::string& sender) {
-  auto it = std::find_if(sources.begin(), sources.end(), boost::bind(&MessageSource::sendingModule, _1) == sender);
+  auto it = std::find_if(
+      sources.begin(), sources.end(), boost::bind(&MessageSource::sendingModule, boost::placeholders::_1) == sender);
   if(it == sources.end()) {
     sources.emplace_back(MessageSource{sender, this});
   }
