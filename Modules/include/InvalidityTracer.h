@@ -1,0 +1,20 @@
+#pragma once
+
+/**
+ *  InvalidityTracer application module.
+ *  
+ *  This module can be instantiated in any application for the purpose of debugging unexpected stats of
+ *  DataValidity::faulty.
+ */
+#include "ApplicationCore.h"
+
+namespace ChimeraTK {
+
+  struct InvalidityTracer : ApplicationModule {
+    using ApplicationModule::ApplicationModule;
+    ScalarPushInput<int> printTrace{this, "printTrace", "", "Write to this variable to print the trace to stdout"};
+
+    void mainLoop() override;
+  };
+
+} // namespace ChimeraTK

@@ -103,10 +103,17 @@ namespace ChimeraTK {
      * write operations */
     VersionNumber currentVersionNumber{nullptr};
 
-    /** Number of inputs which report DataValidity::faulty. */
-    size_t dataFaultCounter{0};
+    /** 
+     *  Number of inputs which report DataValidity::faulty.
+     *  This is atomic to allow the InvalidityTracer module to access this information.
+     */
+    std::atomic<size_t> dataFaultCounter{0};
 
-    /** Unique ID for the circular dependency network. 0 if the EntityOwner is not in a circular dependency network. */
+    /** 
+     *  Unique ID for the circular dependency network. 0 if the EntityOwner is not in a circular dependency network.
+     *  Only write when in LifeCycleState::initialisation (so getDataValidity() is thread safe, required by
+     *  InvalidityTracer).
+     */
     size_t _circularNetworkHash{0};
 
     /** Helper needed to stop the recusion when detecting circular dependency networks.

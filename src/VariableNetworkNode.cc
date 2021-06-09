@@ -349,7 +349,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  ChimeraTK::TransferElementAbstractor& VariableNetworkNode::getAppAccessorNoType() { return *(pdata->appNode); }
+  ChimeraTK::TransferElementAbstractor& VariableNetworkNode::getAppAccessorNoType() const { return *(pdata->appNode); }
 
   /*********************************************************************************************************************/
 

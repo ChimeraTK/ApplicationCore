@@ -11,11 +11,24 @@ namespace ChimeraTK {
   class EntityOwner;
   class VariableNetworkNode;
 
-  /** A mix-in helper class so you can set the flags without knowing the user data type.
+  /** 
+   *  A mix-in helper class so you can set the flags without knowing the user data type.
    */
   class MetaDataPropagationFlagProvider {
+   public:
+    DataValidity getLastValidity() const { return lastValidity; }
+
    protected:
+    /**
+     *  Flag whether this is decorating a circular input
+     */
     bool _isCircularInput{false};
+
+    /** 
+     *  Value of validity flag from last read or write operation.
+     *  This is atomic to allow the InvalidityTracer module to access this information.
+     */
+    std::atomic<DataValidity> lastValidity{DataValidity::ok};
 
     // The VariableNetworkNode needs access to _isCircularInput. It cannot be set at construction time because the network is not complete yet
     // and isCircularInput is not know at that moment.
@@ -41,9 +54,6 @@ namespace ChimeraTK {
 
    protected:
     EntityOwner* _owner;
-
-    /** value of validity flag from last read or write operation */
-    DataValidity lastValidity{DataValidity::ok};
 
     using TransferElement::_dataValidity;
     using NDRegisterAccessorDecorator<T>::_target;

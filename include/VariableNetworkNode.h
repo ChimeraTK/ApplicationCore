@@ -161,7 +161,7 @@ namespace ChimeraTK {
     const std::unordered_set<std::string>& getTags() const;
     void setNumberOfElements(size_t nElements);
     size_t getNumberOfElements() const;
-    ChimeraTK::TransferElementAbstractor& getAppAccessorNoType();
+    ChimeraTK::TransferElementAbstractor& getAppAccessorNoType() const;
 
     void setPublicName(const std::string& name) const;
 

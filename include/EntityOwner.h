@@ -82,11 +82,11 @@ namespace ChimeraTK {
 
     /** Obtain the list of accessors/variables associated with this instance and
      * any submodules */
-    std::list<VariableNetworkNode> getAccessorListRecursive();
+    std::list<VariableNetworkNode> getAccessorListRecursive() const;
 
     /** Obtain the list of submodules associated with this instance and any
      * submodules */
-    std::list<Module*> getSubmoduleListRecursive();
+    std::list<Module*> getSubmoduleListRecursive() const;
 
     /** Check whether a submodule exists by the given name (not taking into
      * account eliminated hierarchies etc.) */

@@ -190,6 +190,9 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error(
           "Error: setCircularNetworkHash() called with different values for EntityOwner \"" + _name + "\" ");
     }
+    if(Application::getInstance().getLifeCycleState() != LifeCycleState::initialisation) {
+      throw ChimeraTK::logic_error("Error: setCircularNetworkHash() called after initialisation.");
+    }
     _circularNetworkHash = circularNetworkHash;
   }
 
