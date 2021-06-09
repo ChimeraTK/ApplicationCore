@@ -287,6 +287,9 @@ namespace ChimeraTK {
     void mainLoop() {
       // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
       ReadAnyGroup group{watch.value, disable.value, requiredValue.value};
+
+      DataValidity lastStatusValidity = DataValidity::ok;
+
       while(true) {
         StatusOutput::Status newStatus;
         if(disable.value != 0) {
@@ -300,10 +303,11 @@ namespace ChimeraTK {
         }
 
         // update only if status has changed, but always in case of initial value
-        if(status.value != newStatus || getDataValidity() != status.value.dataValidity() ||
+        if(status.value != newStatus || getDataValidity() != lastStatusValidity ||
             status.value.getVersionNumber() == VersionNumber{nullptr}) {
           status.value = newStatus;
           status.value.write();
+          lastStatusValidity = getDataValidity();
         }
         group.readAny();
       }
