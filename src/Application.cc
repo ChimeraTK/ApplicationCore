@@ -292,6 +292,7 @@ void Application::shutdown() {
   for(auto& deviceModule : deviceModuleMap) {
     deviceModule.second->terminate();
   }
+
   ApplicationBase::shutdown();
 }
 /*********************************************************************************************************************/
@@ -1507,7 +1508,7 @@ void Application::CircularDependencyDetector::unregisterDependencyWait(VariableN
 /*********************************************************************************************************************/
 
 void Application::CircularDependencyDetector::startDetectBlockedModules() {
-  _thread = std::thread([this] { detectBlockedModules(); });
+  _thread = boost::thread([this] { detectBlockedModules(); });
 }
 
 /*********************************************************************************************************************/
@@ -1517,7 +1518,7 @@ void Application::CircularDependencyDetector::detectBlockedModules() {
   size_t iteration = 0;
   while(true) {
     // wait some time to slow down this check
-    std::this_thread::sleep_for(std::chrono::seconds(60));
+    boost::this_thread::sleep_for(boost::chrono::seconds(60));
 
     // check for modules which did not yet reach their mainLoop
     bool allModulesEnteredMainLoop = true;
@@ -1619,6 +1620,15 @@ void Application::CircularDependencyDetector::detectBlockedModules() {
   _modulesWeHaveWarnedAbout.clear();
   _devicesWeHaveWarnedAbout.clear();
   _otherThingsWeHaveWarnedAbout.clear();
+}
+
+/*********************************************************************************************************************/
+
+Application::CircularDependencyDetector::~CircularDependencyDetector() {
+  if(_thread.joinable()) {
+    _thread.interrupt();
+    _thread.join();
+  }
 }
 
 /*********************************************************************************************************************/

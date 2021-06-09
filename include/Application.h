@@ -223,10 +223,12 @@ namespace ChimeraTK {
       /// Print modules which are currently waiting for initial values.
       void printWaiters();
 
+      ~CircularDependencyDetector();
+
+     protected:
       /// Start detection thread
       void startDetectBlockedModules();
 
-     protected:
       /// Function executed in thread
       void detectBlockedModules();
 
@@ -237,7 +239,9 @@ namespace ChimeraTK {
       std::unordered_set<ApplicationModule*> _modulesWeHaveWarnedAbout;
       std::unordered_set<std::string> _devicesWeHaveWarnedAbout;
       std::unordered_set<NodeType> _otherThingsWeHaveWarnedAbout;
-      std::thread _thread;
+      boost::thread _thread;
+
+      friend class Application;
 
     } circularDependencyDetector;
 
