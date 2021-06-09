@@ -174,15 +174,17 @@ namespace ChimeraTK {
     bool varExists = boost::fusion::any(variableMap.table, FunctorGetTypeForName{this, name, typeOfVar});
 
     if(!varExists) {
-      throw(ChimeraTK::logic_error("ConfigReader: Cannot find a scalar "
-                                   "configuration variable of the name '" +
-          name + "' in the config file '" + _fileName + "'."));
+      auto msg = "ConfigReader: Cannot find a scalar configuration variable of the name '" + name +
+          "' in the config file '" + _fileName + "'.";
+      std::cerr << msg << std::endl;
+      throw(ChimeraTK::logic_error(msg));
     }
 
     if(typeOfVar != typeOfThis) {
-      throw(ChimeraTK::logic_error("ConfigReader: Attempting to read scalar configuration variable '" + name +
-          "' with type '" + typeOfThis + "'. This does not match type '" + typeOfVar +
-          "' defined in the config file."));
+      auto msg = "ConfigReader: Attempting to read scalar configuration variable '" + name + "' with type '" +
+          typeOfThis + "'. This does not match type '" + typeOfVar + "' defined in the config file.";
+      std::cerr << msg << std::endl;
+      throw(ChimeraTK::logic_error(msg));
     }
   }
 
