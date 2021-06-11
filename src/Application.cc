@@ -1515,7 +1515,6 @@ void Application::CircularDependencyDetector::startDetectBlockedModules() {
 
 void Application::CircularDependencyDetector::detectBlockedModules() {
   auto& app = Application::getInstance();
-  size_t iteration = 0;
   while(true) {
     // wait some time to slow down this check
     boost::this_thread::sleep_for(boost::chrono::seconds(60));
@@ -1605,10 +1604,6 @@ void Application::CircularDependencyDetector::detectBlockedModules() {
 
     // if all modules are in the mainLoop, stop this thread
     if(allModulesEnteredMainLoop) break;
-
-    if(++iteration == 2) {
-      printWaiters();
-    }
   }
 
   std::cout << "All application modules are running." << std::endl;
