@@ -56,14 +56,14 @@ namespace ChimeraTK {
     bool write() {
       auto versionNumber = this->getOwner()->getCurrentVersionNumber();
       bool dataLoss = ChimeraTK::OneDRegisterAccessor<UserType>::write(versionNumber);
-      if(dataLoss) Application::incrementDataLossCounter();
+      if(dataLoss) Application::incrementDataLossCounter(this->node.getQualifiedName());
       return dataLoss;
     }
 
     bool writeDestructively() {
       auto versionNumber = this->getOwner()->getCurrentVersionNumber();
       bool dataLoss = ChimeraTK::OneDRegisterAccessor<UserType>::writeDestructively(versionNumber);
-      if(dataLoss) Application::incrementDataLossCounter();
+      if(dataLoss) Application::incrementDataLossCounter(this->node.getQualifiedName());
       return dataLoss;
     }
 

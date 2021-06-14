@@ -184,9 +184,18 @@ namespace ChimeraTK {
     /** Enable debug output for a given variable. */
     void enableVariableDebugging(const VariableNetworkNode& node) { debugMode_variableList.insert(node.getUniqueId()); }
 
-    /** Incremenet counter for how many write() operations have overwritten unread
-     * data */
-    static void incrementDataLossCounter() { getInstance().dataLossCounter++; }
+    /** Enable debug output for lost data. This will print to stdout everytime data is lost in internal queues as it
+     *  is counted with the DataLossCounter module. Do not enable in production environments. Do not call after
+     *  initialisation phase of application. */
+    void enableDebugDataLoss() { debugDataLoss = true; }
+
+    /** Incremenet counter for how many write() operations have overwritten unread data */
+    static void incrementDataLossCounter(const std::string& name) {
+      if(getInstance().debugDataLoss) {
+        std::cout << "Data loss in variable " << name << std::endl;
+      }
+      getInstance().dataLossCounter++;
+    }
 
     static size_t getAndResetDataLossCounter() {
       size_t counter = getInstance().dataLossCounter.load(std::memory_order_relaxed);
@@ -468,6 +477,9 @@ namespace ChimeraTK {
 
     /** Counter for how many write() operations have overwritten unread data */
     std::atomic<size_t> dataLossCounter{0};
+
+    /** Flag whether to debug data loss (as counted with the data loss counter). */
+    bool debugDataLoss{false};
 
     /** Life-cycle state of the application */
     std::atomic<LifeCycleState> lifeCycleState{LifeCycleState::initialisation};

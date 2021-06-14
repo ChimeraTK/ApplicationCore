@@ -26,13 +26,23 @@ namespace ChimeraTK {
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
-      std::cout << "doWriteTransfer() called on '" << _fullyQualifiedName << "'." << std::endl;
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
+      std::cout << "doWriteTransfer() called on '" << _fullyQualifiedName << "'." << std::flush;
+      auto ret = ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransfer(versionNumber);
+      if(ret) {
+        std::cout << " -> DATA LOSS!";
+      }
+      std::cout << std::endl;
+      return ret;
     }
 
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) override {
-      std::cout << "doWriteTransferDestructively() called on '" << _fullyQualifiedName << "'." << std::endl;
-      return ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransferDestructively(versionNumber);
+      std::cout << "doWriteTransferDestructively() called on '" << _fullyQualifiedName << "'." << std::flush;
+      auto ret = ChimeraTK::NDRegisterAccessorDecorator<UserType>::doWriteTransferDestructively(versionNumber);
+      if(ret) {
+        std::cout << " -> DATA LOSS!";
+      }
+      std::cout << std::endl;
+      return ret;
     }
 
     void doReadTransferSynchronously() override {

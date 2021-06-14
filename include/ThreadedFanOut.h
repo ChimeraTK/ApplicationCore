@@ -69,7 +69,7 @@ namespace ChimeraTK {
           }
           slave->setDataValidity(validity);
           bool dataLoss = slave->writeDestructively(version);
-          if(dataLoss) Application::incrementDataLossCounter();
+          if(dataLoss) Application::incrementDataLossCounter(slave->getName());
         }
         // receive data
         boost::this_thread::interruption_point();
@@ -148,7 +148,7 @@ namespace ChimeraTK {
             slave->accessChannel(0) = FanOut<UserType>::impl->accessChannel(0);
           }
           bool dataLoss = slave->writeDestructively(version);
-          if(dataLoss) Application::incrementDataLossCounter();
+          if(dataLoss) Application::incrementDataLossCounter(slave->getName());
         }
         // receive data
         boost::this_thread::interruption_point();
