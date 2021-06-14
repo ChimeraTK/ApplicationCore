@@ -35,6 +35,7 @@ namespace ChimeraTK {
     ~ThreadedFanOut() { deactivate(); }
 
     void activate() override {
+      if(this->_disabled) return;
       assert(!_thread.joinable());
       _thread = boost::thread([this] { this->run(); });
     }

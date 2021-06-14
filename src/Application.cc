@@ -95,7 +95,7 @@ void Application::initialise() {
 /*********************************************************************************************************************/
 
 void Application::optimiseUnmappedVariables(const std::set<std::string>& names) {
-  for(auto& pv : names) {
+  for(const auto& pv : names) {
     auto& node = controlSystemVariables.at(pv);
     auto& network = node.getOwner();
     if(network.getFeedingNode() == node) {
@@ -103,13 +103,35 @@ void Application::optimiseUnmappedVariables(const std::set<std::string>& names) 
       continue;
     }
     if(network.getConsumingNodes().size() == 1) {
-      // TODO: Optimise also this case by replacing feeding accessor with ConstantAccessor
-      continue;
+      if(network.getFeedingNode().getType() == NodeType::Application) {
+        callForType(network.getValueType(), [&](auto t) {
+          using UserType = decltype(t);
+
+          // replace comsuming node with constant in the model
+          network.removeNode(network.getConsumingNodes().front());
+          auto constNode = VariableNetworkNode::makeConstant<UserType>(
+              false, UserType(), network.getFeedingNode().getNumberOfElements());
+          network.addNode(constNode);
+
+          // change application accessor into constant
+          auto& acc = network.getFeedingNode().getAppAccessor<UserType>();
+          auto constImpl = constNode.template createConstAccessor<UserType>({});
+          acc.replace(constImpl);
+        });
+      }
+      else {
+        auto fanOut = network.getFanOut();
+        assert(fanOut);
+        // FanOut is present: disable it
+        fanOut->disable();
+      }
     }
-    // more than one consumer: we have a fan out -> remove control system consumer from it.
-    auto fanOut = network.getFanOut();
-    assert(fanOut != nullptr);
-    fanOut->removeSlave(_processVariableManager->getProcessVariable(pv));
+    else {
+      // more than one consumer: we have a fan out -> remove control system consumer from it.
+      auto fanOut = network.getFanOut();
+      assert(fanOut != nullptr);
+      fanOut->removeSlave(_processVariableManager->getProcessVariable(pv));
+    }
   }
 }
 

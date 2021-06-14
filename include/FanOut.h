@@ -24,7 +24,15 @@ namespace ChimeraTK {
   class FanOutBase {
    public:
     virtual ~FanOutBase() {}
-    virtual void removeSlave(const boost::shared_ptr<ChimeraTK::TransferElement> &slave) = 0;
+    virtual void removeSlave(const boost::shared_ptr<ChimeraTK::TransferElement>& slave) = 0;
+
+    /** Disable the FanOut so it does nothing. Used by Application::optimiseUnmappedVariables(). FeedingFanOut simply
+     *  do nothing instead of read/write operations. ThreadedFanOuts will not launch their thread. Has to be called
+     *  before launching the application/fanout threads. */
+    void disable() { _disabled = true; }
+
+   protected:
+    bool _disabled{false};
   };
 
   /** Base class for several implementations which distribute values from one
