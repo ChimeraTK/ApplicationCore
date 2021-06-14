@@ -223,6 +223,9 @@ namespace ChimeraTK {
       /// Print modules which are currently waiting for initial values.
       void printWaiters();
 
+      /// Stop the thread before ApplicationBase::terminate() is called.
+      void terminate();
+
       ~CircularDependencyDetector();
 
      protected:
