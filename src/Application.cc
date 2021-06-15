@@ -315,6 +315,8 @@ void Application::shutdown() {
     deviceModule.second->terminate();
   }
 
+  circularDependencyDetector.terminate();
+
   ApplicationBase::shutdown();
 }
 /*********************************************************************************************************************/
@@ -641,7 +643,6 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
 /*********************************************************************************************************************/
 
 void Application::makeConnections() {
-
   // finalise connections: decide still-undecided details, in particular for
   // control-system and device varibales, which get created "on the fly".
   finaliseNetworks();
@@ -1641,11 +1642,17 @@ void Application::CircularDependencyDetector::detectBlockedModules() {
 
 /*********************************************************************************************************************/
 
-Application::CircularDependencyDetector::~CircularDependencyDetector() {
+void Application::CircularDependencyDetector::terminate() {
   if(_thread.joinable()) {
     _thread.interrupt();
     _thread.join();
   }
+}
+
+/*********************************************************************************************************************/
+
+Application::CircularDependencyDetector::~CircularDependencyDetector() {
+  assert(!_thread.joinable());
 }
 
 /*********************************************************************************************************************/
