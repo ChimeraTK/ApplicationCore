@@ -11,7 +11,7 @@ class DemoDummy : public ChimeraTK::DummyBackend {
     return boost::shared_ptr<DeviceBackend>(new DemoDummy(parameters.front()));
   }
 
-  void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) override {
+  void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override {
     // if probeSignal register is read, fill it first
     if(bar == 2) {
       assert(address == 0);
