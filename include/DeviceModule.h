@@ -339,6 +339,11 @@ namespace ChimeraTK {
     ConnectingDeviceModule(EntityOwner* owner, const std::string& deviceAliasOrCDD, const std::string& triggerPath = {},
         std::function<void(DeviceModule*)> initialisationHandler = nullptr, const std::string& pathInDevice = "/");
 
+    /**
+     *  Return the underlying DeviceModule
+     */
+    DeviceModule& getDeviceModule() { return *_dm; }
+
    protected:
     void defineConnections() override;
 
