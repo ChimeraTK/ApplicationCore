@@ -183,7 +183,7 @@ namespace ChimeraTK {
     _hasThrownToInhibitTransfer = false;
 
     if(TransferElement::_versionNumber == VersionNumber(nullptr)) {
-      _deviceModule->getInitialValueSharedLock();
+      _deviceModule->waitForInitialValues();
       // we don't have to store the shared lock. Once we acquired it the deviceModule will never take it again.
     }
 

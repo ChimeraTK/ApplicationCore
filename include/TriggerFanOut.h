@@ -84,7 +84,7 @@ namespace ChimeraTK {
       // But we have to increase the testable mode counter because we don't want to fall out of testable mode at this point already.
       if(Application::getInstance().testableMode) ++Application::getInstance().testableMode_deviceInitialisationCounter;
       Application::testableModeUnlock("WaitInitialValueLock");
-      (void)_deviceModule.getInitialValueSharedLock();
+      (void)_deviceModule.waitForInitialValues();
       Application::testableModeLock("Enter while loop");
       if(Application::getInstance().testableMode) --Application::getInstance().testableMode_deviceInitialisationCounter;
 

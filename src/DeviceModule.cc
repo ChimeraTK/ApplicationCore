@@ -66,7 +66,6 @@ namespace ChimeraTK {
   : Module(nullptr, "<Device:" + _deviceAliasOrURI + ">", ""), deviceAliasOrURI(_deviceAliasOrURI),
     registerNamePrefix(""), owner(application) {
     application->registerDeviceModule(this);
-    initialValueMutex.lock();
     if(initialisationHandler) {
       initialisationHandlers.push_back(initialisationHandler);
     }
@@ -382,9 +381,9 @@ namespace ChimeraTK {
 
       // send the trigger that the device is available again
       device.activateAsyncRead();
-      if(isHoldingInitialValueMutex) {
-        isHoldingInitialValueMutex = false;
-        initialValueMutex.unlock();
+      if(isHoldingInitialValueLatch) {
+        isHoldingInitialValueLatch = false;
+        initialValueLatch.count_down();
       }
 
       // [Spec: 2.3.5] Reset exception state and wait for the next error to be reported.
@@ -539,9 +538,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  boost::shared_lock<boost::shared_mutex> DeviceModule::getInitialValueSharedLock() {
-    return boost::shared_lock<boost::shared_mutex>(initialValueMutex);
-  }
+  void DeviceModule::waitForInitialValues() { initialValueLatch.wait(); }
 
   /*********************************************************************************************************************/
   /*********************************************************************************************************************/

@@ -20,6 +20,7 @@
 #include <ChimeraTK/Device.h>
 #include "ModuleGroup.h"
 #include "StatusAccessor.h"
+#include <boost/thread/latch.hpp>
 
 namespace ChimeraTK {
   class Application;
@@ -86,7 +87,7 @@ namespace ChimeraTK {
     /** Move assignment */
     DeviceModule& operator=(DeviceModule&& other) {
       assert(!moduleThread.joinable());
-      assert(other.isHoldingInitialValueMutex);
+      assert(other.isHoldingInitialValueLatch);
       Module::operator=(std::move(other));
       device = std::move(other.device);
       deviceAliasOrURI = std::move(other.deviceAliasOrURI);
@@ -96,7 +97,6 @@ namespace ChimeraTK {
       proxies = std::move(other.proxies);
       deviceHasError = other.deviceHasError;
       for(auto& proxy : proxies) proxy.second._myowner = this;
-      initialValueMutex.lock();
       owner->registerDeviceModule(this);
       return *this;
     }
@@ -203,11 +203,11 @@ namespace ChimeraTK {
      * the list DeviceModule::writeRecoveryOpen, during a recovery.*/
     boost::shared_lock<boost::shared_mutex> getRecoverySharedLock();
 
-    /** Get a shared lock to the DeviceModule::initialValueMutex.
-     * The DeviceModule is holing the exclusive lock from construction until the intial values
-     * can be received in the accessors. It then releases the lock and will never acquire it again.
+    /** 
+     *  Wait for initial values coming from the device. This function will block until the device is opened and
+     *  initialised, and initial values can be read from it.
      */
-    boost::shared_lock<boost::shared_mutex> getInitialValueSharedLock();
+    void waitForInitialValues();
 
     std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override;
 
@@ -281,9 +281,10 @@ namespace ChimeraTK {
     /** Mutex for writing the DeviceModule::writeRecoveryOpen.*/
     boost::shared_mutex recoveryMutex;
 
-    /** Mutex to halt accessors until initial values can be received.*/
-    bool isHoldingInitialValueMutex{true};
-    boost::shared_mutex initialValueMutex;
+    /** Latch to halt accessors until initial values can be received.
+     *  Must be a latch and not a mutex as it is locked in a different thread than unlocked. */
+    bool isHoldingInitialValueLatch{true};
+    boost::latch initialValueLatch{1};
 
     std::atomic<int64_t> synchronousTransferCounter{0};
     std::atomic<uint64_t> writeOrderCounter{0};
