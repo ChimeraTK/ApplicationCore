@@ -16,6 +16,10 @@ include(cmake/set_default_build_to_release.cmake)
 include(cmake/set_default_flags.cmake)
 
 # Add the dependencies. We need ApplicationCore and a control system adapter implementation.
+#
+# /!\ if you need the DeviceAccess-DoocsBackend, you have to add the dependency _after_
+# /!\ selecting the control system adapter, otherwise your server will not work.
+#
 add_dependency(ChimeraTK-ApplicationCore 01.08 REQUIRED)
 
 # Select the control system adapter
