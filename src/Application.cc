@@ -25,6 +25,7 @@
 #include "TestableModeAccessorDecorator.h"
 #include "ThreadedFanOut.h"
 #include "TriggerFanOut.h"
+#include "VariableNetworkModuleGraphDumpingVisitor.h"
 #include "VariableNetworkGraphDumpingVisitor.h"
 #include "VariableNetworkNode.h"
 #include "Visitor.h"
@@ -852,6 +853,15 @@ void Application::dumpConnectionGraph(const std::string& fileName) {
   std::fstream file{fileName, std::ios_base::out};
 
   VariableNetworkGraphDumpingVisitor visitor{file};
+  visitor.dispatch(*this);
+}
+
+/*********************************************************************************************************************/
+
+void Application::dumpModuleConnectionGraph(const std::string& fileName) const {
+  std::fstream file{fileName, std::ios_base::out};
+
+  VariableNetworkModuleGraphDumpingVisitor visitor{file};
   visitor.dispatch(*this);
 }
 
