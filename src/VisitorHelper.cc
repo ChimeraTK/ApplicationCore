@@ -10,6 +10,7 @@ namespace ChimeraTK { namespace detail {
     std::replace(name.begin(), name.end(), '.', 'd'); // dot
     std::replace(name.begin(), name.end(), ' ', '_'); // Generic space replacer
     std::replace(name.begin(), name.end(), '*', 'a'); // asterisk
+    std::replace(name.begin(), name.end(), '@', 'A'); // at
 
     return name;
   }
