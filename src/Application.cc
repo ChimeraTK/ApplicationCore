@@ -846,6 +846,8 @@ void Application::dumpConnections(std::ostream& stream) {                       
   stream << "======================================================================" << std::endl; // LCOV_EXCL_LINE
 } // LCOV_EXCL_LINE
 
+/*********************************************************************************************************************/
+
 void Application::dumpConnectionGraph(const std::string& fileName) {
   std::fstream file{fileName, std::ios_base::out};
 
