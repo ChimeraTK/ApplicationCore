@@ -213,6 +213,11 @@ namespace ChimeraTK {
 
     size_t getCircularNetworkHash() override;
 
+    /**
+     *  Return associated device alias resp. URI
+     */
+    std::string getDeviceAliasOrURI() const { return deviceAliasOrURI; }
+
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the
     // device's catalogue
