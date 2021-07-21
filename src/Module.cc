@@ -173,6 +173,8 @@ namespace ChimeraTK {
     return (*this)[std::string(upperModuleName)].submodule(remainingModuleNames);
   }
 
+  /*********************************************************************************************************************/
+
   Module& Module::submodule(std::string_view moduleName) {
     // According to Scott Meyers "Effective C++", the const cast is fine here
     return const_cast<Module &>(static_cast<const Module &>(*this).submodule(moduleName));
