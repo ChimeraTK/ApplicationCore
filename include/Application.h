@@ -79,6 +79,9 @@ namespace ChimeraTK {
      * connections made in the initilise() function. @see dumpConnections */
     void dumpConnectionGraph(const std::string& filename = {"connections-graph.dot"});
 
+    /** Create Graphviz dot graph representing the connections between the modules, and write to file.*/
+    void dumpModuleConnectionGraph(const std::string& filename = {"module-connections-graph.dot"}) const;
+
     /** Enable warning about unconnected variables. This can be helpful to
      * identify missing connections but is
      *  disabled by default since it may often be very noisy. */
@@ -262,6 +265,7 @@ namespace ChimeraTK {
     friend class VariableNetwork;
     friend class VariableNetworkNode;
     friend class VariableNetworkGraphDumpingVisitor;
+    friend class VariableNetworkModuleGraphDumpingVisitor;
     friend class XMLGeneratorVisitor;
     friend class ConnectingDeviceModule;
 
