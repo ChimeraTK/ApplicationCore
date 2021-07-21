@@ -322,7 +322,7 @@ namespace ChimeraTK {
     }
 
     // put all consuming nodes of B's owner into A's owner
-    for(auto node : other.getConsumingNodes()) {
+    for(auto& node : other.getConsumingNodes()) {
       other.removeNode(node);
       addNode(node);
     }

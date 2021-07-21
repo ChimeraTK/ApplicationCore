@@ -25,7 +25,7 @@ namespace ChimeraTK {
     std::string dotNode = detail::encodeDotNodeName(node.getQualifiedName());
     _stream << "  " << dotNode << "[label=\"{" << node.getName() << "| {";
     bool first = true;
-    for(auto tag : node.getTags()) {
+    for(auto& tag : node.getTags()) {
       if(!first) {
         _stream << "|";
       }

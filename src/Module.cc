@@ -68,7 +68,7 @@ namespace ChimeraTK {
   void Module::readAll(bool includeReturnChannels) {
     auto recursiveAccessorList = getAccessorListRecursive();
     // first blockingly read all push-type variables
-    for(auto accessor : recursiveAccessorList) {
+    for(auto& accessor : recursiveAccessorList) {
       if(accessor.getMode() != UpdateMode::push) continue;
       if(includeReturnChannels) {
         if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
@@ -79,7 +79,7 @@ namespace ChimeraTK {
       accessor.getAppAccessorNoType().read();
     }
     // next non-blockingly read the latest values of all poll-type variables
-    for(auto accessor : recursiveAccessorList) {
+    for(auto& accessor : recursiveAccessorList) {
       if(accessor.getMode() == UpdateMode::push) continue;
       // poll-type accessors cannot have a readback channel
       if(accessor.getDirection().dir != VariableDirection::consuming) continue;
@@ -91,7 +91,7 @@ namespace ChimeraTK {
 
   void Module::readAllNonBlocking(bool includeReturnChannels) {
     auto recursiveAccessorList = getAccessorListRecursive();
-    for(auto accessor : recursiveAccessorList) {
+    for(auto& accessor : recursiveAccessorList) {
       if(accessor.getMode() != UpdateMode::push) continue;
       if(includeReturnChannels) {
         if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
@@ -101,7 +101,7 @@ namespace ChimeraTK {
       }
       accessor.getAppAccessorNoType().readNonBlocking();
     }
-    for(auto accessor : recursiveAccessorList) {
+    for(auto& accessor : recursiveAccessorList) {
       if(accessor.getMode() == UpdateMode::push) continue;
       // poll-type accessors cannot have a readback channel
       if(accessor.getDirection().dir != VariableDirection::consuming) continue;
@@ -113,7 +113,7 @@ namespace ChimeraTK {
 
   void Module::readAllLatest(bool includeReturnChannels) {
     auto recursiveAccessorList = getAccessorListRecursive();
-    for(auto accessor : recursiveAccessorList) {
+    for(auto& accessor : recursiveAccessorList) {
       if(includeReturnChannels) {
         if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
       }
@@ -129,7 +129,7 @@ namespace ChimeraTK {
   void Module::writeAll(bool includeReturnChannels) {
     auto versionNumber = getCurrentVersionNumber();
     auto recursiveAccessorList = getAccessorListRecursive();
-    for(auto accessor : recursiveAccessorList) {
+    for(auto& accessor : recursiveAccessorList) {
       if(includeReturnChannels) {
         if(accessor.getDirection() == VariableDirection{VariableDirection::consuming, false}) continue;
       }
@@ -145,7 +145,7 @@ namespace ChimeraTK {
   void Module::writeAllDestructively(bool includeReturnChannels) {
     auto versionNumber = getCurrentVersionNumber();
     auto recursiveAccessorList = getAccessorListRecursive();
-    for(auto accessor : recursiveAccessorList) {
+    for(auto& accessor : recursiveAccessorList) {
       if(includeReturnChannels) {
         if(accessor.getDirection() == VariableDirection{VariableDirection::consuming, false}) continue;
       }

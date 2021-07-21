@@ -43,7 +43,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode VirtualModule::operator()(const std::string& variableName) const {
-    for(auto variable : getAccessorList()) {
+    for(auto& variable : getAccessorList()) {
       if(variable.getName() == variableName) return VariableNetworkNode(variable);
     }
     throw ChimeraTK::logic_error("Variable '" + variableName + "' is not part of the variable group '" + _name + "'.");
@@ -63,7 +63,7 @@ namespace ChimeraTK {
   void VirtualModule::connectTo(const Module& target, VariableNetworkNode trigger) const {
     // connect all direct variables of this module to their counter-parts in the
     // right-hand-side module
-    for(auto variable : getAccessorList()) {
+    for(auto& variable : getAccessorList()) {
       if(variable.getDirection().dir == VariableDirection::feeding) {
         // use trigger?
         if(trigger != VariableNetworkNode() && target(variable.getName()).getMode() == UpdateMode::push &&

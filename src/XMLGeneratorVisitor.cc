@@ -50,7 +50,7 @@ namespace ChimeraTK {
 
     // go through each directory path component
     xmlpp::Element* current = _rootElement;
-    for(auto pathComponent : directory.getComponents()) {
+    for(auto& pathComponent : directory.getComponents()) {
       // find directory for this path component in the current directory
       std::string xpath = std::string("ac:directory[@name='") + pathComponent + std::string("']");
       auto list = current->find(xpath, nsMap);

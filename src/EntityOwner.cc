@@ -46,7 +46,7 @@ namespace ChimeraTK {
     for(auto mod : moduleList) {
       mod->setOwner(this);
     }
-    for(auto node : accessorList) {
+    for(auto& node : accessorList) {
       node.setOwningModule(this);
     }
     return *this;

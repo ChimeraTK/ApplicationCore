@@ -806,7 +806,7 @@ void Application::optimiseConnections() {
       // will merge the network of the outer loop into the network of the inner
       // loop, since the network of the outer loop will not be found a second
       // time in the inner loop.
-      for(auto consumer : it1->getConsumingNodes()) {
+      for(auto& consumer : it1->getConsumingNodes()) {
         consumer.clearOwner();
         it2->addNode(consumer);
       }
@@ -1061,7 +1061,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
 
           // TODO Is this correct? we already added all consumer as slaves in the fanout  constructor.
           //      Maybe assert that we only have a single poll-type node (is there a check in checkConnections?)
-          for(auto consumer : consumers) {
+          for(auto& consumer : consumers) {
             if(consumer.getMode() == UpdateMode::poll) {
               consumer.setAppAccessorImplementation<UserType>(consumingFanOut);
               break;
