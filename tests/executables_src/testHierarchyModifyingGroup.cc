@@ -61,6 +61,15 @@ struct TestApplication : public ctk::Application {
     void mainLoop() override {}
   };
   TestModule testModule{this, "TestModule", "The test module"};
+
+  struct TestModuleHidden : ctk::ApplicationModule {
+    using ctk::ApplicationModule::ApplicationModule;
+    TestGroup p{this, "/MoveToRootFromHidden",
+        "Use like normal VariableGroup with MoveToRoot, and place inside a hidden to-level module", {"TagP"}};
+    void mainLoop() override {}
+  };
+  TestModuleHidden testModuleHidden{
+      this, "TestModuleHidden", "The hidden test module", ctk::HierarchyModifier::hideThis};
 };
 
 /*********************************************************************************************************************/
@@ -210,6 +219,12 @@ BOOST_AUTO_TEST_CASE(dot_at_end) {
   TestApplication app;
   TestHelper(app, "TagO").submodule("TestModule").submodule("dot").submodule("at").submodule("end")
           .accessor(app.testModule.o.myVar);
+}
+
+BOOST_AUTO_TEST_CASE(MoveToRootFromHidden) {
+  std::cout << "*** MoveToRootFromHidden" << std::endl;
+  TestApplication app;
+  TestHelper(app, "TagP").submodule("MoveToRootFromHidden").accessor(app.testModuleHidden.p.myVar);
 }
 
 /*********************************************************************************************************************/
