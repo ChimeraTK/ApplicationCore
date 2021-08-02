@@ -34,6 +34,7 @@ using Fixture = fixture_with_poll_and_push_input<false>;
  */
 BOOST_AUTO_TEST_SUITE(runtimeErrorHandling)
 
+/**********************************************************************************************************************/
 /*
   * Verify the framework creates fault indicator process variables for a device.
   *
@@ -72,6 +73,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testFaultReporting, Fixture) {
   BOOST_CHECK(static_cast<std::string>(message) == "");
 }
 
+/**********************************************************************************************************************/
 /*
  * Read from a device in error, using pollType Process Variable.
  * 
@@ -128,6 +130,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
   /************************************************************************************************/
 }
 
+/**********************************************************************************************************************/
 /**
  * Read from a device in error using a pushType Process Variable (PV)
  *
@@ -185,6 +188,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
   BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::ok);
 }
 
+/**********************************************************************************************************************/
 /*
  * Test reaNonblocking from a device in error using a push type Process
  * Variable
@@ -240,6 +244,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadNonBlocking, Fixtur
   BOOST_CHECK(pushVariable.getVersionNumber() > versionNumberOnRuntimeError);
 }
 
+/**********************************************************************************************************************/
 /*
  * Test readLatest from a device in error using a push type Process
  * Variable
@@ -296,6 +301,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeReadLatest, Fixture) {
   BOOST_CHECK(pushVariable.getVersionNumber() > versionNumberOnRuntimeError);
 }
 
+/**********************************************************************************************************************/
 /*
  * Verify write operations are written asynchronously on device recovery.
  *
@@ -327,6 +333,7 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testWrite, Fixture) {
   CHECK_EQUAL_TIMEOUT(read<int>(exceptionDummyRegister), 100, 10000);
 }
 
+/**********************************************************************************************************************/
 /*
  * Test multiple calls to Process Variable write, when device is in error.
  * 
@@ -364,7 +371,11 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testMultipleWrites, Fixture) {
   CHECK_EQUAL_TIMEOUT(read<int>(exceptionDummyRegister), 101, 10000);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+/* Non-systematic tests following (to be reviewed and likely removed) */
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 constexpr char ExceptionDummyCDD1[] = "(ExceptionDummy:1?map=test3.map)";
 constexpr char ExceptionDummyCDD2[] = "(ExceptionDummy:2?map=test3.map)";
@@ -497,6 +508,7 @@ struct TestApplication2 : public ctk::Application {
 };
 
 /*********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testExceptionHandlingRead) {
   std::cout << "testExceptionHandlingRead" << std::endl;
   TestApplication app;
@@ -795,6 +807,8 @@ BOOST_AUTO_TEST_CASE(testExceptionHandlingOpen) {
   BOOST_CHECK_EQUAL(readback1, 100);
 }
 
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testConstants) {
   std::cout << "testConstants" << std::endl;
   // Constants are registered to the device to be written when opening/recovering
@@ -840,8 +854,7 @@ BOOST_AUTO_TEST_CASE(testConstants) {
   CHECK_TIMEOUT(dev.read<int32_t>("/MyModule/actuator") == 18, 10000);
 }
 
-/// @todo FIXME: Write test that errors during constant writing are handled correctly, incl. correct error messages to the control system
-BOOST_AUTO_TEST_CASE(testConstantWitingErrors) {}
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testShutdown) {
   std::cout << "testShutdown" << std::endl;
@@ -957,3 +970,7 @@ BOOST_AUTO_TEST_CASE(testShutdown) {
   // I now blocked everything that comes to my mind.
   // And now the real test: does the test end or does it block when shuttig down?
 }
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_SUITE_END()
