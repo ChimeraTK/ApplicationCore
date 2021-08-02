@@ -100,17 +100,24 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPolledRead, Fixture) {
   BOOST_CHECK_EQUAL(pollVariable, 100);
   BOOST_CHECK(pollVariable.dataValidity() == ctk::DataValidity::ok);
 
-  // Behavior on Runtime error on device:
+  // modify value in register after breaking the device
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 10);
 
+  // This read should be skipped but obtain a new version number
   pollVariable.read();
   auto versionNumberOnRuntimeError = pollVariable.getVersionNumber();
   BOOST_CHECK_EQUAL(pollVariable, 100);
   BOOST_CHECK(pollVariable.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(versionNumberOnRuntimeError > versionNumberBeforeRuntimeError);
 
-  // Proceed only after device is gone down.
+  // This read should be skipped too, this time without a new version number
+  pollVariable.read();
+  BOOST_CHECK_EQUAL(pollVariable, 100);
+  BOOST_CHECK(pollVariable.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(pollVariable.getVersionNumber(), versionNumberOnRuntimeError);
+
+  // Proceed only after device is reported to be down
   CHECK_TIMEOUT(isDeviceInError() == true, 10000);
 
   // Behavior on device recovery
