@@ -246,7 +246,6 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
 
   // Behavior on Runtime error on device:
   //  - push input read is skipped.
-  /************************************************************************************************/
   write(exceptionDummyRegister, 10);
 
   deviceBackend->throwExceptionRead = true;
@@ -258,16 +257,14 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testPushTypeRead, Fixture) {
   BOOST_CHECK(pushVariable.getVersionNumber() > versionBeforeRuntimeError);
 
   //  - subsequent push input reads should be frozen
-  /************************************************************************************************/
-  auto f = std::async(std::launch::async, [&]() { pushVariable.read(); });
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"));
+  auto f = std::async(std::launch::async, [&]() { pushVariable.read(); });
 
   // FIXME: is there a better way to confirm read is frozen?
   auto future_status = f.wait_for(std::chrono::seconds(1));
   BOOST_CHECK(future_status == std::future_status::timeout);
 
   //  - Remove Runtime Error
-  /************************************************************************************************/
   deviceBackend->throwExceptionRead = false;
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"));
 
