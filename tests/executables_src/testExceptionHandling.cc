@@ -75,6 +75,93 @@ BOOST_FIXTURE_TEST_CASE(runtimeErrorHandling_testFaultReporting, Fixture) {
 
 /**********************************************************************************************************************/
 /**
+ * Read from device in error (push and poll) when DataValidity::faulty was already set before the exception.
+ * 
+ * Expected behavior:
+ *
+ *   - First read is skipped
+ *
+ * \anchor testExceptionHandling_b_2_2_2 \ref exceptionHandling_b_2_2_2 "B.2.2.2"
+ */
+
+BOOST_FIXTURE_TEST_CASE(B_2_2_2, Fixture) {
+  std::cout << "B_2_2_2" << std::endl;
+
+  // initialize to known value in deviceBackend register
+  write(exceptionDummyRegister, 100);
+
+  // verify normal operation
+  pollVariable.read();
+  auto versionNumberBeforeRuntimeError = pollVariable.getVersionNumber();
+
+  BOOST_CHECK_EQUAL(pollVariable, 100);
+  BOOST_CHECK(pollVariable.dataValidity() == ctk::DataValidity::ok);
+
+  // Modify the validity flag of the application buffer. Note: This is not a 100% sane test, since in theory it could
+  // make a difference whether the flag is actually coming from the device, but implementing such test is tedious. It
+  // does not seem worth the effort, as it is unlikely that even a future, refactored implementation would be sensitive
+  // to this difference (flag would need to be stored artifically in an additional place). It is only important to
+  // change the validity on all decorator levels.
+  pollVariable.setDataValidity(ctk::DataValidity::faulty);
+  for(auto& e : pollVariable.getHardwareAccessingElements()) {
+    e->setDataValidity(ctk::DataValidity::faulty);
+  }
+
+  // modify value in register after breaking the device
+  deviceBackend->throwExceptionRead = true;
+  write(exceptionDummyRegister, 10);
+
+  // This read should be skipped but obtain a new version number
+  pollVariable.read();
+  auto versionNumberOnRuntimeError = pollVariable.getVersionNumber();
+  BOOST_CHECK_EQUAL(pollVariable, 100);
+  BOOST_CHECK(pollVariable.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(versionNumberOnRuntimeError > versionNumberBeforeRuntimeError);
+
+  // wait for recovery
+  CHECK_TIMEOUT((status.readNonBlocking() == true && status == 1), 10000);
+  deviceBackend->throwExceptionRead = false;
+  CHECK_TIMEOUT((status.readNonBlocking() == true && status == 0), 10000);
+
+  // ---------------------------------
+  // redo test with push-type variable
+
+  // discard exception notification (from previous part of test) and initial value (from recovery)
+  pushVariable.read();
+  pushVariable.read();
+  BOOST_CHECK(pushVariable.readNonBlocking() == false);
+
+  // verify normal operation
+  write(exceptionDummyRegister, 101);
+  versionNumberBeforeRuntimeError = {};
+  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), versionNumberBeforeRuntimeError);
+
+  pushVariable.read();
+  BOOST_CHECK_EQUAL(pushVariable, 101);
+  BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK_EQUAL(pushVariable.getVersionNumber(), versionNumberBeforeRuntimeError);
+
+  // Modify the validity flag of the application buffer (see note above in poll-type test)
+  pushVariable.setDataValidity(ctk::DataValidity::faulty);
+  for(auto& e : pushVariable.getHardwareAccessingElements()) {
+    e->setDataValidity(ctk::DataValidity::faulty);
+  }
+
+  // modify value in register after breaking the device
+  deviceBackend->throwExceptionRead = true;
+  write(exceptionDummyRegister, 11);
+  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), versionNumberBeforeRuntimeError);
+
+  // This read should be skipped but obtain a new version number
+  pushVariable.read();
+  versionNumberOnRuntimeError = pushVariable.getVersionNumber();
+  BOOST_CHECK_EQUAL(pushVariable, 101);
+  BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(versionNumberOnRuntimeError > versionNumberBeforeRuntimeError);
+}
+
+/**********************************************************************************************************************/
+/**
  * Read from a device in error, using pollType Process Variable.
  * 
  * Expected behavior:
