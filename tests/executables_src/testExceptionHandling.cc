@@ -29,6 +29,8 @@
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 using Fixture = fixture_with_poll_and_push_input<false>;
+using Fixture_initHandlers = fixture_with_poll_and_push_input<false, true>;
+using Fixture_secondDeviceBroken = fixture_with_poll_and_push_input<false, false, true>;
 
 /*
  * This test suite checks behavior on a device related runtime error.
@@ -427,11 +429,9 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_6, Fixture) {
 
   // Go to exception state, report it explicitly
   write(exceptionDummyRegister, 68);
-  ctk::VersionNumber someVersionBeforeReporting = {};
   deviceBackend->throwExceptionOpen = true; // required to make sure device stays down
   application.device.reportException("explicit report by test");
   deviceBackend->setException(); // FIXME: should this be called by reportException()??
-  ctk::VersionNumber someVersionAfterReporting = {};
 
   //  Check push variable
   pushVariable = 42;
@@ -446,34 +446,6 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_6, Fixture) {
 
 /**********************************************************************************************************************/
 /**
- * \anchor testExceptionHandling_b_2_3_1 \ref exceptionHandling_b_2_3_1 "B.2.3.1"
- * 
- * "In case of a fault state (new or persisting), the actual write operation will take place asynchronously when the
- * device is recovering."
- */
-BOOST_FIXTURE_TEST_CASE(B_2_3_1, Fixture) {
-  std::cout << "B_2_3_1 - delay write" << std::endl;
-
-  // trigger runtime error
-  deviceBackend->throwExceptionRead = true;
-  pollVariable.read();
-
-  // write when device is faulty
-  outputVariable = 100;
-  outputVariable.write();
-  usleep(100000); // allow data to propagate if test would fail
-  BOOST_CHECK_NE(read<int>(exceptionDummyRegister), 100);
-
-  // recover
-  deviceBackend->throwExceptionRead = false;
-  pollVariable.read();
-
-  // delayed value should arrive at device
-  CHECK_EQUAL_TIMEOUT(read<int>(exceptionDummyRegister), 100, 10000);
-}
-
-/**********************************************************************************************************************/
-/**
  * \anchor testExceptionHandling_b_2_3_3 \ref exceptionHandling_b_2_3_3 "B.2.3.3"
  * 
  * "The return value of write() indicates whether data was lost in the transfer. If the write has to be delayed due to
@@ -482,6 +454,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_3_1, Fixture) {
 */
 BOOST_FIXTURE_TEST_CASE(B_2_3_3, Fixture) {
   std::cout << "B_2_3_3 - return value of write" << std::endl;
+
   // trigger runtime error
   deviceBackend->throwExceptionRead = true;
   pollVariable.read();
@@ -493,6 +466,252 @@ BOOST_FIXTURE_TEST_CASE(B_2_3_3, Fixture) {
 
   outputVariable = 101;
   BOOST_CHECK_EQUAL(outputVariable.write(), true); // data lost
+}
+
+/**********************************************************************************************************************/
+/**
+ * \anchor testExceptionHandling_b_2_3_5 \ref exceptionHandling_b_2_3_5 "B.2.3.5"
+ * 
+ * "It is guaranteed that the write takes place before the device is considered fully recovered again and other
+ * transfers are allowed (cf. 3.1)."
+*/
+BOOST_FIXTURE_TEST_CASE(B_2_3_5, Fixture) {
+  std::cout << "B_2_3_5 - write before deviceBecameFunctional" << std::endl;
+
+  // trigger runtime error
+  deviceBackend->throwExceptionRead = true;
+  pollVariable.read();
+
+  // write on faulty device.
+  outputVariable = 987;
+  outputVariable.write();
+
+  // recover device
+  deviceBackend->throwExceptionRead = false;
+  deviceBecameFunctional.read();
+
+  // check result (must be immediately present, so don't use CHECK_EQUAL_TIMEOUT!)
+  BOOST_CHECK_EQUAL(exceptionDummyRegister[0], 987);
+}
+
+/**********************************************************************************************************************/
+/**
+ * \anchor testExceptionHandling_b_2_5 \ref exceptionHandling_b_2_5 "B.2.5"
+ * 
+ * "TransferElement::isReadable(), TransferElement::isWriteable() and TransferElement::isReadonly() return with values
+ * as if reading and writing would be allowed."
+*/
+BOOST_FIXTURE_TEST_CASE(B_2_5, Fixture) {
+  std::cout << "B_2_5 - isReadable/isWriteable/isReadOnly" << std::endl;
+
+  // trigger runtime error
+  deviceBackend->throwExceptionRead = true;
+  pollVariable.read();
+
+  // Note: only test what is not anyway clear by the abstractor type. The others need to be implemented by the
+  // abstractor directly.
+  BOOST_CHECK(pollVariable.isReadable());
+
+  BOOST_CHECK(pushVariable.isReadable());
+
+  BOOST_CHECK(outputVariable.isWriteable());
+  BOOST_CHECK(!outputVariable.isReadOnly());
+}
+
+/**********************************************************************************************************************/
+/**
+ * \anchor testExceptionHandling_b_3_1_1 \ref exceptionHandling_b_3_1_1 "B.3.1.1"
+ * 
+ * [The recovery procedure involves] "the execution of so-called initialisation handlers (see 3.2)."
+ *
+ * \anchor testExceptionHandling_b_3_2 \ref exceptionHandling_b_3_2 "B.3.2"
+ *
+ * "Any number of initialisation handlers can be added to the DeviceModule in the user code. Initialisation handlers are
+ * callback functions which will be executed when a device is opened for the first time and after a device recovers from
+ * an exception, before any application-initiated transfers are executed (including delayed write transfers).
+ * See DeviceModule::addInitialisationHandler()."
+*/
+BOOST_FIXTURE_TEST_CASE(B_3_1_1, Fixture_initHandlers) {
+  std::cout << "B_3_1_1 - initialisation handlers" << std::endl;
+
+  // device opened for first time
+  BOOST_CHECK(initHandler1Called);
+  BOOST_CHECK(initHandler2Called);
+  initHandler1Called = false;
+  initHandler2Called = false;
+
+  // trigger runtime error
+  deviceBackend->throwExceptionRead = true;
+  pollVariable.read();
+
+  // init handlers should not yet be called
+  usleep(10000);
+  BOOST_CHECK(!initHandler1Called);
+  BOOST_CHECK(!initHandler2Called);
+
+  // trigger recovery
+  deviceBackend->throwExceptionRead = false;
+
+  // device re-opened after recovery
+  CHECK_TIMEOUT(initHandler1Called, 10000);
+  CHECK_TIMEOUT(initHandler2Called, 10000);
+}
+
+/**********************************************************************************************************************/
+/**
+ * \anchor testExceptionHandling_b_3_1_2 \ref exceptionHandling_b_3_1_2 "B.3.1.2"
+ * 
+ * [After calling the initialisation handlers are called, the recovery procedure involves] "restoring all registers that
+ * have been written since the start of the application with their latest values. The register values are restored in
+ * the same order they were written."
+*/
+BOOST_FIXTURE_TEST_CASE(B_2_3_2, Fixture_initHandlers) {
+  std::cout << "B_3_1_2 - delayed writes" << std::endl;
+
+  // trigger runtime error
+  deviceBackend->throwExceptionRead = true;
+  pollVariable.read();
+  CHECK_TIMEOUT((status.readNonBlocking(), status == 1), 10000); // no test intended, just wait until error is reported
+
+  // multiple writes to different registers on faulty device
+  outputVariable = 100;
+  outputVariable.write();
+  outputVariable2 = 101;
+  outputVariable2.write();
+  outputVariable3 = 102;
+  outputVariable3.write();
+  outputVariable2 = 103; // write a second time, overwriting the first value
+  outputVariable2.write();
+
+  // get current write count for each register (as a reference)
+  auto wcReg1 = deviceBackend->getWriteCount("REG1");
+  auto wcReg2 = deviceBackend->getWriteCount("REG2");
+  auto wcReg3 = deviceBackend->getWriteCount("REG3");
+
+  // check that values are not yet written to the device
+  usleep(10000);
+  BOOST_CHECK_NE(exceptionDummyRegister[0], 100);
+  BOOST_CHECK_NE(exceptionDummyRegister2[0], 103);
+  BOOST_CHECK_NE(exceptionDummyRegister3[0], 102);
+
+  // recover device
+  initHandler1Called = false;
+  deviceBackend->throwExceptionRead = false;
+
+  // check that values finally are written to the device
+  CHECK_EQUAL_TIMEOUT(exceptionDummyRegister[0], 100, 10000);
+  CHECK_EQUAL_TIMEOUT(exceptionDummyRegister2[0], 103, 10000);
+  CHECK_EQUAL_TIMEOUT(exceptionDummyRegister3[0], 102, 10000);
+
+  // check that writes have happened after initialisation handlers are called
+  BOOST_CHECK(initHandler1Called);
+
+  // check order of writes
+  auto woReg1 = deviceBackend->getWriteOrder("REG1");
+  auto woReg2 = deviceBackend->getWriteOrder("REG2");
+  auto woReg3 = deviceBackend->getWriteOrder("REG3");
+  BOOST_CHECK_GT(woReg2, woReg3);
+  BOOST_CHECK_GT(woReg3, woReg1);
+
+  // check each register is written only once ("only the latest written value [...] prevails").
+  BOOST_CHECK_EQUAL(deviceBackend->getWriteCount("REG1") - wcReg1, 1);
+  BOOST_CHECK_EQUAL(deviceBackend->getWriteCount("REG2") - wcReg2, 1);
+  BOOST_CHECK_EQUAL(deviceBackend->getWriteCount("REG3") - wcReg3, 1);
+}
+
+/**********************************************************************************************************************/
+/**
+ * \anchor testExceptionHandling_b_3_1_3 \ref exceptionHandling_b_3_1_3 "B.3.1.3"
+ * 
+ * [During recovery,] "the asynchronous read transfers of the device are (re-)activated by calling
+ * Device::activateAsyncReads()" [after the delayed writes are executed.]
+*/
+BOOST_FIXTURE_TEST_CASE(B_3_1_3, Fixture_initHandlers) {
+  std::cout << "B_3_1_3 - reactivate async reads" << std::endl;
+
+  // Test async read after first open
+  BOOST_CHECK(deviceBackend->asyncReadActivated());
+
+  // Cause runtime error
+  deviceBackend->throwExceptionRead = true;
+  pollVariable.read();
+
+  // Write to register to latest test order of recovery procedure
+  outputVariable.write();
+
+  // Just to make sure the test is sensitive
+  assert(deviceBackend->asyncReadActivated() == false);
+
+  // Recover from exception state
+  initHandler1Called = false;
+  deviceBackend->throwExceptionRead = false;
+
+  // Test async read after recovery
+  CHECK_TIMEOUT(deviceBackend->asyncReadActivated(), 10000);
+  BOOST_CHECK_EQUAL(deviceBackend->getWriteCount("REG1"), 1);
+}
+
+/**********************************************************************************************************************/
+/**
+ * \anchor testExceptionHandling_b_3_1_4 \ref exceptionHandling_b_3_1_4 "B.3.1.4"
+ * 
+ * [As last part of the recovery,] "Devices/<alias>/deviceBecameFunctional is written to inform any module subscribing
+ * to this variable about the finished recovery."
+*/
+BOOST_FIXTURE_TEST_CASE(B_3_1_4, Fixture_initHandlers) {
+  std::cout << "B_3_1_4 - deviceBecameFunctional" << std::endl;
+
+  // (Note: deviceBecameFunctional is read inside the fixture for the first time!)
+  BOOST_CHECK(deviceBackend->asyncReadActivated());
+  BOOST_CHECK(initHandler1Called);
+
+  // Cause runtime error
+  deviceBackend->throwExceptionRead = true;
+  pollVariable.read();
+
+  // Make sure deviceBecameFunctional is not written at the wrong time
+  usleep(10000);
+  BOOST_CHECK(deviceBecameFunctional.readNonBlocking() == false);
+
+  // Recover from exception state
+  deviceBackend->throwExceptionRead = false;
+
+  // Check that deviceBecameFunctional is written after recovery
+  CHECK_TIMEOUT(deviceBecameFunctional.readNonBlocking() == true, 10000);
+
+  // Make sure deviceBecameFunctional is not written another time
+  usleep(10000);
+  BOOST_CHECK(deviceBecameFunctional.readNonBlocking() == false);
+}
+
+/**********************************************************************************************************************/
+/**
+ * \anchor testExceptionHandling_b_4_1 \ref exceptionHandling_b_4_1 "B.4.1"
+ * 
+ * "Even if some devices are initially in a persisting error state, the part of the application which does not interact
+ * with the faulty devices starts and works normally."
+*/
+BOOST_FIXTURE_TEST_CASE(B_4_1, Fixture_secondDeviceBroken) {
+  std::cout << "B_4_1 - broken devices don't affect unrelated modules" << std::endl;
+
+  // verify the 3 ApplicationModules work
+  write(exceptionDummyRegister, 101);
+  ctk::VersionNumber versionNumberBeforeRuntimeError = {};
+  deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), versionNumberBeforeRuntimeError);
+  pushVariable.read();
+  BOOST_CHECK_EQUAL(pushVariable, 101);
+
+  write(exceptionDummyRegister, 102);
+  pollVariable.read();
+  BOOST_CHECK_EQUAL(pollVariable, 102);
+
+  outputVariable = 103;
+  outputVariable.write();
+  BOOST_CHECK_EQUAL(int(exceptionDummyRegister), 103);
+
+  // make sure test is effective (device2 is still in error condition)
+  status2.readLatest();
+  assert(status2 == 1);
 }
 
 /**********************************************************************************************************************/

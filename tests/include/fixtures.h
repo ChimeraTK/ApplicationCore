@@ -16,12 +16,16 @@
 
 #include <future>
 
+/**********************************************************************************************************************/
+
 struct PollModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
   ChimeraTK::ScalarPollInput<int> pollInput{this, "REG1", "", "", {"DEVICE"}};
   std::promise<void> p;
   void mainLoop() override { p.set_value(); }
 };
+
+/**********************************************************************************************************************/
 
 struct PushModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
@@ -34,54 +38,90 @@ struct PushModule : ChimeraTK::ApplicationModule {
   void mainLoop() override { p.set_value(); }
 };
 
-struct UpdateModule : ChimeraTK::ApplicationModule {
+/**********************************************************************************************************************/
+
+struct OutputModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
   ChimeraTK::ScalarOutput<int> deviceRegister{this, "REG1", "", "", {"DEVICE"}};
+  ChimeraTK::ScalarOutput<int> deviceRegister2{this, "REG2", "", "", {"DEVICE"}};
+  ChimeraTK::ScalarOutput<int> deviceRegister3{this, "REG3", "", "", {"DEVICE"}};
   std::promise<void> p;
   void mainLoop() override { p.set_value(); }
 };
 
+/**********************************************************************************************************************/
+
 struct DummyApplication : ChimeraTK::Application {
   constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
+  constexpr static const char* ExceptionDummyCDD2 = "(ExceptionDummy:2?map=test.map)";
   DummyApplication() : Application("DummyApplication") {}
   ~DummyApplication() { shutdown(); }
 
-  PushModule pushModule{this, "", ""};
-  PollModule pollModule{this, "", ""};
-  UpdateModule updateModule{this, "", ""};
+  PushModule pushModule{this, "", "", ChimeraTK::HierarchyModifier::none, {"DEV"}};
+  PollModule pollModule{this, "", "", ChimeraTK::HierarchyModifier::none, {"DEV"}};
+  OutputModule outputModule{this, "", "", ChimeraTK::HierarchyModifier::none, {"DEV"}};
+  PushModule pushModule2{this, "", "", ChimeraTK::HierarchyModifier::none, {"DEV2"}};
+  PollModule pollModule2{this, "", "", ChimeraTK::HierarchyModifier::none, {"DEV2"}};
+  OutputModule outputModule2{this, "", "", ChimeraTK::HierarchyModifier::none, {"DEV2"}};
 
-  ChimeraTK::ControlSystemModule cs;
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
+  ChimeraTK::DeviceModule device2{this, ExceptionDummyCDD2};
 
   void defineConnections() override {
-    findTag("CS").connectTo(cs);
-    findTag("DEVICE").connectTo(device);
+    findTag("DEVICE").excludeTag("DEV2").connectTo(device);
+    findTag("DEVICE").excludeTag("DEV").connectTo(device2);
 
-    auto push_input = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
-    push_input >> pushModule.reg1.pushInput;
+    device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> pushModule.reg1.pushInput;
+    device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> pushModule2.reg1.pushInput;
   }
 };
 
-template<bool enableTestFacility>
+/**********************************************************************************************************************/
+
+template<bool enableTestFacility, bool addInitHandlers = false, bool breakSecondDeviceAtStart = false>
 struct fixture_with_poll_and_push_input {
   fixture_with_poll_and_push_input()
   : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(DummyApplication::ExceptionDummyCDD1))),
-    exceptionDummyRegister(deviceBackend->getRawAccessor("", "REG1")) {
-    deviceBackend->open();
+    deviceBackend2(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
+        ChimeraTK::BackendFactory::getInstance().createBackend(DummyApplication::ExceptionDummyCDD2))),
+    exceptionDummyRegister(deviceBackend->getRawAccessor("", "REG1")),
+    exceptionDummyRegister2(deviceBackend->getRawAccessor("", "REG2")),
+    exceptionDummyRegister3(deviceBackend->getRawAccessor("", "REG3")) {
+    if constexpr(addInitHandlers) {
+      auto initHandler1 = [this](ChimeraTK::DeviceModule* dm) {
+        if(dm == &application.device) {
+          initHandler1Called = true;
+        }
+      };
+      auto initHandler2 = [this](ChimeraTK::DeviceModule* dm) {
+        if(dm == &application.device) {
+          initHandler2Called = true;
+        }
+      };
+      application.device.addInitialisationHandler(initHandler1);
+      application.device.addInitialisationHandler(initHandler2);
+    }
+
+    deviceBackend2->throwExceptionOpen = breakSecondDeviceAtStart;
+
     testFacitiy.runApplication();
 
     status.replace(testFacitiy.getScalar<int>(
         ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "status"));
     message.replace(testFacitiy.getScalar<std::string>(
         ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "message"));
+    deviceBecameFunctional.replace(testFacitiy.getScalar<int>(
+        ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "deviceBecameFunctional"));
+
+    status2.replace(testFacitiy.getScalar<int>(
+        ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD2 / "status"));
 
     //  wait until all modules have been properly started, to ensure the initial value propagation is complete
-    /************************************************************************************************/
     application.pollModule.p.get_future().wait();
     application.pushModule.p.get_future().wait();
-    application.updateModule.p.get_future().wait();
-    /************************************************************************************************/
+    application.outputModule.p.get_future().wait();
+    deviceBecameFunctional.read();
   }
 
   ~fixture_with_poll_and_push_input() {
@@ -116,14 +156,25 @@ struct fixture_with_poll_and_push_input {
   }
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
+  boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend2;
   DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{enableTestFacility};
 
-  ChimeraTK::ScalarRegisterAccessor<int> status;
+  ChimeraTK::ScalarRegisterAccessor<int> status, status2;
+  ChimeraTK::ScalarRegisterAccessor<int> deviceBecameFunctional;
   ChimeraTK::ScalarRegisterAccessor<std::string> message;
   ChimeraTK::DummyRegisterRawAccessor exceptionDummyRegister;
+  ChimeraTK::DummyRegisterRawAccessor exceptionDummyRegister2;
+  ChimeraTK::DummyRegisterRawAccessor exceptionDummyRegister3;
 
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.pushModule.reg1.pushInput};
   ChimeraTK::ScalarPollInput<int>& pollVariable{application.pollModule.pollInput};
-  ChimeraTK::ScalarOutput<int>& outputVariable{application.updateModule.deviceRegister};
+  ChimeraTK::ScalarOutput<int>& outputVariable{application.outputModule.deviceRegister};
+  ChimeraTK::ScalarOutput<int>& outputVariable2{application.outputModule.deviceRegister2};
+  ChimeraTK::ScalarOutput<int>& outputVariable3{application.outputModule.deviceRegister3};
+
+  std::atomic<bool> initHandler1Called{false};
+  std::atomic<bool> initHandler2Called{false};
 };
+
+/**********************************************************************************************************************/
