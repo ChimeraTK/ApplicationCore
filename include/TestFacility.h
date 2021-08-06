@@ -79,17 +79,6 @@ namespace ChimeraTK {
       Application::getInstance().run();
       // set thread name
       Application::registerThread("TestThread");
-      // wait until all devices are opened
-      Application::testableModeUnlock("waitDevicesToOpen");
-      while(true) {
-        boost::this_thread::yield();
-        bool allOpened = true;
-        for(auto dm : Application::getInstance().deviceModuleMap) {
-          if(!dm.second->device.isOpened()) allOpened = false;
-        }
-        if(allOpened) break;
-      }
-      Application::testableModeLock("waitDevicesToOpen");
       // make sure all initial values have been propagated when in testable mode
       if(Application::getInstance().isTestableModeEnabled()) {
         // call stepApplication() only in testable mode and only if the queues are not empty
