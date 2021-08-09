@@ -75,6 +75,8 @@ BOOST_FIXTURE_TEST_CASE(B_2_1, Fixture) {
  * 
  * "The DataValidity::faulty flag resulting from the fault state is propagated once, even if the variable had the a
  * DataValidity::faulty flag already set previously for another reason."
+ * 
+ * TODO: Set previous fault flag through Backend, and test inside TriggerFanOut (the latter needs the first)
  */
 
 BOOST_FIXTURE_TEST_CASE(B_2_2_2_poll, Fixture) {
@@ -113,6 +115,8 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_2_poll, Fixture) {
  * 
  * "The DataValidity::faulty flag resulting from the fault state is propagated once, even if the variable had the a
  * DataValidity::faulty flag already set previously for another reason."
+ * 
+ * TODO: Set previous fault flag through Backend, and test inside ThreadedFanOut and TriggerFanOut (as trigger). 
  */
 
 BOOST_FIXTURE_TEST_CASE(B_2_2_2_push, Fixture) {
@@ -150,6 +154,8 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_2_push, Fixture) {
  * 
  * "Read operations without AccessMode::wait_for_new_data are skipped until the device is fully recovered again (cf.
  * 3.1). The first skipped read operation will have a new VersionNumber."
+ * 
+ * Test directly inside ApplicationModule
  */
 BOOST_FIXTURE_TEST_CASE(B_2_2_3, Fixture) {
   std::cout << "B_2_2_3 - skip poll type reads" << std::endl;
@@ -175,6 +181,41 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_3, Fixture) {
   BOOST_CHECK_EQUAL(pollVariable, 100);
   BOOST_CHECK(pollVariable.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK_EQUAL(pollVariable.getVersionNumber(), versionNumberOnRuntimeError);
+}
+
+/**********************************************************************************************************************/
+/**
+ * \anchor testExceptionHandling_b_2_2_3_TrFO \ref exceptionHandling_b_2_2_3 "B.2.2.3"
+ * 
+ * "Read operations without AccessMode::wait_for_new_data are skipped until the device is fully recovered again (cf.
+ * 3.1). The first skipped read operation will have a new VersionNumber."
+ * 
+ * Test inside a TriggerFanOut. This is mainly necessary to make sure the ExceptionHandlingDecorator is used for
+ * variables inside the TriggerFanOut.
+ */
+BOOST_FIXTURE_TEST_CASE(B_2_2_3_TriggerFanOut, Fixture) {
+  std::cout << "B_2_2_3_TriggerFanOut - skip poll type reads (in TriggerFanOut)" << std::endl;
+
+  // initialize to known value in deviceBackend register
+  write(exceptionDummy2Register, 666);
+  deviceBackend3->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), {});
+  triggeredInput.read();
+
+  // breaking the device and modify value
+  deviceBackend2->throwExceptionRead = true;
+  write(exceptionDummy2Register, 667);
+
+  // Trigger readout of poll-type inside TriggerFanOut (should be skipped - VersionNumber is invisible in this context)
+  deviceBackend3->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), {});
+  triggeredInput.read();
+  BOOST_CHECK_EQUAL(triggeredInput, 666);
+  BOOST_CHECK(triggeredInput.dataValidity() == ctk::DataValidity::faulty);
+
+  // A second read should be skipped, too
+  deviceBackend3->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), {});
+  triggeredInput.read();
+  BOOST_CHECK_EQUAL(triggeredInput, 666);
+  BOOST_CHECK(triggeredInput.dataValidity() == ctk::DataValidity::faulty);
 }
 
 /**********************************************************************************************************************/
@@ -256,6 +297,73 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_latest, Fixture) {
   BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::faulty);
   auto versionNumberOnRuntimeError = pushVariable.getVersionNumber();
   BOOST_CHECK(versionNumberOnRuntimeError > version);
+}
+
+/**********************************************************************************************************************/
+/**
+ * \anchor testExceptionHandling_b_2_2_4_ThFO \ref exceptionHandling_b_2_2_4 "B.2.2.4"
+ * 
+ * "Read operations with AccessMode::wait_for_new_data will be skipped once for each accessor to propagate the
+ * DataValidity::faulty flag (which counts as new data, i.e. readNonBlocking()/readLatest() will return true
+ * (= hasNewData), and a new VersionNumber is obtained)."
+ * 
+ * This test is for read() inside a ThreadedFanOut. (The ThreadedFanOut never calles the other read functions.)
+ */
+BOOST_FIXTURE_TEST_CASE(B_2_2_4_ThFO, Fixture) {
+  std::cout << "B_2_2_4_ThFO - first skip read in ThreadedFanOut" << std::endl;
+
+  // remove initial value from control system
+  pushVariable3copy.read();
+
+  // go to exception state
+  ctk::VersionNumber version = {};
+  deviceBackend2->throwExceptionRead = true;
+  write(exceptionDummy2Register, 100);
+  deviceBackend2->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
+
+  // as soon as the fault state has arrived, the operation is skipped
+  pushVariable3.read();
+  BOOST_CHECK_NE(pushVariable3, 100); // value did not come through
+  BOOST_CHECK(pushVariable3.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(pushVariable3.getVersionNumber() > version);
+
+  // same state is visible at control system's copy
+  pushVariable3copy.read();
+  BOOST_CHECK_NE(pushVariable3copy, 100); // value did not come through
+  BOOST_CHECK(pushVariable3copy.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(pushVariable3copy.getVersionNumber() > version);
+}
+
+/**********************************************************************************************************************/
+/**
+ * \anchor testExceptionHandling_b_2_2_4_TrFO \ref exceptionHandling_b_2_2_4 "B.2.2.4"
+ * 
+ * "Read operations with AccessMode::wait_for_new_data will be skipped once for each accessor to propagate the
+ * DataValidity::faulty flag (which counts as new data, i.e. readNonBlocking()/readLatest() will return true
+ * (= hasNewData), and a new VersionNumber is obtained)."
+ * 
+ * This test is for read() inside a TriggerFanOut on the trigger variable.
+ */
+BOOST_FIXTURE_TEST_CASE(B_2_2_4_TrFO, Fixture) {
+  std::cout << "B_2_2_4_TrFO - first skip read in TriggerFanOut on the trigger variable" << std::endl;
+
+  // initialize to known value in deviceBackend register
+  write(exceptionDummy2Register, 668);
+  ctk::VersionNumber versionBeforeException = {};
+  deviceBackend3->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), versionBeforeException);
+  triggeredInput.read();
+
+  // breaking the device and modify value
+  deviceBackend3->throwExceptionRead = true;
+  write(exceptionDummy2Register, 669);
+  pollVariable3.read(); // make sure framework sees exception
+
+  // as soon as the fault state has arrived, the operation is skipped (inside the TriggerFanOut), so we get the
+  // updated value (remember: the updated value comes from another device which is not broken)
+  triggeredInput.read();
+  BOOST_CHECK_EQUAL(triggeredInput, 669);
+  BOOST_CHECK(triggeredInput.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(triggeredInput.getVersionNumber() > versionBeforeException);
 }
 
 /**********************************************************************************************************************/
