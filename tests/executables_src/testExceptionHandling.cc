@@ -53,6 +53,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_1, Fixture) {
   BOOST_CHECK_EQUAL(status, 0);
   BOOST_CHECK_EQUAL(static_cast<std::string>(message), "");
 
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   application.pollModule.pollInput.read(); // causes device exception
 
@@ -62,6 +63,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_1, Fixture) {
   BOOST_CHECK(!static_cast<std::string>(message).empty());
 
   deviceBackend->throwExceptionRead = false;
+  deviceBackend->throwExceptionOpen = false;
 
   CHECK_TIMEOUT(status.readNonBlocking() == true, 10000);
   CHECK_TIMEOUT(message.readNonBlocking() == true, 10000);
@@ -98,6 +100,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_2_poll, Fixture) {
   }
 
   // modify value in register after breaking the device
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 10);
 
@@ -136,6 +139,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_2_push, Fixture) {
   }
 
   // modify value in register after breaking the device
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 11);
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), versionNumberBeforeRuntimeError);
@@ -166,6 +170,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_3, Fixture) {
   auto versionNumberBeforeRuntimeError = pollVariable.getVersionNumber();
 
   // modify value in register after breaking the device
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 10);
 
@@ -202,6 +207,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_3_TriggerFanOut, Fixture) {
   triggeredInput.read();
 
   // breaking the device and modify value
+  deviceBackend2->throwExceptionOpen = true;
   deviceBackend2->throwExceptionRead = true;
   write(exceptionDummy2Register, 667);
 
@@ -233,6 +239,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_blocking, Fixture) {
 
   // go to exception state
   ctk::VersionNumber version = {};
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 100);
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
@@ -260,6 +267,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_nonBlocking, Fixture) {
 
   // go to exception state
   ctk::VersionNumber version = {};
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 100);
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
@@ -287,6 +295,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_latest, Fixture) {
 
   // go to exception state
   ctk::VersionNumber version = {};
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 100);
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
@@ -317,6 +326,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_ThFO, Fixture) {
 
   // go to exception state
   ctk::VersionNumber version = {};
+  deviceBackend2->throwExceptionOpen = true;
   deviceBackend2->throwExceptionRead = true;
   write(exceptionDummy2Register, 100);
   deviceBackend2->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
@@ -354,6 +364,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_TrFO, Fixture) {
   triggeredInput.read();
 
   // breaking the device and modify value
+  deviceBackend3->throwExceptionOpen = true;
   deviceBackend3->throwExceptionRead = true;
   write(exceptionDummy2Register, 669);
   pollVariable3.read(); // make sure framework sees exception
@@ -380,6 +391,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_1_nonBlocking, Fixture) {
 
   // go to exception state
   ctk::VersionNumber version = {};
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 100);
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
@@ -411,6 +423,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_1_latest, Fixture) {
 
   // go to exception state
   ctk::VersionNumber version = {};
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 100);
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
@@ -440,6 +453,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_2, Fixture) {
 
   // go to exception state
   ctk::VersionNumber version = {};
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 100);
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"), version);
@@ -454,6 +468,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_2, Fixture) {
 
   // FIXME: This should not be necessary. Bug in ApplicationCore's shutdown procedure!?
   deviceBackend->throwExceptionRead = false;
+  deviceBackend->throwExceptionOpen = false;
 }
 
 /**********************************************************************************************************************/
@@ -472,6 +487,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_3, Fixture) {
   pushVariable.read();
 
   // Change value while in exception state
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 77);
   deviceBackend->triggerPush(ctk::RegisterPath("REG1/PUSH_READ"));
@@ -481,6 +497,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_3, Fixture) {
 
   // Recover from exception state
   deviceBackend->throwExceptionRead = false;
+  deviceBackend->throwExceptionOpen = false;
 
   // Now the value needs to be read
   CHECK_TIMEOUT(pushVariable.readNonBlocking() == true, 10000);
@@ -537,9 +554,9 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_6, Fixture) {
 
   // Go to exception state, report it explicitly
   write(exceptionDummyRegister, 68);
-  deviceBackend->throwExceptionOpen = true; // required to make sure device stays down
-  application.device.reportException("explicit report by test");
-  deviceBackend->setException(); // FIXME: should this be called by reportException()??
+  deviceBackend->throwExceptionOpen = true;
+  deviceBackend->throwExceptionRead = true;
+  pollVariable.read();
 
   //  Check push variable
   pushVariable = 42;
@@ -564,6 +581,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_3_3, Fixture) {
   std::cout << "B_2_3_3 - return value of write" << std::endl;
 
   // trigger runtime error
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   pollVariable.read();
 
@@ -587,6 +605,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_3_5, Fixture) {
   std::cout << "B_2_3_5 - write before deviceBecameFunctional" << std::endl;
 
   // trigger runtime error
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   pollVariable.read();
 
@@ -596,6 +615,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_3_5, Fixture) {
 
   // recover device
   deviceBackend->throwExceptionRead = false;
+  deviceBackend->throwExceptionOpen = false;
   deviceBecameFunctional.read();
 
   // check result (must be immediately present, so don't use CHECK_EQUAL_TIMEOUT!)
@@ -613,6 +633,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_5, Fixture) {
   std::cout << "B_2_5 - isReadable/isWriteable/isReadOnly" << std::endl;
 
   // trigger runtime error
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   pollVariable.read();
 
@@ -649,6 +670,7 @@ BOOST_FIXTURE_TEST_CASE(B_3_1_1, Fixture_initHandlers) {
   initHandler2Called = false;
 
   // trigger runtime error
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   pollVariable.read();
 
@@ -657,10 +679,20 @@ BOOST_FIXTURE_TEST_CASE(B_3_1_1, Fixture_initHandlers) {
   BOOST_CHECK(!initHandler1Called);
   BOOST_CHECK(!initHandler2Called);
 
-  // trigger recovery
+  // trigger recovery, but let first init handler throw
+  initHandler1Throws = true;
   deviceBackend->throwExceptionRead = false;
+  deviceBackend->throwExceptionOpen = false;
 
-  // device re-opened after recovery
+  // init handler 1 must be called eventually, but not init handler 2
+  CHECK_TIMEOUT(initHandler1Called, 10000);
+  usleep(10000);
+  BOOST_CHECK(!initHandler2Called);
+
+  // let the first init handler complete, but not the second one
+  initHandler2Throws = true;
+  initHandler1Called = false;
+  initHandler1Throws = false;
   CHECK_TIMEOUT(initHandler1Called, 10000);
   CHECK_TIMEOUT(initHandler2Called, 10000);
 }
@@ -677,6 +709,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_3_2, Fixture_initHandlers) {
   std::cout << "B_3_1_2 - delayed writes" << std::endl;
 
   // trigger runtime error
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   pollVariable.read();
   CHECK_TIMEOUT((status.readNonBlocking(), status == 1), 10000); // no test intended, just wait until error is reported
@@ -702,17 +735,29 @@ BOOST_FIXTURE_TEST_CASE(B_2_3_2, Fixture_initHandlers) {
   BOOST_CHECK_NE(exceptionDummyRegister2[0], 103);
   BOOST_CHECK_NE(exceptionDummyRegister3[0], 102);
 
-  // recover device
+  // recover device for readling/opening but not yet for writing
   initHandler1Called = false;
   deviceBackend->throwExceptionRead = false;
+  deviceBackend->throwExceptionWrite = true;
+  deviceBackend->throwExceptionOpen = false;
+
+  // wait until the write exception has been thrown
+  deviceBackend->thereHaveBeenExceptions = false;
+  CHECK_TIMEOUT(deviceBackend->thereHaveBeenExceptions, 10000);
+  BOOST_CHECK_NE(exceptionDummyRegister[0], 100);
+  BOOST_CHECK_NE(exceptionDummyRegister2[0], 103);
+  BOOST_CHECK_NE(exceptionDummyRegister3[0], 102);
+
+  // check that write attempt has happened after initialisation handlers are called
+  BOOST_CHECK(initHandler1Called);
+
+  // now let write operations complete
+  deviceBackend->throwExceptionWrite = false;
 
   // check that values finally are written to the device
   CHECK_EQUAL_TIMEOUT(exceptionDummyRegister[0], 100, 10000);
   CHECK_EQUAL_TIMEOUT(exceptionDummyRegister2[0], 103, 10000);
   CHECK_EQUAL_TIMEOUT(exceptionDummyRegister3[0], 102, 10000);
-
-  // check that writes have happened after initialisation handlers are called
-  BOOST_CHECK(initHandler1Called);
 
   // check order of writes
   auto woReg1 = deviceBackend->getWriteOrder("REG1");
@@ -741,6 +786,7 @@ BOOST_FIXTURE_TEST_CASE(B_3_1_3, Fixture_initHandlers) {
   BOOST_CHECK(deviceBackend->asyncReadActivated());
 
   // Cause runtime error
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   pollVariable.read();
 
@@ -753,6 +799,7 @@ BOOST_FIXTURE_TEST_CASE(B_3_1_3, Fixture_initHandlers) {
   // Recover from exception state
   initHandler1Called = false;
   deviceBackend->throwExceptionRead = false;
+  deviceBackend->throwExceptionOpen = false;
 
   // Test async read after recovery
   CHECK_TIMEOUT(deviceBackend->asyncReadActivated(), 10000);
@@ -774,6 +821,7 @@ BOOST_FIXTURE_TEST_CASE(B_3_1_4, Fixture_initHandlers) {
   BOOST_CHECK(initHandler1Called);
 
   // Cause runtime error
+  deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   pollVariable.read();
 
@@ -783,6 +831,7 @@ BOOST_FIXTURE_TEST_CASE(B_3_1_4, Fixture_initHandlers) {
 
   // Recover from exception state
   deviceBackend->throwExceptionRead = false;
+  deviceBackend->throwExceptionOpen = false;
 
   // Check that deviceBecameFunctional is written after recovery
   CHECK_TIMEOUT(deviceBecameFunctional.readNonBlocking() == true, 10000);

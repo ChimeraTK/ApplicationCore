@@ -111,11 +111,17 @@ struct fixture_with_poll_and_push_input {
       auto initHandler1 = [this](ChimeraTK::DeviceModule* dm) {
         if(dm == &application.device) {
           initHandler1Called = true;
+          if(initHandler1Throws) {
+            throw ChimeraTK::runtime_error("Init handler 1 throws by request");
+          }
         }
       };
       auto initHandler2 = [this](ChimeraTK::DeviceModule* dm) {
         if(dm == &application.device) {
           initHandler2Called = true;
+          if(initHandler2Throws) {
+            throw ChimeraTK::runtime_error("Init handler 2 throws by request");
+          }
         }
       };
       application.device.addInitialisationHandler(initHandler1);
@@ -214,6 +220,8 @@ struct fixture_with_poll_and_push_input {
   ChimeraTK::ScalarRegisterAccessor<int> pushVariable3copy;
   ChimeraTK::ScalarPollInput<int>& pollVariable3{application.pollModule3.pollInput};
 
+  std::atomic<bool> initHandler1Throws{false};
+  std::atomic<bool> initHandler2Throws{false};
   std::atomic<bool> initHandler1Called{false};
   std::atomic<bool> initHandler2Called{false};
 };
