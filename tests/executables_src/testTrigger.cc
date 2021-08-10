@@ -291,6 +291,77 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerByCS, T, test_types) {
 }
 
 /*********************************************************************************************************************/
+/* test trigger by app variable through FanOut (i.e. trigger variable is also used else where) */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerByCSFanOut, T, test_types) {
+  std::cout << "***************************************************************"
+               "******************************************************"
+            << std::endl;
+  std::cout << "==> testTriggerByCS<" << typeid(T).name() << ">" << std::endl;
+
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+
+  TestApplication<T> app;
+
+  auto pvManagers = ctk::createPVManager();
+  app.setPVManager(pvManagers.second);
+
+  auto trigger = app.cs("theTrigger", typeid(T), 1);
+  trigger >> app.cs("theTriggerCopied");
+  app.dev("/MyModule/readBack", typeid(T), 1)[trigger] >> app.cs("myCSVar");
+
+  ctk::Device dev("Dummy0");
+  dev.open();
+  dev.write("MyModule/actuator", 1); // write initial value
+
+  app.initialise();
+
+  app.run();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+
+  auto myCSVar = pvManagers.first->getProcessArray<T>("/myCSVar");
+  auto theTrigger = pvManagers.first->getProcessArray<T>("/theTrigger");
+  auto theTriggerCopied = pvManagers.first->getProcessArray<T>("/theTriggerCopied");
+
+  // Need to send the trigger once, since ApplicationCore expects all CS variables to be written once by the
+  // ControlSystemAdapter. We do not use the TestFacility here, so we have to do it ourself.
+  theTrigger->accessData(0) = 2;
+  theTrigger->write();
+  theTriggerCopied->read();
+  BOOST_CHECK_EQUAL(theTriggerCopied->accessData(0), 2);
+
+  // single theaded test only, since the receiving process scalar does not support blocking
+  myCSVar->read(); // read initial value
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 1);
+  BOOST_CHECK(myCSVar->readNonBlocking() == false);
+  dev.write("MyModule/actuator", 42);
+  usleep(10000);
+  BOOST_CHECK(myCSVar->readNonBlocking() == false);
+  myCSVar->accessData(0) = 0;
+  theTrigger->accessData(0) = 3;
+  theTrigger->write();
+  myCSVar->read();
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 42);
+  theTriggerCopied->read();
+  BOOST_CHECK_EQUAL(theTriggerCopied->accessData(0), 3);
+
+  BOOST_CHECK(myCSVar->readNonBlocking() == false);
+  dev.write("MyModule/actuator", 120);
+  usleep(10000);
+  BOOST_CHECK(myCSVar->readNonBlocking() == false);
+  myCSVar->accessData(0) = 0;
+  theTrigger->accessData(0) = 4;
+  theTrigger->write();
+  myCSVar->read();
+  BOOST_CHECK_EQUAL(myCSVar->accessData(0), 120);
+  theTriggerCopied->read();
+  BOOST_CHECK_EQUAL(theTriggerCopied->accessData(0), 4);
+
+  BOOST_CHECK(myCSVar->readNonBlocking() == false);
+  BOOST_CHECK(theTriggerCopied->readNonBlocking() == false);
+}
+
+/*********************************************************************************************************************/
 /* test that multiple variables triggered by the same source are put into the
  * same TransferGroup */
 
