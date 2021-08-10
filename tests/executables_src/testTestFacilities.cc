@@ -67,31 +67,6 @@ struct BlockingReadTestModule : public ctk::ApplicationModule {
 };
 
 /*********************************************************************************************************************/
-/* the AsyncReadTestModule asynchronously reads its input in the main loop and
- * writes the result to its output */
-
-// FIXME Commmented out because readAsync was removed from TransferElement API
-//template<typename T>
-//struct AsyncReadTestModule : public ctk::ApplicationModule {
-//  using ctk::ApplicationModule::ApplicationModule;
-
-//  ctk::ScalarPushInput<T> someInput{this, "someInput", "cm", "This is just some input for testing"};
-//  ctk::ScalarOutput<T> someOutput{this, "someOutput", "cm", "Description"};
-
-//  void mainLoop() {
-//    while(true) {
-//      auto future = someInput.readAsync();
-//      future.wait();
-//      T val = someInput;
-//      someOutput = val;
-//      usleep(10000); // wait some extra time to make sure we are really blocking
-//                     // the test procedure thread
-//      someOutput.write();
-//    }
-//  }
-//};
-
-/*********************************************************************************************************************/
 /* the ReadAnyTestModule calls readAny on a bunch of inputs and outputs some
  * information on the received data */
 
@@ -873,12 +848,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
     TestApplication<T> app;
 
     ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.blockingReadTestModule.someInput;
-    //ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.asyncReadTestModule.someInput;
     ctk::VariableNetworkNode::makeConstant<T>(true, 22) >> app.readAnyTestModule.inputs.v1;
     ctk::VariableNetworkNode::makeConstant<T>(true, 23) >> app.readAnyTestModule.inputs.v2;
     ctk::VariableNetworkNode::makeConstant<T>(true, 24) >> app.readAnyTestModule.inputs.v3;
     app.blockingReadTestModule.someOutput >> app.cs("blockingOutput");
-    //app.asyncReadTestModule.someOutput >> app.cs("asyncOutput");
     app.cs("v4") >> app.readAnyTestModule.inputs.v4;
     app.readAnyTestModule.value >> app.cs("value");
     app.readAnyTestModule.index >> app.cs("index");
@@ -887,7 +860,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
     test.runApplication();
 
     BOOST_CHECK_EQUAL((T)app.blockingReadTestModule.someInput, 18);
-    //BOOST_CHECK_EQUAL((T)app.asyncReadTestModule.someInput, 20);
     BOOST_CHECK_EQUAL((T)app.readAnyTestModule.inputs.v1, 22);
     BOOST_CHECK_EQUAL((T)app.readAnyTestModule.inputs.v2, 23);
     BOOST_CHECK_EQUAL((T)app.readAnyTestModule.inputs.v3, 24);
