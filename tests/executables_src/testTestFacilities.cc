@@ -973,4 +973,25 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testPolling, T, test_types) {
   BOOST_CHECK_EQUAL((T)pv_valuePoll, 46);
   BOOST_CHECK_EQUAL((T)pv_valuePush, 24);
   BOOST_CHECK_EQUAL((T)pv_state, 3);
+
+  // provoke internal queue overflow in poll-type variable (should not make any difference)
+  pv_push = 25;
+  pv_push.write();
+  for(size_t i = 0; i < 10; ++i) {
+    pv_poll = 50 + i;
+  }
+  pv_poll.write();
+  pv_push2.write();
+  test.stepApplication();
+  pv_valuePoll.read();
+  pv_valuePush.read();
+  pv_state.read();
+  BOOST_CHECK_EQUAL((T)pv_valuePoll, 59);
+  BOOST_CHECK_EQUAL((T)pv_valuePush, 25);
+  BOOST_CHECK_EQUAL((T)pv_state, 1);
 }
+
+/*********************************************************************************************************************/
+/* test initial values */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(testInitialValues, T, test_types) {}
