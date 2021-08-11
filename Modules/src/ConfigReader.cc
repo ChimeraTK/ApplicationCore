@@ -216,7 +216,8 @@ namespace ChimeraTK {
     /// @todo error handling!
     std::stringstream stream(value);
     T convertedValue;
-    if(typeid(T) == typeid(int8_t) || typeid(T) == typeid(uint8_t)) { // prevent interpreting int8-types as characters
+    if constexpr(std::is_same<T, int8_t>::value || std::is_same<T, uint8_t>::value) {
+      // prevent interpreting int8-types as characters
       int16_t intermediate;
       stream >> intermediate;
       convertedValue = intermediate;
@@ -269,7 +270,8 @@ namespace ChimeraTK {
       // convert value into user type
       std::stringstream stream(it->second);
       T convertedValue;
-      if(typeid(T) == typeid(int8_t) || typeid(T) == typeid(uint8_t)) { // prevent interpreting int8-types as characters
+      if constexpr(std::is_same<T, int8_t>::value || std::is_same<T, uint8_t>::value) {
+        // prevent interpreting int8-types as characters
         int16_t intermediate;
         stream >> intermediate;
         convertedValue = intermediate;

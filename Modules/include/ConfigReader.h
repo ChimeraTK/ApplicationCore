@@ -197,8 +197,8 @@ namespace ChimeraTK {
     ChimeraTK::TemplateUserTypeMap<MapOfArray> arrayMap;
 
     /** Map assigning string type identifyers to C++ types */
-    ChimeraTK::SingleTypeUserTypeMap<const char*> typeMap{
-        "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float", "double", "string"};
+    ChimeraTK::SingleTypeUserTypeMap<const char*> typeMap{"int8", "uint8", "int16", "uint16", "int32", "uint32",
+        "int64", "uint64", "float", "double", "string", "boolean", "void"};
 
     /** Implementation of get() which can be overloaded for scalars and vectors.
      * The second argument is a dummy only to distinguish the two overloaded
