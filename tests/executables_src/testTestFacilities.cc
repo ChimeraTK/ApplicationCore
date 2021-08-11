@@ -12,6 +12,7 @@
 
 #include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
+#include <boost/thread/barrier.hpp>
 
 #include <ChimeraTK/Device.h>
 
@@ -209,7 +210,46 @@ struct PollingTestApplication : public ctk::Application {
   void defineConnections() {} // setup is done in the tests
 
   ctk::ControlSystemModule cs;
+  ctk::DeviceModule dev{this, dummySdm};
   PollingReadModule<T> pollingReadModule{this, "pollingReadModule", "Module for testing poll-type transfers"};
+};
+
+/*********************************************************************************************************************/
+/* third application  */
+
+struct AnotherPollTestApplication : public ctk::Application {
+  AnotherPollTestApplication() : Application("AnotherTestApplication") {}
+  ~AnotherPollTestApplication() { shutdown(); }
+
+  void defineConnections() {} // setup is done in the tests
+
+  ctk::ControlSystemModule cs;
+  ctk::DeviceModule dev{this, dummySdm};
+
+  struct Module : ctk::ApplicationModule {
+    using ctk::ApplicationModule::ApplicationModule;
+    ctk::ScalarPushInput<int> push1{this, "push1", "", ""};
+    ctk::ScalarPollInput<int> poll1{this, "poll1", "", ""};
+    ctk::ScalarPollInput<int> poll2{this, "poll2", "", ""};
+    ctk::ScalarOutput<int> out1{this, "out1", "", ""};
+    ctk::ScalarOutput<int> out2{this, "out2", "", ""};
+
+    std::mutex m_forChecking;
+
+    void prepare() override { writeAll(); }
+
+    void mainLoop() override {
+      while(true) {
+        push1.read();
+
+        std::unique_lock<std::mutex> lock(m_forChecking);
+        poll1.read();
+        poll2.read();
+      }
+    }
+  };
+  Module m1{this, "m1", ""};
+  Module m2{this, "m2", ""};
 };
 
 /*********************************************************************************************************************/
@@ -989,6 +1029,192 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testPolling, T, test_types) {
   BOOST_CHECK_EQUAL((T)pv_valuePoll, 59);
   BOOST_CHECK_EQUAL((T)pv_valuePush, 25);
   BOOST_CHECK_EQUAL((T)pv_state, 1);
+}
+
+/*********************************************************************************************************************/
+/* test poll-type transfers in combination with various FanOuts */
+
+BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
+  std::cout << "***************************************************************"
+               "******************************************************"
+            << std::endl;
+  std::cout << "==> testPollingThroughFanOuts" << std::endl;
+
+  // Case 1: FeedingFanOut
+  // ---------------------
+  {
+    AnotherPollTestApplication app;
+    app.m1.out1 >> app.m2.poll1 >> app.m2.poll2;
+    app.m1.out2 >> app.m2.push1; // we need something which is pushed, otherwise the TestFacility won't run anything
+
+    std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
+    std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
+
+    ctk::TestFacility test;
+    test.runApplication();
+
+    // test single value
+    BOOST_REQUIRE(lk1.try_lock());
+    app.m1.out1 = 123;
+    app.m1.out1.write();
+    app.m1.out2.write();
+    lk1.unlock();
+
+    test.stepApplication();
+
+    BOOST_REQUIRE(lk2.try_lock());
+    BOOST_CHECK_EQUAL(app.m2.poll1, 123);
+    BOOST_CHECK_EQUAL(app.m2.poll2, 123);
+    lk2.unlock();
+
+    // test queue overrun
+    BOOST_REQUIRE(lk1.try_lock());
+    for(size_t i = 0; i < 10; ++i) {
+      app.m1.out1 = 191 + i;
+      app.m1.out1.write();
+      app.m1.out2.write();
+    }
+    lk1.unlock();
+
+    test.stepApplication();
+
+    BOOST_REQUIRE(lk2.try_lock());
+    BOOST_CHECK_EQUAL(app.m2.poll1, 200);
+    BOOST_CHECK_EQUAL(app.m2.poll2, 200);
+    lk2.unlock();
+  }
+
+  // Case 2: ConsumingFanOut
+  // -----------------------
+  {
+    AnotherPollTestApplication app;
+    app.dev("REG1") >> app.m1.poll1 >> app.m2.push1;
+
+    std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
+    std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
+
+    ctk::Device dev(dummySdm);
+    auto reg1 = dev.getScalarRegisterAccessor<int>("REG1");
+
+    ctk::TestFacility test;
+    test.runApplication();
+
+    reg1 = 42;
+    reg1.write();
+
+    BOOST_REQUIRE(lk1.try_lock());
+    app.m1.poll1.read();
+    BOOST_CHECK_EQUAL(app.m1.poll1, 42);
+    lk1.unlock();
+    BOOST_REQUIRE(lk2.try_lock());
+    BOOST_CHECK_NE(app.m2.push1, 42);
+    lk2.unlock();
+
+    test.stepApplication();
+
+    BOOST_REQUIRE(lk2.try_lock());
+    BOOST_CHECK_EQUAL(app.m2.push1, 42);
+    lk2.unlock();
+  }
+
+  // Case 3: ThreadedFanOut
+  // ----------------------
+  {
+    AnotherPollTestApplication app;
+    app.cs("var") >> app.m1.poll1 >> app.m1.poll2;
+    app.m2.out2 >> app.m1.push1; // we need something which is pushed, otherwise the TestFacility won't run anything
+
+    std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
+    std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
+
+    ctk::TestFacility test;
+    auto var = test.getScalar<int>("/var");
+    test.runApplication();
+
+    // test with single value
+    var = 666;
+    var.write();
+    BOOST_REQUIRE(lk2.try_lock());
+    app.m2.out2.write();
+    lk2.unlock();
+
+    test.stepApplication();
+
+    BOOST_REQUIRE(lk1.try_lock());
+    app.m1.poll1.read();
+    BOOST_CHECK_EQUAL(app.m1.poll1, 666);
+    app.m1.poll2.read();
+    BOOST_CHECK_EQUAL(app.m1.poll2, 666);
+    lk1.unlock();
+
+    // test with queue overrun
+    for(size_t i = 0; i < 10; ++i) {
+      var = 691 + i;
+      var.write();
+    }
+    BOOST_REQUIRE(lk2.try_lock());
+    app.m2.out2.write();
+    lk2.unlock();
+
+    test.stepApplication();
+
+    BOOST_REQUIRE(lk1.try_lock());
+    app.m1.poll1.read();
+    BOOST_CHECK_EQUAL(app.m1.poll1, 700);
+    app.m1.poll2.read();
+    BOOST_CHECK_EQUAL(app.m1.poll2, 700);
+    lk1.unlock();
+  }
+}
+
+/*********************************************************************************************************************/
+/* test device variables */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(testDevice, T, test_types) {
+  std::cout << "***************************************************************"
+               "******************************************************"
+            << std::endl;
+  std::cout << "==> testDevice<" << typeid(T).name() << ">" << std::endl;
+
+  PollingTestApplication<T> app;
+  app.dev("REG1") >> app.pollingReadModule.poll;
+  app.cs("push") >> app.pollingReadModule.push;
+  app.cs("push2") >> app.pollingReadModule.push2;
+  app.pollingReadModule.valuePoll >> app.cs("valuePoll");
+
+  ctk::TestFacility test;
+  auto push = test.getScalar<T>("push");
+  auto push2 = test.getScalar<T>("push2");
+  auto valuePoll = test.getScalar<T>("valuePoll");
+
+  ctk::Device dev(dummySdm);
+  auto r1 = dev.getScalarRegisterAccessor<T>("REG1");
+
+  test.runApplication();
+
+  // this is state 1 in PollingReadModule -> read()
+  r1 = 42;
+  r1.write();
+  push.write();
+  app.stepApplication();
+  valuePoll.read();
+  BOOST_CHECK_EQUAL(valuePoll, 42);
+
+  // this is state 2 in PollingReadModule -> readNonBlocking()
+  r1 = 43;
+  r1.write();
+  push2.write();
+  app.stepApplication();
+  valuePoll.read();
+  BOOST_CHECK_EQUAL(valuePoll, 43);
+
+  // this is state 2 in PollingReadModule -> readLatest()
+  r1 = 44;
+  r1.write();
+  push2.write();
+  app.stepApplication();
+  valuePoll.read();
+  BOOST_CHECK_EQUAL(valuePoll, 44);
 }
 
 /*********************************************************************************************************************/
