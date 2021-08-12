@@ -235,6 +235,7 @@ struct AnotherPollTestApplication : public ctk::Application {
     ctk::ScalarOutput<int> out2{this, "out2", "", ""};
 
     std::mutex m_forChecking;
+    bool hasRead{false};
 
     void prepare() override { writeAll(); }
 
@@ -243,8 +244,10 @@ struct AnotherPollTestApplication : public ctk::Application {
         push1.read();
 
         std::unique_lock<std::mutex> lock(m_forChecking);
+        hasRead = true;
         poll1.read();
         poll2.read();
+        usleep(1000); // give try_lock() in tests a chance to fail if testable mode lock would not work
       }
     }
   };
@@ -1052,6 +1055,7 @@ BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
 
     ctk::TestFacility test;
     test.runApplication();
+    app.dumpConnections();
 
     // test single value
     BOOST_REQUIRE(lk1.try_lock());
@@ -1218,6 +1222,38 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDevice, T, test_types) {
 }
 
 /*********************************************************************************************************************/
-/* test initial values */
+/* test initial values (from control system variables) */
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testInitialValues, T, test_types) {}
+BOOST_AUTO_TEST_CASE(testInitialValues) {
+  std::cout << "***************************************************************"
+               "******************************************************"
+            << std::endl;
+  std::cout << "==> testInitialValues" << std::endl;
+
+  AnotherPollTestApplication app;
+  app.findTag(".*").connectTo(app.cs);
+
+  std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
+  std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
+
+  ctk::TestFacility test;
+
+  test.setScalarDefault<int>("/m1/push1", 42);
+  test.setScalarDefault<int>("/m1/poll1", 43);
+  test.setScalarDefault<int>("/m2/poll2", 44);
+
+  test.runApplication();
+
+  BOOST_REQUIRE(lk1.try_lock());
+  BOOST_CHECK(!app.m1.hasRead);
+  BOOST_CHECK_EQUAL(app.m1.push1, 42);
+  BOOST_CHECK_EQUAL(app.m1.poll1, 43);
+  BOOST_CHECK_EQUAL(app.m1.poll2, 0);
+  lk1.unlock();
+  BOOST_REQUIRE(lk2.try_lock());
+  BOOST_CHECK(!app.m2.hasRead);
+  BOOST_CHECK_EQUAL(app.m2.push1, 0);
+  BOOST_CHECK_EQUAL(app.m2.poll1, 0);
+  BOOST_CHECK_EQUAL(app.m2.poll2, 44);
+  lk2.unlock();
+}
