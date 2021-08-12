@@ -1,0 +1,4 @@
+# name              n_elements     address         size     bar width fracbits signed R/W
+dev.i1                0x00000001    0x00000000    0x00000004  1    32    0      1     RO
+dev.i3                0x00000001    0x00000008    0x00000004  1    32    0      1     RO
+dev.i4                0x00000001    0x00000004    0x00000004  1    32    0      1     RW
