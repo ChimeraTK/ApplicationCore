@@ -4,8 +4,6 @@
 
 #include <chrono>
 #include <cstring>
-#include <future>
-#include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/NDRegisterAccessor.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
@@ -18,7 +16,6 @@
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
 #include "check_timeout.h"
-#include "fixtures.h"
 
 // this #include must come last
 #define BOOST_NO_EXCEPTIONS
@@ -42,6 +39,7 @@ struct TestModule0 : ctk::ApplicationModule {
   }
 };
 
+// module for most of hte data validity propagation tests
 struct TestModule1 : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
   ctk::ScalarPushInput<int> i1{this, "i1", "", ""};
@@ -52,6 +50,7 @@ struct TestModule1 : ctk::ApplicationModule {
     oconst.setDataValidity(outputValidity);
     oconst.write();
     // also provide initial value for o1, in case some module waits on it.
+    // this is important for the testable mode
     o1 = -1;
     o1.setDataValidity(outputValidity);
     o1.write();
@@ -119,11 +118,10 @@ struct TestApplication1 : ctk::Application {
   ctk::ControlSystemModule cs;
 
   TriggerModule m2{this, "m2", ""};
-  //TODO check that ExceptionDummy instead of dummy does not break tests.
   ctk::ConnectingDeviceModule dev{
       this, "(ExceptionDummy?map=testDataValidityPropagation.map)", "/m2/o1", &initialiseDev};
   std::atomic_bool deviceError = false;
-  static void initialiseDev(ChimeraTK::DeviceModule* dev) {
+  static void initialiseDev(ChimeraTK::DeviceModule*) {
     bool err = ((TestApplication1&)Application::getInstance()).deviceError;
     if(err) {
       throw ChimeraTK::runtime_error("device is not ready.");
@@ -169,7 +167,6 @@ BOOST_AUTO_TEST_CASE(testDataValidity_exceptionDummy) {
   // it seems that the exceptionDummy is created only when app starts.
   auto exceptionDummy =
       boost::dynamic_pointer_cast<ctk::ExceptionDummy>(app.device1.getDeviceModule().device.getBackend());
-  //auto exceptionDummy = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(app.device1.device.getBackend());
   assert(exceptionDummy);
   exceptionDummy->setValidity("/dev/i1", ctk::DataValidity::faulty);
 
@@ -182,7 +179,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_exceptionDummy) {
   BOOST_CHECK(devI2.dataValidity() == ctk::DataValidity::ok);
 }
 
-/**
+/*
  * \anchor testDataValidity_1_1 \ref dataValidity_1_1 "1.1"
  * In ApplicationCore each variable has a data validiy flag attached to it. DataValidity can be 'ok' or 'faulty'.
  *
@@ -190,7 +187,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_exceptionDummy) {
  * i.e. expressions testmod1.i1.dataValidity() and testmod1.o1.dataValidity();
  */
 
-/**
+/*
  * \anchor testDataValidity_1_2 \ref dataValidity_1_2 "1.2"
  * This flag is automatically propagated: If any of the inputs of an ApplicationModule is faulty,
  * the data validity of the module becomes faulty, which means all outputs of this module will automatically be
@@ -224,19 +221,19 @@ BOOST_AUTO_TEST_CASE(testDataValidity_1_3) {
   // redmine issue: #8550
 }
 
-/**
+/*
  * \anchor testDataValidity_1_4 \ref dataValidity_1_4 "1.4"
  * The user code has the possibility to query the data validity of the module
  *
- * No active test, if test suite compiles it's ok.
+ * No explicit test, if test suite compiles it's ok.
  */
 
-/**
+/*
  * \anchor testDataValidity_1_5 \ref dataValidity_1_5 "1.5"
  * The user code has the possibility to set the data validity of the module to 'faulty'. However, the user code cannot
  * actively set the module to 'ok' if any of the module inputs are 'faulty'.
  *
- * No active test. The module should use increment/decrement mechanism to set invalid state,
+ * No explicit test. The module should use increment/decrement mechanism to set invalid state,
  * which implies it cannot override faulty state.
  * BUT it is actually possible to override getDataValidity in the Module, so spec does not hold strictly!
  *
@@ -283,11 +280,11 @@ BOOST_AUTO_TEST_CASE(testDataValidity_1_6) {
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
 }
 
-/**
+/*
  * \anchor testDataValidity_1_7 \ref dataValidity_1_7 "1.7"
  *  The user code can get the data validity flag of individual inputs and take special actions.
  *
- *  No active test required.
+ *  No explicit test required.
  */
 
 /**
@@ -336,7 +333,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_1_1) {
   BOOST_CHECK(app.mod.getDataValidity() == ctk::DataValidity::faulty);
 }
 
-/**
+/*
  * \anchor testDataValidity_2_1_2 \ref dataValidity_2_1_2 "2.1.2"
  * The decorator knows about the module it is connected to. It is called the 'owner'.
  *
@@ -373,7 +370,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_1_3) {
   BOOST_CHECK(app.mod.decCalled == 1);
 }
 
-/**
+/*
  * \anchor testDataValidity_2_1_5 \ref dataValidity_2_1_5 "2.1.5"
  * **write:** When writing, the decorator is checking the validity of the owner and the individual flag of the output
  * set by the user. Only if both are 'ok' the output validity is 'ok', otherwise the outgoing data is send as 'faulty'.
@@ -395,7 +392,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_3_1) {
   BOOST_CHECK(testmod1.getDataValidity() == ctk::DataValidity::ok);
 }
 
-/**
+/*
  * \anchor testDataValidity_2_3_2 \ref dataValidity_2_3_2 "2.3.2"
  * All inputs and outputs have a MetaDataPropagatingRegisterDecorator.
  *
@@ -404,8 +401,8 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_3_1) {
 
 /**
  * \anchor testDataValidity_2_3_3 \ref dataValidity_2_3_3 "2.3.3"
- * The main loop of the module usualy does not care about data validity. If any input is invalid, all outputs are
- * automatically invalid. The loop just runs through normaly, even if an input has invalid data.
+ * The main loop of the module usually does not care about data validity. If any input is invalid, all outputs are
+ * automatically invalid. The loop just runs through normally, even if an input has invalid data.
  */
 BOOST_AUTO_TEST_CASE(testDataValidity_2_3_3) {
   TestApplication1<TestModule1> app;
@@ -456,14 +453,6 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_3_4) {
 }
 
 /**
- * \anchor testDataValidiy_3_1 \ref dataValidity_3_1 "3.1"
- * The decorators which manipulate the data fault counter are responsible for counting up and down in pairs, such that
- * the counter goes back to 0 if all data is ok, and never becomes negative.
- *
- * Not tested since its an implementation detail.
- */
-
-/**
  * \anchor testDataValidity_2_4_1 \ref dataValidity_2_4_1 "2.4.1"
  * Only the push-type trigger input of the TriggerFanOut is equiped with a MetaDataPropagatingRegisterDecorator.
  */
@@ -487,7 +476,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_4_1) {
   BOOST_CHECK(result1.dataValidity() == ctk::DataValidity::faulty);
 }
 
-/**
+/*
  * \anchor testDataValidity_2_4_2 \ref dataValidity_2_4_2 "2.4.2"
  * The poll-type data inputs do not have a MetaDataPropagatingRegisterDecorator.
  *
@@ -519,7 +508,8 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_4_3) {
   result2.read();
   BOOST_CHECK(result2.dataValidity() == ctk::DataValidity::ok);
 }
-/**
+
+/*
  * \anchor testDataValidity_2_4_4 \ref dataValidity_2_4_4 "2.4.4"
  * Although the trigger conceptually has data type 'void', it can also be `faulty`. An invalid trigger is processed,
  * but all read out data is flagged as `faulty`.
@@ -549,5 +539,14 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_5_2) {}
  * receiver. Instead, the validity is set right after construction in Application::createDeviceVariable() for receivers.
  */
 BOOST_AUTO_TEST_CASE(testDataValidity_2_6_1) {}
+
+
+/*
+ * \anchor testDataValidiy_3_1 \ref dataValidity_3_1 "3.1"
+ * The decorators which manipulate the data fault counter are responsible for counting up and down in pairs, such that
+ * the counter goes back to 0 if all data is ok, and never becomes negative.
+ *
+ * Not tested since its an implementation detail.
+ */
 
 //BOOST_AUTO_TEST_SUITE_END()
