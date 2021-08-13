@@ -239,6 +239,9 @@ BOOST_AUTO_TEST_CASE(testDataValidity_1_3) {
  *
  */
 
+/**
+ * app with two chained modules, for \ref testDataValidity_1_6
+ */
 struct TestApplication16 : ctk::Application {
   TestApplication16() : Application("testSuite") {}
   ~TestApplication16() { shutdown(); }
@@ -301,7 +304,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_1_8) {
   test.runApplication();
 
   // o0.read() would block here
-  o0.readLatest();
+  BOOST_CHECK(o0.readNonBlocking() == false);
 
   BOOST_CHECK(o0.dataValidity() == ctk::DataValidity::faulty);
 }
@@ -517,36 +520,37 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_4_3) {
  * Already tested in \ref testDataValidity_2_4_1
  */
 
-/**
+/*
  * \anchor testDataValidity_2_5_1 \ref dataValidity_2_5_1 "2.5.1"
  * The MetaDataPropagatingRegisterDecorator is always placed *around* the ExceptionHandlingDecorator if both
  * decorators are used on a process variable. Like this a `faulty` flag raised by the ExceptionHandlingDecorator is
  * automatically picked up by the MetaDataPropagatingRegisterDecorator.
+ *
+ * Already tested in  \ref testDataValidity_1_3
  */
-BOOST_AUTO_TEST_CASE(testDataValidity_2_5_1) {}
-
-/**
+/*
  * \anchor testDataValidity_2_5_2 \ref dataValidity_2_5_2 "2.5.2"
  * The first failing read returns with the old data and the 'faulty' flag. Like this the flag is propagated to the
  * outputs. Only further reads might freeze until the device is available again.
+ *
+ *  Already tested in  \ref testDataValidity_1_3
  */
-BOOST_AUTO_TEST_CASE(testDataValidity_2_5_2) {}
 
-/**
+/*
  * \anchor testDataValidity_2_6_1 \ref dataValidity_2_6_1 "2.6.1"
  * For device variables, the requirement of setting receiving endpoints to 'faulty' on construction can not be
  * fulfilled. In DeviceAccess the accessors are bidirectional and provide no possibility to distinguish sender and
  * receiver. Instead, the validity is set right after construction in Application::createDeviceVariable() for receivers.
+ *
+ * Already tested in  \ref testDataValidity_1_3
  */
-BOOST_AUTO_TEST_CASE(testDataValidity_2_6_1) {}
-
 
 /*
  * \anchor testDataValidiy_3_1 \ref dataValidity_3_1 "3.1"
  * The decorators which manipulate the data fault counter are responsible for counting up and down in pairs, such that
  * the counter goes back to 0 if all data is ok, and never becomes negative.
  *
- * Not tested since its an implementation detail.
+ * Not tested since it's an implementation detail.
  */
 
 //BOOST_AUTO_TEST_SUITE_END()
