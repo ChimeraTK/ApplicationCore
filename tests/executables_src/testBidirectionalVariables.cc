@@ -20,6 +20,8 @@
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
 
+#include "check_timeout.h"
+
 #define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
 #undef BOOST_NO_EXCEPTIONS
@@ -102,7 +104,6 @@ struct TestApplication : public ctk::Application {
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
   void defineConnections() {}         // the setup is done in the tests
-
   ctk::ControlSystemModule cs;
   ModuleA a;
   ModuleB b;
@@ -385,7 +386,8 @@ struct TestApplication2 : ctk::Application {
 
     ctk::ScalarPushInputWB<int> var{this, "var", "", ""};
 
-    void mainLoop() override {}
+    boost::latch mainLoopStarted{1};
+    void mainLoop() override { mainLoopStarted.count_down(); }
   } lower{this, "Lower", ""};
 
   struct Upper : public ctk::ApplicationModule {
@@ -395,7 +397,8 @@ struct TestApplication2 : ctk::Application {
 
     void prepare() override { var.write(); }
 
-    void mainLoop() override {}
+    boost::latch mainLoopStarted{1};
+    void mainLoop() override { mainLoopStarted.count_down(); }
   } upper{this, "Upper", ""};
 };
 
@@ -470,6 +473,29 @@ BOOST_AUTO_TEST_CASE(testDataValidityReturn) {
     // BOOST_CHECK(app.upper.getDataValidity() == ctk::DataValidity::ok);
     //=====================================================================
   }
+}
+
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testInitialValues) {
+  std::cout << "*** testInitialValues" << std::endl;
+
+  TestApplication2 app;
+  ChimeraTK::TestFacility test;
+
+  test.runApplication();
+  app.dumpConnections();
+
+  // return channel: upper must start without lower sending anything through the return channel
+  CHECK_TIMEOUT(app.upper.mainLoopStarted.try_wait(), 10000);
+
+  // forward channel: lower must not start without upper sending the initial value
+  usleep(10000);
+  BOOST_CHECK(!app.lower.mainLoopStarted.try_wait());
+  app.upper.var = 666;
+  app.upper.var.write();
+  CHECK_TIMEOUT(app.lower.mainLoopStarted.try_wait(), 10000);
+  BOOST_CHECK_EQUAL(app.lower.var, 666);
 }
 
 /*********************************************************************************************************************/
