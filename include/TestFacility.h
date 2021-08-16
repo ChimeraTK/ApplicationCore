@@ -40,7 +40,7 @@ namespace ChimeraTK {
       Application::getInstance().testFacilityRunApplicationCalled = true;
       // send default values for all control system variables
       for(auto& pv : pvManager->getAllProcessVariables()) {
-        callForType(pv->getValueType(), [&pv, this](auto arg) {
+        callForTypeNoVoid(pv->getValueType(), [&pv, this](auto arg) {
           // Applies only to writeable variables. @todo FIXME It should also NOT apply for application-to-controlsystem
           // variables with a return channel, despite being writeable here!
           if(!pv->isWriteable()) return;
@@ -92,7 +92,7 @@ namespace ChimeraTK {
       if(Application::getInstance().isTestableModeEnabled()) {
         for(auto& pv : pvManager->getAllProcessVariables()) {
           if(!pv->isReadable()) continue;
-          callForType(pv->getValueType(), [&](auto t) {
+          callForTypeNoVoid(pv->getValueType(), [&](auto t) {
             typedef decltype(t) UserType;
             this->getArray<UserType>(pv->getName()).readNonBlocking();
           });

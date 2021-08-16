@@ -186,7 +186,7 @@ namespace ChimeraTK {
     using MapOfVar = std::unordered_map<std::string, Var<T>>;
 
     /** Type-depending map of vectors of variables */
-    ChimeraTK::TemplateUserTypeMap<MapOfVar> variableMap;
+    ChimeraTK::TemplateUserTypeMapNoVoid<MapOfVar> variableMap;
 
     /** Define type for map of std::string to Array, so we can put it into the
      * TemplateUserTypeMap */
@@ -194,11 +194,11 @@ namespace ChimeraTK {
     using MapOfArray = std::unordered_map<std::string, Array<T>>;
 
     /** Type-depending map of vectors of arrays */
-    ChimeraTK::TemplateUserTypeMap<MapOfArray> arrayMap;
+    ChimeraTK::TemplateUserTypeMapNoVoid<MapOfArray> arrayMap;
 
     /** Map assigning string type identifyers to C++ types */
-    ChimeraTK::SingleTypeUserTypeMap<const char*> typeMap{"int8", "uint8", "int16", "uint16", "int32", "uint32",
-        "int64", "uint64", "float", "double", "string", "boolean", "void"};
+    ChimeraTK::SingleTypeUserTypeMapNoVoid<const char*> typeMap{"int8", "uint8", "int16", "uint16", "int32", "uint32",
+        "int64", "uint64", "float", "double", "string", "boolean"};
 
     /** Implementation of get() which can be overloaded for scalars and vectors.
      * The second argument is a dummy only to distinguish the two overloaded

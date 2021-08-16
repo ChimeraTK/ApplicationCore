@@ -165,7 +165,7 @@ namespace ChimeraTK { namespace history {
      * created by the AccessorAttacher. */
     template<typename UserType>
     using AccessorList = std::list<std::pair<ArrayPushInput<UserType>, HistoryEntry<UserType>>>;
-    TemplateUserTypeMap<AccessorList> _accessorListMap;
+    TemplateUserTypeMapNoVoid<AccessorList> _accessorListMap;
 
     /** boost::fusion::map of UserTypes to std::lists containing the names of the
      * accessors. Technically there would be no need to use TemplateUserTypeMap
@@ -174,7 +174,7 @@ namespace ChimeraTK { namespace history {
      * is used here. */
     template<typename UserType>
     using NameList = std::list<std::string>;
-    TemplateUserTypeMap<NameList> _nameListMap;
+    TemplateUserTypeMapNoVoid<NameList> _nameListMap;
 
     /** Overall variable name list, used to detect name collisions */
     std::list<std::string> _overallVariableList;
