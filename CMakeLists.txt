@@ -14,12 +14,12 @@ option(BUILD_TESTS "Build tests." ON)
 option(BUILD_MICRODAQ "Build MicroDAQ module, which depends on HDF5 (libhdf5-dev)." ON)
 
 # Find the ControlSystemAdapter
-add_dependency(ChimeraTK-ControlSystemAdapter 02.02 REQUIRED)
+add_dependency(ChimeraTK-ControlSystemAdapter 02.03 REQUIRED)
 
 # Find the DeviceAccess
 # Although all the linker flags are added again, the include path might be different
 # if the libraries are installed in different directories for development purposes.
-add_dependency(ChimeraTK-DeviceAccess 02.00 REQUIRED)
+add_dependency(ChimeraTK-DeviceAccess 02.06 REQUIRED)
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)
