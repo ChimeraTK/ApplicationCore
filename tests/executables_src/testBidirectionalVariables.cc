@@ -10,7 +10,6 @@
 #define BOOST_TEST_MODULE testBidirectionalVariables
 
 #include <boost/mpl/list.hpp>
-#include <boost/test/included/unit_test.hpp>
 
 #include <ChimeraTK/BackendFactory.h>
 
@@ -20,6 +19,12 @@
 #include "ControlSystemModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
+
+#include "check_timeout.h"
+
+#define BOOST_NO_EXCEPTIONS
+#include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -99,7 +104,6 @@ struct TestApplication : public ctk::Application {
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
   void defineConnections() {}         // the setup is done in the tests
-
   ctk::ControlSystemModule cs;
   ModuleA a;
   ModuleB b;
@@ -367,6 +371,130 @@ BOOST_AUTO_TEST_CASE(testStartup) {
   // The default value should be overwritten when ModuleC
   // enters its mainLoop
   BOOST_CHECK_EQUAL(testFacility.readScalar<int>("ModuleC/var1"), 42);
+}
+
+/*********************************************************************************************************************/
+
+struct TestApplication2 : ctk::Application {
+  TestApplication2() : Application("testSuite") {}
+  ~TestApplication2() override { shutdown(); }
+
+  void defineConnections() override { lower.connectTo(upper); }
+
+  template<typename ACCESSOR>
+  struct Module : public ctk::ApplicationModule {
+    using ctk::ApplicationModule::ApplicationModule;
+
+    ACCESSOR var{this, "var", "", ""};
+
+    bool sendInitialValue{ctk::VariableNetworkNode(var).getDirection().dir == ctk::VariableDirection::feeding};
+    void prepare() override {
+      if(sendInitialValue) {
+        var.write();
+      }
+    }
+
+    boost::latch mainLoopStarted{1};
+    void mainLoop() override { mainLoopStarted.count_down(); }
+  };
+  Module<ctk::ScalarPushInputWB<int>> lower{this, "Lower", ""};
+  Module<ctk::ScalarOutputPushRB<int>> upper{this, "Upper", ""};
+};
+
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testReadWriteAll) {
+  std::cout << "*** testReadWriteAll" << std::endl;
+
+  TestApplication2 app;
+  ChimeraTK::TestFacility test;
+
+  test.runApplication();
+
+  // forward channel writeAll/readAll
+  app.upper.var = 42;
+  app.upper.writeAll();
+  app.lower.readAll();
+  BOOST_CHECK_EQUAL(app.lower.var, 42);
+
+  // return channel writeAll
+  app.lower.var = 43;
+  app.lower.writeAll();
+  BOOST_CHECK(app.upper.var.readNonBlocking() == false);
+
+  // return channel readAll
+  app.lower.var.write();
+  app.upper.readAll();
+  BOOST_CHECK_NE(app.upper.var, 43);
+  BOOST_CHECK(app.upper.var.readNonBlocking() == true);
+}
+
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testDataValidityReturn) {
+  std::cout << "*** testDataValidityReturn" << std::endl;
+
+  // forward channel
+  {
+    TestApplication2 app;
+    ChimeraTK::TestFacility test;
+
+    test.runApplication();
+    assert(app.lower.getDataValidity() == ctk::DataValidity::ok);
+
+    app.upper.incrementDataFaultCounter();
+    app.upper.var = 666;
+    app.upper.var.write();
+    app.upper.decrementDataFaultCounter();
+    app.lower.var.read();
+    BOOST_CHECK(app.lower.var.dataValidity() == ctk::DataValidity::faulty);
+    BOOST_CHECK(app.lower.getDataValidity() == ctk::DataValidity::faulty);
+  }
+
+  // return channel
+  {
+    TestApplication2 app;
+    ChimeraTK::TestFacility test;
+
+    test.runApplication();
+    assert(app.upper.getDataValidity() == ctk::DataValidity::ok);
+    app.lower.incrementDataFaultCounter();
+    app.lower.var = 120;
+    app.lower.var.write();
+    app.upper.var.read();
+    BOOST_CHECK(app.upper.var.dataValidity() == ctk::DataValidity::faulty);
+
+    //=====================================================================
+    // TODO This check would fail - intended behaviour inclear!!!
+    //
+    // See redmine issue #8607
+    //
+    // BOOST_CHECK(app.upper.getDataValidity() == ctk::DataValidity::ok);
+    //=====================================================================
+  }
+}
+
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testInitialValues) {
+  std::cout << "*** testInitialValues" << std::endl;
+
+  TestApplication2 app;
+  app.upper.sendInitialValue = false;
+  ChimeraTK::TestFacility test(false);
+
+  test.runApplication();
+
+  // return channel: upper must start without lower sending anything through the return channel
+  CHECK_TIMEOUT(app.upper.mainLoopStarted.try_wait(), 10000);
+
+  // forward channel: lower must not start without upper sending the initial value
+  usleep(10000);
+  BOOST_CHECK(!app.lower.mainLoopStarted.try_wait());
+  app.upper.var = 666;
+  app.upper.var.write();
+  CHECK_TIMEOUT(app.lower.mainLoopStarted.try_wait(), 10000);
+  BOOST_CHECK_EQUAL(app.lower.var, 666);
 }
 
 /*********************************************************************************************************************/
