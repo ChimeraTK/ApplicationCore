@@ -82,12 +82,15 @@ namespace ChimeraTK {
     virtual ~DeviceModule();
 
     /** Move operation with the move constructor */
-    DeviceModule(DeviceModule&& other) { operator=(std::move(other)); }
+    DeviceModule(DeviceModule&& other) {
+      operator=(std::move(other));
+    }
 
     /** Move assignment */
     DeviceModule& operator=(DeviceModule&& other) {
       assert(!moduleThread.joinable());
       assert(other.isHoldingInitialValueLatch);
+      if(owner) owner->unregisterDeviceModule(this);
       Module::operator=(std::move(other));
       device = std::move(other.device);
       deviceAliasOrURI = std::move(other.deviceAliasOrURI);
