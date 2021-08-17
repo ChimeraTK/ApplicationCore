@@ -1055,7 +1055,6 @@ BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
 
     ctk::TestFacility test;
     test.runApplication();
-    app.dumpConnections();
 
     // test single value
     BOOST_REQUIRE(lk1.try_lock());
