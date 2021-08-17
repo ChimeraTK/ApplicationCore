@@ -2,9 +2,9 @@
 namespace ChimeraTK {
 /**
 
-\page spec_dataValidityPropagation Technical specification: data validity propagation Specification version V1.0RC2
+\page spec_dataValidityPropagation Technical specification: data validity propagation Specification version V1.0
 
-> **This is a release candidate in implementation**
+> This version is identical to V1.0RC2.
 
 > **NOTICE FOR FUTURE RELEASES: AVOID CHANGING THE NUMBERING!** The tests refer to the sections, incl. links and unlinked references from tests or other parts of the specification. These break, or even worse become wrong, when they are not changed consistenty!
 
