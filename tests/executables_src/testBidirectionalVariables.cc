@@ -377,29 +377,28 @@ BOOST_AUTO_TEST_CASE(testStartup) {
 
 struct TestApplication2 : ctk::Application {
   TestApplication2() : Application("testSuite") {}
-  ~TestApplication2() { shutdown(); }
+  ~TestApplication2() override { shutdown(); }
 
   void defineConnections() override { lower.connectTo(upper); }
 
-  struct Lower : public ctk::ApplicationModule {
+  template<typename ACCESSOR>
+  struct Module : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
-    ctk::ScalarPushInputWB<int> var{this, "var", "", ""};
+    ACCESSOR var{this, "var", "", ""};
+
+    bool sendInitialValue{ctk::VariableNetworkNode(var).getDirection().dir == ctk::VariableDirection::feeding};
+    void prepare() override {
+      if(sendInitialValue) {
+        var.write();
+      }
+    }
 
     boost::latch mainLoopStarted{1};
     void mainLoop() override { mainLoopStarted.count_down(); }
-  } lower{this, "Lower", ""};
-
-  struct Upper : public ctk::ApplicationModule {
-    using ctk::ApplicationModule::ApplicationModule;
-
-    ctk::ScalarOutputPushRB<int> var{this, "var", "", ""};
-
-    void prepare() override { var.write(); }
-
-    boost::latch mainLoopStarted{1};
-    void mainLoop() override { mainLoopStarted.count_down(); }
-  } upper{this, "Upper", ""};
+  };
+  Module<ctk::ScalarPushInputWB<int>> lower{this, "Lower", ""};
+  Module<ctk::ScalarOutputPushRB<int>> upper{this, "Upper", ""};
 };
 
 /*********************************************************************************************************************/
@@ -481,10 +480,10 @@ BOOST_AUTO_TEST_CASE(testInitialValues) {
   std::cout << "*** testInitialValues" << std::endl;
 
   TestApplication2 app;
-  ChimeraTK::TestFacility test;
+  app.upper.sendInitialValue = false;
+  ChimeraTK::TestFacility test(false);
 
   test.runApplication();
-  app.dumpConnections();
 
   // return channel: upper must start without lower sending anything through the return channel
   CHECK_TIMEOUT(app.upper.mainLoopStarted.try_wait(), 10000);
