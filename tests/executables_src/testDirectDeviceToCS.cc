@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDirectCStoDevFanOut, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.cs("myFeeder", typeid(T), 1) >> app.dev("/MyModule/actuator") >> app.dev("/MyModule/readBack");
+  app.cs("myFeeder", typeid(T), 1) >> app.dev("/MyModule/actuator") >> app.dev("/Deeper/hierarchies/also");
   app.initialise();
   app.run();
 
