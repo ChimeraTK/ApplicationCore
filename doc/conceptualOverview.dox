@@ -1,0 +1,86 @@
+using namespace ChimeraTK;
+/**
+\page conceptualOverview Conceptual overview
+
+\section Introduction
+Applications written with ApplicationCore are divided into modules. A module can have any number of input and output process variables. All program logic must be implemented into modules. One fundamental principle of ApplicationCore is that the inputs and outputs of modules can be connected to arbitrary targets like device registers, control system variables, other modules or even multiple targets at the same time. This does not involve any code change, so the author of the module does not need to keep this in mind while coding.
+
+There are the following types of modules:
+
+- Application module: Any application logic must go into this type of modules, so this type of modules is the main ingredience to the application.
+- Variable group: Can be used to organise variables hierarchically within application modules.
+- Module group: Can be used to organise ApplicationModules hierarchically within the application.
+- Device module: Represents a device (in the sense of ChimeraTK DeviceAccess) or a part of such, and allows to connect device registers to other modules.
+- Control system module: Represents the control system variable household. Should normally not be used by the programmer.
+- The application: All other modules must be directly or indirectly instantiated by the application, which is basically the top-most module group.
+
+\section conceptualOverview_ApplicationModule Application module
+
+An application module represents a small task of the total application, e.g. one particular computation. The task will be executed in its own thread, so it is well separated from the rest of the application. Ideally, each module should be somewhat self-contained and independent of other modules, and only ApplicationCore process variables should be used for communication with other parts of the application.
+
+An application module is a class deriving from ChimeraTK::ApplicationModule, e.g.:
+\code{.cpp}
+struct MyModule : ChimeraTK::ApplicationModule {
+  using ChimeraTK::ApplicationModule::ApplicationModule;
+  ctk::ScalarPushInput<double> someInput{this, "someInput", "Unit", "Description"};
+  ctk::ScalarOutput<double> someOutput{this, "someOutput", "Unit", "Description"};
+  void mainLoop() override;
+};
+\endcode
+In this small example, one input and one output process variable is defined (see \ref conceptualOverview_ProcessVariable "next section"). The code processing the data needs to go into the implementation of the ApplicationModule::mainLoop() function implementation, e.g.:
+\code{.cpp}
+void MyModule::mainLoop() {
+  while(true) {
+    // data processing happens here
+  }
+}
+\endcode
+The mainLoop function litteraly needs to contain a loop, which runs for the lifetime of the application. Any preparations which need to be executed once at application start should go before the start of the loop. Alternatively, a function ApplicationModule::prepare() can be implemented, which will be executed at an earlier state of the startup phase, before any of the other mainLoop threads are started.
+
+During shutdown of the application, any read/write operation on the process variables will function as an interruption point. If required, a try-catch block for the boost::thread_interrupted exception will allow to execute any code during shutdown (but keep in mind most functionality like access to devices will not be available any more at that point).
+
+
+\section conceptualOverview_ProcessVariable Process variables and accessors
+\subsection conceptualOverview_ProcessVariable_intro Introduction
+
+What has been previously in this document referred to as a process variable is actually only the accessor to it. Accessors are already known from ChimeraTK DeviceAccess, where they allow reading and writing from/to device registers. In ApplicationCore the concept is extended to a higher abstraction level, since accessors cannot only target device registers.
+
+A process variable has a data source, which is called the feeder, and one or more so-called consumers. The feeder as well as any consumer can each be either a device register, a control system variable (e.g. from an operator panel) or an output accessor of an application module. Process variables have a name, a type, a physical unit, a description and of course a value.
+
+\subsection conceptualOverview_ProcessVariable_accessMode Push and poll transfer modes
+
+Accessors can have either push or poll type transfer modes. In push mode, the feeder initiates the data tranfers, while in poll mode the consumer does. In both cases, a consuming application module still needs to execute a read operation before the value becomes visible in the application buffer of the accessor.
+
+Push inputs of application modules are accessors with the ChimeraTK::AccessMode::wait_for_new_data flag (see DeviceAccess documentation) and hence have a blocking ChimeraTK::TransferElement::read() operation which waits until data is available for reading. They also support ChimeraTK::TransferElement::readNonBlocking() and ChimeraTK::TransferElement::readLatest(), and can be used inside a ChimeraTK::ReadAnyGroup.
+
+Poll inputs do not have the AccessMode::wait_for_new_data flag, and hence all read operations do not block and do not inform about changed values.
+
+Outputs of application modules are always push-type, so they can be connected to either a push-type or a poll-type input. Device registers do not neccessarily support the AccessMode::wait_for_new_data flag, in which case a direct connetion with only poll-type readers is possible. To circumvent this, a trigger can be used which determines the point in time when a new value shall be polled, see the \ref conceptualOverview_DeviceModule "Section Device modules" for more details. Control system variables are always push-type, which means device registers often cannot be connected directly to the control system without a trigger.
+
+\subsection conceptualOverview_ProcessVariable_hierarchy Name and hierarchies
+
+The fully qualified name of a process variable includes the entire hierarchy of modules, which is formed by the combination of ModuleGroups, the ApplicationModule and VariableGroups. All accessors referring to the same fully qualified variable name will access the same logical process variable and hence will be connected and receive the same values.
+
+\subsection conceptualOverview_ProcessVariable_network Variable networks
+
+Each process variable is represented by a VariableNetwork. The programmer normally does not have to deal with variable networks directly, but it is possible to print out all networks of an application for debugging purposes (cf. Application::dumpConnections()). Each feeder or consumer is represented by a VariableNetworkNode. Also with these the programmer does not need to deal normally, but they can be used to connect variables explicitly.
+
+\subsection conceptualOverview_ProcessVariable_metainfo Type and meta information
+
+\section conceptualOverview_VariableGroup Variable groups
+
+\section conceptualOverview_ModuleGroup Module groups
+
+\section conceptualOverview_DeviceModule Device modules
+
+\subsection conceptualOverview_DeviceModule_trigger Triggers
+
+\section conceptualOverview_ControlSystemModule Control system module
+
+\section conceptualOverview_Application The Application
+
+\section conceptualOverview_Connections Process variable connections
+
+\section conceptualOverview_FanOuts Fanouts
+
+*/
