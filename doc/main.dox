@@ -1,7 +1,10 @@
 /**
 \mainpage
 
+ChimeraTK ApplicationCore is a library for writing control system applcations within the ChimeraTK framework. Its purpose is to simplify the development of applications with an emphasis on long-term maintainability. The source code of the control system applications can be kept independent of the used middleware (like EPICS, OPC UA, DOOCS etc.) as they merely need to be linked against one of the ControlSystemAdapters. The library is written in modern C++.
+
 API documentation:
+- \subpage conceptualOverview
 - \subpage exceptionHandling
 
 Module documentation:
