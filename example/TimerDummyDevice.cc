@@ -89,7 +89,17 @@ class TimerDummyRegisterAccessor : public ChimeraTK::NDRegisterAccessor<UserType
 };
 
 template<>
-void TimerDummyRegisterAccessor<std::string>::doPostRead(ChimeraTK::TransferType, bool /*hasNewData*/) {}
+void TimerDummyRegisterAccessor<std::string>::doPostRead(ChimeraTK::TransferType, bool /*hasNewData*/) {
+  this->_versionNumber = {};
+}
+template<>
+void TimerDummyRegisterAccessor<ChimeraTK::Boolean>::doPostRead(ChimeraTK::TransferType, bool /*hasNewData*/) {
+  this->_versionNumber = {};
+}
+template<>
+void TimerDummyRegisterAccessor<ChimeraTK::Void>::doPostRead(ChimeraTK::TransferType, bool /*hasNewData*/) {
+  this->_versionNumber = {};
+}
 
 template<typename UserType>
 boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> TimerDummy::getRegisterAccessor_impl(
