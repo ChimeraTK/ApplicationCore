@@ -850,7 +850,6 @@ BOOST_AUTO_TEST_CASE(testD6_a4_InitialValue) {
   Test6_a4_InitialValueEceptionDummy d;
 
   d.application.run();
-  BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   d.application.readerModule.p.get_future().wait();
   BOOST_CHECK(d.application.readerModule.enteredTheMainLoop == true);
   CHECK_TIMEOUT(d.pushVariable == 777, 100000);
