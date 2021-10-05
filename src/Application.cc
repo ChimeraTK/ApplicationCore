@@ -1280,6 +1280,12 @@ Application& Application::getInstance() {
 
 /*********************************************************************************************************************/
 
+bool Application::canStepApplication() const {
+  return (testableMode_counter != 0);
+}
+
+/*********************************************************************************************************************/
+
 void Application::stepApplication(bool waitForDeviceInitialisation) {
   // testableMode_counter must be non-zero, otherwise there is no input for the application to process. It is also
   // sufficient if testableMode_deviceInitialisationCounter is non-zero, if waitForDeviceInitialisation == true. In that

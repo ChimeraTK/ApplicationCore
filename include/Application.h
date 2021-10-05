@@ -114,6 +114,11 @@ namespace ChimeraTK {
      **/
     bool isTestableModeEnabled() { return testableMode; }
 
+    /**
+     * Check whether data has been sent to the application so stepApplication() can be called.
+     */
+    bool canStepApplication() const;
+
     /** Resume the application until all application threads are stuck in a blocking read operation. Works only when
      *  the testable mode was enabled.
      *  The optional argument controls whether to wait as well for devices to be completely (re-)initialised. Disabling

@@ -100,6 +100,11 @@ namespace ChimeraTK {
       }
     }
 
+    /**
+     * Check whether data has been sent to the application so stepApplication() can be called.
+     */
+    bool canStepApplication() const { return Application::getInstance().canStepApplication(); }
+
     /** Perform a "step" of the application. This runs the application until all
      * input provided to it has been processed and all application modules wait
      * for new data in blocking read calls. This function returns only after the
