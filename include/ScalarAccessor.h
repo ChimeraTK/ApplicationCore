@@ -53,6 +53,7 @@ namespace ChimeraTK {
 
     bool write(ChimeraTK::VersionNumber versionNumber) = delete;
     bool writeDestructively(ChimeraTK::VersionNumber versionNumber) = delete;
+    void writeIfDifferent(UserType newValue, VersionNumber versionNumber) = delete;
 
     bool write() {
       auto versionNumber = this->getOwner()->getCurrentVersionNumber();
@@ -66,6 +67,11 @@ namespace ChimeraTK {
       bool dataLoss = ChimeraTK::ScalarRegisterAccessor<UserType>::writeDestructively(versionNumber);
       if(dataLoss) Application::incrementDataLossCounter(this->node.getQualifiedName());
       return dataLoss;
+    }
+
+    void writeIfDifferent(UserType newValue) {
+      auto versionNumber = this->getOwner()->getCurrentVersionNumber();
+      ChimeraTK::ScalarRegisterAccessor<UserType>::writeIfDifferent(newValue, versionNumber);
     }
 
    protected:

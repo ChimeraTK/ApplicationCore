@@ -74,6 +74,8 @@ namespace ChimeraTK {
     }
     StatusOutput() {}
     using StatusAccessor<ScalarOutput<int32_t>>::operator=;
+
+    void writeIfDifferent(Status newValue) { ScalarOutput<int32_t>::writeIfDifferent(static_cast<int32_t>(newValue)); };
   };
 
   /********************************************************************************************************************/

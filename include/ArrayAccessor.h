@@ -52,6 +52,7 @@ namespace ChimeraTK {
 
     bool write(ChimeraTK::VersionNumber versionNumber) = delete;
     bool writeDestructively(ChimeraTK::VersionNumber versionNumber) = delete;
+    void writeIfDifferent(const std::vector<UserType>& newValue, VersionNumber versionNumber) = delete;
 
     bool write() {
       auto versionNumber = this->getOwner()->getCurrentVersionNumber();
@@ -65,6 +66,11 @@ namespace ChimeraTK {
       bool dataLoss = ChimeraTK::OneDRegisterAccessor<UserType>::writeDestructively(versionNumber);
       if(dataLoss) Application::incrementDataLossCounter(this->node.getQualifiedName());
       return dataLoss;
+    }
+
+    void writeIfDifferent(const std::vector<UserType>& newValue) {
+      auto versionNumber = this->getOwner()->getCurrentVersionNumber();
+      ChimeraTK::OneDRegisterAccessor<UserType>::writeIfDifferent(newValue, versionNumber);
     }
 
    protected:
