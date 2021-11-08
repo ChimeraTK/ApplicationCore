@@ -248,7 +248,7 @@ struct PushD9DummyApplication : ChimeraTK::Application {
     auto push_input2 = device("REG2/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
     push_input1 >> pushModuleD9_1.reg1.pushInput;
     push_input2 >> pushModuleD9_2.reg1.pushInput;
- }
+  }
 };
 
 struct D9InitialValueEceptionDummy {
@@ -448,7 +448,6 @@ BOOST_AUTO_TEST_CASE(testConstantD10InitialValue) {
   BOOST_CHECK(d.pushVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct TestModule : ChimeraTK::ApplicationModule {
@@ -497,7 +496,7 @@ struct TestInitialValueEceptionDummy {
   *  D 1 for DataValidity::faulty
   * \anchor testD1InitialValue_D_1 \ref testD1InitialValue_D_1
   */
-  //Todo add missing tests for bi-directional variables
+//Todo add missing tests for bi-directional variables
 BOOST_AUTO_TEST_CASE(testD1InitialValue) {
   std::cout << "===   testD1InitialValue   === " << std::endl;
 
@@ -591,9 +590,7 @@ struct ReaderModule : ChimeraTK::ApplicationModule {
     enteredTheMainLoop = true;
     p.set_value();
   }
-  void prepare() override {
-    enteredThePrepareLoop = true;
-  }
+  void prepare() override { enteredThePrepareLoop = true; }
 };
 
 struct Test7DummyApplication : ChimeraTK::Application {
@@ -641,7 +638,6 @@ BOOST_AUTO_TEST_CASE(testD7_2_InitialValue) {
   application.readerModule.p.get_future().wait();
   BOOST_CHECK(application.readerModule.enteredTheMainLoop == true);
   CHECK_TIMEOUT(application.readerModule.reg2.pushInput == 555, 500);
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -657,8 +653,8 @@ struct Test6_a1_DummyApplication : ChimeraTK::Application {
   ChimeraTK::ControlSystemModule csModule{};
 
   void defineConnections() override {
-    csModule("REG1")  >> device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
-    csModule("REG1")  >> readerModule.reg1.pushInput;
+    csModule("REG1") >> device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
+    csModule("REG1") >> readerModule.reg1.pushInput;
     //dumpConnections();
   }
 };
@@ -707,7 +703,6 @@ struct Test6_a2_DummyApplication : ChimeraTK::Application {
   ChimeraTK::ControlSystemModule csModule{};
 
   void defineConnections() override {
-
     auto pollInput1 = device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::poll);
     auto trigger = triggerModule["TRIG1"]("PUSH_OUT");
     pollInput1[trigger] >> device("REG2");
@@ -814,7 +809,6 @@ BOOST_AUTO_TEST_CASE(testD6_a3_InitialValue) {
   BOOST_CHECK(d.pushVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct Test6_a4_DummyApplication : ChimeraTK::Application {
@@ -828,7 +822,6 @@ struct Test6_a4_DummyApplication : ChimeraTK::Application {
   ChimeraTK::ControlSystemModule csModule{};
 
   void defineConnections() override {
-
     writerModule.output1 >> readerModule.reg2.pushInput;
     //dumpConnections();
   }
@@ -878,7 +871,6 @@ struct PollModule : ChimeraTK::ApplicationModule {
     p.set_value();
   }
 };
-
 
 struct Test6_b_DummyApplication : ChimeraTK::Application {
   constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
