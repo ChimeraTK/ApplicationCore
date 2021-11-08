@@ -681,11 +681,14 @@ BOOST_AUTO_TEST_CASE(testD6_a1_InitialValue) {
   std::cout << "===   testD6_a1_InitialValue   === " << std::endl;
   Test6_a1_InitialValueEceptionDummy d;
   d.application.run();
-  d.testFacitiy.writeScalar<int>("REG1", 27);
   BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+  d.testFacitiy.writeScalar<int>("REG1", 27);
   ChimeraTK::Device dev;
   dev.open("(ExceptionDummy:1?map=test.map)");
   CHECK_TIMEOUT(dev.read<int>("REG1") == 27, 1000000);
+  // wait until the main loop has been entered. then we know the version number of the inputs must not ne 0.
+  // FIXME: I think this does not belong into this test....
+  d.application.readerModule.p.get_future().wait(); // synchronisation point for the thread sanitizer
   BOOST_CHECK(d.pushVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
 }
 
