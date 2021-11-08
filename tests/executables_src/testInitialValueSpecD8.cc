@@ -732,6 +732,9 @@ struct Test6_a2_InitialValueEceptionDummy {
 /**
   *  D 6_a2 initial value from device in poll mode
   * \anchor testD6_a2_InitialValue \ref testD6_a2_InitialValue
+  *
+  *  The push type variable dev2/REG1 is "directly" connected to dev1/REG2 through a trigger.
+  *  Test that it is written as soon as the initial value is available, i.e. there has been a trigger.
   */
 
 BOOST_AUTO_TEST_CASE(testD6_a2_InitialValue) {
@@ -741,19 +744,19 @@ BOOST_AUTO_TEST_CASE(testD6_a2_InitialValue) {
 
   ChimeraTK::Device dev2;
   dev2.open("(ExceptionDummy:2?map=test.map)");
-  dev2.write<int>("REG1/DUMMY_WRITEABLE", 99);
+  dev2.write<int>("REG1/DUMMY_WRITEABLE", 99); // value now in in dev2
 
   d.application.run();
+  // no trigger yet and the value is not on dev1 yet
   BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
-  dev2.write<int>("REG1/DUMMY_WRITEABLE", 99);
-
-  d.application.triggerModule.trigger.trigger.write();
-
   ChimeraTK::Device dev;
   dev.open("(ExceptionDummy:1?map=test.map)");
+  BOOST_CHECK(dev.read<int>("REG2") != 99);
+
+  // send the trigger and check that the data arrives on the device
+  d.application.triggerModule.trigger.trigger.write();
 
   CHECK_TIMEOUT(dev.read<int>("REG2") == 99, 1000000);
-  BOOST_CHECK(d.pushVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
