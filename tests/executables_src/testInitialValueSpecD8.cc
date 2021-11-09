@@ -522,12 +522,14 @@ BOOST_AUTO_TEST_CASE(testD2InitialValue) {
 
   TestInitialValueEceptionDummy d;
   d.application.run();
-  //commented line might fail on jenkins.
+  //Commented lines are subject to race conditions because the initial value might or might not have
+  // arrived already when the test is done. One would need a way to stop the application start after the
+  // inversion of control has created all PVs, but before the initial values are propagated
   //BOOST_CHECK(d.application.testModule.enteredTheMainLoop == false);
   //BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   //BOOST_CHECK(d.outputVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
-  d.application.testModule.output.write();
   d.application.testModule.p.get_future().wait();
+  d.application.testModule.output.write();
   BOOST_CHECK(d.application.testModule.enteredTheMainLoop == true);
   BOOST_CHECK(d.pushVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
   BOOST_CHECK(d.outputVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
@@ -620,7 +622,7 @@ BOOST_AUTO_TEST_CASE(testD7_1_InitialValue) {
   ChimeraTK::TestFacility testFacitiy{false};
   application.run();
   BOOST_CHECK(application.writerModule.enteredThePrepareLoop == true);
-  BOOST_CHECK(application.readerModule.enteredThePrepareLoop == true);
+  application.readerModule.p.get_future().wait();
   CHECK_TIMEOUT(application.readerModule.reg1.pushInput == 777, 500);
 }
 
@@ -634,7 +636,10 @@ BOOST_AUTO_TEST_CASE(testD7_2_InitialValue) {
   Test7DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{false};
   application.run();
-  BOOST_CHECK(application.readerModule.reg2.pushInput == 0);
+  // The commented line is subject to race conditions because the initial value might or might not have
+  // arrived already when the test is done. One would need a way to stop the application start after the
+  // inversion of control has created all PVs, but before the initial values are propagated
+  // BOOST_CHECK(application.readerModule.reg2.pushInput == 0);
   application.readerModule.p.get_future().wait();
   BOOST_CHECK(application.readerModule.enteredTheMainLoop == true);
   CHECK_TIMEOUT(application.readerModule.reg2.pushInput == 555, 500);
@@ -804,11 +809,15 @@ BOOST_AUTO_TEST_CASE(testD6_a3_InitialValue) {
   dev2.write<int>("REG1/DUMMY_WRITEABLE", 99);
 
   d.application.run();
-  BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+  // The commented line is subject to race conditions because the initial value might or might not have
+  // arrived already when the test is done. One would need a way to stop the application start after the
+  // inversion of control has created all PVs, but before the initial values are propagated
+  //BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
 
   ChimeraTK::Device dev;
   dev.open("(ExceptionDummy:1?map=test.map)");
   CHECK_TIMEOUT(dev.read<int>("REG2") == 99, 1000000);
+  d.application.readerModule.p.get_future().wait();
   BOOST_CHECK(d.pushVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
 }
 
