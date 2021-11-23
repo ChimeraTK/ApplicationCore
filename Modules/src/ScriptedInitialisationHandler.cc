@@ -47,7 +47,7 @@ namespace ChimeraTK {
         }
         _lastFailed = true;
         std::this_thread::sleep_for(std::chrono::seconds(_errorGracePeriod));
-        throw ChimeraTK::runtime_error(_deviceAlias + " board initialisation failed.");
+        throw ChimeraTK::runtime_error(_deviceAlias + " initialisation failed.");
       }
       else {
         output += _deviceAlias + " initialisation SUCCESS!";
