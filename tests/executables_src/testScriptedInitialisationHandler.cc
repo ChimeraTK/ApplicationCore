@@ -127,19 +127,3 @@ BOOST_FIXTURE_TEST_CASE(testError, Fixture) {
   (void)std::filesystem::remove("device1Init.success");
   (void)std::filesystem::remove("continueDevice1Init");
 }
-
-BOOST_AUTO_TEST_CASE(testBoostException) {
-  BOOST_CHECK(false);
-  std::filesystem::rename("deviceInitScript1.bash", "deviceInitScript1.bash.dontuse");
-  try {
-    DMapSetter dmapSetter;
-    TestApp testApp{"ScriptedInitApp"};
-    TestFacility testFacility{false};
-    testFacility.runApplication();
-    sleep(10);
-  }
-  catch(ChimeraTK::logic_error& e) {
-    std::cout << "I caught the exception!" << std::endl;
-  }
-  std::filesystem::rename("deviceInitScript1.bash.dontuse", "deviceInitScript1.bash");
-}
