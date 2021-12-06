@@ -25,12 +25,14 @@ struct ExampleApp : public ctk::Application {
   ExampleApp() : Application("demoApp2") { ChimeraTK::setDMapFilePath("example2.dmap"); }
   ~ExampleApp() { shutdown(); }
 
-  // We can pick any name for the module. "Oven" is what we want to see in the CS
-  Controller controller{this, "Oven", "The controller of the oven"};
-
   ctk::PeriodicTrigger timer{this, "Timer", "Periodic timer for the controller", 1000};
 
+  // Look at the map file: This device provides "Heater/temperatureReadback" and "Heater/heatingCurrent".
   ctk::ConnectingDeviceModule oven{this, "oven", "/Timer/tick"};
+
+  // Pick the name "Heater" for the controller module. Now the variable "Heater/temperatureReadback" and
+  // "Heater/heatingCurrent" are automatically connected to the matching variables on the device.
+  Controller controller{this, "Heater", "A controller for the heater of the oven."};
 };
 
 static ExampleApp theExampleApp;

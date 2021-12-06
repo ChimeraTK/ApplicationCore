@@ -16,12 +16,12 @@ ovenTemp = 25.
 environment = 25.
 
 while True:
-    I=d.read('Oven','heatingCurrent')[0]
+    I=d.read('Heater','heatingCurrent')[0]
     tempChange = 1 * (I*h +                  (environment-ovenTemp)*c)
             #   1s   current*heating rate    deltaT * cooling rate
 
     ovenTemp = ovenTemp + tempChange
-    d.write('Oven','temperatureReadback.DUMMY_WRITEABLE',ovenTemp)
+    d.write('Heater','temperatureReadback.DUMMY_WRITEABLE',ovenTemp)
     print('change ' + str(tempChange) +', new temp ' +str(ovenTemp))
 
     time.sleep(1)
