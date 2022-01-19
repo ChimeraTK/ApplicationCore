@@ -51,11 +51,13 @@ include(cmake/set_default_flags.cmake)
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
+file(GLOB headers "${CMAKE_SOURCE_DIR}/include/*.h")
 set(${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/ ${CMAKE_SOURCE_DIR}/Modules/include/)
 aux_source_directory(${CMAKE_SOURCE_DIR}/src library_sources)
 
 # add generic modules
 include_directories(${CMAKE_SOURCE_DIR}/Modules/include)
+file(GLOB module_headers "${CMAKE_SOURCE_DIR}/Modules/include/*.h")
 aux_source_directory(${CMAKE_SOURCE_DIR}/Modules/src library_sources)
 
 MACRO( COPY_MAPPING_FILES )
@@ -67,11 +69,12 @@ ENDMACRO( COPY_MAPPING_FILES )
 # Create the executables for automated unit testing.
 if(TESTING_IS_ENABLED)
   include_directories(${CMAKE_SOURCE_DIR}/tests/include)
+  file(GLOB test_headers "${CMAKE_SOURCE_DIR}/tests/include/*.h")
   aux_source_directory(${CMAKE_SOURCE_DIR}/tests/executables_src testExecutables)
   foreach( testExecutableSrcFile ${testExecutables})
     #NAME_WE means the base name without path and (longest) extension
     get_filename_component(executableName ${testExecutableSrcFile} NAME_WE)
-    add_executable(${executableName} ${testExecutableSrcFile} )
+    add_executable(${executableName} ${testExecutableSrcFile} ${test_headers})
     # do not link against the boost unit test library, the tests are not written for it!
     target_link_libraries(${executableName} ${PROJECT_NAME} ${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${HDF5_LIBRARIES})
     set_target_properties(${executableName} PROPERTIES LINK_FLAGS "-Wl,-rpath,${PROJECT_BINARY_DIR} ${Boost_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
@@ -101,7 +104,7 @@ if(TESTING_IS_ENABLED)
 endif(TESTING_IS_ENABLED)
 
 # C++ library
-add_library(${PROJECT_NAME} SHARED ${library_sources} )
+add_library(${PROJECT_NAME} SHARED ${library_sources} ${headers} ${module_headers})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
                                                  SOVERSION ${${PROJECT_NAME}_SOVERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
