@@ -57,7 +57,7 @@ namespace ChimeraTK {
      *  the obtained configuration values should be stored for later use in member variables.
      *  Beware that the ConfigReader instance can obly be found if it has been constructed before calling this function.
      *  Hence, the Application should have the ConfigReader as its first member. */
-    ConfigReader& appConfig() const;
+    static ConfigReader& appConfig();
 
    protected:
     /// Cached return value of virtualise(). Caching is required since

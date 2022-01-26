@@ -30,7 +30,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  ConfigReader& ModuleImpl::appConfig() const {
+  ConfigReader& ModuleImpl::appConfig() {
     size_t nConfigReaders = 0;
     ConfigReader* instance = nullptr;
     for(auto* mod : Application::getInstance().getSubmoduleListRecursive()) {
