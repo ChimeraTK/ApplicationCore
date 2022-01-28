@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "VariableNetworkNode.h"
+#include "VariableGroup.h"
 
 #include "XMLGeneratorVisitor.h"
 
@@ -7,6 +8,7 @@
 #include <libxml++/libxml++.h>
 
 #include <cassert>
+#include <cxxabi.h>
 
 namespace ChimeraTK {
   XMLGeneratorVisitor::XMLGeneratorVisitor()
@@ -139,6 +141,54 @@ namespace ChimeraTK {
     // add sub-element containing the description
     xmlpp::Element* nElementsElement = variable->add_child("numberOfElements");
     nElementsElement->set_child_text(std::to_string(owner.getFeedingNode().getNumberOfElements()));
+
+    // add sub-element describing how this variable is connected
+    xmlpp::Element* connectedModules = variable->add_child("connections");
+    auto nodeList = node.getOwner().getConsumingNodes();
+    nodeList.push_back(node.getOwner().getFeedingNode());
+    for(const auto& peerNode : nodeList) {
+      if(peerNode.getType() == NodeType::ControlSystem) continue;
+      bool feeding = peerNode == node.getOwner().getFeedingNode();
+      xmlpp::Element* peer = connectedModules->add_child("peer");
+
+      if(peerNode.getType() == NodeType::Application) {
+        peer->set_attribute("type", "ApplicationModule");
+        // find ApplicationModule (owner might be VariableGroup deep down)
+        const auto* owningModule = peerNode.getOwningModule();
+        while(owningModule->getModuleType() == EntityOwner::ModuleType::VariableGroup) {
+          owningModule = dynamic_cast<const VariableGroup&>(*owningModule).getOwner();
+        }
+        // get name of ApplicatioModule
+        auto qname = owningModule->getQualifiedName();
+        // strip leading application name
+        auto secondSlash = qname.find_first_of('/', 1);
+        if(secondSlash != std::string::npos) qname = qname.substr(secondSlash);
+        peer->set_attribute("name", qname);
+        int status;
+        const auto& owningModuleRef = *owningModule; // dereferencing in separate line to avoid linter warning
+        const char* mangledName = typeid(owningModuleRef).name();
+        std::string className = abi::__cxa_demangle(mangledName, nullptr, nullptr, &status);
+        if(status != 0) {
+          className = std::string(mangledName) + " (demangling failed)";
+        }
+        peer->set_attribute("class", className);
+      }
+      else if(peerNode.getType() == NodeType::Constant) {
+        peer->set_attribute("type", "Constant");
+      }
+      else if(peerNode.getType() == NodeType::Device) {
+        peer->set_attribute("type", "Device");
+        peer->set_attribute("name", peerNode.getDeviceAlias());
+      }
+      else if(peerNode.getType() == NodeType::TriggerProvider) {
+        peer->set_attribute("type", "TriggerProvider");
+      }
+      else {
+        peer->set_attribute("type", "Unknown (" + std::to_string(int(peerNode.getType())) + ")");
+      }
+
+      peer->set_attribute("direction", feeding ? "feeding" : "consuming");
+    }
   }
 
 } // namespace ChimeraTK
