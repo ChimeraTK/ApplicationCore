@@ -25,9 +25,9 @@ namespace ChimeraTK {
   class XMLGeneratorVisitor : public Visitor<Application, VariableNetworkNode> {
    public:
     XMLGeneratorVisitor();
-    virtual ~XMLGeneratorVisitor() {}
-    void dispatch(const Application& app);
-    void dispatch(const VariableNetworkNode& node);
+    virtual ~XMLGeneratorVisitor() = default;
+    void dispatch(const Application& app) override;
+    void dispatch(const VariableNetworkNode& node) override;
 
     void save(const std::string& filename);
 
