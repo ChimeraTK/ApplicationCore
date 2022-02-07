@@ -25,16 +25,17 @@
 
   <xsd:complexType name="VariableType">
     <xsd:sequence>
-      <xsd:element name="value_type" type="ValueType" minOccurs="1" maxOccurs="1"/>
+      <xsd:element name="value_type" type="ValueTypeType" minOccurs="1" maxOccurs="1"/>
       <xsd:element name="direction" type="DirectionType" minOccurs="1" maxOccurs="1"/>
       <xsd:element name="unit" type="xsd:string" minOccurs="1" maxOccurs="1"/>
       <xsd:element name="description" type="xsd:string" minOccurs="1" maxOccurs="1"/>
       <xsd:element name="numberOfElements" type="xsd:integer" minOccurs="1" maxOccurs="1"/>
+      <xsd:element name="connections" type="ConnectionsType" minOccurs="0" maxOccurs="1"/>
     </xsd:sequence>
     <xsd:attribute name="name" type="xsd:string" use="required"/>
   </xsd:complexType>
 
-  <xsd:simpleType name="ValueType">
+  <xsd:simpleType name="ValueTypeType">
     <xsd:restriction base="xsd:string">
       <xsd:enumeration value="int8"/>
       <xsd:enumeration value="uint8"/>
@@ -54,6 +55,35 @@
     <xsd:restriction base="xsd:string">
       <xsd:enumeration value="control_system_to_application"/>
       <xsd:enumeration value="application_to_control_system"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:complexType name="ConnectionsType">
+    <xsd:sequence>
+      <xsd:element name="peer" type="PeerType" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="PeerType">
+    <xsd:attribute name="type" type="PeerTypeType" use="required"/>
+    <xsd:attribute name="name" type="xsd:string" use="required"/>
+    <xsd:attribute name="class" type="xsd:string" use="required"/>
+    <xsd:attribute name="direction" type="PeerDirectionType" use="required"/>
+  </xsd:complexType>
+
+  <xsd:simpleType name="PeerTypeType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="ApplicationModule"/>
+      <xsd:enumeration value="Constant"/>
+      <xsd:enumeration value="Device"/>
+      <xsd:enumeration value="TriggerProvider"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <xsd:simpleType name="PeerDirectionType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="consuming"/>
+      <xsd:enumeration value="feeding"/>
     </xsd:restriction>
   </xsd:simpleType>
 
