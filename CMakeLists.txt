@@ -28,16 +28,11 @@ PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
 include_directories(SYSTEM ${glib_INCLUDE_DIRS} ${LibXML++_INCLUDE_DIRS})
 
 # optional dependency: BOOST unit test framework needed for tests
-FIND_PACKAGE(Boost COMPONENTS unit_test_framework)
+option(BUILD_TESTS "Build test programs" ON)
 IF(BUILD_TESTS)
-  IF(Boost_UNIT_TEST_FRAMEWORK_FOUND)
-    set(TESTING_IS_ENABLED "true")
-    ENABLE_TESTING()
-  ELSE()
-    message(" The following packages were not found, so testing will be disabled:")
-    message("  * BOOST unit_test_framework")
-  ENDIF()
-ENDIF(BUILD_TESTS)
+  FIND_PACKAGE(Boost COMPONENTS unit_test_framework REQUIRED)
+  ENABLE_TESTING()
+ENDIF()
 
 # Find BOOST filesystem
 # Note: we need to search this after looking for the unit_test_framework, since we must not link against the
@@ -67,7 +62,7 @@ MACRO( COPY_MAPPING_FILES )
 ENDMACRO( COPY_MAPPING_FILES )
 
 # Create the executables for automated unit testing.
-if(TESTING_IS_ENABLED)
+if(BUILD_TESTS)
   include_directories(${CMAKE_SOURCE_DIR}/tests/include)
   file(GLOB test_headers "${CMAKE_SOURCE_DIR}/tests/include/*.h")
   aux_source_directory(${CMAKE_SOURCE_DIR}/tests/executables_src testExecutables)
@@ -101,7 +96,7 @@ if(TESTING_IS_ENABLED)
   FILE( COPY ${CMAKE_SOURCE_DIR}/xmlschema/application.xsd DESTINATION ${PROJECT_BINARY_DIR})
   FILE( COPY ${CMAKE_SOURCE_DIR}/tests/deviceInitScript1.bash ${CMAKE_SOURCE_DIR}/tests/deviceInitScript2.bash DESTINATION ${PROJECT_BINARY_DIR})
 
-endif(TESTING_IS_ENABLED)
+endif()
 
 # C++ library
 add_library(${PROJECT_NAME} SHARED ${library_sources} ${headers} ${module_headers})
