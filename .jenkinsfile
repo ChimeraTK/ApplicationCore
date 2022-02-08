@@ -1,2 +1,3 @@
 @Library('ChimeraTK') _
-buildTestDeploy(['ChimeraTK-ControlSystemAdapter'])
+env.MAILTO="martin.hierholzer@desy.de"
+autojob(['ChimeraTK-ControlSystemAdapter'], 'https://github.com/ChimeraTK/ApplicationCore')
