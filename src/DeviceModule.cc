@@ -155,7 +155,7 @@ namespace ChimeraTK {
       // guess type
       const std::type_info* valTyp{&typeid(AnyType)};
       auto& dd = reg.getDataDescriptor(); // numeric, string, boolean, nodata, undefined
-      if(dd.fundamentalType() == RegisterInfo::FundamentalType::numeric) {
+      if(dd.fundamentalType() == DataDescriptor::FundamentalType::numeric) {
         if(dd.isIntegral()) {
           if(dd.isSigned()) {
             if(dd.nDigits() > 11) {
@@ -201,13 +201,13 @@ namespace ChimeraTK {
           }
         }
       }
-      else if(dd.fundamentalType() == RegisterInfo::FundamentalType::boolean) {
+      else if(dd.fundamentalType() == DataDescriptor::FundamentalType::boolean) {
         valTyp = &typeid(int32_t);
       }
-      else if(dd.fundamentalType() == RegisterInfo::FundamentalType::string) {
+      else if(dd.fundamentalType() == DataDescriptor::FundamentalType::string) {
         valTyp = &typeid(std::string);
       }
-      else if(dd.fundamentalType() == RegisterInfo::FundamentalType::nodata) {
+      else if(dd.fundamentalType() == DataDescriptor::FundamentalType::nodata) {
         valTyp = &typeid(int32_t);
       }
 
