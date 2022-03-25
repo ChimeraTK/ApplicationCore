@@ -202,13 +202,13 @@ namespace ChimeraTK {
         }
       }
       else if(dd.fundamentalType() == DataDescriptor::FundamentalType::boolean) {
-        valTyp = &typeid(int32_t);
+        valTyp = &typeid(ChimeraTK::Boolean);
       }
       else if(dd.fundamentalType() == DataDescriptor::FundamentalType::string) {
         valTyp = &typeid(std::string);
       }
       else if(dd.fundamentalType() == DataDescriptor::FundamentalType::nodata) {
-        valTyp = &typeid(int32_t);
+        valTyp = &typeid(ChimeraTK::Void);
       }
 
       auto name = std::string(reg.getRegisterName()).substr(prefixLength);
