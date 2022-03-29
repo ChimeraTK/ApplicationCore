@@ -2,6 +2,7 @@
 #define CHIMERATK_APPLICATION_CORE_PERIODIC_TRIGGER_H
 
 #include "ApplicationCore.h"
+#include "HierarchyModifyingGroup.h"
 
 #include <chrono>
 
@@ -15,16 +16,29 @@ namespace ChimeraTK {
     /** Constructor. In addition to the usual arguments of an ApplicationModule,
      * the default timeout value is specified.
      *  This value is used as a timeout if the timeout value is set to 0. The
-     * timeout value is in milliseconds. */
+     * timeout value is in milliseconds.
+     * @param periodName, tickName Qualified names for the period and the tick variable.
+     *  You can just give a variable name, a relative or an absolute path.*/
     PeriodicTrigger(EntityOwner* owner, const std::string& name, const std::string& description,
         const uint32_t defaultPeriod = 1000, bool eliminateHierarchy = false,
-        const std::unordered_set<std::string>& tags = {})
-    : ApplicationModule(owner, name, description, eliminateHierarchy, tags), defaultPeriod_(defaultPeriod) {}
+        const std::unordered_set<std::string>& tags = {}, std::string periodName = "period",
+        std::string tickName = "tick")
+    : ApplicationModule(owner, name, description, eliminateHierarchy, tags),
+      hierarchyModifiedPeriod(
+          this, periodName, "ms", "period in milliseconds. The trigger is sent once per the specified duration."),
+      hierarchyModifiedTick(this, tickName, "", "Timer tick. Counts the trigger number starting from 0."),
+      period(hierarchyModifiedPeriod.value), tick(hierarchyModifiedTick.value), defaultPeriod_(defaultPeriod) {}
 
-    ScalarPollInput<uint32_t> period{this, "period", "ms",
-        "period in milliseconds. The trigger is "
-        "sent once per the specified duration."};
-    ScalarOutput<uint64_t> tick{this, "tick", "", "Timer tick. Counts the trigger number starting from 0."};
+    // The references period and tick allow to directly access the input and output.
+    // This serves two purposes:
+    // 1. Avoid having to call the .value of ModifyHierarchy each time.
+    // 2. Keep the code API compatible with the previous version which did not have the ModifyHierarchy but directly
+    //    had a ScalarOutput named tick. Some older code which does not connect via the CS name yet but uses direct
+    //    connection might break otherwise.
+    ModifyHierarchy<ScalarPollInput<uint32_t>> hierarchyModifiedPeriod;
+    ModifyHierarchy<ScalarOutput<uint64_t>> hierarchyModifiedTick;
+    ScalarPollInput<uint32_t>& period;
+    ScalarOutput<uint64_t>& tick;
 
     void prepare() override {
       setCurrentVersionNumber({});
