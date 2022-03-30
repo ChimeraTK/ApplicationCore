@@ -118,7 +118,10 @@ namespace ChimeraTK {
   VirtualModule& DeviceModule::virtualiseFromCatalog() const {
     if(virtualisedModuleFromCatalog_isValid) return virtualisedModuleFromCatalog;
 
-    virtualisedModuleFromCatalog = VirtualModule(deviceAliasOrURI, "Device module", ModuleType::Device);
+    auto moduleName = deviceAliasOrURI;
+    std::replace(moduleName.begin(), moduleName.end(), '/', '_'); // replace slashes with underscores
+
+    virtualisedModuleFromCatalog = VirtualModule(moduleName, "Device module", ModuleType::Device);
 
     if(!deviceIsInitialized) {
       device = Device(deviceAliasOrURI);
