@@ -113,7 +113,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  int StatusAggregator::getPriority(StatusOutput::Status status) {
+  int StatusAggregator::getPriority(StatusOutput::Status status) const {
     using Status = StatusOutput::Status;
 
     // static helps against initializing over and over again
@@ -135,7 +135,7 @@ namespace ChimeraTK {
       // find highest priority status of all inputs
       StatusOutput::Status status;
       bool statusSet = false; // flag whether status has been set from an input already
-      int statusPrio;         // stores getPriority(status)
+      int statusPrio = 0;     // stores getPriority(status)
       for(auto& input : _inputs) {
         auto prio = getPriority(input);
         if(!statusSet || prio > statusPrio) {
