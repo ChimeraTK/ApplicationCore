@@ -134,8 +134,12 @@ namespace ChimeraTK {
     while(true) {
       // find highest priority status of all inputs
       StatusOutput::Status status;
-      bool statusSet = false; // flag whether status has been set from an input already
-      int statusPrio = 0;     // stores getPriority(status)
+      // flag whether status has been set from an input already
+      bool statusSet = false;
+      // this stores getPriority(status) if statusSet=true
+      // Intent is to reduce evaluation frequency of getPriority
+      // the initial value provided here is only to prevent compiler warnings
+      int statusPrio = 0;
       for(auto& input : _inputs) {
         auto prio = getPriority(input);
         if(!statusSet || prio > statusPrio) {
@@ -146,6 +150,7 @@ namespace ChimeraTK {
         else if(prio == -1) { //  -1 means, we need to warn about mixed values
           if(statusPrio == -1 && input != status) {
             status = StatusOutput::Status::WARNING;
+            statusPrio = getPriority(status);
           }
         }
       }
