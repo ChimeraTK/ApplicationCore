@@ -113,10 +113,11 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  int StatusAggregator::getPriority(StatusOutput::Status status) {
+  int StatusAggregator::getPriority(StatusOutput::Status status) const {
     using Status = StatusOutput::Status;
 
-    const std::map<PriorityMode, std::map<Status, int32_t>> map_priorities{
+    // static helps against initializing over and over again
+    static const std::map<PriorityMode, std::map<Status, int32_t>> map_priorities{
         {PriorityMode::fwko, {{Status::OK, 1}, {Status::FAULT, 3}, {Status::OFF, 0}, {Status::WARNING, 2}}},
         {PriorityMode::fwok, {{Status::OK, 0}, {Status::FAULT, 3}, {Status::OFF, 1}, {Status::WARNING, 2}}},
         {PriorityMode::ofwk, {{Status::OK, 0}, {Status::FAULT, 2}, {Status::OFF, 3}, {Status::WARNING, 1}}},
@@ -133,16 +134,23 @@ namespace ChimeraTK {
     while(true) {
       // find highest priority status of all inputs
       StatusOutput::Status status;
-      bool statusSet = false; // flag whether status has been set from an input already
+      // flag whether status has been set from an input already
+      bool statusSet = false;
+      // this stores getPriority(status) if statusSet=true
+      // Intent is to reduce evaluation frequency of getPriority
+      // the initial value provided here is only to prevent compiler warnings
+      int statusPrio = 0;
       for(auto& input : _inputs) {
         auto prio = getPriority(input);
-        if(!statusSet || prio > getPriority(status)) {
+        if(!statusSet || prio > statusPrio) {
           status = input;
+          statusPrio = prio;
           statusSet = true;
         }
         else if(prio == -1) { //  -1 means, we need to warn about mixed values
-          if(getPriority(status) == -1 && input != status) {
+          if(statusPrio == -1 && input != status) {
             status = StatusOutput::Status::WARNING;
+            statusPrio = getPriority(status);
           }
         }
       }

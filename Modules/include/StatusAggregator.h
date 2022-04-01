@@ -114,7 +114,7 @@ namespace ChimeraTK {
     /// Convert Status value into a priority (high integer value = high priority), depending on chosen PriorityMode
     /// Return value of -1 has the special meaning that the input Status's must be all equal, otherwise it must result
     /// in a warning Status.
-    int getPriority(StatusOutput::Status status);
+    int getPriority(StatusOutput::Status status) const;
   };
 
   /********************************************************************************************************************/
