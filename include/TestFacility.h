@@ -20,6 +20,20 @@
 
 namespace ChimeraTK {
 
+  namespace detail {
+
+    template<typename T>
+    struct BoolTypeHelper {
+      using type = T;
+    };
+
+    template<>
+    struct BoolTypeHelper<bool> {
+      using type = ChimeraTK::Boolean;
+    };
+
+  } // namespace detail
+
   /** Helper class to facilitate tests of applications based on ApplicationCore */
   class TestFacility {
    public:
@@ -188,7 +202,7 @@ namespace ChimeraTK {
      */
     template<typename TYPE>
     void writeScalar(const std::string& name, const TYPE value) {
-      auto acc = getScalar<TYPE>(name);
+      auto acc = getScalar<typename detail::BoolTypeHelper<TYPE>::type>(name);
       acc = value;
       acc.write();
     }
@@ -197,8 +211,14 @@ namespace ChimeraTK {
      */
     template<typename TYPE>
     void writeArray(const std::string& name, const std::vector<TYPE>& value) {
-      auto acc = getArray<TYPE>(name);
-      acc = value;
+      auto acc = getArray<typename detail::BoolTypeHelper<TYPE>::type>(name);
+      if constexpr(!std::is_same<TYPE, bool>::value) {
+        acc = value;
+      }
+      else {
+        assert(value.size() == acc.getNElements());
+        std::transform(value.begin(), value.end(), acc.begin(), [](const bool& v) -> ChimeraTK::Boolean { return v; });
+      }
       acc.write();
     }
 
@@ -206,7 +226,7 @@ namespace ChimeraTK {
      * in a single call */
     template<typename TYPE>
     TYPE readScalar(const std::string& name) {
-      auto acc = getScalar<TYPE>(name);
+      auto acc = getScalar<typename detail::BoolTypeHelper<TYPE>::type>(name);
       acc.readLatest();
       return acc;
     }
@@ -215,7 +235,7 @@ namespace ChimeraTK {
      * in a single call */
     template<typename TYPE>
     std::vector<TYPE> readArray(const std::string& name) {
-      auto acc = getArray<TYPE>(name);
+      auto acc = getArray<typename detail::BoolTypeHelper<TYPE>::type>(name);
       acc.readLatest();
       return acc;
     }
@@ -238,12 +258,19 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error("TestFacility::setArrayDefault() called after runApplication().");
       }
       // check if PV exists
-      auto pv = pvManager->getProcessArray<T>(name);
+      auto pv = pvManager->getProcessArray<typename detail::BoolTypeHelper<T>::type>(name);
       if(pv == nullptr) {
         throw ChimeraTK::logic_error("Process variable '" + name + "' does not exist.");
       }
       // store default value in map
-      boost::fusion::at_key<T>(defaults.table)[name] = value;
+      auto& tv = boost::fusion::at_key<typename detail::BoolTypeHelper<T>::type>(defaults.table)[name];
+      if constexpr(!std::is_same<T, bool>::value) {
+        tv = value;
+      }
+      else {
+        tv.resize(value.size());
+        std::transform(value.begin(), value.end(), tv.begin(), [](const bool& v) -> ChimeraTK::Boolean { return v; });
+      }
     }
 
    protected:
