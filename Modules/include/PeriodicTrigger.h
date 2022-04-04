@@ -29,6 +29,19 @@ namespace ChimeraTK {
       hierarchyModifiedTick(this, tickName, "", "Timer tick. Counts the trigger number starting from 0."),
       period(hierarchyModifiedPeriod.value), tick(hierarchyModifiedTick.value), defaultPeriod_(defaultPeriod) {}
 
+    /** Move constructor */
+    PeriodicTrigger(PeriodicTrigger&& other)
+    : ApplicationModule(std::move(other)), hierarchyModifiedPeriod(std::move(other.hierarchyModifiedPeriod)),
+      hierarchyModifiedTick(std::move(other.hierarchyModifiedTick)), period(hierarchyModifiedPeriod.value),
+      tick(hierarchyModifiedTick.value), defaultPeriod_(other.defaultPeriod_) {}
+
+    /** Move assignment */
+    PeriodicTrigger& operator=(PeriodicTrigger&& rhs) {
+      this->~PeriodicTrigger();
+      new(this) PeriodicTrigger(std::move(rhs));
+      return *this;
+    }
+
     // The references period and tick allow to directly access the input and output.
     // This serves two purposes:
     // 1. Avoid having to call the .value of ModifyHierarchy each time.
