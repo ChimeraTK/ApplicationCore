@@ -157,15 +157,20 @@ namespace ChimeraTK {
       return getTestableModeLockObject().owns_lock();
     }
 
-    /** Get string holding the name of the current thread. This is used e.g. for
-     * debugging output of the testable mode and for the internal profiler. */
-    static std::string& threadName();
+    /** Set string holding the name of the current thread or the specified thread ID. This is used e.g. for
+     *  debugging output of the testable mode and for the internal profiler. */
+    void setThreadName(const std::string& name);
+
+    /** Get string holding the name of the current thread or the specified thread ID. This is used e.g. for
+     *  debugging output of the testable mode and for the internal profiler. Will return "*UNKNOWN_THREAD*" if the name
+     *  for the given ID has not yet been set. */
+    static std::string threadName(const boost::thread::id& threadId = boost::this_thread::get_id());
 
     /** Register the thread in the application system and give it a name. This
      * should be done for all threads used by the application to help with
      * debugging and to allow profiling. */
     static void registerThread(const std::string& name) {
-      threadName() = name;
+      Application::getInstance().setThreadName(name);
       Profiler::registerThread(name);
       pthread_setname_np(pthread_self(), name.substr(0, std::min<std::string::size_type>(name.length(), 15)).c_str());
     }
@@ -299,7 +304,7 @@ namespace ChimeraTK {
      * particular thread) the lock will not be owned by the returned object, so it
      * is important to catch the corresponding exception when calling
      * std::unique_lock::unlock(). */
-    static std::unique_lock<std::mutex>& getTestableModeLockObject();
+    static std::unique_lock<std::timed_mutex>& getTestableModeLockObject();
 
     /** Register the connections to constants for previously unconnected nodes. */
     void processUnconnectedNodes();
@@ -419,7 +424,7 @@ namespace ChimeraTK {
      * static. The static storage duration presents no problem in either case,
      * since there can only be one single instance of Application at a time (see
      * ApplicationBase constructor). */
-    static std::mutex testableMode_mutex;
+    static std::timed_mutex testableMode_mutex;
 
     /** Semaphore counter used in testable mode to check if application code is
      * finished executing. This value may only be accessed while holding the
@@ -455,7 +460,7 @@ namespace ChimeraTK {
      * This is used to prevent spamming repeating messages if the same thread
      * acquires and releases the lock in a loop without another thread
      *  activating in between. */
-    std::thread::id testableMode_lastMutexOwner;
+    boost::thread::id testableMode_lastMutexOwner;
 
     /** Counter how often the same thread has acquired the testable mode mutex in
      * a row without another thread owning it in between. This is an indicator for
@@ -508,6 +513,11 @@ namespace ChimeraTK {
     /** The networks of circlular dependencies, reachable by their hash, which serves as unique ID
      */
     std::map<size_t, std::list<EntityOwner*>> circularDependencyNetworks;
+
+    /** Map of thread names */
+    std::map<boost::thread::id, std::string> threadNames;
+
+    std::mutex m_threadNames;
 
     template<typename UserType>
     friend class TestableModeAccessorDecorator; // needs access to the

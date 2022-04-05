@@ -34,7 +34,7 @@
 
 using namespace ChimeraTK;
 
-std::mutex Application::testableMode_mutex;
+std::timed_mutex Application::testableMode_mutex;
 
 /*********************************************************************************************************************/
 
@@ -1328,11 +1328,20 @@ void Application::testableModeLock(const std::string& name) {
   if(getInstance().testableMode_repeatingMutexOwner > 0) usleep(10000);
 
   // obtain the lock
-  getTestableModeLockObject().lock();
+  auto success = getTestableModeLockObject().try_lock_for(std::chrono::seconds(10));
+  if(!success) {
+    std::cout << "Application::testableModeLock(): Thread " << threadName()                       // LCOV_EXCL_LINE
+              << " could not obtain lock for 10 seconds, presumably because "                     // LCOV_EXCL_LINE
+              << threadName(getInstance().testableMode_lastMutexOwner) << " does not release it." // LCOV_EXCL_LINE
+              << std::endl;                                                                       // LCOV_EXCL_LINE
+
+    // throw a specialised exception to make sure whoever catches it really knows what he does...
+    throw TestsStalled(); // LCOV_EXCL_LINE
+  }                       // LCOV_EXCL_LINE
 
   // check if the last owner of the mutex was this thread, which may be a hint
   // that no other thread is waiting for the lock
-  if(getInstance().testableMode_lastMutexOwner == std::this_thread::get_id()) {
+  if(getInstance().testableMode_lastMutexOwner == boost::this_thread::get_id()) {
     // debug output if enabled
     if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) { // LCOV_EXCL_LINE
                                                                                                        // (only cout)
@@ -1350,11 +1359,8 @@ void Application::testableModeLock(const std::string& name) {
     if(getInstance().testableMode_repeatingMutexOwner > 100) {
       // print an informative message first, which lists also all variables
       // currently containing unread data.
-      std::cerr << "*** Tests are stalled due to data which has been sent but "
-                   "not received."
-                << std::endl;
-      std::cerr << "    The following variables still contain unread values or "
-                   "had data loss due to a queue overflow:"
+      std::cerr << "*** Tests are stalled due to data which has been sent but not received." << std::endl;
+      std::cerr << "    The following variables still contain unread values or had data loss due to a queue overflow:"
                 << std::endl;
       for(auto& pair : Application::getInstance().testableMode_perVarCounter) {
         if(pair.second > 0) {
@@ -1381,19 +1387,15 @@ void Application::testableModeLock(const std::string& name) {
       std::cerr << "(end of list)" << std::endl;
       // Check for modules waiting for initial values (prints nothing if there are no such modules)
       getInstance().circularDependencyDetector.printWaiters();
-      // throw a specialised exception to make sure whoever catches it really
-      // knows what he does...
+      // throw a specialised exception to make sure whoever catches it really knows what he does...
       throw TestsStalled();
-      // getInstance().testableMode_counter = 0;
-      // for(auto &pair : Application::getInstance().testableMode_perVarCounter)
-      // pair.second = 0;
     }
   }
   else {
     // last owner of the mutex was different: reset the counter and store the
     // thread id
     getInstance().testableMode_repeatingMutexOwner = 0;
-    getInstance().testableMode_lastMutexOwner = std::this_thread::get_id();
+    getInstance().testableMode_lastMutexOwner = boost::this_thread::get_id();
 
     // debug output if enabled
     if(getInstance().enableDebugTestableMode) {                               // LCOV_EXCL_LINE (only cout)
@@ -1408,8 +1410,8 @@ void Application::testableModeLock(const std::string& name) {
 void Application::testableModeUnlock(const std::string& name) {
   if(!getInstance().testableMode) return;
   if(getInstance().enableDebugTestableMode &&
-      (!getInstance().testableMode_repeatingMutexOwner                                   // LCOV_EXCL_LINE (only cout)
-          || getInstance().testableMode_lastMutexOwner != std::this_thread::get_id())) { // LCOV_EXCL_LINE (only cout)
+      (!getInstance().testableMode_repeatingMutexOwner                                     // LCOV_EXCL_LINE (only cout)
+          || getInstance().testableMode_lastMutexOwner != boost::this_thread::get_id())) { // LCOV_EXCL_LINE (only cout)
     std::cout << "Application::testableModeUnlock(): Thread " << threadName()            // LCOV_EXCL_LINE (only cout)
               << " releases lock for " << name << std::endl;                             // LCOV_EXCL_LINE (only cout)
   }                                                                                      // LCOV_EXCL_LINE (only cout)
@@ -1417,25 +1419,31 @@ void Application::testableModeUnlock(const std::string& name) {
 }
 /*********************************************************************************************************************/
 
-std::string& Application::threadName() {
-  // Note: due to a presumed bug in gcc (still present in gcc 7), the
-  // thread_local definition must be in the cc file to prevent seeing different
-  // objects in the same thread under some conditions. Another workaround for
-  // this problem can be found in commit
-  // dc051bfe35ce6c1ed954010559186f63646cf5d4
-  thread_local std::string name{"**UNNAMED**"};
-  return name;
+void Application::setThreadName(const std::string& name) {
+  std::unique_lock<std::mutex> myLock(m_threadNames);
+  threadNames[boost::this_thread::get_id()] = name;
 }
 
 /*********************************************************************************************************************/
 
-std::unique_lock<std::mutex>& Application::getTestableModeLockObject() {
+std::string Application::threadName(const boost::thread::id& threadId) {
+  std::unique_lock<std::mutex> myLock(Application::getInstance().m_threadNames);
+  auto& names = Application::getInstance().threadNames;
+  if(names.find(threadId) == names.end()) {
+    return "*UNKNOWN_THREAD*";
+  }
+  return names.at(threadId);
+}
+
+/*********************************************************************************************************************/
+
+std::unique_lock<std::timed_mutex>& Application::getTestableModeLockObject() {
   // Note: due to a presumed bug in gcc (still present in gcc 7), the
   // thread_local definition must be in the cc file to prevent seeing different
   // objects in the same thread under some conditions. Another workaround for
   // this problem can be found in commit
   // dc051bfe35ce6c1ed954010559186f63646cf5d4
-  thread_local std::unique_lock<std::mutex> myLock(Application::testableMode_mutex, std::defer_lock);
+  thread_local std::unique_lock<std::timed_mutex> myLock(Application::testableMode_mutex, std::defer_lock);
   return myLock;
 }
 
