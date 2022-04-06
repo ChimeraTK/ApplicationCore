@@ -1328,10 +1328,17 @@ void Application::testableModeLock(const std::string& name) {
   if(getInstance().testableMode_repeatingMutexOwner > 0) usleep(10000);
 
   // obtain the lock
-  auto success = getTestableModeLockObject().try_lock_for(std::chrono::seconds(10));
+  auto lastSeen_lastOwner = getInstance().testableMode_lastMutexOwner;
+repeatTryLock:
+  auto success = getTestableModeLockObject().try_lock_for(std::chrono::seconds(30));
   if(!success) {
+    auto currentLastOwner = getInstance().testableMode_lastMutexOwner;
+    if(currentLastOwner != lastSeen_lastOwner) {
+      lastSeen_lastOwner = currentLastOwner;
+      goto repeatTryLock;
+    }
     std::cout << "Application::testableModeLock(): Thread " << threadName()                       // LCOV_EXCL_LINE
-              << " could not obtain lock for 10 seconds, presumably because "                     // LCOV_EXCL_LINE
+              << " could not obtain lock for 30 seconds, presumably because "                     // LCOV_EXCL_LINE
               << threadName(getInstance().testableMode_lastMutexOwner) << " does not release it." // LCOV_EXCL_LINE
               << std::endl;                                                                       // LCOV_EXCL_LINE
 
