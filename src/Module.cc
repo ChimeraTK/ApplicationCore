@@ -9,6 +9,7 @@
 #include "Application.h"
 #include "VirtualModule.h"
 #include "ApplicationModule.h"
+#include "DeviceModule.h"
 
 namespace ChimeraTK {
 
@@ -237,9 +238,14 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  ApplicationModule* Module::findApplicationModule() {
+  Module* Module::findApplicationModule() {
     if(getModuleType() == ModuleType::ApplicationModule) {
       auto* ret = dynamic_cast<ApplicationModule*>(this);
+      assert(ret != nullptr);
+      return ret;
+    }
+    else if(getModuleType() == ModuleType::Device) {
+      auto* ret = dynamic_cast<DeviceModule*>(this);
       assert(ret != nullptr);
       return ret;
     }

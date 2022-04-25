@@ -258,10 +258,10 @@ namespace ChimeraTK {
       void detectBlockedModules();
 
       std::mutex _mutex;
-      std::map<ApplicationModule*, ApplicationModule*> _waitMap;
-      std::map<ApplicationModule*, std::string> _awaitedVariables;
+      std::map<Module*, Module*> _waitMap;
+      std::map<Module*, std::string> _awaitedVariables;
       std::map<EntityOwner*, VariableNetworkNode> _awaitedNodes;
-      std::unordered_set<ApplicationModule*> _modulesWeHaveWarnedAbout;
+      std::unordered_set<Module*> _modulesWeHaveWarnedAbout;
       std::unordered_set<std::string> _devicesWeHaveWarnedAbout;
       std::unordered_set<NodeType> _otherThingsWeHaveWarnedAbout;
       boost::thread _thread;
@@ -278,6 +278,7 @@ namespace ChimeraTK {
     friend class VariableNetworkModuleGraphDumpingVisitor;
     friend class XMLGeneratorVisitor;
     friend class ConnectingDeviceModule;
+    friend class StatusAggregator;
 
     template<typename UserType>
     friend class Accessor;
@@ -526,7 +527,6 @@ namespace ChimeraTK {
                                                 // idMap
 
     friend class TestFacility;  // needs access to testableMode_variables
-    friend class DeviceModule;  // needs access to testableMode_variables
     friend class DeviceModule;  // needs access to testableMode_variables
     friend class TriggerFanOut; // needs access to testableMode_variables
 
