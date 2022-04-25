@@ -312,6 +312,8 @@ namespace ChimeraTK {
     friend class ExceptionHandlingDecorator;
 
     friend class ConnectingDeviceModule;
+
+    friend class StatusAggregator;
   };
 
   /*********************************************************************************************************************/

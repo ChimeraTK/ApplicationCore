@@ -164,10 +164,15 @@ namespace ChimeraTK {
 
     size_t getCircularNetworkHash() override { return _owner->getCircularNetworkHash(); }
 
-    /** Find ApplicationModule owner. If "this" is an ApplicationModule, "this" is returned. If "this" is a
+    /**
+     *  Find ApplicationModule owner. If "this" is an ApplicationModule, "this" is returned. If "this" is a
      *  VariableGroup, the tree of owners is followed, until the ApplicationModule is found. If "this" is neither an
-     *  ApplicationModule nor a VariableGroup, a ChimeraTK::logic_error is thrown. */
-    ApplicationModule* findApplicationModule();
+     *  ApplicationModule nor a VariableGroup, a ChimeraTK::logic_error is thrown.
+     *
+     *  Note: This function treats ApplicationModules and DeviceModules the same (hence the return type must be the
+     *  common base class).
+     */
+    Module* findApplicationModule();
 
    protected:
     /** Owner of this instance */
