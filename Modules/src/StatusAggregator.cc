@@ -1,6 +1,7 @@
 #include "StatusAggregator.h"
 #include "ControlSystemModule.h"
 #include "ConfigReader.h"
+#include "DeviceModule.h"
 
 #include <list>
 #include <regex>
@@ -14,22 +15,30 @@ namespace ChimeraTK {
       const std::unordered_set<std::string>& outputTags)
   : ApplicationModule(owner, "aggregator", description, HierarchyModifier::hideThis, outputTags), _output(this, name),
     _mode(mode), _tagsToAggregate(tagsToAggregate) {
+    // check maximum size of tagsToAggregate
+    if(tagsToAggregate.size() > 1) {
+      throw ChimeraTK::logic_error("StatusAggregator: List of tagsToAggregate must contain at most one tag.");
+    }
+
     // add reserved tag tagAggregatedStatus to the status output, so it can be detected by other StatusAggregators
     _output.status.addTag(tagAggregatedStatus);
 
     // search the variable tree for StatusOutputs and create the matching inputs
     populateStatusInput();
-
-    // check maximum size of tagsToAggregate
-    if(tagsToAggregate.size() > 1) {
-      throw ChimeraTK::logic_error("StatusAggregator: List of tagsToAggregate must contain at most one tag.");
-    }
   }
 
   /********************************************************************************************************************/
 
   void StatusAggregator::populateStatusInput() {
     scanAndPopulateFromHierarchyLevel(*getOwner(), ".");
+
+    // Special treatment for DeviceModules, because they are formally not owned by the Application: If we are
+    // aggregating all tags at the top-level of the Application, include the status outputs of all DeviceModules.
+    if(getOwner() == &Application::getInstance() && _tagsToAggregate.empty()) {
+      for(auto& p : Application::getInstance().deviceModuleMap) {
+        scanAndPopulateFromHierarchyLevel(p.second->deviceError, ".");
+      }
+    }
 
     // Check if no inputs are present (nothing found to aggregate)
     if(_inputs.empty()) {

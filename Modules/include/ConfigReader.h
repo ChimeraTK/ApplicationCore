@@ -124,12 +124,20 @@ namespace ChimeraTK {
     void mainLoop() override {}
     void prepare() override;
 
-    /** Get value for given configuration variable. This is already accessible
-     * right after construction of this object. Throws std::out_of_range if
-     * variable doesn't exist. To obtain the value of an array, use an
-     * std::vector<T> as template argument. */
+    /** 
+     *  Get value for given configuration variable. This is already accessible right after construction of this object.
+     *  Throws ChimeraTK::logic_error if variable doesn't exist. To obtain the value of an array, use an std::vector<T>
+     *  as template argument.
+     */
     template<typename T>
     const T& get(const std::string& variableName) const;
+
+    /** 
+     *  Version of get() which does not throw if the variable does not exist and instead returns the given default
+     *  value.
+     */
+    template<typename T>
+    const T& get(const std::string& variableName, const T& defaultValue) const;
 
    protected:
     /** Helper function to avoid code duplication in constructors **/
@@ -214,6 +222,20 @@ namespace ChimeraTK {
     friend struct FunctorSetValuesArray;
     friend struct FunctorGetTypeForName;
   };
+
+  /*********************************************************************************************************************/
+  /*********************************************************************************************************************/
+
+  template<typename T>
+  const T& ConfigReader::get(const std::string& variableName, const T& defaultValue) const {
+    /// FIXME: Do not implement with try-catch.
+    try {
+      return get_impl(variableName, static_cast<T*>(nullptr));
+    }
+    catch(ChimeraTK::logic_error&) {
+      return defaultValue;
+    }
+  }
 
   /*********************************************************************************************************************/
   /*********************************************************************************************************************/
