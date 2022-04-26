@@ -18,15 +18,17 @@ include(cmake/set_default_flags.cmake)
 
 # Add the dependencies. We need ApplicationCore and a control system adapter implementation.
 add_dependency(ChimeraTK-ApplicationCore 01.06 REQUIRED)
-#FIXME: Make the adapter configurable via command line parameter
-add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter 00.10 REQUIRED)
+
+# Use cmake option -DADAPTER=DOOCS, -DADAPTER=OPCUA or -DADAPTER=EPICSIOC to select a
+# control system adapter implementation.
+include(cmake/set_control_system_adapter.cmake)
 
 AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR} demo_sources)
 
 # The server proper. It depends on application core and the control system adapter implementation.
 add_executable(${PROJECT_NAME} ${demo_sources})
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${ChimeraTK-ApplicationCore_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
-  target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES} )
+set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${ChimeraTK-ApplicationCore_LINK_FLAGS} ${Adapter_LINK_FLAGS}")
+  target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} ${Adapter_LIBRARIES} )
 
 # We compile the same sources with the GENERATE_XML flag to get an xml generator.
 # This one does not depent on a control system adapter implementation.
