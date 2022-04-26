@@ -1,5 +1,6 @@
 #include "StatusAggregator.h"
 #include "ControlSystemModule.h"
+#include "ConfigReader.h"
 #include "DeviceModule.h"
 
 #include <list>
@@ -174,7 +175,21 @@ namespace ChimeraTK {
       }
 
       // wait for changed inputs
-      rag.readAny();
+    waitForChange:
+      auto change = rag.readAny();
+
+      // handle request for debug info
+      if(change == debug.value.getId()) {
+        static std::mutex debugMutex; // all aggregators trigger at the same time => lock for clean output
+        std::unique_lock<std::mutex> lk(debugMutex);
+
+        std::cout << "StatusAggregtor " << getQualifiedName() << " debug info:" << std::endl;
+        for(auto& input : _inputs) {
+          std::cout << input.getName() << " = " << input << std::endl;
+        }
+        std::cout << "debug info finished." << std::endl;
+        goto waitForChange;
+      }
     }
   }
 

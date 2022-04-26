@@ -115,6 +115,10 @@ namespace ChimeraTK {
     /// Return value of -1 has the special meaning that the input Status's must be all equal, otherwise it must result
     /// in a warning Status.
     int getPriority(StatusOutput::Status status) const;
+
+    /// Allow runtime debugging (FIXME: use Void instead!)
+    ModifyHierarchy<ScalarPushInput<int>> debug{
+        this, "/Debug/statusAggregators", "", "Print debug info for all status aggregators once."};
   };
 
   /********************************************************************************************************************/
