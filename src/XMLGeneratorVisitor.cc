@@ -113,6 +113,12 @@ namespace ChimeraTK {
     else if(type == typeid(std::string)) {
       dataTypeName = "string";
     }
+    else if(type == typeid(ChimeraTK::Void)) {
+      dataTypeName = "Void";
+    }
+    else if(type == typeid(ChimeraTK::Boolean)) {
+      dataTypeName = "Boolean";
+    }
     xmlpp::Element* valueTypeElement = variable->add_child("value_type");
     valueTypeElement->set_child_text(dataTypeName);
 
