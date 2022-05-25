@@ -5,6 +5,7 @@
 #include "ModuleGroup.h"
 #include "HierarchyModifyingGroup.h"
 #include "StatusAccessor.h"
+#include "StatusWithMessage.h"
 
 #include <list>
 #include <vector>
@@ -94,16 +95,10 @@ namespace ChimeraTK {
     constexpr static auto tagInternalVars = "_ChimeraTK_StatusAggregator_internalVars";
 
     /// The aggregated status output
-    struct StatusOutputGroup : HierarchyModifyingGroup {
-      StatusOutputGroup(EntityOwner* owner, std::string qualifiedVariableName)
-      : HierarchyModifyingGroup(owner, HierarchyModifyingGroup::getPathName(qualifiedVariableName), ""),
-        status(this, HierarchyModifyingGroup::getUnqualifiedName(qualifiedVariableName), "") {}
-      StatusOutputGroup() = default;
-      StatusOutput status;
-    } _output;
+    StatusWithMessage _output;
 
     /// All status inputs to be aggregated
-    std::vector<StatusPushInput> _inputs;
+    std::vector<StatusWithMessageInput> _inputs;
 
     /// Priority mode used in aggregation
     PriorityMode _mode;

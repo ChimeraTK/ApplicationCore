@@ -21,7 +21,7 @@ namespace ChimeraTK {
     }
 
     // add reserved tag tagAggregatedStatus to the status output, so it can be detected by other StatusAggregators
-    _output.status.addTag(tagAggregatedStatus);
+    _output._status.addTag(tagAggregatedStatus);
 
     // search the variable tree for StatusOutputs and create the matching inputs
     populateStatusInput();
@@ -42,7 +42,7 @@ namespace ChimeraTK {
 
     // Check if no inputs are present (nothing found to aggregate)
     if(_inputs.empty()) {
-      throw ChimeraTK::logic_error("StatusAggregator " + VariableNetworkNode(_output.status).getQualifiedName() +
+      throw ChimeraTK::logic_error("StatusAggregator " + VariableNetworkNode(_output._status).getQualifiedName() +
           " has not found anything to aggregate.");
     }
   }
@@ -50,6 +50,11 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void StatusAggregator::scanAndPopulateFromHierarchyLevel(EntityOwner& module, const std::string& namePrefix) {
+    // a map used just for optimization of node lookup by name, which happens in inner loop below
+    std::map<std::string, VariableNetworkNode*> nodesByName;
+    for(auto& node : module.getAccessorList()) {
+      nodesByName[node.getName()] = &node;
+    }
     // Search for StatusOutputs to aggregate
     for(auto& node : module.getAccessorList()) {
       // Filter required tags
@@ -77,8 +82,20 @@ namespace ChimeraTK {
       }
 
       // Create matching input for the found StatusOutput of the other StatusAggregator
-      _inputs.emplace_back(this, node.getName(), "", std::unordered_set<std::string>{tagInternalVars});
-      node >> _inputs.back();
+      // Unfortunately, the qualified name of the newly-created node is useless,
+      // so we save the original one as description for indication in a message
+      _inputs.emplace_back(this, node.getName(), node.getQualifiedName(), HierarchyModifier::hideThis,
+          std::unordered_set<std::string>{tagInternalVars});
+      node >> _inputs.back()._status;
+      // look for matching status message output node
+      VariableNetworkNode* statusMsgNode = nullptr;
+      auto result = nodesByName.find(node.getName() + "_message");
+      if(result != nodesByName.end()) {
+        // tell the StatusWithMessageInput that it should consider the message source, and connect it
+        statusMsgNode = result->second;
+        _inputs.back().setMessageSource();
+        *statusMsgNode >> _inputs.back()._message;
+      }
     }
 
     // Search for StatusAggregators among submodules
@@ -107,9 +124,13 @@ namespace ChimeraTK {
         if(skip) continue;
 
         // aggregate the StatusAggregator's result
-        auto node = VariableNetworkNode(aggregator->_output.status);
-        _inputs.emplace_back(this, node.getName(), "", std::unordered_set<std::string>{tagInternalVars});
-        node >> _inputs.back();
+        auto statusNode = VariableNetworkNode(aggregator->_output._status);
+        _inputs.emplace_back(this, statusNode.getName(), "", HierarchyModifier::hideThis,
+            std::unordered_set<std::string>{tagInternalVars});
+        statusNode >> _inputs.back()._status;
+        auto msgNode = VariableNetworkNode(aggregator->_output._message);
+        _inputs.back().setMessageSource();
+        msgNode >> _inputs.back()._message;
         return;
       }
     }
@@ -139,27 +160,38 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void StatusAggregator::mainLoop() {
+    // set up inputsMap which gives StatusWithMessageInput for transferelementId of members
+    std::map<TransferElementID, StatusWithMessageInput*> inputsMap;
+    for(auto& x : _inputs) {
+      inputsMap[x._status.getId()] = &x;
+      if(x.hasMessageSource) inputsMap[x._message.getId()] = &x;
+    }
+
     auto rag = readAnyGroup();
     DataValidity lastStatusValidity = DataValidity::ok;
     while(true) {
       // find highest priority status of all inputs
       StatusOutput::Status status;
+      StatusWithMessageInput* statusOrigin = nullptr;
       // flag whether status has been set from an input already
       bool statusSet = false;
       // this stores getPriority(status) if statusSet=true
       // Intent is to reduce evaluation frequency of getPriority
       // the initial value provided here is only to prevent compiler warnings
       int statusPrio = 0;
-      for(auto& input : _inputs) {
+      for(auto& inputPair : _inputs) {
+        StatusPushInput& input = inputPair._status;
         auto prio = getPriority(input);
         if(!statusSet || prio > statusPrio) {
           status = input;
+          statusOrigin = &inputPair;
           statusPrio = prio;
           statusSet = true;
         }
         else if(prio == -1) { //  -1 means, we need to warn about mixed values
           if(statusPrio == -1 && input != status) {
             status = StatusOutput::Status::WARNING;
+            statusOrigin = nullptr;
             statusPrio = getPriority(status);
           }
         }
@@ -167,16 +199,35 @@ namespace ChimeraTK {
       assert(statusSet);
 
       // write status only if changed, but always write initial value out
-      if(status != _output.status || _output.status.getVersionNumber() == VersionNumber{nullptr} ||
+      if(status != _output._status || _output._status.getVersionNumber() == VersionNumber{nullptr} ||
           getDataValidity() != lastStatusValidity) {
-        _output.status = status;
-        _output.status.write();
+        if(!statusOrigin) {
+          // this can only happen if warning about mixed values
+          assert(status == StatusOutput::Status::WARNING);
+          _output.write(status, "warning - StatusAggregator inputs have mixed values");
+        }
+        else {
+          if(status != StatusOutput::Status::OK) {
+            // this either copies the message from corresponding string variable, or sets a generic message
+            auto msg = statusOrigin->getMessage();
+            _output.write(status, msg);
+          }
+          else {
+            _output.writeOk();
+          }
+        }
+
         lastStatusValidity = getDataValidity();
       }
 
       // wait for changed inputs
     waitForChange:
       auto change = rag.readAny();
+      auto f = inputsMap.find(change);
+      if(f != inputsMap.end()) {
+        auto varPair = f->second;
+        if(!varPair->update(change)) goto waitForChange; // inputs not in consistent state yet
+      }
 
       // handle request for debug info
       if(change == debug.value.getId()) {
@@ -184,8 +235,13 @@ namespace ChimeraTK {
         std::unique_lock<std::mutex> lk(debugMutex);
 
         std::cout << "StatusAggregtor " << getQualifiedName() << " debug info:" << std::endl;
-        for(auto& input : _inputs) {
-          std::cout << input.getName() << " = " << input << std::endl;
+        for(auto& inputPair : _inputs) {
+          StatusPushInput& input = inputPair._status;
+          std::cout << input.getName() << " = " << input;
+          if(inputPair.hasMessageSource) {
+            std::cout << inputPair._message.getName() << " = " << (std::string)inputPair._message;
+          }
+          std::cout << std::endl;
         }
         std::cout << "debug info finished." << std::endl;
         goto waitForChange;

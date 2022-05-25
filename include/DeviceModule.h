@@ -20,6 +20,7 @@
 #include <ChimeraTK/Device.h>
 #include "ModuleGroup.h"
 #include "StatusAccessor.h"
+#include "StatusWithMessage.h"
 #include <boost/thread/latch.hpp>
 
 namespace ChimeraTK {
@@ -243,12 +244,7 @@ namespace ChimeraTK {
     /** A  VariableGroup for exception status and message. It can be protected, as
      * it is automatically connected to the control system in
      * DeviceModule::defineConnections() */
-    struct DeviceError : public VariableGroup {
-      using VariableGroup::VariableGroup;
-      StatusOutput status{this, "status", "Device status"};
-      ScalarOutput<std::string> message{this, "message", "", "Error message"};
-    };
-    DeviceError deviceError{this, "DeviceError", "Error status of the device"};
+    StatusWithMessage deviceError{this, "DeviceError/status", "Error status of the device"};
 
     /** The thread waiting for reportException(). It runs handleException() */
     boost::thread moduleThread;
