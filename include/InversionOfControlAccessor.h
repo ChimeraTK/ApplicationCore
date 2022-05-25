@@ -64,7 +64,12 @@ namespace ChimeraTK {
       node = other.node; // just copies the pointer, but other will be destroyed
                          // right after this move constructor
       other.node = VariableNetworkNode();
-      node.setAppAccessorPointer(static_cast<Derived*>(this));
+      if(node.getType() == NodeType::Application) {
+        node.setAppAccessorPointer(static_cast<Derived*>(this));
+      }
+      else {
+        assert(node.getType() == NodeType::invalid);
+      }
       // Note: the accessor is registered by the VariableNetworkNode, so we don't
       // have to re-register.
     }

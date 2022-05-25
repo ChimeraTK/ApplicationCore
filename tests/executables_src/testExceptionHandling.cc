@@ -48,7 +48,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_1, Fixture) {
 
   // These are instantiated in the fixture:
   // status -> /Devices/(ExceptionDummy:1?map=test.map)/status
-  // message -> /Devices/(ExceptionDummy:1?map=test.map)/message
+  // message -> /Devices/(ExceptionDummy:1?map=test.map)/status_message
 
   BOOST_CHECK_EQUAL(status, 0);
   BOOST_CHECK_EQUAL(static_cast<std::string>(message), "");

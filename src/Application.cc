@@ -1638,7 +1638,7 @@ void Application::CircularDependencyDetector::detectBlockedModules() {
             auto* dm = Application::getInstance().deviceModuleMap[deviceName];
             std::unique_lock dmLock(dm->errorMutex);
             if(dm->deviceHasError) {
-              std::cout << " (" << std::string(dm->deviceError.message) << ")";
+              std::cout << " (" << std::string(dm->deviceError._message) << ")";
             }
             std::cout << "..." << std::endl;
           }

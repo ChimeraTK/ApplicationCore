@@ -180,8 +180,8 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   //app.dumpConnections();
 
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 30000);
-  CHECK_EQUAL_TIMEOUT(
-      test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), exceptionMessage, 10000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "status_message"),
+      exceptionMessage, 10000);
 
   // Check that the execution of init handlers was stopped after the exception:
   // initialiseReg2 and initialiseReg3 were not executed. As we already checked with timeout that the
@@ -198,7 +198,8 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   // then check the initialisation (again, no extra timeout needed because of the logic:
   // success is only reported after successful init).
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 10000);
-  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), "", 10000);
+  CHECK_EQUAL_TIMEOUT(
+      test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "status_message"), "", 10000);
 
   // initialisation should be correct now
   BOOST_CHECK_EQUAL(var1, 42);
@@ -223,17 +224,18 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
 
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 10000);
   // First we see the message from the failing write
-  BOOST_CHECK(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message") != "");
+  BOOST_CHECK(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "status_message") != "");
   dummyBackend->throwExceptionWrite = false;
   // Afterwards we see a message from the failing initialisation (which we can now distinguish from the original write exception because write does not throw any more)
-  CHECK_EQUAL_TIMEOUT(
-      test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), exceptionMessage, 10000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "status_message"),
+      exceptionMessage, 10000);
 
   // Now fix the initialisation error and check that the device comes up.
   throwInInitialisation = false;
   // Wait until the device is OK again
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 10000);
-  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "message"), "", 10000);
+  CHECK_EQUAL_TIMEOUT(
+      test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "status_message"), "", 10000);
   // Finally check that the 20 arrives on the device
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/REG4"), 20, 10000);
 }

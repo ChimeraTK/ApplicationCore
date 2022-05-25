@@ -133,7 +133,7 @@ struct fixture_with_poll_and_push_input {
     status.replace(testFacitiy.getScalar<int>(
         ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "status"));
     message.replace(testFacitiy.getScalar<std::string>(
-        ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "message"));
+        ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "status_message"));
     deviceBecameFunctional.replace(testFacitiy.getScalar<int>(
         ChimeraTK::RegisterPath("/Devices") / DummyApplication::ExceptionDummyCDD1 / "deviceBecameFunctional"));
 

@@ -366,3 +366,52 @@ BOOST_AUTO_TEST_CASE(testTags) {
 }
 
 /**********************************************************************************************************************/
+
+// test behavior for status+string:
+// test that status aggregator always has a message output and hands it over to next status aggregator
+BOOST_AUTO_TEST_CASE(testStatusMessage) {
+  std::cout << "testStatusMessage" << std::endl;
+  TestApplication2Levels app;
+
+  ctk::TestFacility test;
+
+  auto status = test.getScalar<int>("/Aggregated/status");
+  auto statusMessage = test.getScalar<std::string>("/Aggregated/status_message");
+  auto innerStatus = test.getScalar<int>("/Aggregated/extraStatus");
+  auto innerStatusMessage = test.getScalar<std::string>("/Aggregated/extraStatus_message");
+
+  // write initial values
+  app.s.status = ctk::StatusOutput::Status::OK;
+  app.s.status.write();
+  app.outerGroup.s1.status = ctk::StatusOutput::Status::OK;
+  app.outerGroup.s1.status.write();
+  app.outerGroup.s2.status = ctk::StatusOutput::Status::OK;
+  app.outerGroup.s2.status.write();
+
+  test.runApplication();
+
+  // check the initial values
+  innerStatus.readLatest();
+  BOOST_CHECK_EQUAL(int(innerStatus), int(ctk::StatusOutput::Status::OK));
+  innerStatusMessage.readLatest();
+  BOOST_CHECK_EQUAL(std::string(innerStatusMessage), "");
+  status.readLatest();
+  BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::OK));
+  statusMessage.readLatest();
+  BOOST_CHECK_EQUAL(std::string(statusMessage), "");
+
+  app.outerGroup.s2.status = ctk::StatusOutput::Status::FAULT;
+  app.outerGroup.s2.status.write();
+  test.stepApplication();
+  status.readLatest();
+  statusMessage.readLatest();
+  innerStatus.readLatest();
+  innerStatusMessage.readLatest();
+  BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::FAULT));
+  const char* faultString = "/testApp/OuterGroup/s2/s2 switched to FAULT";
+  BOOST_CHECK_EQUAL(std::string(statusMessage), faultString);
+  BOOST_CHECK_EQUAL(int(innerStatus), int(ctk::StatusOutput::Status::FAULT));
+  BOOST_CHECK_EQUAL(std::string(innerStatusMessage), faultString);
+}
+
+/**********************************************************************************************************************/
