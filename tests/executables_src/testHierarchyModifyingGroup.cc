@@ -330,3 +330,25 @@ BOOST_AUTO_TEST_CASE(move_construct) {
 }
 
 /*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(move_invalid) {
+  std::cout << "*** move_invalid" << std::endl;
+  // test move constructor and move assignment works when moving uninitialized/invalid elements
+  struct VG : ChimeraTK::HierarchyModifyingGroup {
+    ChimeraTK::ScalarPushInput<int> valid{this, "valid", "", ""}; // has NodeType::Application
+    ChimeraTK::ScalarPushInput<int> invalid{}; // has default-constructed VariableNetworkType with  NodeType::Invalid
+    void initializeLate() { invalid = ChimeraTK::ScalarPushInput<int>{this, "valid2", "", ""}; }
+  };
+  VG vg0;
+  // move construction from NodeType::Invalid should be fine
+  VG vg1{std::move(vg0)};
+  BOOST_CHECK(static_cast<ChimeraTK::VariableNetworkNode>(vg1.invalid).getType() == ChimeraTK::NodeType::invalid);
+  // move assignment to NodeType::Invalid should be fine
+  vg1 = VG{};
+  VG vg2;
+  vg2.initializeLate();
+  vg1 = std::move(vg2);
+  BOOST_CHECK(static_cast<ChimeraTK::VariableNetworkNode>(vg1.invalid).getType() == ChimeraTK::NodeType::Application);
+}
+
+/*********************************************************************************************************************/
