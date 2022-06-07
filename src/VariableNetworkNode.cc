@@ -444,7 +444,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetworkNode::setAppAccessorPointer(ChimeraTK::TransferElementAbstractor* accessor) {
-    assert(getType() == NodeType::Application);
+    assert(getType() == NodeType::Application || getType() == NodeType::invalid);
     pdata->appNode = accessor;
   }
 
