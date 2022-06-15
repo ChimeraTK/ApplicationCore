@@ -51,9 +51,9 @@ namespace ChimeraTK {
 
   void StatusAggregator::scanAndPopulateFromHierarchyLevel(EntityOwner& module, const std::string& namePrefix) {
     // a map used just for optimization of node lookup by name, which happens in inner loop below
-    std::map<std::string, VariableNetworkNode*> nodesByName;
+    std::map<std::string, VariableNetworkNode> nodesByName;
     for(auto& node : module.getAccessorList()) {
-      nodesByName[node.getName()] = &node;
+      nodesByName[node.getName()] = node;
     }
     // Search for StatusOutputs to aggregate
     for(auto& node : module.getAccessorList()) {
@@ -88,13 +88,12 @@ namespace ChimeraTK {
           std::unordered_set<std::string>{tagInternalVars});
       node >> _inputs.back()._status;
       // look for matching status message output node
-      VariableNetworkNode* statusMsgNode = nullptr;
       auto result = nodesByName.find(node.getName() + "_message");
       if(result != nodesByName.end()) {
         // tell the StatusWithMessageInput that it should consider the message source, and connect it
-        statusMsgNode = result->second;
+        auto statusMsgNode = result->second;
         _inputs.back().setMessageSource();
-        *statusMsgNode >> _inputs.back()._message;
+        statusMsgNode >> _inputs.back()._message;
       }
     }
 
