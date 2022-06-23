@@ -357,7 +357,7 @@ namespace ChimeraTK {
         });
         for(auto& recoveryHelper : recoveryHelpers) {
           if(recoveryHelper->versionNumber != VersionNumber{nullptr}) {
-            recoveryHelper->accessor->write(recoveryHelper->versionNumber);
+            recoveryHelper->accessor->write();
             recoveryHelper->wasWritten = true;
           }
         }
