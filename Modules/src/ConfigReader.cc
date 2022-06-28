@@ -212,19 +212,7 @@ namespace ChimeraTK {
 
   template<typename T>
   void ConfigReader::createVar(const std::string& name, const std::string& value) {
-    // convert value into user type
-    /// @todo error handling!
-    std::stringstream stream(value);
-    T convertedValue;
-    if constexpr(std::is_same<T, int8_t>::value || std::is_same<T, uint8_t>::value) {
-      // prevent interpreting int8-types as characters
-      int16_t intermediate;
-      stream >> intermediate;
-      convertedValue = intermediate;
-    }
-    else { // note: string is done in template specialisation
-      stream >> convertedValue;
-    }
+    T convertedValue = ChimeraTK::userTypeToUserType<T>(value);
 
     auto moduleName = branch(name);
     auto varName = leaf(name);
@@ -233,20 +221,6 @@ namespace ChimeraTK {
     // place the variable onto the vector
     std::unordered_map<std::string, ConfigReader::Var<T>>& theMap = boost::fusion::at_key<T>(variableMap.table);
     theMap.emplace(std::make_pair(name, ConfigReader::Var<T>(varOwner, varName, convertedValue)));
-  }
-
-  /*********************************************************************************************************************/
-
-  template<>
-  void ConfigReader::createVar<std::string>(const std::string& name, const std::string& value) {
-    auto moduleName = branch(name);
-    auto varName = leaf(name);
-    auto varOwner = _moduleTree->lookup(moduleName);
-
-    // place the variable onto the vector
-    std::unordered_map<std::string, ConfigReader::Var<std::string>>& theMap =
-        boost::fusion::at_key<std::string>(variableMap.table);
-    theMap.emplace(std::make_pair(name, ConfigReader::Var<std::string>(varOwner, varName, value)));
   }
 
   /*********************************************************************************************************************/
@@ -268,17 +242,7 @@ namespace ChimeraTK {
       ++expectedIndex;
 
       // convert value into user type
-      std::stringstream stream(it->second);
-      T convertedValue;
-      if constexpr(std::is_same<T, int8_t>::value || std::is_same<T, uint8_t>::value) {
-        // prevent interpreting int8-types as characters
-        int16_t intermediate;
-        stream >> intermediate;
-        convertedValue = intermediate;
-      }
-      else { // note: string is done in template specialisation
-        stream >> convertedValue;
-      }
+      T convertedValue = ChimeraTK::userTypeToUserType<T>(it->second);
 
       // store value in vector
       Tvalues.push_back(convertedValue);
@@ -291,36 +255,6 @@ namespace ChimeraTK {
     // place the variable onto the vector
     std::unordered_map<std::string, ConfigReader::Array<T>>& theMap = boost::fusion::at_key<T>(arrayMap.table);
     theMap.emplace(std::make_pair(name, ConfigReader::Array<T>(arrayOwner, arrayName, Tvalues)));
-  }
-
-  /*********************************************************************************************************************/
-
-  template<>
-  void ConfigReader::createArray<std::string>(const std::string& name, const std::map<size_t, std::string>& values) {
-    std::vector<std::string> Tvalues;
-
-    size_t expectedIndex = 0;
-    for(auto it = values.begin(); it != values.end(); ++it) {
-      // check index (std::map should be ordered by the index)
-      if(it->first != expectedIndex) {
-        parsingError("Array index " + std::to_string(expectedIndex) + " not found, but " + std::to_string(it->first) +
-            " was. "
-            "Sparse arrays are not supported!");
-      }
-      ++expectedIndex;
-
-      // store value in vector
-      Tvalues.push_back(it->second);
-    }
-
-    auto moduleName = branch(name);
-    auto arrayName = leaf(name);
-    auto arrayOwner = _moduleTree->lookup(moduleName);
-
-    // place the variable onto the vector
-    std::unordered_map<std::string, ConfigReader::Array<std::string>>& theMap =
-        boost::fusion::at_key<std::string>(arrayMap.table);
-    theMap.emplace(std::make_pair(name, ConfigReader::Array<std::string>(arrayOwner, arrayName, Tvalues)));
   }
 
   /*********************************************************************************************************************/
