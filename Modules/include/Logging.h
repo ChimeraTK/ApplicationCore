@@ -252,6 +252,8 @@ namespace logging {
 
     std::unique_ptr<std::ofstream> file; ///< Log file where to write log messages
 
+    size_t getNumberOfModules() { return sources.size(); }
+
     void prepare() override;
 
     /**

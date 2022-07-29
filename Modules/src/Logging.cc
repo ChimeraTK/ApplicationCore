@@ -79,9 +79,15 @@ LoggingModule::LoggingModule(ctk::EntityOwner* owner, const std::string& name, c
     for(auto it = list.begin(); it != list.end(); ++it) {
       // do not add the module itself
       if(it->getOwningModule() == this) continue;
-      std::cout << "Registered module " << it->getOwningModule()->getName() << " for logging." << std::endl;
-      auto acc = getAccessorPair(it->getOwningModule()->getName());
-      (*it) >> acc;
+      try {
+        auto acc = getAccessorPair(it->getOwningModule()->getName());
+        (*it) >> acc;
+        std::cout << "Registered module " << it->getOwningModule()->getName() << " for logging." << std::endl;
+      }
+      catch(ChimeraTK::logic_error& e) {
+        std::cerr << "Failed to add logging module: " << it->getOwningModule()->getName() << " Error: " << e.what()
+                  << std::endl;
+      }
     }
   }
   if(sources.empty()) std::cerr << "LoggingModule did not find any module that uses a Logger." << std::endl;

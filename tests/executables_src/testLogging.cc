@@ -17,6 +17,7 @@
 #include <boost/thread.hpp>
 
 #include "Logging.h"
+#include "ModuleGroup.h"
 using namespace logging;
 
 #include "TestFacility.h"
@@ -37,6 +38,18 @@ struct DummyModule : ChimeraTK::ApplicationModule {
   }
 };
 
+struct TestGroup : public ChimeraTK::ModuleGroup {
+  using ChimeraTK::ModuleGroup::ModuleGroup;
+  struct A : public ChimeraTK::ModuleGroup {
+    using ChimeraTK::ModuleGroup::ModuleGroup;
+    DummyModule dummy{this, "Dummy", ""};
+  } a{this, "A", ""};
+  struct B : public ChimeraTK::ModuleGroup {
+    using ChimeraTK::ModuleGroup::ModuleGroup;
+    DummyModule dummy{this, "Dummy", ""};
+  } b{this, "B", ""};
+};
+
 /**
  * Define a test app to test the LoggingModule.
  *
@@ -50,8 +63,10 @@ struct testApp : public ChimeraTK::Application {
     dir = std::string(dir_name);
     filename = dir + "/testLogging.log";
   }
-  ~testApp() override {
-    shutdown();
+  virtual ~testApp() {
+    if(!isShutDown) {
+      shutdown();
+    }
     if(fileCreated) {
       BOOST_CHECK_EQUAL(boost::filesystem::remove(filename.c_str()), true);
     }
@@ -71,9 +86,27 @@ struct testApp : public ChimeraTK::Application {
   std::string dir;
   std::string filename;
 
+  bool isShutDown{false};
+
   const char* directory = "/tmp/testLogging/";
   const char* fileprefix = "test";
 };
+
+struct testMultipleModules : public testApp {
+  testMultipleModules() : testApp(){};
+  virtual ~testMultipleModules() {
+    shutdown();
+    isShutDown = true;
+  }
+  TestGroup group{this, "MainGroup", ""};
+};
+
+BOOST_AUTO_TEST_CASE(testMultpleModules) {
+  testMultipleModules app;
+  ChimeraTK::TestFacility tf;
+  tf.runApplication();
+  BOOST_CHECK_EQUAL(app.log.getNumberOfModules(), 2);
+}
 
 BOOST_AUTO_TEST_CASE(testLogMsg) {
   testApp app;
