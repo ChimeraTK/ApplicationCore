@@ -20,6 +20,7 @@
 #include "DeviceModule.h"
 #include "ModuleGroup.h"
 #include "ScalarAccessor.h"
+#include "VoidAccessor.h"
 #include "VariableGroup.h"
 #include "HierarchyModifyingGroup.h"
 #include "VirtualModule.h"

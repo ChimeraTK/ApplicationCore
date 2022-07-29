@@ -22,6 +22,7 @@
 #include "DeviceModule.h"
 #include "FeedingFanOut.h"
 #include "ScalarAccessor.h"
+#include "VoidAccessor.h"
 #include "TestableModeAccessorDecorator.h"
 #include "ThreadedFanOut.h"
 #include "TriggerFanOut.h"
@@ -1419,9 +1420,9 @@ void Application::testableModeUnlock(const std::string& name) {
   if(getInstance().enableDebugTestableMode &&
       (!getInstance().testableMode_repeatingMutexOwner                                     // LCOV_EXCL_LINE (only cout)
           || getInstance().testableMode_lastMutexOwner != boost::this_thread::get_id())) { // LCOV_EXCL_LINE (only cout)
-    std::cout << "Application::testableModeUnlock(): Thread " << threadName()            // LCOV_EXCL_LINE (only cout)
-              << " releases lock for " << name << std::endl;                             // LCOV_EXCL_LINE (only cout)
-  }                                                                                      // LCOV_EXCL_LINE (only cout)
+    std::cout << "Application::testableModeUnlock(): Thread " << threadName()              // LCOV_EXCL_LINE (only cout)
+              << " releases lock for " << name << std::endl;                               // LCOV_EXCL_LINE (only cout)
+  }                                                                                        // LCOV_EXCL_LINE (only cout)
   getTestableModeLockObject().unlock();
 }
 /*********************************************************************************************************************/
