@@ -110,10 +110,13 @@
 #ifndef MODULES_LOGGING_H_
 #define MODULES_LOGGING_H_
 
-#include "ApplicationCore.h"
 #include <fstream>
 #include <map>
 #include <queue>
+
+#include <ChimeraTK/RegisterPath.h>
+
+#include "ApplicationCore.h"
 
 namespace ctk = ChimeraTK;
 
@@ -201,13 +204,13 @@ namespace logging {
    */
   class LoggingModule : public ctk::ApplicationModule {
    private:
-    ctk::VariableNetworkNode getAccessorPair(const std::string& sender);
+    ctk::VariableNetworkNode getAccessorPair(const std::string& sender, const std::string& name);
 
     struct MessageSource {
       ctk::ScalarPushInput<std::string> msg;
       std::string sendingModule;
-      MessageSource(const std::string& moduleName, Module* module)
-      : msg{module, moduleName + "Msg", "", ""}, sendingModule(moduleName) {}
+      MessageSource(const ChimeraTK::RegisterPath& path, Module* module, const size_t& id)
+      : msg{module, "message_" + std::to_string(id), "", "", {"***logging_internal***"}}, sendingModule(path) {}
     };
     /** List of senders. */
     std::vector<MessageSource> sources;

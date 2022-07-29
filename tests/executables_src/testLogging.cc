@@ -80,7 +80,10 @@ struct testApp : public ChimeraTK::Application {
 
   ChimeraTK::ControlSystemModule cs;
 
-  void defineConnections() override { log.findTag("CS").connectTo(cs); }
+  void defineConnections() override {
+    log.findTag("CS").connectTo(cs);
+    dumpConnections();
+  }
 
   bool fileCreated;
   std::string dir;
@@ -92,29 +95,42 @@ struct testApp : public ChimeraTK::Application {
   const char* fileprefix = "test";
 };
 
-struct testMultipleModules : public testApp {
-  testMultipleModules() : testApp(){};
-  virtual ~testMultipleModules() {
-    shutdown();
-    isShutDown = true;
-  }
+struct testMultipleModules : public ChimeraTK::Application {
+  testMultipleModules() : Application("test"){};
+  virtual ~testMultipleModules() { shutdown(); }
+
   TestGroup group{this, "MainGroup", ""};
+  LoggingModule log{this, "LoggingModule", "LoggingModule test"};
+
+  void initialise() override {
+    Application::initialise();
+    dumpConnections();
+  }
 };
 
 BOOST_AUTO_TEST_CASE(testMultpleModules) {
   testMultipleModules app;
   ChimeraTK::TestFacility tf;
+  tf.setScalarDefault("/LoggingModule/maxTailLength", (uint)1);
   tf.runApplication();
   BOOST_CHECK_EQUAL(app.log.getNumberOfModules(), 2);
+  app.group.a.dummy.logger->sendMessage("Message from module a", LogLevel::DEBUG);
+  app.group.b.dummy.logger->sendMessage("Message from module b", LogLevel::DEBUG);
+  tf.stepApplication();
+  std::string ss = tf.readScalar<std::string>("/LoggingModule/logTail");
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("->") + 3), std::string("Message from module b\n"));
+  app.group.b.dummy.logger->sendMessage("Message from module b", LogLevel::DEBUG);
+  app.group.a.dummy.logger->sendMessage("Message from module a", LogLevel::DEBUG);
+  tf.stepApplication();
+  ss = tf.readScalar<std::string>("/LoggingModule/logTail");
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("->") + 3), std::string("Message from module a\n"));
 }
 
 BOOST_AUTO_TEST_CASE(testLogMsg) {
   testApp app;
   ChimeraTK::TestFacility tf;
+  tf.setScalarDefault("maxTailLength", (uint)1);
   tf.runApplication();
-  auto tailLength = tf.getScalar<uint>("maxTailLength");
-  tailLength = 1;
-  tailLength.write();
   app.dummy.logger->sendMessage("test", LogLevel::DEBUG);
   tf.stepApplication();
   std::string ss = tf.readScalar<std::string>("logTail");

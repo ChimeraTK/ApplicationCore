@@ -45,7 +45,8 @@ std::string logging::getTime() {
 
 Logger::Logger(ctk::Module* module, const std::string& tag)
 : VariableGroup(module, "Logging", "VariableGroup added by the Logger"),
-  message(module, "message", "", "Message of the module to the logging System", {tag, module->getName()}) {}
+  message(module, "message", "", "Message of the module to the logging System",
+      {tag, module->getName(), "***logging_internal***"}) {}
 
 void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level) {
   if(message.isInitialised()) {
@@ -80,13 +81,13 @@ LoggingModule::LoggingModule(ctk::EntityOwner* owner, const std::string& name, c
       // do not add the module itself
       if(it->getOwningModule() == this) continue;
       try {
-        auto acc = getAccessorPair(it->getOwningModule()->getName());
+        auto acc = getAccessorPair(it->getOwningModule()->getQualifiedName(), it->getOwningModule()->getName());
         (*it) >> acc;
-        std::cout << "Registered module " << it->getOwningModule()->getName() << " for logging." << std::endl;
+        std::cout << "Registered module " << it->getOwningModule()->getQualifiedName() << " for logging." << std::endl;
       }
       catch(ChimeraTK::logic_error& e) {
-        std::cerr << "Failed to add logging module: " << it->getOwningModule()->getName() << " Error: " << e.what()
-                  << std::endl;
+        std::cerr << "Failed to add logging module: " << it->getOwningModule()->getQualifiedName()
+                  << " Error: " << e.what() << std::endl;
       }
     }
   }
@@ -181,7 +182,7 @@ void LoggingModule::mainLoop() {
     // remove message level
     tmpStr = tmpStr.substr(1, tmpStr.size());
     std::stringstream ss;
-    ss << level << getName() << "/" << currentSender->sendingModule << " " << getTime() << tmpStr;
+    ss << level << getName() << ":" << currentSender->sendingModule << " " << getTime() << tmpStr;
     if(targetStream == 0 || targetStream == 1) {
       if(!((std::string)logFile).empty() && !file->is_open()) {
         std::stringstream ss_file;
@@ -207,11 +208,11 @@ void LoggingModule::mainLoop() {
   }
 }
 
-ctk::VariableNetworkNode LoggingModule::getAccessorPair(const std::string& sender) {
+ctk::VariableNetworkNode LoggingModule::getAccessorPair(const std::string& sender, const std::string& name) {
   auto it = std::find_if(
       sources.begin(), sources.end(), boost::bind(&MessageSource::sendingModule, boost::placeholders::_1) == sender);
   if(it == sources.end()) {
-    sources.emplace_back(MessageSource{sender, this});
+    sources.emplace_back(MessageSource{ChimeraTK::RegisterPath(sender), this, sources.size()});
   }
   else {
     throw ChimeraTK::logic_error(
