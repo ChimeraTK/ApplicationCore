@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include <string>
+#include "Application.h"
+#include "InversionOfControlAccessor.h"
 
 #include <ChimeraTK/VoidRegisterAccessor.h>
 
-#include "Application.h"
-#include "InversionOfControlAccessor.h"
+#include <string>
 
 namespace ChimeraTK {
 
