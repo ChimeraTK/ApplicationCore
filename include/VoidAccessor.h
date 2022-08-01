@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 #pragma once
 
 #include <string>
@@ -23,10 +26,10 @@ namespace ChimeraTK {
     using ChimeraTK::VoidRegisterAccessor::operator=;
 
     /** Move constructor */
-    VoidAccessor(VoidAccessor&& other) { InversionOfControlAccessor<VoidAccessor>::replace(std::move(other)); }
+    VoidAccessor(VoidAccessor&& other) noexcept { InversionOfControlAccessor<VoidAccessor>::replace(std::move(other)); }
 
     /** Move assignment. */
-    VoidAccessor& operator=(VoidAccessor&& other) {
+    VoidAccessor& operator=(VoidAccessor&& other) noexcept {
       // Having a move-assignment operator is required to use the move-assignment
       // operator of a module containing an accessor.
       InversionOfControlAccessor<VoidAccessor>::replace(std::move(other));
@@ -54,13 +57,13 @@ namespace ChimeraTK {
    protected:
     friend class InversionOfControlAccessor<VoidAccessor>;
 
-    VoidAccessor(Module* owner, const std::string& name, VariableDirection direction, std::string unit, UpdateMode mode,
-        const std::string& description, const std::unordered_set<std::string>& tags = {})
+    VoidAccessor(Module* owner, const std::string& name, VariableDirection direction, std::string& unit,
+        UpdateMode mode, const std::string& description, const std::unordered_set<std::string>& tags = {})
     : InversionOfControlAccessor<VoidAccessor>(
           owner, name, direction, unit, 1, mode, description, &typeid(ChimeraTK::Void), tags) {}
 
     /** Default constructor creates a dysfunctional accessor (to be assigned with a real accessor later) */
-    VoidAccessor() {}
+    VoidAccessor() = default;
   };
 
   /********************************************************************************************************************/
@@ -70,7 +73,7 @@ namespace ChimeraTK {
     VoidInput(Module* owner, const std::string& name, std::string unit, const std::string& description,
         const std::unordered_set<std::string>& tags = {})
     : VoidAccessor(owner, name, {VariableDirection::consuming, false}, unit, UpdateMode::push, description, tags) {}
-    VoidInput() : VoidAccessor() {}
+    VoidInput() = default;
     using VoidAccessor::operator=;
   };
 
@@ -81,7 +84,7 @@ namespace ChimeraTK {
     VoidOutput(Module* owner, const std::string& name, std::string unit, const std::string& description,
         const std::unordered_set<std::string>& tags = {})
     : VoidAccessor(owner, name, {VariableDirection::feeding, false}, unit, UpdateMode::push, description, tags) {}
-    VoidOutput() : VoidAccessor() {}
+    VoidOutput() = default;
     using VoidAccessor::operator=;
   };
 
