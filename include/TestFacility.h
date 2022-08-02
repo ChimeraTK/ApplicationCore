@@ -13,6 +13,7 @@
 #include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
 #include <ChimeraTK/OneDRegisterAccessor.h>
 #include <ChimeraTK/ScalarRegisterAccessor.h>
+#include <ChimeraTK/VoidRegisterAccessor.h>
 
 #include "Application.h"
 #include "DeviceModule.h"
@@ -128,6 +129,39 @@ namespace ChimeraTK {
      *  processed until the next call to step(). */
     void stepApplication(bool waitForDeviceInitialisation = true) const {
       Application::getInstance().stepApplication(waitForDeviceInitialisation);
+    }
+
+    /** Obtain a void process variable from the application, which is published
+     * to the control system. */
+    ChimeraTK::VoidRegisterAccessor getVoid(const ChimeraTK::RegisterPath& name) const {
+      // check for existing accessor in cache
+      if(boost::fusion::at_key<ChimeraTK::Void>(accessorMap.table).count(name) > 0) {
+        return boost::fusion::at_key<ChimeraTK::Void>(accessorMap.table)[name];
+      }
+
+      // obtain accessor from ControlSystemPVManager
+      auto pv = pvManager->getProcessArray<ChimeraTK::Void>(name);
+      if(pv == nullptr) {
+        throw ChimeraTK::logic_error("Process variable '" + name + "' does not exist.");
+      }
+
+      // obtain variable id from pvIdMap and transfer it to idMap (required by the
+      // TestableModeAccessorDecorator)
+      size_t varId = Application::getInstance().pvIdMap[pv->getUniqueId()];
+
+      // decorate with TestableModeAccessorDecorator if variable is sender and
+      // receiver is not poll-type, and store it in cache
+      if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[varId]) {
+        auto deco = boost::make_shared<TestableModeAccessorDecorator<ChimeraTK::Void>>(pv, false, true, varId, varId);
+        Application::getInstance().testableMode_names[varId] = "ControlSystem:" + name;
+        boost::fusion::at_key<ChimeraTK::Void>(accessorMap.table)[name] = deco;
+      }
+      else {
+        boost::fusion::at_key<ChimeraTK::Void>(accessorMap.table)[name] = pv;
+      }
+
+      // return the accessor as stored in the cache
+      return boost::fusion::at_key<ChimeraTK::Void>(accessorMap.table)[name];
     }
 
     /** Obtain a scalar process variable from the application, which is published
