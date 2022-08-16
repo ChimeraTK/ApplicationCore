@@ -46,7 +46,9 @@ std::string logging::getTime() {
 Logger::Logger(ctk::Module* module, const std::string& tag)
 : VariableGroup(module, "Logging", "VariableGroup added by the Logger"),
   message(module, "message", "", "Message of the module to the logging System",
-      {tag, module->getName(), "***logging_internal***"}) {}
+      {tag, module->getName(), "***logging_internal***"}),
+  alias(module, "alias", "", "Alias used to identify messages. If not empty the owning module register path is used.",
+      {module->getName(), "***logging_internal***"}) {}
 
 void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level) {
   if(message.isInitialised()) {
@@ -68,7 +70,15 @@ void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level)
 
 void Logger::prepare() {
   // write initial value in order to bring LoggingModule to mainLoop()
+  alias.write();
   message.write();
+}
+
+void Logger::setAlias(const std::string& _alias) {
+  if(alias.isInitialised()) {
+    alias = _alias;
+    alias.write();
+  }
 }
 
 LoggingModule::LoggingModule(ctk::EntityOwner* owner, const std::string& name, const std::string& description,
@@ -81,7 +91,10 @@ LoggingModule::LoggingModule(ctk::EntityOwner* owner, const std::string& name, c
       // do not add the module itself
       if(it->getOwningModule() == this) continue;
       try {
-        auto acc = getAccessorPair(it->getOwningModule()->getQualifiedName(), it->getOwningModule()->getName());
+        // virtualLogging.getQualifiedName() returns the name of the app, e.g. /test and we remove that from the module name , e.g. /test/MyModule
+        auto moduleName =
+            it->getOwningModule()->getQualifiedName().substr(virtualLogging.getQualifiedName().length() + 1);
+        auto acc = getAccessorPair(moduleName, it->getOwningModule()->getName());
         (*it) >> acc;
         std::cout << "Registered module " << it->getOwningModule()->getQualifiedName() << " for logging." << std::endl;
       }
@@ -92,6 +105,35 @@ LoggingModule::LoggingModule(ctk::EntityOwner* owner, const std::string& name, c
     }
   }
   if(sources.empty()) std::cerr << "LoggingModule did not find any module that uses a Logger." << std::endl;
+}
+
+ctk::RegisterPath LoggingModule::prepareHierarchy(const ctk::RegisterPath& namePrefix) {
+  ctk::RegisterPath result;
+  // create variable group map for namePrefix if needed
+  if(groupMap.find(namePrefix) == groupMap.end()) {
+    // search for existing parent (if any)
+    auto parentPrefix = namePrefix;
+    while(groupMap.find(parentPrefix) == groupMap.end()) {
+      if(parentPrefix == "/") break; // no existing parent found
+      parentPrefix = std::string(parentPrefix).substr(0, std::string(parentPrefix).find_last_of("/"));
+    }
+    // create all not-yet-existing parents
+    while(true) {
+      ctk::EntityOwner* owner = this;
+      if(parentPrefix != "/") owner = &groupMap[parentPrefix];
+      auto stop = std::string(namePrefix).find_first_of("/", parentPrefix.length() + 1);
+      if(stop == std::string::npos) stop = namePrefix.length();
+      ctk::RegisterPath name = std::string(namePrefix).substr(parentPrefix.length(), stop - parentPrefix.length());
+      result = parentPrefix;
+      parentPrefix /= name;
+      if(parentPrefix == namePrefix) {
+        // do not add the last hierachy level -> will be added by the MessageSource
+        break;
+      }
+      groupMap[parentPrefix] = ctk::VariableGroup(owner, std::string(name).substr(1), "");
+    }
+  }
+  return result;
 }
 
 void LoggingModule::broadcastMessage(std::string msg, const bool& isError) {
@@ -143,7 +185,7 @@ void LoggingModule::mainLoop() {
   broadcastMessage(greeter.str());
   for(auto module = sources.begin(); module != sources.end(); module++) {
     broadcastMessage(std::string("\t - ") + module->sendingModule);
-    id_list[module->msg.getId()] = &(*module);
+    id_list[module->data.msg.getId()] = &(*module);
   }
   auto group = readAnyGroup();
   std::string msg;
@@ -159,7 +201,7 @@ void LoggingModule::mainLoop() {
     }
     try {
       currentSender = id_list.at(id);
-      msg = (std::string)(currentSender->msg);
+      msg = (std::string)(currentSender->data.msg);
     }
     catch(std::out_of_range& e) {
       throw ChimeraTK::logic_error("Cannot find  element id"
@@ -182,7 +224,12 @@ void LoggingModule::mainLoop() {
     // remove message level
     tmpStr = tmpStr.substr(1, tmpStr.size());
     std::stringstream ss;
-    ss << level << getName() << ":" << currentSender->sendingModule << " " << getTime() << tmpStr;
+    if(((std::string)currentSender->data.alias).empty()) {
+      ss << level << getName() << ":" << currentSender->sendingModule << " " << getTime() << tmpStr;
+    }
+    else {
+      ss << level << getName() << ":" << (std::string)currentSender->data.alias << " " << getTime() << tmpStr;
+    }
     if(targetStream == 0 || targetStream == 1) {
       if(!((std::string)logFile).empty() && !file->is_open()) {
         std::stringstream ss_file;
@@ -208,17 +255,23 @@ void LoggingModule::mainLoop() {
   }
 }
 
-ctk::VariableNetworkNode LoggingModule::getAccessorPair(const std::string& sender, const std::string& name) {
-  auto it = std::find_if(
-      sources.begin(), sources.end(), boost::bind(&MessageSource::sendingModule, boost::placeholders::_1) == sender);
+ctk::VariableNetworkNode LoggingModule::getAccessorPair(const ctk::RegisterPath& namePrefix, const std::string& name) {
+  auto it = std::find_if(sources.begin(), sources.end(),
+      boost::bind(&MessageSource::sendingModule, boost::placeholders::_1) == (std::string)namePrefix);
   if(it == sources.end()) {
-    sources.emplace_back(MessageSource{ChimeraTK::RegisterPath(sender), this, sources.size()});
+    auto result = prepareHierarchy(namePrefix);
+    if(result == "/") {
+      sources.emplace_back(MessageSource{namePrefix, this});
+    }
+    else {
+      sources.emplace_back(MessageSource{namePrefix, &groupMap[result]});
+    }
   }
   else {
     throw ChimeraTK::logic_error(
-        "Cannot add logging for module " + sender + " since logging was already added for this module.");
+        "Cannot add logging for module " + namePrefix + " since logging was already added for this module.");
   }
-  return sources.back().msg;
+  return sources.back().data.msg;
 }
 
 void LoggingModule::terminate() {
