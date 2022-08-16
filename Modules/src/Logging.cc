@@ -45,9 +45,9 @@ std::string logging::getTime() {
 
 Logger::Logger(ctk::Module* module, const std::string& tag)
 : VariableGroup(module, "Logging", "VariableGroup added by the Logger"),
-  message(module, "message", "", "Message of the module to the logging System",
+  message(this, "message", "", "Message of the module to the logging System",
       {tag, module->getName(), "***logging_internal***"}),
-  alias(module, "alias", "", "Alias used to identify messages. If not empty the owning module register path is used.",
+  alias(this, "alias", "", "Alias used to identify messages. If not empty the owning module register path is used.",
       {module->getName(), "***logging_internal***"}) {}
 
 void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level) {
