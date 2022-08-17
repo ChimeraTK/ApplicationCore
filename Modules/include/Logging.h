@@ -122,8 +122,9 @@ namespace ctk = ChimeraTK;
 
 namespace logging {
 
-  /** Define available logging levels. */
-  enum LogLevel { DEBUG, INFO, WARNING, ERROR, SILENT };
+  /** Define available logging levels. INTERNAL is used to
+   * indicate an already published message  */
+  enum LogLevel { DEBUG, INFO, WARNING, ERROR, SILENT, INTERNAL };
 
   /** Define stream operator to use the LogLevel in streams, e.g. std::cout */
   std::ostream& operator<<(std::ostream& os, const logging::LogLevel& level);
@@ -164,12 +165,15 @@ namespace logging {
      *
      * \param module The owning module that is using the Logger. It will appear as
      * sender in the LoggingModule, which is receiving messages from the Logger.
+     * \param name Name used to initialise the VariableGroup.
+     * \param description Description used to initialise the VariableGroup.
      * \param tag A tag that is used to identify the Logger by the LoggingModule.
      */
-    Logger(ctk::Module* module, const std::string& tag = "Logging");
+    Logger(ctk::Module* module, const std::string &name = "Logging",
+        const std::string &description = "VariableGroup added by the Logger",
+        const std::string& tag = "Logging");
     /** Message to be send to the logging module */
     ctk::ScalarOutput<std::string> message;
-    ctk::ScalarOutput<std::string> alias;
 
     /**
      * \brief Send a message, which means to update the message and messageLevel
@@ -177,12 +181,6 @@ namespace logging {
      *
      */
     void sendMessage(const std::string& msg, const logging::LogLevel& level);
-
-    /**
-     * \brief If an alias is set it will be used in messages instaed of the register
-     * path of the owning module.
-     */
-    void setAlias(const std::string& alias);
 
     void prepare() override;
   };

@@ -43,12 +43,11 @@ std::string logging::getTime() {
   return str;
 }
 
-Logger::Logger(ctk::Module* module, const std::string& tag)
-: VariableGroup(module, "Logging", "VariableGroup added by the Logger"),
-  message(this, "message", "", "Message of the module to the logging System",
-      {tag, module->getName(), "***logging_internal***"}),
-  alias(this, "alias", "", "Alias used to identify messages. If not empty the owning module register path is used.",
-      {module->getName(), "***logging_internal***"}) {}
+Logger::Logger(ctk::Module* module, const std::string &name, const std::string &description, const std::string& tag)
+: VariableGroup(module, name, description),
+  message(this, "message", "", "Message of the module to the logging System. The leading number indicates the log level "
+      "(0: DEBUG, 1: INFO, 2: WARNING, 3: ERROR, 4;SILENT). A leading 5 is used internally for old messages.",
+      {tag, module->getName(), "***logging_internal***"}){}
 
 void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level) {
   if(message.isInitialised()) {
@@ -60,7 +59,7 @@ void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level)
     message = std::to_string(level) + msg + "\n";
     message.write();
     // set emtpy message to let the LoggingModule know that someone called writeAll() without sending a message
-    message = "";
+    message = std::to_string(logging::LogLevel::INTERNAL) + msg + "\n";
   }
   else {
     // only use the buffer until ctk initialized the process variables
@@ -70,15 +69,7 @@ void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level)
 
 void Logger::prepare() {
   // write initial value in order to bring LoggingModule to mainLoop()
-  alias.write();
   message.write();
-}
-
-void Logger::setAlias(const std::string& _alias) {
-  if(alias.isInitialised()) {
-    alias = _alias;
-    alias.write();
-  }
 }
 
 LoggingModule::LoggingModule(ctk::EntityOwner* owner, const std::string& name, const std::string& description,
@@ -207,16 +198,16 @@ void LoggingModule::mainLoop() {
       throw ChimeraTK::logic_error("Cannot find  element id"
                                    "when updating logging variables.");
     }
-    // if message is empty assume someone called writeAll() in a module containing the Logger -> ignore
-    if(msg.empty()) {
-      continue;
-    }
     try {
       level = static_cast<LogLevel>(std::strtoul(&msg.at(0), NULL, 0));
     }
     catch(std::out_of_range& e) {
       throw ChimeraTK::logic_error("Cannot find  message level"
                                    "when updating logging variables.");
+    }
+    // if log level is INTERANEL someone called writeAll() in a module containing the Logger -> ignore
+    if(level == LogLevel::INTERNAL){
+      continue;
     }
     if(targetStream == 4) continue;
     LogLevel setLevel = static_cast<LogLevel>((uint)logLevel);

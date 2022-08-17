@@ -134,7 +134,10 @@ BOOST_AUTO_TEST_CASE(testAlias) {
   tf.stepApplication();
   std::string ss = tf.readScalar<std::string>("/LoggingModule/logTail");
   BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 6), std::string("/Dummy"));
-  app.dummy.logger->setAlias("NewName");
+//  app.dummy.logger->setAlias("NewName");
+  auto alias = tf.getScalar<std::string>("/Dummy/Logging/alias");
+  alias = "NewName";
+  alias.write();
   app.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
   tf.stepApplication();
   ss = tf.readScalar<std::string>("/LoggingModule/logTail");
