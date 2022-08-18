@@ -5,19 +5,19 @@
  *      Author: zenker
  */
 
-//#define BOOST_TEST_DYN_LINK
+// #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE LoggingTest
 
-#include <fstream>
-#include <stdlib.h>
+#include "Logging.h"
+#include "ModuleGroup.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/test/included/unit_test.hpp>
 #include <boost/thread.hpp>
 
-#include "Logging.h"
-#include "ModuleGroup.h"
+#include <fstream>
+#include <stdlib.h>
 using namespace logging;
 
 #include "TestFacility.h"
@@ -47,7 +47,7 @@ struct TestGroup : public ChimeraTK::ModuleGroup {
   struct B : public ChimeraTK::ModuleGroup {
     using ChimeraTK::ModuleGroup::ModuleGroup;
     DummyModule dummy{this, "Dummy", ""};
-  } b{this, "B", ""};
+  } b{this, "B", "", ctk::HierarchyModifier::hideThis};
 };
 
 /**
@@ -134,11 +134,43 @@ BOOST_AUTO_TEST_CASE(testAlias) {
   tf.stepApplication();
   std::string ss = tf.readScalar<std::string>("/LoggingModule/logTail");
   BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 6), std::string("/Dummy"));
-//  app.dummy.logger->setAlias("NewName");
   auto alias = tf.getScalar<std::string>("/Dummy/Logging/alias");
   alias = "NewName";
   alias.write();
   app.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  ss = tf.readScalar<std::string>("/LoggingModule/logTail");
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 7), std::string("NewName"));
+}
+
+BOOST_AUTO_TEST_CASE(testAlias_withHierachies) {
+  MultipleModuleApp app;
+  ChimeraTK::TestFacility tf;
+  tf.setScalarDefault("/LoggingModule/maxTailLength", (uint)1);
+  tf.runApplication();
+  BOOST_CHECK_EQUAL(app.log.getNumberOfModules(), 2);
+  app.group.a.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  std::string ss = tf.readScalar<std::string>("/LoggingModule/logTail");
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 26), std::string("/MainGroup/A/Dummy/Logging"));
+
+  app.group.b.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  ss = tf.readScalar<std::string>("/LoggingModule/logTail");
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 26), std::string("/MainGroup/B/Dummy/Logging"));
+
+  auto aliasA = tf.getScalar<std::string>("/MainGroup/A/Dummy/Logging/alias");
+  aliasA = "NewName";
+  aliasA.write();
+  app.group.a.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  ss = tf.readScalar<std::string>("/LoggingModule/logTail");
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 7), std::string("NewName"));
+
+  auto aliasB = tf.getScalar<std::string>("/MainGroup/Dummy/Logging/alias");
+  aliasB = "NewName";
+  aliasB.write();
+  app.group.b.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
   tf.stepApplication();
   ss = tf.readScalar<std::string>("/LoggingModule/logTail");
   BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 7), std::string("NewName"));
