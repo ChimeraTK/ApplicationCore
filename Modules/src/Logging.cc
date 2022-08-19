@@ -5,14 +5,15 @@
  *      Author: zenker
  */
 
+#include "Logging.h"
+
+#include "boost/date_time/posix_time/posix_time.hpp"
+
 #include <fstream>
 #include <ostream>
 #include <sstream>
 #include <string>
 #include <vector>
-
-#include "Logging.h"
-#include "boost/date_time/posix_time/posix_time.hpp"
 
 using namespace logging;
 
@@ -43,11 +44,12 @@ std::string logging::getTime() {
   return str;
 }
 
-Logger::Logger(ctk::Module* module, const std::string &name, const std::string &description, const std::string& tag)
+Logger::Logger(ctk::Module* module, const std::string& name, const std::string& description, const std::string& tag)
 : VariableGroup(module, name, description),
-  message(this, "message", "", "Message of the module to the logging System. The leading number indicates the log level "
+  message(this, "message", "",
+      "Message of the module to the logging System. The leading number indicates the log level "
       "(0: DEBUG, 1: INFO, 2: WARNING, 3: ERROR, 4;SILENT). A leading 5 is used internally for old messages.",
-      {tag, module->getName(), "***logging_internal***"}){}
+      {tag, module->getName(), "***logging_internal***"}) {}
 
 void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level) {
   if(message.isInitialised()) {
@@ -184,7 +186,7 @@ void LoggingModule::mainLoop() {
   LogLevel level;
 
   while(1) {
-    //we skip the initial value since it is empty anyway and set in Logger::prepare
+    // we skip the initial value since it is empty anyway and set in Logger::prepare
     auto id = group.readAny();
     if(id_list.count(id) == 0) {
       throw ChimeraTK::logic_error("Cannot find  element id"
@@ -206,7 +208,7 @@ void LoggingModule::mainLoop() {
                                    "when updating logging variables.");
     }
     // if log level is INTERANEL someone called writeAll() in a module containing the Logger -> ignore
-    if(level == LogLevel::INTERNAL){
+    if(level == LogLevel::INTERNAL) {
       continue;
     }
     if(targetStream == 4) continue;

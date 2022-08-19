@@ -110,13 +110,13 @@
 #ifndef MODULES_LOGGING_H_
 #define MODULES_LOGGING_H_
 
-#include <fstream>
-#include <map>
-#include <queue>
+#include "ApplicationCore.h"
 
 #include <ChimeraTK/RegisterPath.h>
 
-#include "ApplicationCore.h"
+#include <fstream>
+#include <map>
+#include <queue>
 
 namespace ctk = ChimeraTK;
 
@@ -169,9 +169,8 @@ namespace logging {
      * \param description Description used to initialise the VariableGroup.
      * \param tag A tag that is used to identify the Logger by the LoggingModule.
      */
-    Logger(ctk::Module* module, const std::string &name = "Logging",
-        const std::string &description = "VariableGroup added by the Logger",
-        const std::string& tag = "Logging");
+    Logger(ctk::Module* module, const std::string& name = "Logging",
+        const std::string& description = "VariableGroup added by the Logger", const std::string& tag = "Logging");
     /** Message to be send to the logging module */
     ctk::ScalarOutput<std::string> message;
 
