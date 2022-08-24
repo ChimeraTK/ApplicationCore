@@ -10,8 +10,12 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   // Forward declarations
   class VariableNetworkNode;
+
+  /********************************************************************************************************************/
 
   /**
    * @brief A helper class to replace the output stream temporarily
@@ -40,6 +44,8 @@ namespace ChimeraTK {
    private:
     std::list<std::reference_wrapper<std::ostream>> _streamStack;
   };
+
+  /********************************************************************************************************************/
 
   /**
    * @brief The VariableNetworkNodeDumpingVisitor class
@@ -73,5 +79,7 @@ namespace ChimeraTK {
    private:
     std::string _separator;
   };
+
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK

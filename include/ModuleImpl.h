@@ -17,25 +17,19 @@ namespace ChimeraTK {
    public:
     // constructor inheritances does not work due to a gcc bug!?
     ModuleImpl(EntityOwner* owner, const std::string& name, const std::string& description,
-        HierarchyModifier hierarchyModifier = HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
-    : Module(owner, name, description, hierarchyModifier, tags) {}
+        HierarchyModifier hierarchyModifier = HierarchyModifier::none,
+        const std::unordered_set<std::string>& tags = {});
 
     ModuleImpl(EntityOwner* owner, const std::string& name, const std::string& description, bool eliminateHierarchy,
-        const std::unordered_set<std::string>& tags = {})
-    : Module(owner, name, description, eliminateHierarchy, tags) {}
+        const std::unordered_set<std::string>& tags = {});
 
-    ModuleImpl() : Module() {}
+    ModuleImpl() = default;
 
     /** Move constructor */
     ModuleImpl(ModuleImpl&& other) { operator=(std::move(other)); }
 
     /** Move assignment operator */
-    ModuleImpl& operator=(ModuleImpl&& other) {
-      if(other.virtualisedModule_isValid) virtualisedModule = other.virtualisedModule;
-      virtualisedModule_isValid = other.virtualisedModule_isValid;
-      Module::operator=(std::forward<ModuleImpl>(other));
-      return *this;
-    }
+    ModuleImpl& operator=(ModuleImpl&& other);
 
     VariableNetworkNode operator()(const std::string& variableName) const override;
 

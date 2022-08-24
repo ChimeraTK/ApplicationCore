@@ -41,6 +41,15 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  ApplicationModule& ApplicationModule::operator=(ApplicationModule&& other) {
+    assert(!moduleThread.joinable()); // if the thread is already running,
+                                      // moving is no longer allowed!
+    ModuleImpl::operator=(std::move(other));
+    return *this;
+  }
+
+  /*********************************************************************************************************************/
+
   void ApplicationModule::run() {
     // start the module thread
     assert(!moduleThread.joinable());
@@ -73,6 +82,12 @@ namespace ChimeraTK {
 
   ApplicationModule::~ApplicationModule() {
     assert(!moduleThread.joinable());
+  }
+
+  /*********************************************************************************************************************/
+
+  void ApplicationModule::setCurrentVersionNumber(VersionNumber versionNumber) {
+    if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
   }
 
   /*********************************************************************************************************************/

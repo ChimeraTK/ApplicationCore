@@ -6,8 +6,12 @@
 
 namespace ChimeraTK {
 
+  /*********************************************************************************************************************/
+
   VariableNetworkDumpingVisitor::VariableNetworkDumpingVisitor(const std::string& prefix, std::ostream& stream)
   : Visitor<ChimeraTK::VariableNetwork>(), VariableNetworkNodeDumpingVisitor(stream, " "), _prefix(prefix) {}
+
+  /*********************************************************************************************************************/
 
   void VariableNetworkDumpingVisitor::dispatch(const VariableNetwork& t) {
     stream() << _prefix << "VariableNetwork";
@@ -48,5 +52,7 @@ namespace ChimeraTK {
     }
     stream() << _prefix << "}" << std::endl;
   }
+
+  /*********************************************************************************************************************/
 
 } // namespace ChimeraTK

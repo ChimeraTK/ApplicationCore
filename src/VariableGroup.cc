@@ -7,6 +7,8 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   VariableGroup::VariableGroup(EntityOwner* owner, const std::string& name, const std::string& description,
       HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
   : ModuleImpl(owner, name, description, hierarchyModifier, tags) {
@@ -17,6 +19,8 @@ namespace ChimeraTK {
     }
   }
 
+  /********************************************************************************************************************/
+
   VariableGroup::VariableGroup(EntityOwner* owner, const std::string& name, const std::string& description,
       bool eliminateHierarchy, const std::unordered_set<std::string>& tags)
   : ModuleImpl(owner, name, description, eliminateHierarchy, tags) {
@@ -26,5 +30,14 @@ namespace ChimeraTK {
                                    "other VariableGroups!");
     }
   }
+
+  /********************************************************************************************************************/
+
+  VariableGroup& VariableGroup::operator=(VariableGroup&& other) {
+    ModuleImpl::operator=(std::move(other));
+    return *this;
+  }
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

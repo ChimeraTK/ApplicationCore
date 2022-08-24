@@ -16,31 +16,20 @@ constexpr useconds_t DeviceOpenTimeout = 500;
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   /** InternalModule which waits for a trigger, then reads a number of variables
    * and distributes each of them to any number of slaves. */
   class TriggerFanOut : public InternalModule {
    public:
     TriggerFanOut(const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl, DeviceModule& deviceModule,
-        VariableNetwork& network)
-    : externalTrigger(externalTriggerImpl), _deviceModule(deviceModule), _network(network) {}
+        VariableNetwork& network);
 
-    ~TriggerFanOut() { deactivate(); }
+    ~TriggerFanOut();
 
-    void activate() override {
-      assert(!_thread.joinable());
-      _thread = boost::thread([this] { this->run(); });
-    }
+    void activate() override;
 
-    void deactivate() override {
-      if(_thread.joinable()) {
-        _thread.interrupt();
-        if(externalTrigger->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
-          externalTrigger->interrupt();
-        }
-        _thread.join();
-      }
-      assert(!_thread.joinable());
-    }
+    void deactivate() override;
 
     /** Add a new network the TriggerFanOut. The network is defined by its feeding
      * node. This function will return the corresponding FeedingFanOut, to which
@@ -48,89 +37,13 @@ namespace ChimeraTK {
     template<typename UserType>
     boost::shared_ptr<FeedingFanOut<UserType>> addNetwork(
         boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingNode,
-        ConsumerImplementationPairs<UserType> const& consumerImplementationPairs) {
-      assert(feedingNode.get() != nullptr);
-      transferGroup.addAccessor(feedingNode);
-      auto feedingFanOut = boost::make_shared<FeedingFanOut<UserType>>(feedingNode->getName(), feedingNode->getUnit(),
-          feedingNode->getDescription(), feedingNode->getNumberOfSamples(),
-          false, // in TriggerFanOuts we cannot have return channels
-          consumerImplementationPairs);
-      boost::fusion::at_key<UserType>(fanOutMap.table)[feedingNode] = feedingFanOut;
-      return feedingFanOut;
-    }
+        ConsumerImplementationPairs<UserType> const& consumerImplementationPairs);
 
     /** Synchronise feeder and the consumers. This function is executed in the
      * separate thread. */
-    void run() {
-      Application::registerThread("TrFO" + externalTrigger->getName());
-      Application::testableModeLock("start");
-      testableModeReached = true;
-
-      ChimeraTK::VersionNumber version = Application::getInstance().getStartVersion();
-
-      // Wait for the initial value of the trigger. There always will be one, and if we don't read it here we would
-      // trigger the loop twice.
-      externalTrigger->read();
-      version = externalTrigger->getVersionNumber();
-
-      // Wait until the device has been initialised for the first time. This means it
-      // has been opened, and the check in TransferGroup::read() will not throw a logic_error
-      // We don't have to store the lock. Just need it as a synchronisation point.
-      // But we have to increase the testable mode counter because we don't want to fall out of testable mode at this
-      // point already.
-      if(Application::getInstance().testableMode) ++Application::getInstance().testableMode_deviceInitialisationCounter;
-      Application::testableModeUnlock("WaitInitialValueLock");
-      (void)_deviceModule.waitForInitialValues();
-      Application::testableModeLock("Enter while loop");
-      if(Application::getInstance().testableMode) --Application::getInstance().testableMode_deviceInitialisationCounter;
-
-      while(true) {
-        transferGroup.read();
-        // send the version number to the consumers
-        boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, externalTrigger->dataValidity()));
-
-        // wait for external trigger
-        boost::this_thread::interruption_point();
-        Profiler::stopMeasurement();
-        externalTrigger->read();
-        Profiler::startMeasurement();
-        boost::this_thread::interruption_point();
-        version = externalTrigger->getVersionNumber();
-      }
-    }
+    void run();
 
    protected:
-    /** Functor class to send data to the consumers, suitable for
-     * boost::fusion::for_each(). */
-    struct SendDataToConsumers {
-      SendDataToConsumers(VersionNumber version, DataValidity triggerValidity)
-      : _version(version), _triggerValidity(triggerValidity) {}
-
-      template<typename PAIR>
-      void operator()(PAIR& pair) const {
-        auto theMap = pair.second; // map of feeder to FeedingFanOut (i.e. part of
-                                   // the fanOutMap)
-
-        // iterate over all feeder/FeedingFanOut pairs
-        for(auto& network : theMap) {
-          auto feeder = network.first;
-          auto fanOut = network.second;
-          fanOut->setDataValidity((_triggerValidity == DataValidity::ok && feeder->dataValidity() == DataValidity::ok) ?
-                  DataValidity::ok :
-                  DataValidity::faulty);
-          fanOut->accessChannel(0).swap(feeder->accessChannel(0));
-          // don't use write destructively. In case of an exception we still need the data for the next read (see
-          // Exception Handling spec B.2.2.6)
-          bool dataLoss = fanOut->write(_version);
-          if(dataLoss) Application::incrementDataLossCounter(fanOut->getName());
-          // swap the data back to the feeder so we have a valid copy there.
-          fanOut->accessChannel(0).swap(feeder->accessChannel(0));
-        }
-      }
-
-      VersionNumber _version;
-      DataValidity _triggerValidity;
-    };
 
     /** TransferElement acting as our trigger */
     boost::shared_ptr<ChimeraTK::TransferElement> externalTrigger;
@@ -154,5 +67,24 @@ namespace ChimeraTK {
     /** Reference to VariableNetwork which is being realised by this FanOut. **/
     VariableNetwork& _network;
   };
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  boost::shared_ptr<FeedingFanOut<UserType>> TriggerFanOut::addNetwork(
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingNode,
+      ConsumerImplementationPairs<UserType> const& consumerImplementationPairs) {
+    assert(feedingNode.get() != nullptr);
+    transferGroup.addAccessor(feedingNode);
+    auto feedingFanOut = boost::make_shared<FeedingFanOut<UserType>>(feedingNode->getName(), feedingNode->getUnit(),
+        feedingNode->getDescription(), feedingNode->getNumberOfSamples(),
+        false, // in TriggerFanOuts we cannot have return channels
+        consumerImplementationPairs);
+    boost::fusion::at_key<UserType>(fanOutMap.table)[feedingNode] = feedingFanOut;
+    return feedingFanOut;
+  }
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

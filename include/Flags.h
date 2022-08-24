@@ -4,6 +4,8 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   /** Struct to define the direction of variables. The main direction is defined
    * with an enum. In addition the presence of a return channel is specified. */
   struct VariableDirection {
@@ -21,11 +23,17 @@ namespace ChimeraTK {
     bool operator!=(const VariableDirection& other) const { return !operator==(other); }
   };
 
+  /********************************************************************************************************************/
+
   /** Enum to define the update mode of variables. */
   enum class UpdateMode { poll, push, invalid };
 
+  /********************************************************************************************************************/
+
   /** Enum to define types of VariableNetworkNode */
   enum class NodeType { Device, ControlSystem, Application, TriggerReceiver, TriggerProvider, Constant, invalid };
+
+  /********************************************************************************************************************/
 
   /** Hierarchy modifier: specify if and how the module hierarchy should be modified in EntityOwner::findTag() etc. */
   enum class HierarchyModifier {
@@ -43,6 +51,8 @@ namespace ChimeraTK {
     ///< inside an application.
   };
 
+  /********************************************************************************************************************/
+
   /** Enum to define the life-cycle states of an Application. */
   enum class LifeCycleState {
     initialisation, ///< Initialisation phase including ApplicationModule::prepare(). Single threaded operation. All
@@ -52,5 +62,7 @@ namespace ChimeraTK {
     ///< after this point.
     shutdown ///< The application is in the process of shutting down.
   };
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

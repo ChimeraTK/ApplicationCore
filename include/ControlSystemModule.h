@@ -20,12 +20,7 @@ namespace ChimeraTK {
     ControlSystemModule(ControlSystemModule&& other) { operator=(std::move(other)); }
 
     /** Move assignment */
-    ControlSystemModule& operator=(ControlSystemModule&& other) {
-      Module::operator=(std::move(other));
-      variableNamePrefix = std::move(other.variableNamePrefix);
-      subModules = std::move(other.subModules);
-      return *this;
-    }
+    ControlSystemModule& operator=(ControlSystemModule&& other);
 
     /** The function call operator returns a VariableNetworkNode which can be used
      * in the Application::initialise() function to connect the control system

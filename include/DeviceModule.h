@@ -31,18 +31,24 @@ namespace ChimeraTK {
   namespace detail {
     struct DeviceModuleProxy : Module {
       DeviceModuleProxy(const DeviceModule& owner, const std::string& registerNamePrefix);
+
       DeviceModuleProxy(DeviceModuleProxy&& other);
-      DeviceModuleProxy() {}
+
+      DeviceModuleProxy() = default;
 
       VariableNetworkNode operator()(const std::string& registerName, UpdateMode mode,
           const std::type_info& valueType = typeid(AnyType), size_t nElements = 0) const;
+
       VariableNetworkNode operator()(const std::string& registerName, const std::type_info& valueType,
           size_t nElements = 0, UpdateMode mode = UpdateMode::poll) const;
+
       VariableNetworkNode operator()(const std::string& variableName) const override;
       Module& operator[](const std::string& moduleName) const override;
 
       const Module& virtualise() const override;
+
       void connectTo(const Module& target, VariableNetworkNode trigger = {}) const override;
+
       ModuleType getModuleType() const override { return ModuleType::Device; }
 
       DeviceModuleProxy& operator=(DeviceModuleProxy&& other);
@@ -82,34 +88,18 @@ namespace ChimeraTK {
     DeviceModule(DeviceModule&& other) { operator=(std::move(other)); }
 
     /** Move assignment */
-    DeviceModule& operator=(DeviceModule&& other) {
-      assert(!moduleThread.joinable());
-      assert(other.isHoldingInitialValueLatch);
-      if(owner) owner->unregisterDeviceModule(this);
-      Module::operator=(std::move(other));
-      device = std::move(other.device);
-      deviceAliasOrURI = std::move(other.deviceAliasOrURI);
-      registerNamePrefix = std::move(other.registerNamePrefix);
-      deviceError = std::move(other.deviceError);
-      owner = other.owner;
-      proxies = std::move(other.proxies);
-      deviceHasError = other.deviceHasError;
-      for(auto& proxy : proxies) proxy.second._myowner = this;
-      owner->registerDeviceModule(this);
-      return *this;
-    }
+    DeviceModule& operator=(DeviceModule&& other);
+
     /** The subscript operator returns a VariableNetworkNode which can be used in
      * the Application::initialise()
      *  function to connect the register with another variable. */
     VariableNetworkNode operator()(const std::string& registerName, UpdateMode mode,
         const std::type_info& valueType = typeid(AnyType), size_t nElements = 0) const;
+
     VariableNetworkNode operator()(const std::string& registerName, const std::type_info& valueType,
-        size_t nElements = 0, UpdateMode mode = UpdateMode::poll) const {
-      return operator()(registerName, mode, valueType, nElements);
-    }
-    VariableNetworkNode operator()(const std::string& variableName) const override {
-      return operator()(variableName, UpdateMode::poll);
-    }
+        size_t nElements = 0, UpdateMode mode = UpdateMode::poll) const;
+
+    VariableNetworkNode operator()(const std::string& variableName) const override;
 
     Module& operator[](const std::string& moduleName) const override;
 
@@ -133,9 +123,7 @@ namespace ChimeraTK {
 
     VersionNumber getCurrentVersionNumber() const override { return currentVersionNumber; }
 
-    void setCurrentVersionNumber(VersionNumber versionNumber) override {
-      if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
-    }
+    void setCurrentVersionNumber(VersionNumber versionNumber) override;
 
     VersionNumber currentVersionNumber{nullptr};
 
@@ -145,14 +133,10 @@ namespace ChimeraTK {
     mutable Device device;
 
     DataValidity getDataValidity() const override { return DataValidity::ok; }
-    void incrementDataFaultCounter() override {
-      throw ChimeraTK::logic_error("incrementDataFaultCounter() called on a DeviceModule. This is probably "
-                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
-    }
-    void decrementDataFaultCounter() override {
-      throw ChimeraTK::logic_error("decrementDataFaultCounter() called on a DeviceModule. This is probably "
-                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
-    }
+
+    void incrementDataFaultCounter() override;
+
+    void decrementDataFaultCounter() override;
 
     /** Add initialisation handlers to the device.
      *

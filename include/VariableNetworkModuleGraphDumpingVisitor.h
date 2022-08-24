@@ -9,11 +9,14 @@
 
 namespace ChimeraTK {
 
-  // Forward Declarations
+  /*********************************************************************************************************************/
 
+  // Forward Declarations
   class Application;
   class VariableNetwork;
   class Module;
+
+  /*********************************************************************************************************************/
 
   /**
    * @brief The VariableNetworkModuleGraphDumpingVisitor class
@@ -37,5 +40,7 @@ namespace ChimeraTK {
     std::map<std::string, std::pair<std::string, bool>> _edgeMap;
     std::list<std::string> _deviceList;
   };
+
+  /*********************************************************************************************************************/
 
 } // namespace ChimeraTK

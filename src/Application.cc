@@ -61,6 +61,48 @@ void Application::defineConnections() {
 
 /*********************************************************************************************************************/
 
+void Application::enableTestableMode() {
+  threadName() = "TEST THREAD";
+  testableMode = true;
+  testableModeLock("enableTestableMode");
+}
+
+/*********************************************************************************************************************/
+
+bool Application::testableModeTestLock() {
+  if(!getInstance().testableMode) return false;
+  return getTestableModeLockObject().owns_lock();
+}
+
+/*********************************************************************************************************************/
+
+void Application::registerThread(const std::string& name) {
+  Application::getInstance().setThreadName(name);
+  Profiler::registerThread(name);
+  pthread_setname_np(pthread_self(), name.substr(0, std::min<std::string::size_type>(name.length(), 15)).c_str());
+}
+
+/*********************************************************************************************************************/
+
+void Application::incrementDataLossCounter(const std::string& name) {
+  if(getInstance().debugDataLoss) {
+    std::cout << "Data loss in variable " << name << std::endl;
+  }
+  getInstance().dataLossCounter++;
+}
+
+/*********************************************************************************************************************/
+
+size_t Application::getAndResetDataLossCounter() {
+  size_t counter = getInstance().dataLossCounter.load(std::memory_order_relaxed);
+  while(!getInstance().dataLossCounter.compare_exchange_weak(
+      counter, 0, std::memory_order_release, std::memory_order_relaxed)) {
+  }
+  return counter;
+}
+
+/*********************************************************************************************************************/
+
 void Application::initialise() {
   if(initialiseCalled) {
     throw ChimeraTK::logic_error("Application::initialise() was already called before.");

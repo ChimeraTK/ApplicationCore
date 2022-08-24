@@ -83,11 +83,7 @@ namespace ChimeraTK {
     void accept(Visitor<VariableNetwork>& visitor) const;
 
     /** Compare two networks */
-    bool operator==(const VariableNetwork& other) const {
-      if(other.valueType != valueType) return false;
-      if(other.nodeList != nodeList) return false;
-      return true;
-    }
+    bool operator==(const VariableNetwork& other) const;
     bool operator!=(const VariableNetwork& other) const { return !operator==(other); }
 
     /** Return the trigger type. This function will also do some checking if the

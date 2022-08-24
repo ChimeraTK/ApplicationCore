@@ -339,4 +339,15 @@ namespace ChimeraTK {
 
     return true;
   }
+
+  /*********************************************************************************************************************/
+
+  bool VariableNetwork::operator==(const VariableNetwork& other) const {
+    if(other.valueType != valueType) return false;
+    if(other.nodeList != nodeList) return false;
+    return true;
+  }
+
+  /*********************************************************************************************************************/
+
 } // namespace ChimeraTK
