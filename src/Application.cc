@@ -5,33 +5,35 @@
  *      Author: Martin Hierholzer
  */
 
-#include <exception>
-#include <fstream>
-#include <string>
-#include <thread>
-
-#include <boost/fusion/container/map.hpp>
-#include <ChimeraTK/BackendFactory.h>
-
 #include "Application.h"
+
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
 #include "ConstantAccessor.h"
 #include "ConsumingFanOut.h"
 #include "DebugPrintAccessorDecorator.h"
 #include "DeviceModule.h"
+#include "ExceptionHandlingDecorator.h"
 #include "FeedingFanOut.h"
 #include "ScalarAccessor.h"
-#include "VoidAccessor.h"
 #include "TestableModeAccessorDecorator.h"
 #include "ThreadedFanOut.h"
 #include "TriggerFanOut.h"
-#include "VariableNetworkModuleGraphDumpingVisitor.h"
 #include "VariableNetworkGraphDumpingVisitor.h"
+#include "VariableNetworkModuleGraphDumpingVisitor.h"
 #include "VariableNetworkNode.h"
 #include "Visitor.h"
+#include "VoidAccessor.h"
 #include "XMLGeneratorVisitor.h"
-#include "ExceptionHandlingDecorator.h"
+
+#include <ChimeraTK/BackendFactory.h>
+
+#include <boost/fusion/container/map.hpp>
+
+#include <exception>
+#include <fstream>
+#include <string>
+#include <thread>
 
 using namespace ChimeraTK;
 
@@ -1161,7 +1163,8 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           impl->write();
         }
         else if(consumer.getType() == NodeType::Device) {
-          // we register the required accessor as a recovery accessor. This is just a bare RegisterAccessor without any decorations directly from the backend.
+          // we register the required accessor as a recovery accessor. This is just a bare RegisterAccessor without any
+          // decorations directly from the backend.
           if(deviceMap.count(consumer.getDeviceAlias()) == 0) {
             deviceMap[consumer.getDeviceAlias()] =
                 ChimeraTK::BackendFactory::getInstance().createBackend(consumer.getDeviceAlias());
@@ -1173,9 +1176,10 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           assert(deviceModuleMap.find(consumer.getDeviceAlias()) != deviceModuleMap.end());
           DeviceModule* devmod = deviceModuleMap[consumer.getDeviceAlias()];
 
-          // The accessor implementation already has its data in the user buffer. We now just have to add a valid version number
-          // and have a recovery accessors (RecoveryHelper to be excact) which we can register at the DeviceModule.
-          // As this is a constant we don't need to change it later and don't have to store it somewere else.
+          // The accessor implementation already has its data in the user buffer. We now just have to add a valid
+          // version number and have a recovery accessors (RecoveryHelper to be excact) which we can register at the
+          // DeviceModule. As this is a constant we don't need to change it later and don't have to store it somewere
+          // else.
           devmod->addRecoveryAccessor(boost::make_shared<RecoveryHelper>(impl, VersionNumber(), devmod->writeOrder()));
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {

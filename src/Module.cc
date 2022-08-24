@@ -6,10 +6,11 @@
  */
 
 #include "Module.h"
+
 #include "Application.h"
-#include "VirtualModule.h"
 #include "ApplicationModule.h"
 #include "DeviceModule.h"
+#include "VirtualModule.h"
 
 namespace ChimeraTK {
 
@@ -178,7 +179,7 @@ namespace ChimeraTK {
 
   Module& Module::submodule(std::string_view moduleName) {
     // According to Scott Meyers "Effective C++", the const cast is fine here
-    return const_cast<Module &>(static_cast<const Module &>(*this).submodule(moduleName));
+    return const_cast<Module&>(static_cast<const Module&>(*this).submodule(moduleName));
   }
 
   /*********************************************************************************************************************/

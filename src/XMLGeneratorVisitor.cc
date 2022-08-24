@@ -1,11 +1,11 @@
-#include "Application.h"
-#include "VariableNetworkNode.h"
-#include "VariableGroup.h"
-
 #include "XMLGeneratorVisitor.h"
 
-#include <ChimeraTK/RegisterPath.h>
+#include "Application.h"
+#include "VariableGroup.h"
+#include "VariableNetworkNode.h"
 #include <libxml++/libxml++.h>
+
+#include <ChimeraTK/RegisterPath.h>
 
 #include <cassert>
 #include <cxxabi.h>
@@ -15,7 +15,9 @@ namespace ChimeraTK {
   : Visitor<ChimeraTK::Application, ChimeraTK::VariableNetworkNode>(), _doc(std::make_shared<xmlpp::Document>()),
     _rootElement(_doc->create_root_node("application", "https://github.com/ChimeraTK/ApplicationCore")) {}
 
-  void XMLGeneratorVisitor::save(const std::string& fileName) { _doc->write_to_file_formatted(fileName); }
+  void XMLGeneratorVisitor::save(const std::string& fileName) {
+    _doc->write_to_file_formatted(fileName);
+  }
 
   void XMLGeneratorVisitor::dispatch(const Application& app) {
     _rootElement->set_attribute("name", app.getName());

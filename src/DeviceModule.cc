@@ -5,12 +5,13 @@
  *      Author: Martin Hierholzer
  */
 
-#include <ChimeraTK/DeviceBackend.h>
+#include "DeviceModule.h"
 
 #include "Application.h"
-#include "DeviceModule.h"
-#include "ModuleGroup.h"
 #include "HierarchyModifyingGroup.h"
+#include "ModuleGroup.h"
+
+#include <ChimeraTK/DeviceBackend.h>
 
 namespace ChimeraTK {
 
@@ -104,7 +105,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  const Module& DeviceModule::virtualise() const { return *this; }
+  const Module& DeviceModule::virtualise() const {
+    return *this;
+  }
 
   /*********************************************************************************************************************/
 
@@ -244,8 +247,8 @@ namespace ChimeraTK {
     // The error queue must only be modified when holding both mutexes (error mutex and testable mode mutex), because
     // the testable mode counter must always be consistent with the content of the queue.
     // To avoid deadlocks you must always first aquire the testable mode mutex if you need both.
-    // You can hold the error mutex without holding the testable mode mutex (for instance for checking the error predicate),
-    // but then you must not try to aquire the testable mode mutex!
+    // You can hold the error mutex without holding the testable mode mutex (for instance for checking the error
+    // predicate), but then you must not try to aquire the testable mode mutex!
     boost::unique_lock<boost::shared_mutex> errorLock(errorMutex);
 
     if(!deviceHasError) { // only report new errors if the device does not have reported errors already
@@ -276,7 +279,8 @@ namespace ChimeraTK {
     std::string error;
     owner->testableModeLock("Startup");
 
-    // We have the testable mode lock. The device has not been initialised yet, but from now on the testableMode_deviceInitialisationCounter will take care or it
+    // We have the testable mode lock. The device has not been initialised yet, but from now on the
+    // testableMode_deviceInitialisationCounter will take care or it
     testableModeReached = true;
 
     // flag whether the devices was opened+initialised for the first time
@@ -348,7 +352,8 @@ namespace ChimeraTK {
       }
 
       // Write all recovery accessors
-      // We are now entering the critical recovery section. It is protected by the recovery mutex until the deviceHasError flag has been cleared.
+      // We are now entering the critical recovery section. It is protected by the recovery mutex until the
+      // deviceHasError flag has been cleared.
       boost::unique_lock<boost::shared_mutex> recoveryLock(recoveryMutex);
       try {
         // sort recovery helpers according to write order
@@ -521,7 +526,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  uint64_t DeviceModule::writeOrder() { return ++writeOrderCounter; }
+  uint64_t DeviceModule::writeOrder() {
+    return ++writeOrderCounter;
+  }
 
   /*********************************************************************************************************************/
 
@@ -531,7 +538,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void DeviceModule::waitForInitialValues() { initialValueLatch.wait(); }
+  void DeviceModule::waitForInitialValues() {
+    initialValueLatch.wait();
+  }
 
   /*********************************************************************************************************************/
   /*********************************************************************************************************************/

@@ -8,16 +8,16 @@
 #ifndef CHIMERATK_TEST_FACILITY
 #define CHIMERATK_TEST_FACILITY
 
-#include <boost/fusion/include/at_key.hpp>
+#include "Application.h"
+#include "DeviceModule.h"
+#include "TestableModeAccessorDecorator.h"
 
 #include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
 #include <ChimeraTK/OneDRegisterAccessor.h>
 #include <ChimeraTK/ScalarRegisterAccessor.h>
 #include <ChimeraTK/VoidRegisterAccessor.h>
 
-#include "Application.h"
-#include "DeviceModule.h"
-#include "TestableModeAccessorDecorator.h"
+#include <boost/fusion/include/at_key.hpp>
 
 namespace ChimeraTK {
 

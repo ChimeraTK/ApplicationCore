@@ -3,19 +3,19 @@
 #define BOOST_TEST_MODULE testDeviceInitialisationHandler
 
 //#include <boost/mpl/list.hpp>
-#include <boost/test/included/unit_test.hpp>
-
 #include "Application.h"
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
+
+#include <boost/test/included/unit_test.hpp>
 //#include "ScalarAccessor.h"
+#include "check_timeout.h"
 #include "TestFacility.h"
 
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
-#include <stdlib.h>
 
-#include "check_timeout.h"
+#include <stdlib.h>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   app.dev.connectTo(app.cs);
   ctk::TestFacility test;
   test.runApplication();
-  //app.dumpConnections();
+  // app.dumpConnections();
   ctk::Device dummy;
   dummy.open(deviceCDD);
 
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
   app.dev.connectTo(app.cs);
   ctk::TestFacility test;
   test.runApplication();
-  //app.dumpConnections();
+  // app.dumpConnections();
 
   auto deviceStatus = test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status");
 
@@ -173,11 +173,11 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   ctk::Device dummy;
   dummy.open(deviceCDD);
 
-  // We cannot use runApplication because the DeviceModule leaves the testable mode without variables in the queue, but has not finished error handling yet.
-  // In this special case we cannot make the programme continue, because stepApplication only works if the queues are not empty.
-  // We have to work with timeouts here (until someone comes up with a better idea)
+  // We cannot use runApplication because the DeviceModule leaves the testable mode without variables in the queue, but
+  // has not finished error handling yet. In this special case we cannot make the programme continue, because stepApplication
+  // only works if the queues are not empty. We have to work with timeouts here (until someone comes up with a better idea)
   app.run();
-  //app.dumpConnections();
+  // app.dumpConnections();
 
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 30000);
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "status_message"),
@@ -226,7 +226,8 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   // First we see the message from the failing write
   BOOST_CHECK(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "status_message") != "");
   dummyBackend->throwExceptionWrite = false;
-  // Afterwards we see a message from the failing initialisation (which we can now distinguish from the original write exception because write does not throw any more)
+  // Afterwards we see a message from the failing initialisation (which we can now distinguish from the original write
+  // exception because write does not throw any more)
   CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "status_message"),
       exceptionMessage, 10000);
 

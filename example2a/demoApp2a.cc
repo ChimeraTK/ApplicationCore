@@ -1,7 +1,7 @@
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/ConfigReader.h>
-#include <ChimeraTK/ApplicationCore/PeriodicTrigger.h>
 #include <ChimeraTK/ApplicationCore/EnableXMLGenerator.h>
+#include <ChimeraTK/ApplicationCore/PeriodicTrigger.h>
 
 namespace ctk = ChimeraTK;
 

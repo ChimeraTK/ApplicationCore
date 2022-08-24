@@ -8,12 +8,12 @@
 #ifndef CHIMERATK_THREADED_FAN_OUT_H
 #define CHIMERATK_THREADED_FAN_OUT_H
 
-#include <ChimeraTK/NDRegisterAccessor.h>
-#include <ChimeraTK/ReadAnyGroup.h>
-
 #include "Application.h"
 #include "FanOut.h"
 #include "InternalModule.h"
+
+#include <ChimeraTK/NDRegisterAccessor.h>
+#include <ChimeraTK/ReadAnyGroup.h>
 
 namespace ChimeraTK {
 
@@ -107,8 +107,8 @@ namespace ChimeraTK {
         VariableNetwork& network, ConsumerImplementationPairs<UserType> const& consumerImplementationPairs)
     : ThreadedFanOut<UserType>(feedingImpl, network, consumerImplementationPairs) {
       for(auto el : consumerImplementationPairs) {
-        //TODO Calling a virtual in the constructor seems odd,
-        //     but works because we want this version's implementation
+        // TODO Calling a virtual in the constructor seems odd,
+        //      but works because we want this version's implementation
         addSlave(el.first, el.second);
       }
     }
@@ -121,7 +121,7 @@ namespace ChimeraTK {
         boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode& consumer) override {
       // TODO Adding slaves is currently by done by the ThreadedFanOut base class.
       //      Refactor constructors and addSlaves for all FanOuts?
-      //FanOut<UserType>::addSlave(slave, consumer);
+      // FanOut<UserType>::addSlave(slave, consumer);
       if(consumer.getDirection().withReturn) {
         assert(_returnChannelSlave == nullptr);
         _returnChannelSlave = slave;

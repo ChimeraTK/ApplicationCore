@@ -1,7 +1,8 @@
+#include "ConfigReader.h"
+
+#include "VariableGroup.h"
 #include <libxml++/libxml++.h>
 
-#include "ConfigReader.h"
-#include "VariableGroup.h"
 #include <iostream>
 
 namespace ChimeraTK {
@@ -426,7 +427,7 @@ namespace ChimeraTK {
       error("Expected 'configuration' tag instead of: " + root->get_name());
     }
 
-    //start with clean lists: parseModule accumulates elements into these.
+    // start with clean lists: parseModule accumulates elements into these.
     variableList_ = std::make_unique<VariableList>();
     arrayList_ = std::make_unique<ArrayList>();
 

@@ -8,12 +8,12 @@
 #ifndef CHIMERATK_INVERSION_OF_CONTROL_ACCESSOR_H
 #define CHIMERATK_INVERSION_OF_CONTROL_ACCESSOR_H
 
-#include <string>
+#include "Module.h"
+#include "VariableNetworkNode.h"
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 
-#include "Module.h"
-#include "VariableNetworkNode.h"
+#include <string>
 
 namespace ChimeraTK {
 

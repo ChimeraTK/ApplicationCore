@@ -1,7 +1,9 @@
 #include "ScriptedInitialisationHandler.h"
+
 #include "DeviceModule.h"
 
 #include <boost/process.hpp>
+
 #include <functional>
 namespace bp = boost::process;
 

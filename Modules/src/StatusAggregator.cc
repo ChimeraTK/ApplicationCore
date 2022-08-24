@@ -1,6 +1,7 @@
 #include "StatusAggregator.h"
-#include "ControlSystemModule.h"
+
 #include "ConfigReader.h"
+#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 
 #include <list>

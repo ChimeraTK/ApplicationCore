@@ -1,5 +1,6 @@
 
 #include "Server.h"
+
 #include "version.h"
 
 void Server::defineConnections() {

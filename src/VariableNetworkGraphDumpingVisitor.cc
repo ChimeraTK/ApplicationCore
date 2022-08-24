@@ -1,4 +1,5 @@
 #include "VariableNetworkGraphDumpingVisitor.h"
+
 #include "Application.h"
 #include "VariableNetwork.h"
 #include "VisitorHelper.h"

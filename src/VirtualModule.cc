@@ -5,11 +5,12 @@
  *      Author: Martin Hierholzer
  */
 
-#include <ChimeraTK/TransferElement.h>
+#include "VirtualModule.h"
 
 #include "Application.h"
 #include "Module.h"
-#include "VirtualModule.h"
+
+#include <ChimeraTK/TransferElement.h>
 
 namespace ChimeraTK {
 
@@ -94,7 +95,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VirtualModule::addAccessor(VariableNetworkNode accessor) { accessorList.push_back(accessor); }
+  void VirtualModule::addAccessor(VariableNetworkNode accessor) {
+    accessorList.push_back(accessor);
+  }
 
   /*********************************************************************************************************************/
 
@@ -131,7 +134,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  const Module& VirtualModule::virtualise() const { return *this; }
+  const Module& VirtualModule::virtualise() const {
+    return *this;
+  }
 
   /*********************************************************************************************************************/
 

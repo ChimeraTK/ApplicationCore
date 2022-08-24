@@ -9,6 +9,7 @@
 #define CHIMERATK_FAN_OUT_H
 
 #include "VariableNetworkNode.h"
+
 #include <ChimeraTK/NDRegisterAccessor.h>
 
 #include <list>
@@ -69,10 +70,10 @@ namespace ChimeraTK {
     }
 
     // remove a slave identified by its consuming node from the FanOut
-    void removeSlave(const boost::shared_ptr<ChimeraTK::TransferElement> &slave) override {
+    void removeSlave(const boost::shared_ptr<ChimeraTK::TransferElement>& slave) override {
       // make sure the slave is actually currently in the list, and get it by the right typ
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave_typed;
-      for(auto &s : slaves) {
+      for(auto& s : slaves) {
         if(s == slave) {
           slave_typed = s;
           break;
@@ -82,7 +83,7 @@ namespace ChimeraTK {
 
       size_t nOld = slaves.size();
       slaves.remove(slave_typed);
-      assert(slaves.size() == nOld-1);
+      assert(slaves.size() == nOld - 1);
     }
 
     // interrupt the input and all slaves

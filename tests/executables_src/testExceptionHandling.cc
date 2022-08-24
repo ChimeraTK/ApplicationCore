@@ -1,25 +1,25 @@
 #define BOOST_TEST_MODULE testExceptionHandling
 
-#include <chrono>
-#include <cstring>
-#include <future>
-
-#include <boost/mpl/list.hpp>
+#include "Application.h"
+#include "ApplicationModule.h"
+#include "check_timeout.h"
+#include "ControlSystemModule.h"
+#include "DeviceModule.h"
+#include "fixtures.h"
+#include "ScalarAccessor.h"
+#include "TestFacility.h"
 
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/Device.h>
-#include <ChimeraTK/NDRegisterAccessor.h>
-#include <ChimeraTK/ExceptionDummyBackend.h>
 #include <ChimeraTK/DummyRegisterAccessor.h>
+#include <ChimeraTK/ExceptionDummyBackend.h>
+#include <ChimeraTK/NDRegisterAccessor.h>
 
-#include "Application.h"
-#include "ApplicationModule.h"
-#include "ControlSystemModule.h"
-#include "DeviceModule.h"
-#include "ScalarAccessor.h"
-#include "TestFacility.h"
-#include "check_timeout.h"
-#include "fixtures.h"
+#include <boost/mpl/list.hpp>
+
+#include <chrono>
+#include <cstring>
+#include <future>
 
 // this #include must come last
 #define BOOST_NO_EXCEPTIONS
@@ -74,10 +74,10 @@ BOOST_FIXTURE_TEST_CASE(B_2_1, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_2_poll \ref exceptionHandling_b_2_2_2 "B.2.2.2"
- * 
+ *
  * "The DataValidity::faulty flag resulting from the fault state is propagated once, even if the variable had the a
  * DataValidity::faulty flag already set previously for another reason."
- * 
+ *
  * TODO: Set previous fault flag through Backend, and test inside TriggerFanOut (the latter needs the first)
  */
 
@@ -115,11 +115,11 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_2_poll, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_2_push \ref exceptionHandling_b_2_2_2 "B.2.2.2"
- * 
+ *
  * "The DataValidity::faulty flag resulting from the fault state is propagated once, even if the variable had the a
  * DataValidity::faulty flag already set previously for another reason."
- * 
- * TODO: Set previous fault flag through Backend, and test inside ThreadedFanOut and TriggerFanOut (as trigger). 
+ *
+ * TODO: Set previous fault flag through Backend, and test inside ThreadedFanOut and TriggerFanOut (as trigger).
  */
 
 BOOST_FIXTURE_TEST_CASE(B_2_2_2_push, Fixture) {
@@ -155,10 +155,10 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_2_push, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_3 \ref exceptionHandling_b_2_2_3 "B.2.2.3"
- * 
+ *
  * "Read operations without AccessMode::wait_for_new_data are skipped until the device is fully recovered again (cf.
  * 3.1). The first skipped read operation will have a new VersionNumber."
- * 
+ *
  * Test directly inside ApplicationModule
  */
 BOOST_FIXTURE_TEST_CASE(B_2_2_3, Fixture) {
@@ -191,10 +191,10 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_3, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_3_TrFO \ref exceptionHandling_b_2_2_3 "B.2.2.3"
- * 
+ *
  * "Read operations without AccessMode::wait_for_new_data are skipped until the device is fully recovered again (cf.
  * 3.1). The first skipped read operation will have a new VersionNumber."
- * 
+ *
  * Test inside a TriggerFanOut. This is mainly necessary to make sure the ExceptionHandlingDecorator is used for
  * variables inside the TriggerFanOut.
  */
@@ -227,11 +227,11 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_3_TriggerFanOut, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_4_blocking \ref exceptionHandling_b_2_2_4 "B.2.2.4"
- * 
+ *
  * "Read operations with AccessMode::wait_for_new_data will be skipped once for each accessor to propagate the
  * DataValidity::faulty flag (which counts as new data, i.e. readNonBlocking()/readLatest() will return true
  * (= hasNewData), and a new VersionNumber is obtained)."
- * 
+ *
  * This test is for blocking read().
  */
 BOOST_FIXTURE_TEST_CASE(B_2_2_4_blocking, Fixture) {
@@ -255,11 +255,11 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_blocking, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_4_nonBlocking \ref exceptionHandling_b_2_2_4 "B.2.2.4"
- * 
+ *
  * "Read operations with AccessMode::wait_for_new_data will be skipped once for each accessor to propagate the
  * DataValidity::faulty flag (which counts as new data, i.e. readNonBlocking()/readLatest() will return true
  * (= hasNewData), and a new VersionNumber is obtained)."
- * 
+ *
  * This test is for readNonBlocking().
  */
 BOOST_FIXTURE_TEST_CASE(B_2_2_4_nonBlocking, Fixture) {
@@ -283,11 +283,11 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_nonBlocking, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_4_latest \ref exceptionHandling_b_2_2_4 "B.2.2.4"
- * 
+ *
  * "Read operations with AccessMode::wait_for_new_data will be skipped once for each accessor to propagate the
  * DataValidity::faulty flag (which counts as new data, i.e. readNonBlocking()/readLatest() will return true
  * (= hasNewData), and a new VersionNumber is obtained)."
- * 
+ *
  * This test is for readLatest().
  */
 BOOST_FIXTURE_TEST_CASE(B_2_2_4_latest, Fixture) {
@@ -311,11 +311,11 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_latest, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_4_ThFO \ref exceptionHandling_b_2_2_4 "B.2.2.4"
- * 
+ *
  * "Read operations with AccessMode::wait_for_new_data will be skipped once for each accessor to propagate the
  * DataValidity::faulty flag (which counts as new data, i.e. readNonBlocking()/readLatest() will return true
  * (= hasNewData), and a new VersionNumber is obtained)."
- * 
+ *
  * This test is for read() inside a ThreadedFanOut. (The ThreadedFanOut never calles the other read functions.)
  */
 BOOST_FIXTURE_TEST_CASE(B_2_2_4_ThFO, Fixture) {
@@ -347,11 +347,11 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_ThFO, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_4_TrFO \ref exceptionHandling_b_2_2_4 "B.2.2.4"
- * 
+ *
  * "Read operations with AccessMode::wait_for_new_data will be skipped once for each accessor to propagate the
  * DataValidity::faulty flag (which counts as new data, i.e. readNonBlocking()/readLatest() will return true
  * (= hasNewData), and a new VersionNumber is obtained)."
- * 
+ *
  * This test is for read() inside a TriggerFanOut on the trigger variable.
  */
 BOOST_FIXTURE_TEST_CASE(B_2_2_4_TrFO, Fixture) {
@@ -380,10 +380,10 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_TrFO, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_4_1_nonBlocking \ref exceptionHandling_b_2_2_4_1 "B.2.2.4.1"
- * 
+ *
  * [After first skipped read operation in 2.2.4, the following] "non-blocking read operations (readNonBlocking() and
  * readLatest()) are skipped and return false (= no new data), until the device is recovered".
- * 
+ *
  * This test is for readNonBlocking().
  */
 BOOST_FIXTURE_TEST_CASE(B_2_2_4_1_nonBlocking, Fixture) {
@@ -412,10 +412,10 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_1_nonBlocking, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_4_1_latest \ref exceptionHandling_b_2_2_4_1 "B.2.2.4.1"
- * 
+ *
  * [After first skipped read operation in 2.2.4, the following] "non-blocking read operations (readNonBlocking() and
  * readLatest()) are skipped and return false (= no new data), until the device is recovered".
- * 
+ *
  * This test is for readLatest().
  */
 BOOST_FIXTURE_TEST_CASE(B_2_2_4_1_latest, Fixture) {
@@ -444,7 +444,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_1_latest, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_4_2 \ref exceptionHandling_b_2_2_4_2 "B.2.2.4.2"
- * 
+ *
  * [After first skipped read operation in 2.2.4, the following] "blocking read operations (read()) will be frozen until
  * the device is recovered."
  */
@@ -474,7 +474,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_2, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_4_3 \ref exceptionHandling_b_2_2_4_3 "B.2.2.4.3"
- * 
+ *
  * "After the device is fully recovered (cf. 3.1), the current value is (synchronously) read from the device. This is
  * the first value received by the accessor after an exception."
  */
@@ -507,7 +507,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_3, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_5 \ref exceptionHandling_b_2_2_5 "B.2.2.5"
- * 
+ *
  * "The VersionNumbers returned in case of an exception are the same for the same exception, even across variables and
  * modules. It will be generated in the moment the exception is reported."
  */
@@ -535,7 +535,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_5, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_2_6 \ref exceptionHandling_b_2_2_6 "B.2.2.6"
- * 
+ *
  * "The data buffer is not updated. This guarantees that the data buffer stays on the last known value if the user code
  * has not modified it since the last read."
  */
@@ -572,11 +572,11 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_6, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_3_3 \ref exceptionHandling_b_2_3_3 "B.2.3.3"
- * 
+ *
  * "The return value of write() indicates whether data was lost in the transfer. If the write has to be delayed due to
  * an exception, the return value will be true (= data lost) if a previously delayed and not-yet written value is
  * discarded in the process, false (= no data lost) otherwise."
-*/
+ */
 BOOST_FIXTURE_TEST_CASE(B_2_3_3, Fixture) {
   std::cout << "B_2_3_3 - return value of write" << std::endl;
 
@@ -597,10 +597,10 @@ BOOST_FIXTURE_TEST_CASE(B_2_3_3, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_3_5 \ref exceptionHandling_b_2_3_5 "B.2.3.5"
- * 
+ *
  * "It is guaranteed that the write takes place before the device is considered fully recovered again and other
  * transfers are allowed (cf. 3.1)."
-*/
+ */
 BOOST_FIXTURE_TEST_CASE(B_2_3_5, Fixture) {
   std::cout << "B_2_3_5 - write before deviceBecameFunctional" << std::endl;
 
@@ -625,10 +625,10 @@ BOOST_FIXTURE_TEST_CASE(B_2_3_5, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_2_5 \ref exceptionHandling_b_2_5 "B.2.5"
- * 
+ *
  * "TransferElement::isReadable(), TransferElement::isWriteable() and TransferElement::isReadonly() return with values
  * as if reading and writing would be allowed."
-*/
+ */
 BOOST_FIXTURE_TEST_CASE(B_2_5, Fixture) {
   std::cout << "B_2_5 - isReadable/isWriteable/isReadOnly" << std::endl;
 
@@ -650,7 +650,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_5, Fixture) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_3_1_1 \ref exceptionHandling_b_3_1_1 "B.3.1.1"
- * 
+ *
  * [The recovery procedure involves] "the execution of so-called initialisation handlers (see 3.2)."
  *
  * \anchor testExceptionHandling_b_3_2 \ref exceptionHandling_b_3_2 "B.3.2"
@@ -659,7 +659,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_5, Fixture) {
  * callback functions which will be executed when a device is opened for the first time and after a device recovers from
  * an exception, before any application-initiated transfers are executed (including delayed write transfers).
  * See DeviceModule::addInitialisationHandler()."
-*/
+ */
 BOOST_FIXTURE_TEST_CASE(B_3_1_1, Fixture_initHandlers) {
   std::cout << "B_3_1_1 - initialisation handlers" << std::endl;
 
@@ -700,11 +700,11 @@ BOOST_FIXTURE_TEST_CASE(B_3_1_1, Fixture_initHandlers) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_3_1_2 \ref exceptionHandling_b_3_1_2 "B.3.1.2"
- * 
+ *
  * [After calling the initialisation handlers are called, the recovery procedure involves] "restoring all registers that
  * have been written since the start of the application with their latest values. The register values are restored in
  * the same order they were written."
-*/
+ */
 BOOST_FIXTURE_TEST_CASE(B_2_3_2, Fixture_initHandlers) {
   std::cout << "B_3_1_2 - delayed writes" << std::endl;
 
@@ -775,10 +775,10 @@ BOOST_FIXTURE_TEST_CASE(B_2_3_2, Fixture_initHandlers) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_3_1_3 \ref exceptionHandling_b_3_1_3 "B.3.1.3"
- * 
+ *
  * [During recovery,] "the asynchronous read transfers of the device are (re-)activated by calling
  * Device::activateAsyncReads()" [after the delayed writes are executed.]
-*/
+ */
 BOOST_FIXTURE_TEST_CASE(B_3_1_3, Fixture_initHandlers) {
   std::cout << "B_3_1_3 - reactivate async reads" << std::endl;
 
@@ -809,10 +809,10 @@ BOOST_FIXTURE_TEST_CASE(B_3_1_3, Fixture_initHandlers) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_3_1_4 \ref exceptionHandling_b_3_1_4 "B.3.1.4"
- * 
+ *
  * [As last part of the recovery,] "Devices/<alias>/deviceBecameFunctional is written to inform any module subscribing
  * to this variable about the finished recovery."
-*/
+ */
 BOOST_FIXTURE_TEST_CASE(B_3_1_4, Fixture_initHandlers) {
   std::cout << "B_3_1_4 - deviceBecameFunctional" << std::endl;
 
@@ -844,10 +844,10 @@ BOOST_FIXTURE_TEST_CASE(B_3_1_4, Fixture_initHandlers) {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_4_1 \ref exceptionHandling_b_4_1 "B.4.1"
- * 
+ *
  * "Even if some devices are initially in a persisting error state, the part of the application which does not interact
  * with the faulty devices starts and works normally."
-*/
+ */
 BOOST_FIXTURE_TEST_CASE(B_4_1, Fixture_secondDeviceBroken) {
   std::cout << "B_4_1 - broken devices don't affect unrelated modules" << std::endl;
 

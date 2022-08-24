@@ -10,17 +10,19 @@
 
 #include "ControlSystemModule.h"
 #include "Module.h"
+#include "ModuleGroup.h"
+#include "RecoveryHelper.h"
 #include "ScalarAccessor.h"
+#include "StatusAccessor.h"
+#include "StatusWithMessage.h"
 #include "VariableGroup.h"
 #include "VariableNetworkNode.h"
 #include "VirtualModule.h"
-#include "RecoveryHelper.h"
+
+#include <ChimeraTK/Device.h>
 #include <ChimeraTK/ForwardDeclarations.h>
 #include <ChimeraTK/RegisterPath.h>
-#include <ChimeraTK/Device.h>
-#include "ModuleGroup.h"
-#include "StatusAccessor.h"
-#include "StatusWithMessage.h"
+
 #include <boost/thread/latch.hpp>
 
 namespace ChimeraTK {
@@ -83,9 +85,7 @@ namespace ChimeraTK {
     virtual ~DeviceModule();
 
     /** Move operation with the move constructor */
-    DeviceModule(DeviceModule&& other) {
-      operator=(std::move(other));
-    }
+    DeviceModule(DeviceModule&& other) { operator=(std::move(other)); }
 
     /** Move assignment */
     DeviceModule& operator=(DeviceModule&& other) {
@@ -168,28 +168,29 @@ namespace ChimeraTK {
      *  You can add mupltiple handlers. They are executed in the sequence in which they are registered. If a handler
      *  has been registered in the constructor, it is called first.
      *
-     *  The handler function is called from the DeviceModule thread (not from the thread with the accessor that threw the exception).
-     *  It is handed a pointer to the instance of the DeviceModule
-     *  where the handler was registered. The handler function may throw a ChimeraTK::runtime_error, so you don't have to
-     *  catch errors thrown when accessing the Device inside the handler. After a handler has thrown an exception, the
-     *  following handlers are not called. The DeviceModule will wait until the Device reports isFunctional() again and retry.
-     *  The exception is reported to other modules and the control system.
+     *  The handler function is called from the DeviceModule thread (not from the thread with the accessor that threw
+     * the exception). It is handed a pointer to the instance of the DeviceModule where the handler was registered. The
+     * handler function may throw a ChimeraTK::runtime_error, so you don't have to catch errors thrown when accessing
+     * the Device inside the handler. After a handler has thrown an exception, the following handlers are not called.
+     * The DeviceModule will wait until the Device reports isFunctional() again and retry. The exception is reported to
+     * other modules and the control system.
      *
      *  Notice: Especially in network based devices which do not hold a permanent connection, it is not always possible
-     *  to predict whether the next read()/write() will succeed. In this case the Device will always report isFunctional()
-     *  and one just has to retry. In this case the DeviceModule will start the initialisation sequence every 500 ms.
+     *  to predict whether the next read()/write() will succeed. In this case the Device will always report
+     * isFunctional() and one just has to retry. In this case the DeviceModule will start the initialisation sequence
+     * every 500 ms.
      */
     void addInitialisationHandler(std::function<void(DeviceModule*)> initialisationHandler);
 
     /** A trigger that indicated that the device just became available again an error (in contrast to the
-      *  error status which is also send when the device goes away).
-      *  The output is public so your module can connect to it and trigger re-sending of variables that
-      *  have to be send to the device again. e.g. after this has re-booted.
-      *  Attention: It is not send the first time the device is being opened. In this case the normal startup
-      *  mechanism takes care that the data is send.
-      *  Like the deviceError, it is automatically published to the control systen to ensure that there is at least one
-      *  consumer connected.
-      */
+     *  error status which is also send when the device goes away).
+     *  The output is public so your module can connect to it and trigger re-sending of variables that
+     *  have to be send to the device again. e.g. after this has re-booted.
+     *  Attention: It is not send the first time the device is being opened. In this case the normal startup
+     *  mechanism takes care that the data is send.
+     *  Like the deviceError, it is automatically published to the control systen to ensure that there is at least one
+     *  consumer connected.
+     */
     ScalarOutput<int> deviceBecameFunctional{
         this, "deviceBecameFunctional", "", ""}; // should be changed to data type void
 
@@ -207,7 +208,7 @@ namespace ChimeraTK {
      * the list DeviceModule::writeRecoveryOpen, during a recovery.*/
     boost::shared_lock<boost::shared_mutex> getRecoverySharedLock();
 
-    /** 
+    /**
      *  Wait for initial values coming from the device. This function will block until the device is opened and
      *  initialised, and initial values can be read from it.
      */
@@ -259,7 +260,7 @@ namespace ChimeraTK {
 
     /** Version number of the last exception. Only access under the error mutex. */
     VersionNumber exceptionVersionNumber = {};
-    //Intentionally not initialised with nullptr. It is propagated as long as the device is not successfully opened.
+    // Intentionally not initialised with nullptr. It is propagated as long as the device is not successfully opened.
 
     /** The error flag whether the device is functional. protected by the errorMutex. */
     bool deviceHasError{true};
@@ -319,29 +320,29 @@ namespace ChimeraTK {
   class ConnectingDeviceModule : public ModuleGroup {
    public:
     /**
-    *  Create ConnectingDeviceModule which is connected to the control system at the path of the owner.
-    *
-    *  deviceAliasOrURI: identifies the device by either the alias found in the DMAP file or directly a CDD.
-    *
-    *  triggerPath specifies a control system variable which is used as a trigger where needed.
-    *
-    *  initialisationHandler specifies a callback function to initialise the device (optional, default is none).
-    *
-    *  pathInDevice specifies a module in the device register hierarchy which should be used and connected to the
-    *  control system (optional, default is "/" which connects the entire device).
-    *
-    *  Note about typical usage: A DeviceModule constructed with this constructer is often owned by the ModuleGroup
-    *  which is using this device. The device should be a logical name mapped device so the variable hierarchy of the
-    *  ModuleGroup and the Device can be matched. The logical device may be subdivided into several parts, e.g. if
-    *  different parts of the device are used by independent ModuleGroups, or if different triggers are required. This
-    *  is possible by use of the pathInDevice prefix. To avoid the creation of multiple DeviceBackends for the same
-    *  device (which may not even be possible for some transport protocols) make sure that the device CDD is identical
-    *  for all instances (the alias name does not matter, so multiple DMAP file entires pointing to the same device
-    *  are possible if needed).
-    *
-    *  Keep in mind that mulitple DeviceModules will perform independent and asynchronous recovery procedures after
-    *  an exception, even when pointing to the same device.
-    */
+     *  Create ConnectingDeviceModule which is connected to the control system at the path of the owner.
+     *
+     *  deviceAliasOrURI: identifies the device by either the alias found in the DMAP file or directly a CDD.
+     *
+     *  triggerPath specifies a control system variable which is used as a trigger where needed.
+     *
+     *  initialisationHandler specifies a callback function to initialise the device (optional, default is none).
+     *
+     *  pathInDevice specifies a module in the device register hierarchy which should be used and connected to the
+     *  control system (optional, default is "/" which connects the entire device).
+     *
+     *  Note about typical usage: A DeviceModule constructed with this constructer is often owned by the ModuleGroup
+     *  which is using this device. The device should be a logical name mapped device so the variable hierarchy of the
+     *  ModuleGroup and the Device can be matched. The logical device may be subdivided into several parts, e.g. if
+     *  different parts of the device are used by independent ModuleGroups, or if different triggers are required. This
+     *  is possible by use of the pathInDevice prefix. To avoid the creation of multiple DeviceBackends for the same
+     *  device (which may not even be possible for some transport protocols) make sure that the device CDD is identical
+     *  for all instances (the alias name does not matter, so multiple DMAP file entires pointing to the same device
+     *  are possible if needed).
+     *
+     *  Keep in mind that mulitple DeviceModules will perform independent and asynchronous recovery procedures after
+     *  an exception, even when pointing to the same device.
+     */
     ConnectingDeviceModule(EntityOwner* owner, const std::string& deviceAliasOrCDD, const std::string& triggerPath = {},
         std::function<void(DeviceModule*)> initialisationHandler = nullptr, const std::string& pathInDevice = "/");
 

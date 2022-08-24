@@ -37,7 +37,9 @@ namespace ChimeraTK {
     _stream << "}}\", shape=record]" << std::endl;
   }
 
-  void ModuleGraphVisitor::dispatch(const Module& module) { dumpEntityOwner(static_cast<const EntityOwner&>(module)); }
+  void ModuleGraphVisitor::dispatch(const Module& module) {
+    dumpEntityOwner(static_cast<const EntityOwner&>(module));
+  }
 
   void ModuleGraphVisitor::dumpEntityOwner(const EntityOwner& module) {
     std::string myDotNode = detail::encodeDotNodeName(module.getQualifiedName());

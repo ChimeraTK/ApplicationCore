@@ -8,9 +8,9 @@
 #ifndef CHIMERATK_DEBUG_DECORATOR_REGISTER_ACCCESSOR
 #define CHIMERATK_DEBUG_DECORATOR_REGISTER_ACCCESSOR
 
-#include <ChimeraTK/NDRegisterAccessorDecorator.h>
-
 #include "Application.h"
+
+#include <ChimeraTK/NDRegisterAccessorDecorator.h>
 
 namespace ChimeraTK {
 

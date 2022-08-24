@@ -1,10 +1,10 @@
 #ifndef CHIMERATK_APPLICATION_CORE_PIPE_H
 #define CHIMERATK_APPLICATION_CORE_PIPE_H
 
+#include "ApplicationCore.h"
+
 #include <cmath>
 #include <limits>
-
-#include "ApplicationCore.h"
 
 namespace ChimeraTK {
 

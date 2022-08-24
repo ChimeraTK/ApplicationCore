@@ -30,7 +30,7 @@ For more info see \ref statusmonitordoc
 /** Generic modules for status monitoring.
  * Each module monitors an input variable and depending upon the
  * conditions reports four different states.
-*/
+ */
 #include "ApplicationCore.h"
 #include "StatusAccessor.h"
 
@@ -42,7 +42,7 @@ namespace ChimeraTK {
    *  type of the variable to be monitored. A non-template base class
    *  facilitates checking for the type in the StatusAggregator, which
    *  needs to identify any StatusMonitor.
-   *  
+   *
    *  FIXME This distinction between StatusMonitorImpl and StatusMonitor is no longer required. Merge the classes!
    */
   struct StatusMonitor : ApplicationModule {
@@ -66,7 +66,8 @@ namespace ChimeraTK {
     StatusOutput status;
 
     /** Disable the monitor. The status will always be OFF. You don't have to connect this input.
-     *  When there is no feeder, ApplicationCore will connect it to a constant feeder with value 0, hence the monitor is always enabled.
+     *  When there is no feeder, ApplicationCore will connect it to a constant feeder with value 0, hence the monitor is
+     * always enabled.
      */
     ScalarPushInput<int> disable{this, "disable", "", "Disable the status monitor"};
   };
@@ -170,24 +171,24 @@ namespace ChimeraTK {
   };
 
   /** Module for status monitoring depending on range of threshold values.
- * As long as a monitored value is in the range defined by user it goes
- * to fault or warning state. If the monitored value exceeds the upper limmit
- * or goes under the lowerthreshold the state reported will be always OK.
- * IMPORTANT: This module does not check for ill logic, so make sure to
- * set the ranges correctly to issue warning or fault.
- */
+   * As long as a monitored value is in the range defined by user it goes
+   * to fault or warning state. If the monitored value exceeds the upper limmit
+   * or goes under the lowerthreshold the state reported will be always OK.
+   * IMPORTANT: This module does not check for ill logic, so make sure to
+   * set the ranges correctly to issue warning or fault.
+   */
   template<typename T>
   struct RangeMonitor : public StatusMonitorImpl<T> {
     using StatusMonitorImpl<T>::StatusMonitorImpl;
 
     /** WARNING state to be reported if value is in between the upper and
- * lower threshold including the start and end of thresholds.
- */
+     * lower threshold including the start and end of thresholds.
+     */
     ScalarPushInput<T> warningUpperThreshold{this, "upperWarningThreshold", "", "", StatusMonitor::_parameterTags};
     ScalarPushInput<T> warningLowerThreshold{this, "lowerWarningThreshold", "", "", StatusMonitor::_parameterTags};
     /** FAULT state to be reported if value is in between the upper and
- * lower threshold including the start and end of thresholds.
- */
+     * lower threshold including the start and end of thresholds.
+     */
     ScalarPushInput<T> faultUpperThreshold{this, "upperFaultThreshold", "", "", StatusMonitor::_parameterTags};
     ScalarPushInput<T> faultLowerThreshold{this, "lowerFaultThreshold", "", "", StatusMonitor::_parameterTags};
 
@@ -219,25 +220,25 @@ namespace ChimeraTK {
     }
   };
 
-  /** 
+  /**
    *  Module for status monitoring of an exact value.
-   *  
+   *
    *  If monitored input value is not exactly the same as the requiredValue, a fault state will be reported. If the
    *  parameter variable "disable" is set to a non-zero value, the monitoring is disabled and the output status is
    *  always OFF.
-   *  
+   *
    *  Note: It is strongly recommended to use this monitor only for integer data types or strings, as floating point
    *  data types should never be compared with exact equality.
    */
   template<typename T>
   struct ExactMonitor : ApplicationModule {
-    /** 
+    /**
      *  Constructor for exact monitoring module.
-     *  
+     *
      *  inputPath: qualified path of the variable to monitor
      *  outputPath: qualified path of the status output variable
      *  parameterPath: qualified path of the VariableGroup holding the parameter variables requiredValue and disable
-     *  
+     *
      *  All qualified paths can be either relative or absolute to the given owner. See HierarchyModifyingGroup for
      *  more details.
      */
@@ -248,14 +249,14 @@ namespace ChimeraTK {
     : ExactMonitor(owner, inputPath, outputPath, parameterPath + "/requiredValue", parameterPath + "/disable",
           description, outputTags, parameterTags) {}
 
-    /** 
+    /**
      *  Constructor for exact monitoring module.
-     *  
+     *
      *  inputPath: qualified path of the variable to monitor
      *  outputPath: qualified path of the status output variable
      *  requiredValuePath: qualified path of the parameter variable requiredValue
      *  disablePath: qualified path of the parameter variable disable
-     *  
+     *
      *  All qualified paths can be either relative or absolute to the given owner. See HierarchyModifyingGroup for
      *  more details.
      */

@@ -2,15 +2,15 @@
 
 #define BOOST_TEST_MODULE testExceptionHandling
 
-#include <boost/mpl/list.hpp>
-#include <boost/test/included/unit_test.hpp>
-
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ControlSystemModule.h"
 #include "ScalarAccessor.h"
 #include "StatusMonitor.h"
 #include "TestFacility.h"
+
+#include <boost/mpl/list.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
 
   ctk::TestFacility test;
   test.runApplication();
-  //app.cs.dump();
+  // app.cs.dump();
 
   auto warning = test.getScalar<double_t>(std::string("/Monitor/upperWarningThreshold"));
   warning = 50.0;
@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   auto status = test.getScalar<int32_t>(std::string("/Monitor/status"));
   status.readLatest();
 
-  //should be in OK state.
+  // should be in OK state.
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   //   //just below the warning level
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
-  //just below the fault threshold,. still warning
+  // just below the fault threshold,. still warning
   watch = 59.99;
   watch.write();
   test.stepApplication();
@@ -155,7 +155,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
-  //increase well above the upper fault level
+  // increase well above the upper fault level
   watch = 65;
   watch.write();
   test.stepApplication();
@@ -164,24 +164,25 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
 
   // now check that changing the status is updated correctly if we change the limits
 
-  //increase fault value greater than watch
+  // increase fault value greater than watch
   fault = 68;
   fault.write();
   test.stepApplication();
   status.readLatest();
-  //should be in WARNING state.
+  // should be in WARNING state.
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
-  //increase warning value greater than watch
+  // increase warning value greater than watch
   warning = 66;
   warning.write();
   test.stepApplication();
   status.readLatest();
-  //should be in OK state.
+  // should be in OK state.
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
-  // Set the upper fault limit below the upper warning limit and below the current temperature. The warning is not active, but the fault.
-  // Although this is not a reasonable configuration the fault limit must superseed the warning and the status has to be fault.
+  // Set the upper fault limit below the upper warning limit and below the current temperature. The warning is not
+  // active, but the fault. Although this is not a reasonable configuration the fault limit must superseed the warning
+  // and the status has to be fault.
   fault = 60;
   fault.write();
   test.stepApplication();
@@ -208,7 +209,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
 
   ctk::TestFacility test;
   test.runApplication();
-  //app.dumpConnections();
+  // app.dumpConnections();
 
   auto warning = test.getScalar<uint>(std::string("/Monitor/lowerWarningThreshold"));
   warning = 40;
@@ -228,7 +229,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   auto status = test.getScalar<int32_t>(std::string("/Monitor/status"));
   status.readLatest();
 
-  //should be in OK state.
+  // should be in OK state.
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // just abow the lower warning limit
@@ -252,7 +253,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
-  //exactly at the lower warning limit
+  // exactly at the lower warning limit
   watch = 40;
   watch.write();
   test.stepApplication();
@@ -272,14 +273,14 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
-  //just above the lower fault limit
+  // just above the lower fault limit
   watch = 31;
   watch.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
-  //exactly at the lower fault limit (only well defined for int)
+  // exactly at the lower fault limit (only well defined for int)
   watch = 30;
   watch.write();
   test.stepApplication();
@@ -299,7 +300,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
-  //way bellow the lower fault limit
+  // way bellow the lower fault limit
   watch = 12;
   watch.write();
   test.stepApplication();
@@ -355,7 +356,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
 
   ctk::TestFacility test;
   test.runApplication();
-  //app.dumpConnections();
+  // app.dumpConnections();
 
   auto warningUpperLimit = test.getScalar<int>(std::string("/Monitor/upperWarningThreshold"));
   warningUpperLimit = 50;
@@ -388,7 +389,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
 
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
-  //just below the warning level
+  // just below the warning level
   watch = 49;
   watch.write();
   test.stepApplication();
@@ -409,7 +410,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
-  //exactly at the upper warning threshold (only well defined for int)
+  // exactly at the upper warning threshold (only well defined for int)
   watch = 50;
   watch.write();
   test.stepApplication();
@@ -429,14 +430,14 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
-  //just below the fault threshold,. still warning
+  // just below the fault threshold,. still warning
   watch = 59;
   watch.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
-  //exactly at the upper warning threshold (only well defined for int)
+  // exactly at the upper warning threshold (only well defined for int)
   watch = 60;
   watch.write();
   test.stepApplication();
@@ -456,42 +457,42 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
-  //increase well above the upper fault level
+  // increase well above the upper fault level
   watch = 65;
   watch.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
-  //back to ok, just abow the lower warning limit
+  // back to ok, just abow the lower warning limit
   watch = 41;
   watch.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
-  //exactly at the lower warning limit
+  // exactly at the lower warning limit
   watch = 40;
   watch.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
-  //just above the lower fault limit
+  // just above the lower fault limit
   watch = 31;
   watch.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
 
-  //exactly at the lower fault limit (only well defined for int)
+  // exactly at the lower fault limit (only well defined for int)
   watch = 30;
   watch.write();
   test.stepApplication();
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
-  //way bellow the lower fault limit
+  // way bellow the lower fault limit
   watch = 12;
   watch.write();
   test.stepApplication();
@@ -578,7 +579,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
 
   ctk::TestFacility test;
   test.runApplication();
-  //app.dumpConnections();
+  // app.dumpConnections();
 
   auto requiredValue = test.getScalar<int64_t>(std::string("/parameters/requiredValue"));
   requiredValue = 409;
@@ -593,7 +594,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   auto status = test.getScalar<int32_t>(std::string("/output/path"));
   status.readLatest();
 
-  //should be in OK state.
+  // should be in OK state.
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // drop in a disable test.
@@ -610,12 +611,12 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   status.readLatest();
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
-  //set watch value different than required value
+  // set watch value different than required value
   watch = 414;
   watch.write();
   test.stepApplication();
   status.readLatest();
-  //should be in FAULT state.
+  // should be in FAULT state.
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // drop in a disable test.
@@ -635,23 +636,23 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   watch.write();
   test.stepApplication();
   status.readLatest();
-  //should be in OK state.
+  // should be in OK state.
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
-  //set requiredValue value different than watch value
+  // set requiredValue value different than watch value
   requiredValue = 413;
   requiredValue.write();
   test.stepApplication();
   status.readLatest();
-  //should be in WARNING state.
+  // should be in WARNING state.
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
-  //set requiredValue value equals to watch value
+  // set requiredValue value equals to watch value
   requiredValue = 409;
   requiredValue.write();
   test.stepApplication();
   status.readLatest();
-  //should be in WARNING state.
+  // should be in WARNING state.
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // check that the tags are applied correctly

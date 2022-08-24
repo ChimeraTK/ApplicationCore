@@ -1,12 +1,12 @@
 #ifndef CHIMERATK_APPLICATION_CORE_DATA_LOSS_COUNTER_H
 #define CHIMERATK_APPLICATION_CORE_DATA_LOSS_COUNTER_H
 
-#include <map>
+#include "ApplicationCore.h"
+#include "HierarchyModifyingGroup.h"
 
 #include <ChimeraTK/SupportedUserTypes.h>
 
-#include "ApplicationCore.h"
-#include "HierarchyModifyingGroup.h"
+#include <map>
 
 namespace ChimeraTK {
 

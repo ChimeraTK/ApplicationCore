@@ -3,18 +3,17 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include <ChimeraTK/DummyRegisterAccessor.h>
-#include <ChimeraTK/ExceptionDummyBackend.h>
-
 #include "Application.h"
 #include "ApplicationModule.h"
+#include "check_timeout.h"
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "PeriodicTrigger.h"
 #include "TestFacility.h"
 #include "VariableGroup.h"
 
-#include "check_timeout.h"
+#include <ChimeraTK/DummyRegisterAccessor.h>
+#include <ChimeraTK/ExceptionDummyBackend.h>
 
 namespace ctk = ChimeraTK;
 

@@ -1,5 +1,6 @@
 
 #include "VariableNetworkNodeDumpingVisitor.h"
+
 #include "VariableNetworkNode.h"
 
 namespace ChimeraTK {

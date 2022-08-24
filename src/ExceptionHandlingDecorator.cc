@@ -1,4 +1,5 @@
 #include "ExceptionHandlingDecorator.h"
+
 #include "DeviceModule.h"
 
 #include <functional>
@@ -20,12 +21,13 @@ namespace ChimeraTK {
       _deviceModule->writeRegisterPaths.push_back(registerName);
 
       // writable registers get a recoveryAccessor
-      // Notice: There will be write-accessors without recovery accessors in future (intentionally turned off by the application programmer)
-      // When this feature is added the VariableNetworkNode will get a new data member to indicate this.
+      // Notice: There will be write-accessors without recovery accessors in future (intentionally turned off by the
+      // application programmer) When this feature is added the VariableNetworkNode will get a new data member to
+      // indicate this.
       auto nElements = networkNode.getNumberOfElements();
 
-      // The device in the deviceModule does not have a valid backend yet. It is set when open() is called, which has not happened yet.
-      // We have to get the backend from the application.
+      // The device in the deviceModule does not have a valid backend yet. It is set when open() is called, which has
+      // not happened yet. We have to get the backend from the application.
       assert(Application::getInstance().deviceMap.count(deviceAlias) != 0);
       auto deviceBackend = Application::getInstance().deviceMap[deviceAlias];
 
@@ -87,8 +89,8 @@ namespace ChimeraTK {
 
     } // lock guard goes out of scope
 
-    // Now delegate call to the generic decorator, which swaps the buffer, without adding our exception handling with the generic transfer
-    // preWrite and postWrite are only delegated if the transfer is allowed.
+    // Now delegate call to the generic decorator, which swaps the buffer, without adding our exception handling with
+    // the generic transfer preWrite and postWrite are only delegated if the transfer is allowed.
     ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type, versionNumber);
   }
 
@@ -133,8 +135,9 @@ namespace ChimeraTK {
         _target->postRead(type, hasNewData);
         if(hasNewData) {
           // Reset the flag after a successful read.
-          // It is only reset if there was new data. A readNonBlocking on a faulty device is not different to a readNonBlocking on working device: There just
-          // is no new data. We only reset it on the next successful read with the initial value, otherwise keep the exception flag.
+          // It is only reset if there was new data. A readNonBlocking on a faulty device is not different to a
+          // readNonBlocking on working device: There just is no new data. We only reset it on the next successful read
+          // with the initial value, otherwise keep the exception flag.
           _hasReportedException = false;
         }
       }
@@ -164,7 +167,7 @@ namespace ChimeraTK {
       _dataValidity = _target->dataValidity();
       // Note: This assertion does not hold
       // See discussion in https://github.com/ChimeraTK/DeviceAccess/pull/178
-      //assert(_target->getVersionNumber() >= _versionNumber);
+      // assert(_target->getVersionNumber() >= _versionNumber);
       if(_target->getVersionNumber() > _versionNumber) {
         _versionNumber = _target->getVersionNumber();
       }

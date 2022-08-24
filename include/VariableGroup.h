@@ -8,11 +8,11 @@
 #ifndef CHIMERATK_VARIABLE_GROUP_H
 #define CHIMERATK_VARIABLE_GROUP_H
 
-#include <list>
+#include "ModuleImpl.h"
 
 #include <boost/thread.hpp>
 
-#include "ModuleImpl.h"
+#include <list>
 
 namespace ChimeraTK {
 

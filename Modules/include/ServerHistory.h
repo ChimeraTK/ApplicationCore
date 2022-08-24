@@ -84,10 +84,11 @@
 #define MODULES_SERVERHISTORY_H_
 
 #include "ApplicationCore.h"
+#include <unordered_set>
+
 #include <ChimeraTK/SupportedUserTypes.h>
 
 #include <tuple>
-#include <unordered_set>
 #include <vector>
 
 namespace ChimeraTK { namespace history {
@@ -143,7 +144,8 @@ namespace ChimeraTK { namespace history {
 
     /**
      * Overload that calls virtualiseFromCatalog. Parameter see addSource(const Module&...)
-     * \param submodule If only a submodule should be added give the name. It does not work do create a submodule of the DeviceModule itself!
+     * \param submodule If only a submodule should be added give the name. It does not work do create a submodule of the
+     * DeviceModule itself!
      */
     void addSource(const DeviceModule& source, const RegisterPath& namePrefix, const std::string& submodule = "",
         const VariableNetworkNode& trigger = {});
@@ -185,5 +187,5 @@ namespace ChimeraTK { namespace history {
     friend struct AccessorAttacher;
   };
 
-}}     // namespace ChimeraTK::history
+}} // namespace ChimeraTK::history
 #endif /* MODULES_SERVERHISTORY_H_ */

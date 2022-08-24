@@ -7,10 +7,10 @@
  *      Author: Martin Hierholzer
  */
 
-#include <ChimeraTK/NDRegisterAccessorDecorator.h>
+#include "Application.h"
 #include "RecoveryHelper.h"
 
-#include "Application.h"
+#include <ChimeraTK/NDRegisterAccessorDecorator.h>
 
 namespace ChimeraTK {
 
@@ -50,7 +50,8 @@ namespace ChimeraTK {
     bool previousReadFailed{true};
 
     boost::shared_ptr<RecoveryHelper> _recoveryHelper{nullptr};
-    // store the recoveryAccessor separately. The RecoveryHelper only contains a pointer to TransferElement and can't be used to fill in data.
+    // store the recoveryAccessor separately. The RecoveryHelper only contains a pointer to TransferElement and can't be
+    // used to fill in data.
     boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
 
     VariableDirection _direction;

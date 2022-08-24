@@ -7,12 +7,12 @@
 
 #define BOOST_TEST_MODULE testHierarchyModifyingGroup
 
+#include "ApplicationCore.h"
+#include "TestFacility.h"
+
 #include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
 #include <boost/thread.hpp>
-
-#include "ApplicationCore.h"
-#include "TestFacility.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -30,9 +30,7 @@ struct TestApplication : public ctk::Application {
 
   ctk::ControlSystemModule cs;
 
-  void defineConnections() override {
-    findTag(".*").connectTo(cs);
-  }
+  void defineConnections() override { findTag(".*").connectTo(cs); }
 
   struct TestModule : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -204,8 +202,12 @@ BOOST_AUTO_TEST_CASE(twoUp) {
 BOOST_AUTO_TEST_CASE(hierarchy_with_dots_anywhere_also_single_dots) {
   std::cout << "*** hierarchy/with/../dots/../../anywhere/./also/./single/./dots/.." << std::endl;
   TestApplication app;
-  TestHelper(app, "TagM").submodule("TestModule").submodule("anywhere").submodule("also").submodule("single")
-          .accessor(app.testModule.m.myVar);
+  TestHelper(app, "TagM")
+      .submodule("TestModule")
+      .submodule("anywhere")
+      .submodule("also")
+      .submodule("single")
+      .accessor(app.testModule.m.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(dot) {
@@ -217,8 +219,12 @@ BOOST_AUTO_TEST_CASE(dot) {
 BOOST_AUTO_TEST_CASE(dot_at_end) {
   std::cout << "*** dot/at/end/." << std::endl;
   TestApplication app;
-  TestHelper(app, "TagO").submodule("TestModule").submodule("dot").submodule("at").submodule("end")
-          .accessor(app.testModule.o.myVar);
+  TestHelper(app, "TagO")
+      .submodule("TestModule")
+      .submodule("dot")
+      .submodule("at")
+      .submodule("end")
+      .accessor(app.testModule.o.myVar);
 }
 
 BOOST_AUTO_TEST_CASE(MoveToRootFromHidden) {
@@ -259,8 +265,8 @@ BOOST_AUTO_TEST_CASE(bad_path_exception) {
   TestApplication_empty app;
   BOOST_CHECK_THROW(TestGroup tg(&app.testModule, "/../cannot/work", "This is not allowed"), ctk::logic_error);
   BOOST_CHECK_THROW(TestGroup tg(&app.testModule, "/..", "This is not allowed either"), ctk::logic_error);
-  BOOST_CHECK_THROW(TestGroup tg(&app.testModule, "/somthing/less/../../../obvious", "This is also not allowed"),
-                    ctk::logic_error);
+  BOOST_CHECK_THROW(
+      TestGroup tg(&app.testModule, "/somthing/less/../../../obvious", "This is also not allowed"), ctk::logic_error);
 }
 
 /*********************************************************************************************************************/
@@ -268,12 +274,11 @@ BOOST_AUTO_TEST_CASE(bad_path_exception) {
 struct TestApplication_moveAssignment : public ctk::Application {
   TestApplication_moveAssignment() : Application("testSuite") {}
   ~TestApplication_moveAssignment() { shutdown(); }
-  void defineConnections() override {
-  }
+  void defineConnections() override {}
 
   struct TestModule : ctk::ApplicationModule {
-    TestModule(EntityOwner *owner, const std::string &name, const std::string &description)
-        : ApplicationModule(owner, name, description) {
+    TestModule(EntityOwner* owner, const std::string& name, const std::string& description)
+    : ApplicationModule(owner, name, description) {
       a = TestGroup(this, "VariableGroupLike", "Use like normal VariableGroup", {"TagA"});
       h = TestGroup(this, "local/very/deep/hierarchy", "Create deep hierarchy locally", {"TagH"});
     }
@@ -302,9 +307,7 @@ BOOST_AUTO_TEST_CASE(move_assignment) {
 struct TestApplication_moveConstruct : public ctk::Application {
   TestApplication_moveConstruct() : Application("testSuite") {}
   ~TestApplication_moveConstruct() { shutdown(); }
-  void defineConnections() override {
-    testModule = TestModule(this, "TestModule", "The test module");
-  }
+  void defineConnections() override { testModule = TestModule(this, "TestModule", "The test module"); }
 
   struct TestModule : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;

@@ -2,23 +2,22 @@
 
 #define BOOST_TEST_MODULE testPropagateDataFaultFlag
 
-#include <boost/mpl/list.hpp>
+#include "Application.h"
+#include "ApplicationModule.h"
+#include "ArrayAccessor.h"
+#include "check_timeout.h"
+#include "ControlSystemModule.h"
+#include "ModuleGroup.h"
+#include "ScalarAccessor.h"
+#include "TestFacility.h"
 
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/Device.h>
-#include <ChimeraTK/NDRegisterAccessor.h>
 #include <ChimeraTK/DummyRegisterAccessor.h>
-
-#include "Application.h"
-#include "ApplicationModule.h"
-#include "ControlSystemModule.h"
-#include "ScalarAccessor.h"
-#include "ArrayAccessor.h"
-#include "TestFacility.h"
-#include "ModuleGroup.h"
-#include "check_timeout.h"
-
 #include <ChimeraTK/ExceptionDummyBackend.h>
+#include <ChimeraTK/NDRegisterAccessor.h>
+
+#include <boost/mpl/list.hpp>
 
 #define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
@@ -240,7 +239,7 @@ BOOST_AUTO_TEST_CASE(testWithFanOut) {
 
   test.runApplication();
 
-  //app.dumpConnections();
+  // app.dumpConnections();
 
   // test if fault flag propagates to all outputs
   Ai1 = 1;
@@ -391,27 +390,27 @@ struct Module2 : ctk::ApplicationModule {
 // struct TestApplication3 : ctk::ApplicationModule {
 struct TestApplication3 : ctk::Application {
   /*
- *   CS +-----> threaded fanout +------------------+
- *                  +                              v
- *                  +---------+                   +Device1+
- *                            |                   |       |
- *              Feeding       v                   |       |
- *   CS   <----- fanout --+ Module1 <-----+       v       |
- *                 |          ^           +Consuming      |
- *                 |          +--------+    fanout        |
- *                 +------+            +      +           |
- *                        v         Device2   |           |
- *   CS   <-----------+ Module2               |           |
- *                                            |           |
- *   CS   <-----------------------------------+           |
- *                                                        |
- *                                                        |
- *   CS   <-----------+ Trigger fanout <------------------+
- *                           ^
- *                           |
- *                           +
- *                           CS
- */
+   *   CS +-----> threaded fanout +------------------+
+   *                  +                              v
+   *                  +---------+                   +Device1+
+   *                            |                   |       |
+   *              Feeding       v                   |       |
+   *   CS   <----- fanout --+ Module1 <-----+       v       |
+   *                 |          ^           +Consuming      |
+   *                 |          +--------+    fanout        |
+   *                 +------+            +      +           |
+   *                        v         Device2   |           |
+   *   CS   <-----------+ Module2               |           |
+   *                                            |           |
+   *   CS   <-----------------------------------+           |
+   *                                                        |
+   *                                                        |
+   *   CS   <-----------+ Trigger fanout <------------------+
+   *                           ^
+   *                           |
+   *                           +
+   *                           CS
+   */
 
   constexpr static char const* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=testDataValidity1.map)";
   constexpr static char const* ExceptionDummyCDD2 = "(ExceptionDummy:1?map=testDataValidity2.map)";
@@ -525,7 +524,7 @@ BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
   deviceRegister.write();
 
   auto trigger = test.getScalar<int>("trigger");
-  auto result = test.getScalar<int>("i3"); //Cs hook into reg: m1.i3
+  auto result = test.getScalar<int>("i3"); // Cs hook into reg: m1.i3
 
   //----------------------------------------------------------------//
   // trigger works as expected
@@ -728,7 +727,8 @@ BOOST_FIXTURE_TEST_CASE(testReadDeviceWithTrigger, Fixture_noTestableMode) {
   // Recovery
   device1DummyBackend->throwExceptionRead = false;
 
-  // Wait until the device has recovered. Otherwise the read might be skipped and we still read the previous value with the faulty flag.
+  // Wait until the device has recovered. Otherwise the read might be skipped and we still read the previous value with
+  // the faulty flag.
   while((void)device1Status.read(), device1Status == 1) {
     usleep(1000);
   }
@@ -795,7 +795,8 @@ BOOST_FIXTURE_TEST_CASE(testConsumingFanout, Fixture_noTestableMode) {
   // Recovery
   device1DummyBackend->throwExceptionRead = false;
 
-  // Wait until the device has recovered. Otherwise the read might be skipped and we still read the previous value with the faulty flag.
+  // Wait until the device has recovered. Otherwise the read might be skipped and we still read the previous value with
+  // the faulty flag.
   while((void)device1Status.read(), device1Status == 1) {
     usleep(1000);
   }

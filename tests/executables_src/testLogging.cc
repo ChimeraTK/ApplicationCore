@@ -9,7 +9,6 @@
 #define BOOST_TEST_MODULE LoggingTest
 
 #include "Logging.h"
-#include "ModuleGroup.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>

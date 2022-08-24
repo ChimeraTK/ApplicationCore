@@ -8,9 +8,10 @@
 #ifndef CHIMERATK_FEEDING_FAN_OUT_H
 #define CHIMERATK_FEEDING_FAN_OUT_H
 
+#include "FanOut.h"
+
 #include <ChimeraTK/NDRegisterAccessor.h>
 
-#include "FanOut.h"
 #include <functional>
 #include <sstream>
 
@@ -142,12 +143,13 @@ namespace ChimeraTK {
         slave->setDataValidity(this->dataValidity());
       }
 
-      // Don't call pre-write on the slaves. Each slave has to do it's own exception handling, so we call the whole operation in doWriteTansfer().
-      // To fulfill the TransferElement specification we would have to check the pre-conditions here so no logic error is thrown in the
-      // transfer phase (logic_errors are predictable and can always pre prevented. They should be thrown here already).
-      // FIXME: At the moment we can be lazy about it. logic_errors are not treated in ApplicationCore and the only effect is that
-      // the logic_error would be delayed after postRead() and terminate the application there, and not after the transfer.
-      // Advantage about being lazy: It safes a few virtual function calls.
+      // Don't call pre-write on the slaves. Each slave has to do it's own exception handling, so we call the whole
+      // operation in doWriteTansfer(). To fulfill the TransferElement specification we would have to check the
+      // pre-conditions here so no logic error is thrown in the transfer phase (logic_errors are predictable and can
+      // always pre prevented. They should be thrown here already).
+      // FIXME: At the moment we can be lazy about it. logic_errors are not treated in ApplicationCore and the only
+      // effect is that the logic_error would be delayed after postRead() and terminate the application there, and not
+      // after the transfer. Advantage about being lazy: It safes a few virtual function calls.
     }
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override {
