@@ -1,11 +1,6 @@
-#ifndef CHIMERATK_EXCEPTION_HANDLING_DECORATOR_H
-#define CHIMERATK_EXCEPTION_HANDLING_DECORATOR_H
-/*
- * ExceptionHandlingDecorator.h
- *
- *  Created on: Mar 18, 2019
- *      Author: Martin Hierholzer
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "Application.h"
 #include "RecoveryHelper.h"
@@ -71,5 +66,3 @@ namespace ChimeraTK {
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
 
 } /* namespace ChimeraTK */
-
-#endif // CHIMERATK_EXCEPTION_HANDLING_DECORATOR_H

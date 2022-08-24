@@ -1,12 +1,6 @@
-/*
- * ModuleGroup.h
- *
- *  Created on: Aug 23, 2017
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_MODULE_GROUP_H
-#define CHIMERATK_MODULE_GROUP_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "ModuleImpl.h"
 
@@ -57,5 +51,3 @@ namespace ChimeraTK {
   };
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERATK_MODULE_GROUP_H */

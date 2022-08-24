@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
+
 /*!
  * \author Klaus Zenker (HZDR)
  * \date 03.04.2018
@@ -106,9 +110,6 @@
  *  is not done processing a message, the internal buffer is full and a new message arrives it is dropped.
 
  */
-
-#ifndef MODULES_LOGGING_H_
-#define MODULES_LOGGING_H_
 
 #include "ApplicationCore.h"
 
@@ -300,5 +301,3 @@ namespace logging {
   };
 
 } // namespace logging
-
-#endif /* MODULES_LOGGING_H_ */

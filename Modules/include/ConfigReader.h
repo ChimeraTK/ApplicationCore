@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
+
 /*!
  * \page configreader ConfigReader Module
  *
@@ -64,9 +68,6 @@
      \endverbatim
  *
  * */
-
-#ifndef CHIMERATK_APPLICATION_CORE_CONFIG_READER_H
-#define CHIMERATK_APPLICATION_CORE_CONFIG_READER_H
 
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
@@ -264,5 +265,3 @@ namespace ChimeraTK {
   }
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERATK_APPLICATION_CORE_CONFIG_READER_H */

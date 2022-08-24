@@ -1,12 +1,6 @@
-/*
- * TestableModeAccessorDecorator.h
- *
- *  Created on: Feb 17, 2017
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_TEST_DECORATOR_REGISTER_ACCCESSOR
-#define CHIMERATK_TEST_DECORATOR_REGISTER_ACCCESSOR
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "Application.h"
 #include "FeedingFanOut.h"
@@ -163,5 +157,3 @@ namespace ChimeraTK {
   };
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERATK_TEST_DECORATOR_REGISTER_ACCCESSOR */

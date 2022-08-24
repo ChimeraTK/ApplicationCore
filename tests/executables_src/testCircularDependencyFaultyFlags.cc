@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #define BOOST_TEST_MODULE testPropagateDataFaultFlag
 
 // Tests never terminate when an exception is caught and BOOST_NO_EXCEPTIONS is set, but the exeption's what() message

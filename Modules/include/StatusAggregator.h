@@ -1,5 +1,6 @@
-#ifndef CHIMERATK_STATUS_AGGREGATOR_H
-#define CHIMERATK_STATUS_AGGREGATOR_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "ApplicationModule.h"
 #include "HierarchyModifyingGroup.h"
@@ -119,4 +120,3 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
 } // namespace ChimeraTK
-#endif // CHIMERATK_STATUS_AGGREGATOR_H

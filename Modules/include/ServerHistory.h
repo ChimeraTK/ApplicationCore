@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
+
 /*!
  * \author Klaus Zenker (HZDR)
  * \date 10.08.2018
@@ -79,9 +83,6 @@
  *  are not filled make sure all variables are written. If they are not written in the module main loop,
  *  write them once before the main loop of the module containing the history variables.
  */
-
-#ifndef MODULES_SERVERHISTORY_H_
-#define MODULES_SERVERHISTORY_H_
 
 #include "ApplicationCore.h"
 #include <unordered_set>
@@ -188,4 +189,3 @@ namespace ChimeraTK { namespace history {
   };
 
 }} // namespace ChimeraTK::history
-#endif /* MODULES_SERVERHISTORY_H_ */

@@ -1,12 +1,6 @@
-/*
- * ArrayAccessor.h
- *
- *  Created on: Jun 07, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_ARRAY_ACCESSOR_H
-#define CHIMERATK_ARRAY_ACCESSOR_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "Application.h"
 #include "InversionOfControlAccessor.h"
@@ -158,5 +152,3 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERATK_ARRAY_ACCESSOR_H */

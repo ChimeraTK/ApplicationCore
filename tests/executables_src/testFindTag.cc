@@ -1,10 +1,5 @@
-/*
- * testFindTag.cc
- *
- *  Created on: Feb 27, 2019
- *      Author: Martin Hierholzer
- */
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include <chrono>
 #include <future>
 

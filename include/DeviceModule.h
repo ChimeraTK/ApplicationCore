@@ -1,12 +1,6 @@
-/*
- * DeviceModule.h
- *
- *  Created on: Jun 27, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_DEVICE_MODULE_H
-#define CHIMERATK_DEVICE_MODULE_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "ControlSystemModule.h"
 #include "Module.h"
@@ -371,5 +365,3 @@ namespace ChimeraTK {
   };
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERATK_DEVICE_MODULE_H */

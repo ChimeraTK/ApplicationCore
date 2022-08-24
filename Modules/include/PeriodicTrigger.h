@@ -1,5 +1,6 @@
-#ifndef CHIMERATK_APPLICATION_CORE_PERIODIC_TRIGGER_H
-#define CHIMERATK_APPLICATION_CORE_PERIODIC_TRIGGER_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "ApplicationCore.h"
 #include "HierarchyModifyingGroup.h"
@@ -90,5 +91,3 @@ namespace ChimeraTK {
     uint32_t defaultPeriod_;
   };
 } // namespace ChimeraTK
-
-#endif // CHIMERATK_APPLICATION_CORE_PERIODIC_TRIGGER_H
