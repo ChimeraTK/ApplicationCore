@@ -11,9 +11,13 @@
 
 namespace ChimeraTK {
 
+  /*********************************************************************************************************************/
+
   class Application;
   class ModuleGroup;
   struct ConfigReader;
+
+  /*********************************************************************************************************************/
 
   class ApplicationModule : public ModuleImpl {
    public:
@@ -44,12 +48,7 @@ namespace ChimeraTK {
     ApplicationModule(ApplicationModule&& other) { operator=(std::move(other)); }
 
     /** Move assignment */
-    ApplicationModule& operator=(ApplicationModule&& other) {
-      assert(!moduleThread.joinable()); // if the thread is already running,
-                                        // moving is no longer allowed!
-      ModuleImpl::operator=(std::move(other));
-      return *this;
-    }
+    ApplicationModule& operator=(ApplicationModule&& other);
 
     /** Destructor */
     virtual ~ApplicationModule();
@@ -71,9 +70,7 @@ namespace ChimeraTK {
     void incrementDataFaultCounter() override;
     void decrementDataFaultCounter() override;
 
-    void setCurrentVersionNumber(VersionNumber versionNumber) override {
-      if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
-    }
+    void setCurrentVersionNumber(VersionNumber versionNumber) override;
 
     std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override;
 
@@ -114,5 +111,7 @@ namespace ChimeraTK {
      */
     detail::CircularDependencyDetectionRecursionStopper _recursionStopper;
   };
+
+  /*********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

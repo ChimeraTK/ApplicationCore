@@ -6,9 +6,13 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   VariableNetworkNodeDumpingVisitor::VariableNetworkNodeDumpingVisitor(
       std::ostream& stream, const std::string& separator)
   : Visitor<ChimeraTK::VariableNetworkNode>(), PushableStream(stream), _separator(separator) {}
+
+  /********************************************************************************************************************/
 
   void VariableNetworkNodeDumpingVisitor::dispatch(const VariableNetworkNode& t) {
     if(t.getType() == NodeType::Application) stream() << " type = Application ('" << t.getQualifiedName() << "')";
@@ -49,5 +53,7 @@ namespace ChimeraTK {
 
     stream() << std::endl;
   }
+
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK

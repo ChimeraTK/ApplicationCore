@@ -39,13 +39,7 @@ namespace ChimeraTK {
     ModuleGroup(ModuleGroup&& other) { operator=(std::move(other)); }
 
     /** Move assignment */
-    ModuleGroup& operator=(ModuleGroup&& other) {
-      ModuleImpl::operator=(std::move(other));
-      return *this;
-    }
-
-    /** Destructor */
-    virtual ~ModuleGroup(){};
+    ModuleGroup& operator=(ModuleGroup&& other);
 
     ModuleType getModuleType() const override { return ModuleType::ModuleGroup; }
   };

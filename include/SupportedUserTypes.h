@@ -2,7 +2,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include <ChimeraTK/SupportedUserTypes.h>
+
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
 
   /** Map of UserType to value of the UserType. */
   typedef boost::fusion::map<boost::fusion::pair<int8_t, int8_t>, boost::fusion::pair<uint8_t, uint8_t>,
@@ -10,6 +14,8 @@ namespace ChimeraTK {
       boost::fusion::pair<int32_t, int32_t>, boost::fusion::pair<uint32_t, uint32_t>, boost::fusion::pair<float, float>,
       boost::fusion::pair<double, double>>
       ApplicationCoreUserTypeMap;
+
+  /********************************************************************************************************************/
 
   /** Map of UserType to a class template with the UserType as template argument.
    */
@@ -23,5 +29,7 @@ namespace ChimeraTK {
         boost::fusion::pair<double, TemplateClass<double>>>
         table;
   };
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

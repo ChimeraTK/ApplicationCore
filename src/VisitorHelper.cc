@@ -6,6 +6,8 @@
 
 namespace ChimeraTK { namespace detail {
 
+  /********************************************************************************************************************/
+
   std::string encodeDotNodeName(std::string name) {
     std::replace(name.begin(), name.end(), '-', 'm'); // minus
     std::replace(name.begin(), name.end(), ':', 'c'); // colon
@@ -18,8 +20,12 @@ namespace ChimeraTK { namespace detail {
     return name;
   }
 
+  /********************************************************************************************************************/
+
   std::string nodeName(const VariableNetworkNode& node) {
     return node.getQualifiedName().empty() ? node.getName() : node.getQualifiedName();
   }
+
+  /********************************************************************************************************************/
 
 }} // namespace ChimeraTK::detail

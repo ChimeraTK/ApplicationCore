@@ -76,10 +76,42 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  DeviceModule& DeviceModule::operator=(DeviceModule&& other) {
+    assert(!moduleThread.joinable());
+    assert(other.isHoldingInitialValueLatch);
+    if(owner) owner->unregisterDeviceModule(this);
+    Module::operator=(std::move(other));
+    device = std::move(other.device);
+    deviceAliasOrURI = std::move(other.deviceAliasOrURI);
+    registerNamePrefix = std::move(other.registerNamePrefix);
+    deviceError = std::move(other.deviceError);
+    owner = other.owner;
+    proxies = std::move(other.proxies);
+    deviceHasError = other.deviceHasError;
+    for(auto& proxy : proxies) proxy.second._myowner = this;
+    owner->registerDeviceModule(this);
+    return *this;
+  }
+
+  /*********************************************************************************************************************/
+
   VariableNetworkNode DeviceModule::operator()(
       const std::string& registerName, UpdateMode mode, const std::type_info& valueType, size_t nElements) const {
     return {registerName, deviceAliasOrURI, registerNamePrefix / registerName, mode,
         {VariableDirection::invalid, false}, valueType, nElements};
+  }
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode DeviceModule::operator()(
+      const std::string& registerName, const std::type_info& valueType, size_t nElements, UpdateMode mode) const {
+    return operator()(registerName, mode, valueType, nElements);
+  }
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode DeviceModule::operator()(const std::string& variableName) const {
+    return operator()(variableName, UpdateMode::poll);
   }
 
   /*********************************************************************************************************************/
@@ -492,6 +524,12 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  void DeviceModule::setCurrentVersionNumber(VersionNumber versionNumber) {
+    if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
+  }
+
+  /*********************************************************************************************************************/
+
   void DeviceModule::defineConnections() {
     // replace all slashes in the deviceAliasOrURI, because URIs might contain slashes and they are not allowed in
     // module names
@@ -535,6 +573,35 @@ namespace ChimeraTK {
 
   void DeviceModule::waitForInitialValues() {
     initialValueLatch.wait();
+  }
+
+  /*********************************************************************************************************************/
+
+  std::list<EntityOwner*> DeviceModule::getInputModulesRecursively(std::list<EntityOwner*> startList) {
+    // The DeviceModule is the end of the recursion, and is not considered recursive to itself.
+    // There will always be circular connections to the CS module which does not pose a problem.
+    // Just return the startList without adding anything (not even the DeviceModule itself)
+    return startList;
+  }
+
+  /*********************************************************************************************************************/
+
+  size_t DeviceModule::getCircularNetworkHash() {
+    return 0; // The device module is never part of a circular network
+  }
+
+  /*********************************************************************************************************************/
+
+  void DeviceModule::incrementDataFaultCounter() {
+    throw ChimeraTK::logic_error("incrementDataFaultCounter() called on a DeviceModule. This is probably "
+                                 "caused by incorrect ownership of variables/accessors or VariableGroups.");
+  }
+
+  /*********************************************************************************************************************/
+
+  void DeviceModule::decrementDataFaultCounter() {
+    throw ChimeraTK::logic_error("decrementDataFaultCounter() called on a DeviceModule. This is probably "
+                                 "caused by incorrect ownership of variables/accessors or VariableGroups.");
   }
 
   /*********************************************************************************************************************/
@@ -596,23 +663,6 @@ namespace ChimeraTK {
       source.connectTo(connectionTarget); // connection without trigger
     }
   }
-
-  /*********************************************************************************************************************/
-
-  std::list<EntityOwner*> DeviceModule::getInputModulesRecursively(std::list<EntityOwner*> startList) {
-    // The DeviceModule is the end of the recursion, and is not considered recursive to itself.
-    // There will always be circular connections to the CS module which does not pose a problem.
-    // Just return the startList without adding anything (not even the DeviceModule itself)
-    return startList;
-  }
-
-  /*********************************************************************************************************************/
-
-  size_t DeviceModule::getCircularNetworkHash() {
-    return 0; // The device module is never part of a circular network
-  }
-
-  /*********************************************************************************************************************/
 
   /*********************************************************************************************************************/
 

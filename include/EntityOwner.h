@@ -10,15 +10,21 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   class AccessorBase;
   class Module;
   class VirtualModule;
+
+  /********************************************************************************************************************/
 
   /**
    *  Convenience type definition which can optionally be used as a shortcut for the type which defines a list of
    *  tags.
    */
   using TAGS = const std::unordered_set<std::string>;
+
+  /********************************************************************************************************************/
 
   /**
    *  Base class for owners of other EntityOwners (e.g. Modules) and Accessors.
@@ -38,9 +44,7 @@ namespace ChimeraTK {
         const std::unordered_set<std::string>& tags = {});
 
     /** Default constructor just for late initialisation */
-    EntityOwner()
-    : _name("**INVALID**"), _description("Invalid EntityOwner created by default constructor just "
-                                         "as a place holder") {}
+    EntityOwner();
 
     /** Virtual destructor to make the type polymorphic */
     virtual ~EntityOwner();
@@ -106,10 +110,7 @@ namespace ChimeraTK {
 
     /** Called inside the constructor of Accessor: adds the accessor to the list
      */
-    void registerAccessor(VariableNetworkNode accessor) {
-      for(auto& tag : _tags) accessor.addTag(tag);
-      accessorList.push_back(accessor);
-    }
+    void registerAccessor(VariableNetworkNode accessor);
 
     /** Called inside the destructor of Accessor: removes the accessor from the
      * list */
@@ -271,5 +272,7 @@ namespace ChimeraTK {
   std::string EntityOwner::constant(T value) {
     return "@CONST@" + userTypeToUserType<std::string>(value);
   }
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

@@ -9,6 +9,17 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
+  VirtualModule::VirtualModule(const std::string& name, const std::string& description, ModuleType moduleType)
+  : Module(nullptr, name, description), _moduleType(moduleType) {
+    if(name.find_first_of("/") != std::string::npos) {
+      throw ChimeraTK::logic_error("Module names must not contain slashes: '" + name + "'.");
+    }
+  }
+
+  /********************************************************************************************************************/
+
   VirtualModule::VirtualModule(const VirtualModule& other) : Module(nullptr, other.getName(), other.getDescription()) {
     // since moduleList stores plain pointers, we need to regenerate this list
     for(auto& mod : other.submodules) addSubModule(mod); // this creates a copy (call by value)
@@ -17,14 +28,14 @@ namespace ChimeraTK {
     _moduleType = other.getModuleType();
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   VirtualModule::~VirtualModule() {
     // do not unregister owner in Module destructor
     _owner = nullptr;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   VirtualModule& VirtualModule::operator=(const VirtualModule& other) {
     // move-assign a plain new module
@@ -36,7 +47,7 @@ namespace ChimeraTK {
     return *this;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   VariableNetworkNode VirtualModule::operator()(const std::string& variableName) const {
     for(auto& variable : getAccessorList()) {
@@ -45,7 +56,7 @@ namespace ChimeraTK {
     throw ChimeraTK::logic_error("Variable '" + variableName + "' is not part of the variable group '" + _name + "'.");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   Module& VirtualModule::operator[](const std::string& moduleName) const {
     for(auto submodule : getSubmoduleList()) {
@@ -54,7 +65,7 @@ namespace ChimeraTK {
     throw ChimeraTK::logic_error("Sub-module '" + moduleName + "' is not part of the variable group '" + _name + "'.");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void VirtualModule::connectTo(const Module& target, VariableNetworkNode trigger) const {
     // connect all direct variables of this module to their counter-parts in the
@@ -88,13 +99,13 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void VirtualModule::addAccessor(VariableNetworkNode accessor) {
     accessorList.push_back(accessor);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void VirtualModule::addSubModule(VirtualModule module) {
     if(!hasSubmodule(module.getName())) {
@@ -115,7 +126,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void VirtualModule::removeSubModule(const std::string& name) {
     for(auto module = submodules.begin(); module != submodules.end(); ++module) {
@@ -127,13 +138,13 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   const Module& VirtualModule::virtualise() const {
     return *this;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   VirtualModule& VirtualModule::createAndGetSubmodule(const RegisterPath& moduleName) {
     for(auto& sm : submodules) {
@@ -143,7 +154,7 @@ namespace ChimeraTK {
     return submodules.back();
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   VirtualModule& VirtualModule::createAndGetSubmoduleRecursive(const RegisterPath& moduleName) {
     if(moduleName == "") return *this;
@@ -158,7 +169,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void VirtualModule::stripEmptyChildsRecursive() {
     // first recurse into childs, to make sure to remove all we an
@@ -175,6 +186,6 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

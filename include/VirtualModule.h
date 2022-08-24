@@ -16,12 +16,7 @@ namespace ChimeraTK {
   class VirtualModule : public Module {
    public:
     /** Constructor */
-    VirtualModule(const std::string& name, const std::string& description, ModuleType moduleType)
-    : Module(nullptr, name, description), _moduleType(moduleType) {
-      if(name.find_first_of("/") != std::string::npos) {
-        throw ChimeraTK::logic_error("Module names must not contain slashes: '" + name + "'.");
-      }
-    }
+    VirtualModule(const std::string& name, const std::string& description, ModuleType moduleType);
 
     /** Copy constructor */
     VirtualModule(const VirtualModule& other);

@@ -10,8 +10,12 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   class ApplicationModule;
   struct ConfigReader;
+
+  /********************************************************************************************************************/
 
   class VariableGroup : public ModuleImpl {
    public:
@@ -36,21 +40,20 @@ namespace ChimeraTK {
      * to allow constructor inheritance of modules owning other modules. This
      * constructor will not actually be called then. See this bug report:
      * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-    VariableGroup() {}
+    VariableGroup() = default;
 
     /** Destructor */
-    virtual ~VariableGroup(){};
+    virtual ~VariableGroup() = default;
 
     /** Move constructor */
     VariableGroup(VariableGroup&& other) { operator=(std::move(other)); }
 
     /** Move assignment */
-    VariableGroup& operator=(VariableGroup&& other) {
-      ModuleImpl::operator=(std::move(other));
-      return *this;
-    }
+    VariableGroup& operator=(VariableGroup&& other);
 
     ModuleType getModuleType() const override { return ModuleType::VariableGroup; }
   };
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

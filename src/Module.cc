@@ -258,4 +258,26 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  std::string Module::getQualifiedName() const {
+    return ((_owner != nullptr) ? _owner->getQualifiedName() : "") + "/" + _name;
+  }
+
+  /*********************************************************************************************************************/
+
+  std::string Module::getFullDescription() const {
+    if(_owner == nullptr) return _description;
+    auto ownerDescription = _owner->getFullDescription();
+    if(ownerDescription == "") return _description;
+    if(_description == "") return ownerDescription;
+    return ownerDescription + " - " + _description;
+  }
+
+  /*********************************************************************************************************************/
+
+  std::list<EntityOwner*> Module::getInputModulesRecursively(std::list<EntityOwner*> startList) {
+    return _owner->getInputModulesRecursively(startList);
+  }
+
+  /*********************************************************************************************************************/
+
 } /* namespace ChimeraTK */

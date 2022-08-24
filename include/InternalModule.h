@@ -10,6 +10,8 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   /** Base class for internal modules which are created by the variable connection code (e.g.
    *  Application::makeConnections()). These modules have to be handled  differently since the instance is created
    *  dynamically and thus we cannot store the plain pointer in Application::overallModuleList.
@@ -18,7 +20,7 @@ namespace ChimeraTK {
    *  to be properly unified with the normal Module classes. */
   class InternalModule : public EntityOwner {
    public:
-    ~InternalModule() override {}
+    ~InternalModule() override = default;
 
     /** Activate synchronisation thread if needed
      *  @todo: Unify with Module::run() */
@@ -38,16 +40,28 @@ namespace ChimeraTK {
     DataValidity getDataValidity() const override { throw; }
     void incrementDataFaultCounter() override { throw; }
     void decrementDataFaultCounter() override { throw; }
-    std::list<EntityOwner*> getInputModulesRecursively([[maybe_unused]] std::list<EntityOwner*> startList) override {
-      throw ChimeraTK::logic_error("getInputModulesRecursively() called on an InternalModule (ThreadedFanout or "
-                                   "TriggerFanout). This is probably "
-                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
-    }
-    size_t getCircularNetworkHash() override {
-      throw ChimeraTK::logic_error("getCircularNetworkHash() called on an InternalModule (ThreadedFanout or "
-                                   "TriggerFanout). This is probably "
-                                   "caused by incorrect ownership of variables/accessors or VariableGroups.");
-    }
+    std::list<EntityOwner*> getInputModulesRecursively([[maybe_unused]] std::list<EntityOwner*> startList) override;
+    size_t getCircularNetworkHash() override;
   };
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  inline std::list<EntityOwner*> InternalModule::getInputModulesRecursively(
+      [[maybe_unused]] std::list<EntityOwner*> startList) {
+    throw ChimeraTK::logic_error("getInputModulesRecursively() called on an InternalModule (ThreadedFanout or "
+                                 "TriggerFanout). This is probably "
+                                 "caused by incorrect ownership of variables/accessors or VariableGroups.");
+  }
+
+  /********************************************************************************************************************/
+
+  inline size_t InternalModule::getCircularNetworkHash() {
+    throw ChimeraTK::logic_error("getCircularNetworkHash() called on an InternalModule (ThreadedFanout or "
+                                 "TriggerFanout). This is probably "
+                                 "caused by incorrect ownership of variables/accessors or VariableGroups.");
+  }
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

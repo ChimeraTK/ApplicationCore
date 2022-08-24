@@ -19,6 +19,15 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  ControlSystemModule& ControlSystemModule::operator=(ControlSystemModule&& other) {
+    Module::operator=(std::move(other));
+    variableNamePrefix = std::move(other.variableNamePrefix);
+    subModules = std::move(other.subModules);
+    return *this;
+  }
+
+  /********************************************************************************************************************/
+
   VariableNetworkNode ControlSystemModule::operator()(
       const std::string& variableName, const std::type_info& valueType, size_t nElements) const {
     assert(variableName.find_first_of("/") == std::string::npos);

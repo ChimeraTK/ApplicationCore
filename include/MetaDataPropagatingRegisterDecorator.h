@@ -4,13 +4,15 @@
 
 #include <ChimeraTK/NDRegisterAccessorDecorator.h>
 
-/********************************************************************************************************************/
-
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
 
   // we can only declare the classes here but not use them/include the header to avoid a circular dependency
   class EntityOwner;
   class VariableNetworkNode;
+
+  /********************************************************************************************************************/
 
   /**
    *  A mix-in helper class so you can set the flags without knowing the user data type.
@@ -35,6 +37,8 @@ namespace ChimeraTK {
     // network is not complete yet and isCircularInput is not know at that moment.
     friend class VariableNetworkNode;
   };
+
+  /********************************************************************************************************************/
 
   /**
    *  NDRegisterAccessorDecorator which propagates meta data attached to input process variables through the owning
@@ -62,6 +66,10 @@ namespace ChimeraTK {
     using MetaDataPropagationFlagProvider::_isCircularInput;
   };
 
+  /********************************************************************************************************************/
+
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(MetaDataPropagatingRegisterDecorator);
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */
