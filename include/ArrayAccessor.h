@@ -8,16 +8,16 @@
 #ifndef CHIMERATK_ARRAY_ACCESSOR_H
 #define CHIMERATK_ARRAY_ACCESSOR_H
 
-#include <string>
+#include "Application.h"
+#include "InversionOfControlAccessor.h"
+#include "Profiler.h"
+
+#include <ChimeraTK/OneDRegisterAccessor.h>
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/thread.hpp>
 
-#include <ChimeraTK/OneDRegisterAccessor.h>
-
-#include "Application.h"
-#include "InversionOfControlAccessor.h"
-#include "Profiler.h"
+#include <string>
 
 namespace ChimeraTK {
 

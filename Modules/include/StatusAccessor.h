@@ -5,16 +5,17 @@
  * \date 01.06.2021
  *
  * Provide an aggregateable StatusOutputs which can have one of the four states: OFF, OK, WARNING, FAULT.
- * 
+ *
  * Multiple StatusOutputs can be aggregated using the StatusAggregator. StatusOutputs are typically provided by
  * StatusMonitors, but also custom ApplicationModules can provide them.
- * 
+ *
  * For convenience, also StatusPushInputs and StatusPollInput are provided for use in custom ApplicationModules.
  */
 
-#include <ChimeraTK/ControlSystemAdapter/StatusAccessorBase.h>
-#include "ScalarAccessor.h"
 #include "Module.h"
+#include "ScalarAccessor.h"
+
+#include <ChimeraTK/ControlSystemAdapter/StatusAccessorBase.h>
 
 namespace ChimeraTK {
 

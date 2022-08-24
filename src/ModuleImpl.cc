@@ -10,7 +10,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  Module& ModuleImpl::operator[](const std::string& moduleName) const { return virtualise()[moduleName]; }
+  Module& ModuleImpl::operator[](const std::string& moduleName) const {
+    return virtualise()[moduleName];
+  }
 
   /*********************************************************************************************************************/
 

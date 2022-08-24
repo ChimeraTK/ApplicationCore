@@ -1,19 +1,21 @@
 #define BOOST_TEST_MODULE testVersionpropagation
 
 #include "ApplicationModule.h"
+#include "check_timeout.h"
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
+#include "fixtures.h"
 #include "Flags.h"
 #include "TestFacility.h"
 #include "VariableGroup.h"
-#include "check_timeout.h"
-#include "fixtures.h"
 
-#include <boost/test/included/unit_test.hpp>
 #include <ChimeraTK/ExceptionDummyBackend.h>
 #include <ChimeraTK/RegisterPath.h>
-#include <future>
 #include <ChimeraTK/VersionNumber.h>
+
+#include <boost/test/included/unit_test.hpp>
+
+#include <future>
 
 namespace ctk = ChimeraTK;
 using Fixture = fixture_with_poll_and_push_input<false>;

@@ -1,9 +1,8 @@
 
-#include "StatusMonitor.h"
-#include "StatusAggregator.h"
-
 #include "Application.h"
 #include "ModuleGroup.h"
+#include "StatusAggregator.h"
+#include "StatusMonitor.h"
 #include "TestFacility.h"
 
 #define BOOST_NO_EXCEPTIONS

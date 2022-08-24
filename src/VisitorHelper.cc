@@ -1,4 +1,5 @@
 #include "VisitorHelper.h"
+
 #include "VariableNetworkNode.h"
 
 namespace ChimeraTK { namespace detail {

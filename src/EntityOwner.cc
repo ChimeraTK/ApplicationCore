@@ -5,16 +5,17 @@
  *      Author: Martin Hierholzer
  */
 
+#include "EntityOwner.h"
+
+#include "Application.h"
+#include "Module.h"
+#include "ModuleGraphVisitor.h"
+#include "VirtualModule.h"
+
 #include <cassert>
 #include <fstream>
 #include <iostream>
 #include <regex>
-
-#include "EntityOwner.h"
-#include "Module.h"
-#include "ModuleGraphVisitor.h"
-#include "VirtualModule.h"
-#include "Application.h"
 
 namespace ChimeraTK {
 
@@ -62,7 +63,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void EntityOwner::unregisterModule(Module* module) { moduleList.remove(module); }
+  void EntityOwner::unregisterModule(Module* module) {
+    moduleList.remove(module);
+  }
 
   /*********************************************************************************************************************/
 
@@ -190,7 +193,8 @@ namespace ChimeraTK {
         }
       }
       else {
-        // just hide -> add to the parent (could also an already existing object with the same hierarchy level as virtualMe, where we just add to)
+        // just hide -> add to the parent (could also an already existing object with the same hierarchy level as
+        // virtualMe, where we just add to)
         moduleToAddTo = &virtualParent;
       }
     }
@@ -294,7 +298,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool EntityOwner::hasReachedTestableMode() { return testableModeReached; }
+  bool EntityOwner::hasReachedTestableMode() {
+    return testableModeReached;
+  }
 
   /*********************************************************************************************************************/
 

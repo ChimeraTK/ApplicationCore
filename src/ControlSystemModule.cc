@@ -6,6 +6,7 @@
  */
 
 #include "ControlSystemModule.h"
+
 #include "Application.h"
 
 namespace ChimeraTK {
@@ -46,7 +47,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  const Module& ControlSystemModule::virtualise() const { return *this; }
+  const Module& ControlSystemModule::virtualise() const {
+    return *this;
+  }
 
   /*********************************************************************************************************************/
 

@@ -11,8 +11,8 @@
 using namespace boost::unit_test_framework;
 
 #include "ApplicationCore.h"
-#include "TestFacility.h"
 #include "ConfigReader.h"
+#include "TestFacility.h"
 
 namespace ctk = ChimeraTK;
 
@@ -245,7 +245,7 @@ BOOST_AUTO_TEST_CASE(testConfigReader) {
   BOOST_CHECK_EQUAL(arrayValueString.size(), 8);
   for(size_t i = 0; i < 8; ++i) BOOST_CHECK_EQUAL(arrayValueString[i], "Hallo" + std::to_string(i + 1));
 
-  //app.config.virtualise().dump();
+  // app.config.virtualise().dump();
   app.config.connectTo(app.testModule);
 
   app.initialise();

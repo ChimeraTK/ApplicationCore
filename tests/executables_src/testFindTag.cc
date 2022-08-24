@@ -10,12 +10,12 @@
 
 #define BOOST_TEST_MODULE testFindTag
 
+#include "ApplicationCore.h"
+#include "TestFacility.h"
+
 #include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
 #include <boost/thread.hpp>
-
-#include "ApplicationCore.h"
-#include "TestFacility.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;

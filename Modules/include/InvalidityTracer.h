@@ -2,7 +2,7 @@
 
 /**
  *  InvalidityTracer application module.
- *  
+ *
  *  This module can be instantiated in any application for the purpose of debugging unexpected stats of
  *  DataValidity::faulty.
  */

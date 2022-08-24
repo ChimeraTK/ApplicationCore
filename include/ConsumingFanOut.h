@@ -8,9 +8,9 @@
 #ifndef CHIMERATK_CONSUMING_FAN_OUT_H
 #define CHIMERATK_CONSUMING_FAN_OUT_H
 
-#include <ChimeraTK/NDRegisterAccessorDecorator.h>
-
 #include "FanOut.h"
+
+#include <ChimeraTK/NDRegisterAccessorDecorator.h>
 
 namespace ChimeraTK {
 

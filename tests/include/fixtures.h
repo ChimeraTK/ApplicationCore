@@ -1,18 +1,18 @@
 #pragma once
 
-#include <ChimeraTK/BackendFactory.h>
-#include <ChimeraTK/Device.h>
-#include <ChimeraTK/NDRegisterAccessor.h>
-#include <ChimeraTK/ExceptionDummyBackend.h>
-#include <ChimeraTK/DummyRegisterAccessor.h>
-
 #include "Application.h"
 #include "ApplicationModule.h"
+#include "check_timeout.h"
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
-#include "check_timeout.h"
+
+#include <ChimeraTK/BackendFactory.h>
+#include <ChimeraTK/Device.h>
+#include <ChimeraTK/DummyRegisterAccessor.h>
+#include <ChimeraTK/ExceptionDummyBackend.h>
+#include <ChimeraTK/NDRegisterAccessor.h>
 
 #include <future>
 
@@ -86,7 +86,7 @@ struct DummyApplication : ChimeraTK::Application {
     device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> pushModule3.reg1.pushInput >>
         cs("dev2_reg1_push_read");
     findTag("DEVICE").excludeTag("DEV").connectTo(cs["Device2"]);
-    //dumpConnections();
+    // dumpConnections();
   }
 };
 

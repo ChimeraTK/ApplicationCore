@@ -8,12 +8,12 @@
 #ifndef CHIMERATK_CONTROL_SYSTEM_MODULE_H
 #define CHIMERATK_CONTROL_SYSTEM_MODULE_H
 
-#include <list>
+#include "Module.h"
+#include "VariableNetworkNode.h"
 
 #include <ChimeraTK/RegisterPath.h>
 
-#include "Module.h"
-#include "VariableNetworkNode.h"
+#include <list>
 
 namespace ChimeraTK {
 

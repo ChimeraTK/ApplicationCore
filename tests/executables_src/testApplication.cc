@@ -10,17 +10,16 @@
 
 #define BOOST_TEST_MODULE testApplication
 
-#include <boost/filesystem.hpp>
-#include <boost/mpl/list.hpp>
-#include <boost/test/included/unit_test.hpp>
-#include <boost/thread.hpp>
-
-#include <libxml++/libxml++.h>
-
 #include "Application.h"
 #include "ControlSystemModule.h"
 #include "Multiplier.h"
 #include "Pipe.h"
+#include <libxml++/libxml++.h>
+
+#include <boost/filesystem.hpp>
+#include <boost/mpl/list.hpp>
+#include <boost/test/included/unit_test.hpp>
+#include <boost/thread.hpp>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;

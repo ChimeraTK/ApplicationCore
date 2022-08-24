@@ -1,7 +1,9 @@
 #include "MetaDataPropagatingRegisterDecorator.h"
+
+#include "Application.h"
 #include "EntityOwner.h"
 #include "VariableNetworkNode.h"
-#include "Application.h"
+
 #include <boost/pointer_cast.hpp>
 
 namespace ChimeraTK {
@@ -37,8 +39,8 @@ namespace ChimeraTK {
 
   template<typename T>
   void MetaDataPropagatingRegisterDecorator<T>::doPreWrite(TransferType type, VersionNumber versionNumber) {
-    // We cannot use NDRegisterAccessorDecorator<T> here because we need a different implementation of setting the target data validity.
-    // So we have a complete implemetation here.
+    // We cannot use NDRegisterAccessorDecorator<T> here because we need a different implementation of setting the
+    // target data validity. So we have a complete implemetation here.
 
     if(_owner->getCircularNetworkHash() && _dataValidity != lastValidity) {
       // In circular dependency networks an output which actively has DataValidity::faulty set by the user logic is handled

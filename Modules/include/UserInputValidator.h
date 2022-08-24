@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ScalarAccessor.h"
+
 #include <boost/fusion/container.hpp>
 
 namespace ChimeraTK {
@@ -43,14 +44,14 @@ namespace ChimeraTK {
    *   validator.setErrorFunction([&](const std::string &message) { ... code to report error ...});
    *   validator.add("MyInput must be bigger than 0!", [&] { return myInput > 0; }, myInput);
    *   validator.setFallback(myInput, 1); // necessary, since 0 is not valid
-   *    
+   *
    *   ChimeraTK::TransferElementID change;
    *   auto rag = readAnyGroup();
    *   while(true) {
    *     validator.validate(change); // change is default constructed in first run -> validate all initial values
-   *      
+   *
    *     ... do some computations based on myInput which would fail for myInput <= 0 ...
-   *      
+   *
    *     change = rag.readAny();
    *   }
    * }

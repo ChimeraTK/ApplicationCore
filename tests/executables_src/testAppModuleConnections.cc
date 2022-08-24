@@ -5,16 +5,16 @@
  *      Author: Martin Hierholzer
  */
 
-#include <future>
-
-#include <boost/mpl/list.hpp>
-
-#include <ChimeraTK/BackendFactory.h>
-
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
 #include "ScalarAccessor.h"
+
+#include <ChimeraTK/BackendFactory.h>
+
+#include <boost/mpl/list.hpp>
+
+#include <future>
 
 #define BOOST_NO_EXCEPTIONS
 #define BOOST_TEST_MODULE testAppModuleConnections
@@ -379,7 +379,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMergeNetworks, T, test_types) {
   app.testModule.consumingPush2 >> app.testModule.consumingPush3;
   // This merges the two networks
   app.testModule.consumingPush >> app.testModule.consumingPush2;
-
 
   // run the app
   app.initialise();

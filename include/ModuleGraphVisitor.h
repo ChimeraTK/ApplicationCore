@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Visitor.h"
+
 #include <ostream>
 #include <string>
-
-#include "Visitor.h"
 
 namespace ChimeraTK {
   // Forward declarations

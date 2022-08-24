@@ -8,10 +8,10 @@
 #ifndef CHIMERATK_TEST_DECORATOR_REGISTER_ACCCESSOR
 #define CHIMERATK_TEST_DECORATOR_REGISTER_ACCCESSOR
 
-#include <ChimeraTK/NDRegisterAccessorDecorator.h>
-
 #include "Application.h"
 #include "FeedingFanOut.h"
+
+#include <ChimeraTK/NDRegisterAccessorDecorator.h>
 
 namespace ChimeraTK {
 

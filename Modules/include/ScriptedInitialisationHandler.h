@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ApplicationModule.h"
-#include "ScalarAccessor.h"
 #include "HierarchyModifyingGroup.h"
+#include "ScalarAccessor.h"
 
 namespace ChimeraTK {
 
@@ -36,9 +36,11 @@ namespace ChimeraTK {
      * @param owner Argument for the ApplicationModule, ususally "this"
      * @param name Irrelevant, will be taken from the device module
      * @param description
-     * @param command The system command which is exected for device initialisation. Must return 0 on success and an error code if initialisation failed.
+     * @param command The system command which is exected for device initialisation. Must return 0 on success and an
+     * error code if initialisation failed.
      * @param deviceModule The device module on which the initialisation handler is registered.
-     * @param outputName Name of the PV with the output string. Defauls to "initScriptOutput", but can be changed in case more than one script is needed for the device.
+     * @param outputName Name of the PV with the output string. Defauls to "initScriptOutput", but can be changed in
+     * case more than one script is needed for the device.
      * @param errorGracePeriod Additional time in seconds before a retry after an error.
      */
     ScriptedInitHandler(EntityOwner* owner, const std::string& name, const std::string& description,

@@ -8,11 +8,11 @@
 #ifndef CHIMERATK_ENTITY_OWNER_H
 #define CHIMERATK_ENTITY_OWNER_H
 
+#include "Flags.h"
+#include "VariableNetworkNode.h"
+
 #include <list>
 #include <string>
-
-#include "VariableNetworkNode.h"
-#include "Flags.h"
 
 namespace ChimeraTK {
 
@@ -20,13 +20,13 @@ namespace ChimeraTK {
   class Module;
   class VirtualModule;
 
-  /** 
+  /**
    *  Convenience type definition which can optionally be used as a shortcut for the type which defines a list of
    *  tags.
    */
   using TAGS = const std::unordered_set<std::string>;
 
-  /** 
+  /**
    *  Base class for owners of other EntityOwners (e.g. Modules) and Accessors.
    *  FIXME: Unify with Module class (not straight forward!).
    */
@@ -152,7 +152,8 @@ namespace ChimeraTK {
     void setEliminateHierarchy() { _hierarchyModifier = HierarchyModifier::hideThis; }
 
     /** Returns the flag whether this level of hierarchy should be eliminated. It returns true
-        if hiding the hierarchy is required by the hierarchy modifier (HierarchyModifier::hideThis or HierarchyModifier::oneUpAndHide) */
+        if hiding the hierarchy is required by the hierarchy modifier (HierarchyModifier::hideThis or
+       HierarchyModifier::oneUpAndHide) */
     bool getEliminateHierarchy() const;
 
     /** Returns the hierarchy modifier of this entity. FIXE: One of those useless code comments.
@@ -226,7 +227,7 @@ namespace ChimeraTK {
      *  instantiating generic modules which expect a parameter by variable name, when the parameter shall be set to
      *  a constant value.
      *
-     *  This function is a static member of the EntityOwner, since it is normally called in constructors of 
+     *  This function is a static member of the EntityOwner, since it is normally called in constructors of
      *  EntityOwners.
      */
     template<typename T>

@@ -8,15 +8,15 @@
 #ifndef CHIMERATK_TRIGGER_FAN_OUT_H
 #define CHIMERATK_TRIGGER_FAN_OUT_H
 
-#include <ChimeraTK/NDRegisterAccessor.h>
-#include <ChimeraTK/SupportedUserTypes.h>
-#include <ChimeraTK/TransferGroup.h>
-
 #include "Application.h"
+#include "DeviceModule.h"
 #include "FeedingFanOut.h"
 #include "InternalModule.h"
 #include "Profiler.h"
-#include "DeviceModule.h"
+
+#include <ChimeraTK/NDRegisterAccessor.h>
+#include <ChimeraTK/SupportedUserTypes.h>
+#include <ChimeraTK/TransferGroup.h>
 
 constexpr useconds_t DeviceOpenTimeout = 500;
 
@@ -74,14 +74,16 @@ namespace ChimeraTK {
 
       ChimeraTK::VersionNumber version = Application::getInstance().getStartVersion();
 
-      // Wait for the initial value of the trigger. There always will be one, and if we don't read it here we would trigger the loop twice.
+      // Wait for the initial value of the trigger. There always will be one, and if we don't read it here we would
+      // trigger the loop twice.
       externalTrigger->read();
       version = externalTrigger->getVersionNumber();
 
       // Wait until the device has been initialised for the first time. This means it
       // has been opened, and the check in TransferGroup::read() will not throw a logic_error
       // We don't have to store the lock. Just need it as a synchronisation point.
-      // But we have to increase the testable mode counter because we don't want to fall out of testable mode at this point already.
+      // But we have to increase the testable mode counter because we don't want to fall out of testable mode at this
+      // point already.
       if(Application::getInstance().testableMode) ++Application::getInstance().testableMode_deviceInitialisationCounter;
       Application::testableModeUnlock("WaitInitialValueLock");
       (void)_deviceModule.waitForInitialValues();
@@ -123,7 +125,8 @@ namespace ChimeraTK {
                   DataValidity::ok :
                   DataValidity::faulty);
           fanOut->accessChannel(0).swap(feeder->accessChannel(0));
-          // don't use write destructively. In case of an exception we still need the data for the next read (see Exception Handling spec B.2.2.6)
+          // don't use write destructively. In case of an exception we still need the data for the next read (see
+          // Exception Handling spec B.2.2.6)
           bool dataLoss = fanOut->write(_version);
           if(dataLoss) Application::incrementDataLossCounter(fanOut->getName());
           // swap the data back to the feeder so we have a valid copy there.

@@ -10,20 +10,20 @@
 
 #define BOOST_TEST_MODULE testTestFacilities
 
-#include <boost/mpl/list.hpp>
-#include <boost/test/included/unit_test.hpp>
-#include <boost/thread/barrier.hpp>
-
-#include <ChimeraTK/Device.h>
-
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
-#include "TestFacility.h"
 #include "TestableModeAccessorDecorator.h"
+#include "TestFacility.h"
 #include "VariableGroup.h"
+
+#include <ChimeraTK/Device.h>
+
+#include <boost/mpl/list.hpp>
+#include <boost/test/included/unit_test.hpp>
+#include <boost/thread/barrier.hpp>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;

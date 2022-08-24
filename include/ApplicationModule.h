@@ -8,13 +8,13 @@
 #ifndef CHIMERATK_APPLICATION_MODULE_H
 #define CHIMERATK_APPLICATION_MODULE_H
 
-#include <list>
+#include "Application.h"
+#include "CircularDependencyDetectionRecursionStopper.h"
+#include "ModuleImpl.h"
 
 #include <boost/thread.hpp>
 
-#include "ModuleImpl.h"
-#include "Application.h"
-#include "CircularDependencyDetectionRecursionStopper.h"
+#include <list>
 
 namespace ChimeraTK {
 
@@ -103,13 +103,13 @@ namespace ChimeraTK {
      * write operations */
     VersionNumber currentVersionNumber{nullptr};
 
-    /** 
+    /**
      *  Number of inputs which report DataValidity::faulty.
      *  This is atomic to allow the InvalidityTracer module to access this information.
      */
     std::atomic<size_t> dataFaultCounter{0};
 
-    /** 
+    /**
      *  Unique ID for the circular dependency network. 0 if the EntityOwner is not in a circular dependency network.
      *  Only write when in LifeCycleState::initialisation (so getDataValidity() is thread safe, required by
      *  InvalidityTracer).

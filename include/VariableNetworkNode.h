@@ -8,20 +8,19 @@
 #ifndef CHIMERATK_VARIABLE_NETWORK_NODE_H
 #define CHIMERATK_VARIABLE_NETWORK_NODE_H
 
-#include <iostream>
-#include <unordered_map>
-#include <unordered_set>
-
-#include <assert.h>
-
-#include <boost/shared_ptr.hpp>
-
-#include <ChimeraTK/NDRegisterAccessorAbstractor.h>
-
 #include "ConstantAccessor.h"
 #include "Flags.h"
 #include "MetaDataPropagatingRegisterDecorator.h"
 #include "Visitor.h"
+#include <unordered_map>
+#include <unordered_set>
+
+#include <ChimeraTK/NDRegisterAccessorAbstractor.h>
+
+#include <boost/shared_ptr.hpp>
+
+#include <assert.h>
+#include <iostream>
 
 namespace ChimeraTK {
 

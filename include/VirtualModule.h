@@ -8,12 +8,13 @@
 #ifndef CHIMERATK_VIRTUAL_MODULE_H
 #define CHIMERATK_VIRTUAL_MODULE_H
 
-#include <list>
+#include "Module.h"
+
+#include <ChimeraTK/RegisterPath.h>
 
 #include <boost/thread.hpp>
 
-#include "Module.h"
-#include <ChimeraTK/RegisterPath.h>
+#include <list>
 
 namespace ChimeraTK {
 

@@ -1,12 +1,12 @@
 #define BOOST_TEST_MODULE testExceptionHandling
-#include <boost/test/included/unit_test.hpp>
-
-#include "ScriptedInitialisationHandler.h"
 #include "Application.h"
-#include "DeviceModule.h"
-#include "TestFacility.h"
-#include "ControlSystemModule.h"
 #include "check_timeout.h"
+#include "ControlSystemModule.h"
+#include "DeviceModule.h"
+#include "ScriptedInitialisationHandler.h"
+#include "TestFacility.h"
+
+#include <boost/test/included/unit_test.hpp>
 
 #include <filesystem>
 #include <fstream>
@@ -43,7 +43,7 @@ BOOST_FIXTURE_TEST_CASE(testSuccess, Fixture) {
   (void)std::filesystem::remove("continueDevice1Init");
   (void)std::filesystem::remove("produceDevice1InitError");
   testFacility.runApplication();
-  //testApp.dumpConnections();
+  // testApp.dumpConnections();
   auto initMessage = testFacility.getScalar<std::string>("/Devices/Dummy0/initScriptOutput");
 
   initMessage.read();
@@ -93,7 +93,7 @@ BOOST_FIXTURE_TEST_CASE(testError, Fixture) {
 
   testFacility.runApplication();
 
-  //testApp.dumpConnections();
+  // testApp.dumpConnections();
   auto secondInitMessage = testFacility.getScalar<std::string>("/Devices/Dummy0/secondInitScriptOutput");
 
   // let the script run three times. Afterwards manually check that there is only one printout on the console

@@ -5,11 +5,12 @@
  *      Author: Martin Hierholzer
  */
 
-#include <sstream>
+#include "VariableNetwork.h"
 
 #include "Application.h"
-#include "VariableNetwork.h"
 #include "VariableNetworkDumpingVisitor.h"
+
+#include <sstream>
 
 namespace ChimeraTK {
 
@@ -24,7 +25,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  size_t VariableNetwork::countConsumingNodes() const { return nodeList.size() - (hasFeedingNode() ? 1 : 0); }
+  size_t VariableNetwork::countConsumingNodes() const {
+    return nodeList.size() - (hasFeedingNode() ? 1 : 0);
+  }
 
   /*********************************************************************************************************************/
 
@@ -99,7 +102,9 @@ namespace ChimeraTK {
     accept(visitor);
   }
 
-  void VariableNetwork::accept(Visitor<VariableNetwork>& visitor) const { visitor.dispatch(*this); }
+  void VariableNetwork::accept(Visitor<VariableNetwork>& visitor) const {
+    visitor.dispatch(*this);
+  }
 
   /*********************************************************************************************************************/
 

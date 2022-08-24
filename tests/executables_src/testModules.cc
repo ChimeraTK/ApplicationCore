@@ -13,9 +13,9 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include <boost/mpl/list.hpp>
-
 #include "ApplicationCore.h"
+
+#include <boost/mpl/list.hpp>
 
 namespace ctk = ChimeraTK;
 

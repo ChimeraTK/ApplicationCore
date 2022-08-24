@@ -1,13 +1,14 @@
 #define BOOST_TEST_MODULE testFanoutConnections
 
-#include <boost/mpl/list.hpp>
-#include <boost/test/included/unit_test.hpp>
-
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
+
 #include <ChimeraTK/ExceptionDummyBackend.h>
+
+#include <boost/mpl/list.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 namespace ctk = ChimeraTK;
 

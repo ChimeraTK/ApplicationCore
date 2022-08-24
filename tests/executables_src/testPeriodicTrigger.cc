@@ -4,8 +4,8 @@
 using namespace boost::unit_test_framework;
 
 #include "Application.h"
-#include "TestFacility.h"
 #include "PeriodicTrigger.h"
+#include "TestFacility.h"
 
 using namespace ChimeraTK;
 

@@ -5,10 +5,10 @@
  *      Author: Martin Hierholzer
  */
 
-#include <iostream>
-
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/EnableXMLGenerator.h>
+
+#include <iostream>
 
 namespace ctk = ChimeraTK;
 

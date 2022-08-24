@@ -8,17 +8,18 @@
 #ifndef CHIMERATK_VARIABLE_NETWORK_H
 #define CHIMERATK_VARIABLE_NETWORK_H
 
+#include "Flags.h"
+#include "VariableNetworkNode.h"
+#include "Visitor.h"
+
+#include <ChimeraTK/ControlSystemAdapter/ProcessVariable.h>
+
 #include <boost/mpl/for_each.hpp>
+
 #include <iostream>
 #include <list>
 #include <string>
 #include <typeinfo>
-
-#include <ChimeraTK/ControlSystemAdapter/ProcessVariable.h>
-
-#include "Flags.h"
-#include "VariableNetworkNode.h"
-#include "Visitor.h"
 
 namespace ChimeraTK {
 
@@ -139,7 +140,7 @@ namespace ChimeraTK {
     bool merge(VariableNetwork& other);
 
     /** Set FanOut used to realise this network */
-    void setFanOut(const boost::shared_ptr<FanOutBase> &fanOut) { _fanOut = fanOut; }
+    void setFanOut(const boost::shared_ptr<FanOutBase>& fanOut) { _fanOut = fanOut; }
 
     /** Return FanOut used to realise this network if present, empty shared_ptr otherwise. */
     boost::shared_ptr<FanOutBase> getFanOut() const { return _fanOut.lock(); }
@@ -175,7 +176,6 @@ namespace ChimeraTK {
 
     /** The fan out to realise this network. Only valid if a FanOut is needed. */
     boost::weak_ptr<FanOutBase> _fanOut;
-
   };
 
 } /* namespace ChimeraTK */

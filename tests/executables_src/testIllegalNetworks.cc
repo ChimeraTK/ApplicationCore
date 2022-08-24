@@ -9,16 +9,16 @@
 
 #define BOOST_TEST_MODULE testIllegalNetworks
 
-#include <boost/mpl/list.hpp>
-#include <boost/test/included/unit_test.hpp>
-
-#include <ChimeraTK/BackendFactory.h>
-
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
+
+#include <ChimeraTK/BackendFactory.h>
+
+#include <boost/mpl/list.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;

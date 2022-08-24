@@ -1,12 +1,12 @@
 #define BOOST_TEST_MODULE testDirectDeviceToCS
 
-#include <boost/test/included/unit_test.hpp>
-
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ControlSystemModule.h"
 #include "ScalarAccessor.h"
 #include "VariableGroup.h"
+
+#include <boost/test/included/unit_test.hpp>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;

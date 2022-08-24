@@ -1,15 +1,16 @@
 #include "VariableNetworkModuleGraphDumpingVisitor.h"
+
 #include "Application.h"
+#include "DeviceModule.h"
+#include "Module.h"
 #include "VariableNetwork.h"
 #include "VisitorHelper.h"
-#include "Module.h"
-#include "DeviceModule.h"
+
+#include <boost/algorithm/string.hpp>
 
 #include <algorithm>
 #include <sstream>
 #include <typeinfo>
-
-#include <boost/algorithm/string.hpp>
 
 namespace ChimeraTK {
 

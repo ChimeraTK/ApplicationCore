@@ -8,17 +8,17 @@
 #ifndef CHIMERATK_APPLICATION_H
 #define CHIMERATK_APPLICATION_H
 
-#include <atomic>
-#include <mutex>
-
-#include <ChimeraTK/ControlSystemAdapter/ApplicationBase.h>
-#include <ChimeraTK/DeviceBackend.h>
-
 #include "EntityOwner.h"
 #include "Flags.h"
 #include "InternalModule.h"
 #include "Profiler.h"
 #include "VariableNetwork.h"
+
+#include <ChimeraTK/ControlSystemAdapter/ApplicationBase.h>
+#include <ChimeraTK/DeviceBackend.h>
+
+#include <atomic>
+#include <mutex>
 //#include "DeviceModule.h"
 
 namespace ChimeraTK {

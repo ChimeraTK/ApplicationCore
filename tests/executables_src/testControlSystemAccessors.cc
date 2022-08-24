@@ -9,9 +9,11 @@
 
 #define BOOST_TEST_MODULE testControlSystemAccessors
 
-#include <boost/mpl/list.hpp>
-#include <boost/test/included/unit_test.hpp>
-#include <boost/thread/barrier.hpp>
+#include "Application.h"
+#include "ApplicationModule.h"
+#include "ControlSystemModule.h"
+#include "DeviceModule.h"
+#include "ScalarAccessor.h"
 
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
@@ -19,11 +21,9 @@
 #include <ChimeraTK/ControlSystemAdapter/PVManager.h>
 #include <ChimeraTK/Device.h>
 
-#include "Application.h"
-#include "ApplicationModule.h"
-#include "ControlSystemModule.h"
-#include "DeviceModule.h"
-#include "ScalarAccessor.h"
+#include <boost/mpl/list.hpp>
+#include <boost/test/included/unit_test.hpp>
+#include <boost/thread/barrier.hpp>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;

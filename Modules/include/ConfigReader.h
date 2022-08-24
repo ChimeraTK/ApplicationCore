@@ -68,14 +68,14 @@
 #ifndef CHIMERATK_APPLICATION_CORE_CONFIG_READER_H
 #define CHIMERATK_APPLICATION_CORE_CONFIG_READER_H
 
-#include <map>
+#include "ApplicationModule.h"
+#include "ArrayAccessor.h"
+#include "ScalarAccessor.h"
 #include <unordered_map>
 
 #include <ChimeraTK/SupportedUserTypes.h>
 
-#include "ApplicationModule.h"
-#include "ScalarAccessor.h"
-#include "ArrayAccessor.h"
+#include <map>
 
 namespace ChimeraTK {
 
@@ -124,7 +124,7 @@ namespace ChimeraTK {
     void mainLoop() override {}
     void prepare() override;
 
-    /** 
+    /**
      *  Get value for given configuration variable. This is already accessible right after construction of this object.
      *  Throws ChimeraTK::logic_error if variable doesn't exist. To obtain the value of an array, use an std::vector<T>
      *  as template argument.
@@ -132,7 +132,7 @@ namespace ChimeraTK {
     template<typename T>
     const T& get(const std::string& variableName) const;
 
-    /** 
+    /**
      *  Version of get() which does not throw if the variable does not exist and instead returns the given default
      *  value.
      */

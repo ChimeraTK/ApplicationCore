@@ -1,6 +1,7 @@
 #include "InvalidityTracer.h"
-#include "Visitor.h"
+
 #include "MetaDataPropagatingRegisterDecorator.h"
+#include "Visitor.h"
 
 namespace ChimeraTK { namespace {
   struct InvalidityTracerVisitor : Visitor<VariableNetworkNode, ApplicationModule> {
@@ -11,7 +12,7 @@ namespace ChimeraTK { namespace {
     // are simply ignored.
     void dispatch(const VariableNetworkNode& accessor) override;
   };
-}} // namespace ChimeraTK::
+}} // namespace ChimeraTK
 
 /**********************************************************************************************************************/
 
