@@ -111,7 +111,10 @@
 
  */
 
-#include "ApplicationCore.h"
+#include "ApplicationModule.h"
+#include "HierarchyModifyingGroup.h"
+#include "ScalarAccessor.h"
+#include "VariableGroup.h"
 
 #include <ChimeraTK/RegisterPath.h>
 

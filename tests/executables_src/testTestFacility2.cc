@@ -4,8 +4,12 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "ApplicationCore.h"
+#include "Application.h"
+#include "ApplicationModule.h"
+#include "ControlSystemModule.h"
+#include "ScalarAccessor.h"
 #include "TestFacility.h"
+
 namespace ctk = ChimeraTK;
 
 struct MyModule : public ctk::ApplicationModule {

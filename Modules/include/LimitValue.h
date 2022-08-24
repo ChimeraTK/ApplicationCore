@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "ApplicationCore.h"
+#include "ApplicationModule.h"
+#include "ScalarAccessor.h"
 
 namespace ChimeraTK {
 

@@ -5,8 +5,14 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "ApplicationCore.h"
+#include "Application.h"
+#include "ApplicationModule.h"
+#include "ControlSystemModule.h"
+#include "ScalarAccessor.h"
 #include "TestFacility.h"
+#include "VariableGroup.h"
+#include "VirtualModule.h"
+
 using namespace ChimeraTK;
 
 struct TestApp : public Application {

@@ -5,9 +5,14 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "ApplicationCore.h"
+#include "Application.h"
+#include "ApplicationModule.h"
+#include "ArrayAccessor.h"
 #include "ConfigReader.h"
+#include "DeviceModule.h"
+#include "ScalarAccessor.h"
 #include "TestFacility.h"
+#include "VariableGroup.h"
 
 namespace ctk = ChimeraTK;
 

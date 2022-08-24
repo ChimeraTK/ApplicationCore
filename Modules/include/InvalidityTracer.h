@@ -8,7 +8,8 @@
  *  This module can be instantiated in any application for the purpose of debugging unexpected stats of
  *  DataValidity::faulty.
  */
-#include "ApplicationCore.h"
+#include "ApplicationModule.h"
+#include "ScalarAccessor.h"
 
 namespace ChimeraTK {
 
