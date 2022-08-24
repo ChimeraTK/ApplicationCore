@@ -5,8 +5,14 @@
 
 #define BOOST_TEST_MODULE testFindTag
 
-#include "ApplicationCore.h"
+#include "Application.h"
+#include "ApplicationModule.h"
+#include "ControlSystemModule.h"
+#include "ModuleGroup.h"
+#include "ScalarAccessor.h"
 #include "TestFacility.h"
+#include "VariableGroup.h"
+#include "VirtualModule.h"
 
 #include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>

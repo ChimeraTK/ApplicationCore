@@ -8,7 +8,13 @@
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "ApplicationCore.h"
+#include "Application.h"
+#include "ApplicationModule.h"
+#include "ArrayAccessor.h"
+#include "ModuleGroup.h"
+#include "ScalarAccessor.h"
+#include "VariableGroup.h"
+#include "VirtualModule.h"
 
 #include <boost/mpl/list.hpp>
 

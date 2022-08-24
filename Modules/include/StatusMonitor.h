@@ -30,8 +30,11 @@ For more info see \ref statusmonitordoc
  * Each module monitors an input variable and depending upon the
  * conditions reports four different states.
  */
-#include "ApplicationCore.h"
+#include "ApplicationModule.h"
+#include "HierarchyModifyingGroup.h"
+#include "ScalarAccessor.h"
 #include "StatusAccessor.h"
+#include "VariableGroup.h"
 
 namespace ChimeraTK {
 

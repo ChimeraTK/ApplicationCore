@@ -5,8 +5,14 @@
 
 #define BOOST_TEST_MODULE testHierarchyModifyingGroup
 
-#include "ApplicationCore.h"
-#include "TestFacility.h"
+#include "Application.h"
+#include "ApplicationModule.h"
+#include "ControlSystemModule.h"
+#include "HierarchyModifyingGroup.h"
+#include "ModuleGroup.h"
+#include "ScalarAccessor.h"
+#include "VariableGroup.h"
+#include "VirtualModule.h"
 
 #include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
