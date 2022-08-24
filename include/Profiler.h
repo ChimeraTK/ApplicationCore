@@ -1,12 +1,6 @@
-/*
- * Profiler.h
- *
- *  Created on: May 15, 2017
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_PROFILER_H
-#define CHIMERATK_PROFILER_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include <assert.h>
 #include <atomic>
@@ -102,5 +96,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERATK_PROFILER_H */

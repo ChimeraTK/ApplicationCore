@@ -1,12 +1,6 @@
-/*
- * FanOut.h
- *
- *  Created on: Jun 15, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_FAN_OUT_H
-#define CHIMERATK_FAN_OUT_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "VariableNetworkNode.h"
 
@@ -107,5 +101,3 @@ namespace ChimeraTK {
   };
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERATK_FAN_OUT_H */

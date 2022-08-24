@@ -1,12 +1,6 @@
-/*
- * ConsumingFanOut.h
- *
- *  Created on: Jun 15, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_CONSUMING_FAN_OUT_H
-#define CHIMERATK_CONSUMING_FAN_OUT_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "FanOut.h"
 
@@ -71,5 +65,3 @@ namespace ChimeraTK {
   };
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERATK_CONSUMING_FAN_OUT_H */

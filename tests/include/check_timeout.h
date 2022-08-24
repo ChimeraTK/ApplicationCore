@@ -1,5 +1,6 @@
-#ifndef CHECK_TIMEOUT_H
-#define CHECK_TIMEOUT_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include <boost/test/test_tools.hpp>
 
@@ -21,5 +22,3 @@
     BOOST_CHECK_EQUAL(left, right);                                                                                    \
   }                                                                                                                    \
   (void)0
-
-#endif // CHECK_TIMEOUT_H

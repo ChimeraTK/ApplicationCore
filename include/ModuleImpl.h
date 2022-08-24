@@ -1,12 +1,6 @@
-/*
- * ModuleImpl.h
- *
- *  Created on: Okt 11, 2017
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_MODULE_IMPL_H
-#define CHIMERATK_MODULE_IMPL_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "Module.h"
 #include "VirtualModule.h"
@@ -67,5 +61,3 @@ namespace ChimeraTK {
   };
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERATK_MODULE_IMPL_H */
