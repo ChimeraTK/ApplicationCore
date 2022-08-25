@@ -5,7 +5,6 @@
 #include "EntityOwner.h"
 #include "Flags.h"
 #include "InternalModule.h"
-#include "Profiler.h"
 #include "VariableNetwork.h"
 
 #include <ChimeraTK/ControlSystemAdapter/ApplicationBase.h>
@@ -147,13 +146,16 @@ namespace ChimeraTK {
      *  This function should generally not be used in user code. */
     static bool testableModeTestLock();
 
-    /** Set string holding the name of the current thread or the specified thread ID. This is used e.g. for
-     *  debugging output of the testable mode and for the internal profiler. */
+    /**
+     * Set string holding the name of the current thread or the specified thread ID. This is used e.g. for
+     * debugging output of the testable mode.
+     */
     void setThreadName(const std::string& name);
 
-    /** Get string holding the name of the current thread or the specified thread ID. This is used e.g. for
-     *  debugging output of the testable mode and for the internal profiler. Will return "*UNKNOWN_THREAD*" if the name
-     *  for the given ID has not yet been set. */
+    /**
+     * Get string holding the name of the current thread or the specified thread ID. This is used e.g. for debugging
+     * output of the testable mode. Will return "*UNKNOWN_THREAD*" if the name for the given ID has not yet been set.
+     */
     static std::string threadName(const boost::thread::id& threadId = boost::this_thread::get_id());
 
     /** Register the thread in the application system and give it a name. This

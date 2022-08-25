@@ -4,7 +4,6 @@
 
 #include "Application.h"
 #include "InversionOfControlAccessor.h"
-#include "Profiler.h"
 
 #include <ChimeraTK/OneDRegisterAccessor.h>
 

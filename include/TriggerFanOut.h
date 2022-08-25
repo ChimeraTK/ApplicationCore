@@ -6,7 +6,6 @@
 #include "DeviceModule.h"
 #include "FeedingFanOut.h"
 #include "InternalModule.h"
-#include "Profiler.h"
 
 #include <ChimeraTK/NDRegisterAccessor.h>
 #include <ChimeraTK/SupportedUserTypes.h>

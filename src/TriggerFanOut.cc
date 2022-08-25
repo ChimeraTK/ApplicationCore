@@ -103,9 +103,7 @@ namespace ChimeraTK {
 
       // wait for external trigger
       boost::this_thread::interruption_point();
-      Profiler::stopMeasurement();
       externalTrigger->read();
-      Profiler::startMeasurement();
       boost::this_thread::interruption_point();
       version = externalTrigger->getVersionNumber();
     }
