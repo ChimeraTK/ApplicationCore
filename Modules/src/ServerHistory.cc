@@ -2,13 +2,14 @@
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 
-namespace ChimeraTK { namespace history {
+namespace ChimeraTK { // namespace history {
 
   /** Callable class for use with  boost::fusion::for_each: Attach the given
    * accessor to the History with proper handling of the UserType. */
+  template<typename TRIGGERTYPE>
   struct AccessorAttacher {
-    AccessorAttacher(
-        VariableNetworkNode& feeder, ServerHistory* owner, const std::string& name, const VariableNetworkNode& trigger)
+    AccessorAttacher(VariableNetworkNode& feeder, ServerHistory<TRIGGERTYPE>* owner, const std::string& name,
+        const VariableNetworkNode& trigger)
     : _feeder(feeder), _trigger(trigger), _owner(owner), _name(name) {}
 
     template<typename PAIR>
@@ -27,16 +28,44 @@ namespace ChimeraTK { namespace history {
 
     VariableNetworkNode& _feeder;
     VariableNetworkNode _trigger;
-    ServerHistory* _owner;
+    ServerHistory<TRIGGERTYPE>* _owner;
     const std::string& _name;
   };
 
-  void ServerHistory::addSource(
-      const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode& trigger) {
-    // for simplification, first create a VirtualModule containing the correct
-    // hierarchy structure (obeying eliminate hierarchy etc.)
-    auto dynamicModel = source.findTag(".*"); /// @todo use virtualise() instead
-
+  template<typename TRIGGERTYPE>
+  ServerHistory<TRIGGERTYPE>::ServerHistory(EntityOwner* owner, const std::string& name, const std::string& description,
+      size_t historyLength, bool enableTimeStamps, const std::string& trigger, HierarchyModifier hierarchyModifier,
+      const std::unordered_set<std::string>& tags)
+  : ApplicationModule(owner, name, description, hierarchyModifier, tags), _historyLength(historyLength),
+    _enbaleTimeStamps(enableTimeStamps) {
+    VariableNetworkNode triggerNode;
+    if(!trigger.empty()) {
+      triggerGroup = Trigger{this, HierarchyModifyingGroup::getPathName(trigger),
+          HierarchyModifyingGroup::getUnqualifiedName(trigger), ""};
+      triggerNode = triggerGroup.trigger;
+    }
+    auto virtualLogging = getOwner()->findTag("history");
+    auto list = virtualLogging.getAccessorListRecursive();
+    for(auto it = list.begin(); it != list.end(); ++it) {
+      // do not add the module itself
+      if(it->getOwningModule() == this) continue;
+      try {
+        // virtualLogging.getQualifiedName() returns the name of the app, e.g. /test and we remove that from the module
+        // name , e.g. /test/MyModule
+        auto namePrefix =
+            it->getOwningModule()->getQualifiedName().substr(virtualLogging.getQualifiedName().length() + 1);
+        prepareHierarchy(namePrefix);
+        boost::fusion::for_each(
+            _accessorListMap.table, AccessorAttacher<TRIGGERTYPE>(*it, this, namePrefix / it->getName(), triggerNode));
+      }
+      catch(ChimeraTK::logic_error& e) {
+        std::cerr << "Failed to add history variable: " << it->getQualifiedName() << " Error: " << e.what()
+                  << std::endl;
+      }
+    }
+  }
+  template<typename TRIGGERTYPE>
+  void ServerHistory<TRIGGERTYPE>::prepareHierarchy(const RegisterPath& namePrefix) {
     // create variable group map for namePrefix if needed
     if(groupMap.find(namePrefix) == groupMap.end()) {
       // search for existing parent (if any)
@@ -56,29 +85,43 @@ namespace ChimeraTK { namespace history {
         groupMap[parentPrefix] = VariableGroup(owner, std::string(name).substr(1), "");
       }
     }
-
-    // add all accessors on this hierarchy level
-    for(auto& acc : dynamicModel.getAccessorList()) {
-      boost::fusion::for_each(_accessorListMap.table, AccessorAttacher(acc, this, namePrefix / acc.getName(), trigger));
-    }
-
-    // recurse into submodules
-    for(auto mod : dynamicModel.getSubmoduleList()) {
-      addSource(*mod, namePrefix / mod->getName(), trigger);
-    }
   }
 
-  void ServerHistory::addSource(const DeviceModule& source, const RegisterPath& namePrefix,
-      const std::string& submodule, const VariableNetworkNode& trigger) {
-    auto mod = source.virtualiseFromCatalog();
-    if(submodule.empty())
-      addSource(mod, namePrefix, trigger);
-    else
-      addSource(mod.submodule(submodule), namePrefix, trigger);
-  }
+  //  template<typename TRIGGERTYPE>
+  //  void ServerHistory<TRIGGERTYPE>::addSource(
+  //      const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode& trigger) {
+  //    // for simplification, first create a VirtualModule containing the correct
+  //    // hierarchy structure (obeying eliminate hierarchy etc.)
+  //    auto dynamicModel = source.findTag(".*"); /// @todo use virtualise() instead
+  //
+  //    prepareHierarchy(namePrefix);
+  //
+  //    // add all accessors on this hierarchy level
+  //    for(auto& acc : dynamicModel.getAccessorList()) {
+  //      boost::fusion::for_each(
+  //          _accessorListMap.table, AccessorAttacher<TRIGGERTYPE>(acc, this, namePrefix / acc.getName(), trigger));
+  //    }
+  //
+  //    // recurse into submodules
+  //    for(auto mod : dynamicModel.getSubmoduleList()) {
+  //      addSource(*mod, namePrefix / mod->getName(), trigger);
+  //    }
+  //  }
+  //
+  //  template<typename TRIGGERTYPE>
+  //  void ServerHistory<TRIGGERTYPE>::addSource(const DeviceModule& source, const RegisterPath& namePrefix,
+  //      const std::string& submodule, const VariableNetworkNode& trigger) {
+  //    auto mod = source.virtualiseFromCatalog();
+  //    if(submodule.empty())
+  //      addSource(mod, namePrefix, trigger);
+  //    else
+  //      addSource(mod.submodule(submodule), namePrefix, trigger);
+  //  }
 
+  template<typename TRIGGERTYPE>
   template<typename UserType>
-  VariableNetworkNode ServerHistory::getAccessor(const std::string& variableName, const size_t& nElements) {
+  VariableNetworkNode ServerHistory<TRIGGERTYPE>::getAccessor(
+      const std::string& variableName, const size_t& nElements) {
     // check if variable name already registered
     for(auto& name : _overallVariableList) {
       if(name == variableName) {
@@ -159,18 +202,20 @@ namespace ChimeraTK { namespace history {
     TransferElementID _id;
   };
 
-  void ServerHistory::prepare() {
+  template<typename TRIGGERTYPE>
+  void ServerHistory<TRIGGERTYPE>::prepare() {
     incrementDataFaultCounter(); // the written data is flagged as faulty
     writeAll();                  // send out initial values of all outputs.
     decrementDataFaultCounter(); // when entering the main loop calculate the validiy from the inputs. No artificial increase.
   }
 
-  void ServerHistory::mainLoop() {
+  template<typename TRIGGERTYPE>
+  void ServerHistory<TRIGGERTYPE>::mainLoop() {
     auto group = readAnyGroup();
     while(true) {
       auto id = group.readAny();
       boost::fusion::for_each(_accessorListMap.table, Update(id));
     }
   }
-
-}} // namespace ChimeraTK::history
+  INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES_NO_VOID(ServerHistory);
+} // namespace ChimeraTK
