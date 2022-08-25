@@ -133,10 +133,13 @@ BOOST_AUTO_TEST_CASE(testAlias) {
   app.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
   tf.stepApplication();
   std::string ss = tf.readScalar<std::string>("/LoggingModule/logTail");
-  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 6), std::string("/Dummy"));
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 5), std::string("Dummy"));
   auto alias = tf.getScalar<std::string>("/Dummy/Logging/alias");
   alias = "NewName";
   alias.write();
+  app.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  // write twice to be sure the alias is set
   app.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
   tf.stepApplication();
   ss = tf.readScalar<std::string>("/LoggingModule/logTail");
@@ -152,24 +155,32 @@ BOOST_AUTO_TEST_CASE(testAlias_withHierachies) {
   app.group.a.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
   tf.stepApplication();
   std::string ss = tf.readScalar<std::string>("/LoggingModule/logTail");
-  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 26), std::string("/MainGroup/A/Dummy/Logging"));
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 25), std::string("MainGroup/A/Dummy/Logging"));
 
   app.group.b.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
   tf.stepApplication();
   ss = tf.readScalar<std::string>("/LoggingModule/logTail");
-  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 26), std::string("/MainGroup/B/Dummy/Logging"));
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 25), std::string("MainGroup/B/Dummy/Logging"));
 
   auto aliasA = tf.getScalar<std::string>("/MainGroup/A/Dummy/Logging/alias");
   aliasA = "NewName";
   aliasA.write();
   app.group.a.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
   tf.stepApplication();
+  // write twice to be sure the alias is set
+  app.group.a.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
   ss = tf.readScalar<std::string>("/LoggingModule/logTail");
   BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 7), std::string("NewName"));
 
+  // check if internal variable is removed from CS
+  BOOST_CHECK_THROW(tf.getScalar<std::string>("/MainGroup/B/Dummy/Logging/alias"), ctk::logic_error);
   auto aliasB = tf.getScalar<std::string>("/MainGroup/Dummy/Logging/alias");
   aliasB = "NewName";
   aliasB.write();
+  app.group.b.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  // write twice to be sure the alias is set
   app.group.b.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
   tf.stepApplication();
   ss = tf.readScalar<std::string>("/LoggingModule/logTail");

@@ -174,6 +174,9 @@ namespace logging {
     /** Message to be send to the logging module */
     ctk::ScalarOutput<std::string> message;
 
+    /** Alias that is used instead of the module name when printing messages. */
+    ctk::ScalarPollInput<std::string> alias;
+
     /**
      * \brief Send a message, which means to update the message and messageLevel
      * member variables.
@@ -227,14 +230,17 @@ namespace logging {
        */
       struct Data : ctk::HierarchyModifyingGroup {
         using ctk::HierarchyModifyingGroup::HierarchyModifyingGroup;
-        ctk::ScalarPushInput<std::string> msg{this, "message", "", "", {"***logging_internal***"}};
-        ctk::ScalarPollInput<std::string> alias{this, "alias", "", "", {"***logging_internal***"}};
+        ctk::ScalarPushInput<std::string> msg{this, "message", "", "", {"_logging_internal"}};
+        ctk::ScalarPollInput<std::string> alias{this, "alias", "", "", {"_logging_internal"}};
       };
 
       Data data;
       std::string sendingModule;
       MessageSource(const ChimeraTK::RegisterPath& path, Module* module)
-      : data(module, (std::string)path, ""), sendingModule(path) {}
+      : data(module, (std::string)path, ""), sendingModule(((std::string)path).substr(1)) {}
+
+      bool operator==(const MessageSource& other) { return other.sendingModule == sendingModule; }
+      bool operator==(const std::string& name) { return name == sendingModule; }
     };
     /** List of senders. */
     std::vector<MessageSource> sources;
@@ -281,14 +287,16 @@ namespace logging {
 
     size_t getNumberOfModules() { return sources.size(); }
 
-    void prepare() override;
-
     /**
      * Application core main loop.
      */
     void mainLoop() override;
 
     void terminate() override;
+
+    void findTagAndAppendToModule(ctk::VirtualModule& virtualParent, const std::string& tag,
+        bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate,
+        ctk::VirtualModule& root) const override;
   };
 
 } // namespace logging

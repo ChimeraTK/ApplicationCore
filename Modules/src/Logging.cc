@@ -49,7 +49,8 @@ Logger::Logger(ctk::Module* module, const std::string& name, const std::string& 
   message(this, "message", "",
       "Message of the module to the logging System. The leading number indicates the log level "
       "(0: DEBUG, 1: INFO, 2: WARNING, 3: ERROR, 4;SILENT). A leading 5 is used internally for old messages.",
-      {tag, module->getName(), "***logging_internal***"}) {}
+      {tag, module->getName()}),
+  alias(this, "alias", "", "Alias used in the message as identifier.", {tag, module->getName()}) {}
 
 void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level) {
   if(message.isInitialised()) {
@@ -84,12 +85,28 @@ LoggingModule::LoggingModule(ctk::EntityOwner* owner, const std::string& name, c
       // do not add the module itself
       if(it->getOwningModule() == this) continue;
       try {
-        // virtualLogging.getQualifiedName() returns the name of the app, e.g. /test and we remove that from the module name , e.g. /test/MyModule
+        // virtualLogging.getQualifiedName() returns the name of the app, e.g. /test and we remove that from the module
+        // name , e.g. /test/MyModule
         auto moduleName =
             it->getOwningModule()->getQualifiedName().substr(virtualLogging.getQualifiedName().length() + 1);
-        auto acc = getAccessorPair(moduleName, it->getOwningModule()->getName());
-        (*it) >> acc;
-        std::cout << "Registered module " << it->getOwningModule()->getQualifiedName() << " for logging." << std::endl;
+        auto msgSource = std::find(sources.begin(), sources.end(), moduleName);
+        if(msgSource == sources.end()) {
+          // Create new MessageSource
+          auto acc = getAccessorPair(moduleName, it->getOwningModule()->getName());
+          (*it) >> acc;
+          std::cout << "Registered module " << it->getOwningModule()->getQualifiedName() << " for logging."
+                    << std::endl;
+        }
+        else {
+          // Connect variables that was not connected when creating the MessageSource
+          // On creation either alias or the message could have been connected -> now connect the other one
+          if(it->getName() == "alias") {
+            (*it) >> msgSource->data.alias;
+          }
+          else if(it->getName() == "message") {
+            (*it) >> msgSource->data.msg;
+          }
+        }
       }
       catch(ChimeraTK::logic_error& e) {
         std::cerr << "Failed to add logging module: " << it->getOwningModule()->getQualifiedName()
@@ -161,12 +178,6 @@ void LoggingModule::broadcastMessage(std::string msg, const bool& isError) {
   messageCounter++;
   logTail = tmpLog;
   logTail.write();
-}
-
-void LoggingModule::prepare() {
-  incrementDataFaultCounter(); // force data to be flagged as faulty
-  writeAll();
-  decrementDataFaultCounter(); // data validity depends on inputs
 }
 
 void LoggingModule::mainLoop() {
@@ -270,4 +281,26 @@ ctk::VariableNetworkNode LoggingModule::getAccessorPair(const ctk::RegisterPath&
 void LoggingModule::terminate() {
   if((file.get() != nullptr) && (file->is_open())) file->close();
   ApplicationModule::terminate();
+}
+
+void LoggingModule::findTagAndAppendToModule(ctk::VirtualModule& virtualParent, const std::string& tag,
+    bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, ctk::VirtualModule& root) const {
+  // Change behaviour to exclude the auto-generated inputs which are connected to the data sources. Otherwise those
+  // variables might get published twice to the control system, if findTag(".*") is used to connect the entire
+  // application to the control system.
+  // This is a temporary solution. In future, instead the inputs should be generated at the same place in the
+  // hierarchy as the source variable, and the connetion should not be made by the module itself. This currently would
+  // be complicated to implement, since it is difficult to find the correct virtual name for the variables.
+
+  struct MyVirtualModule : ctk::VirtualModule {
+    using ctk::VirtualModule::VirtualModule;
+    using ctk::VirtualModule::findTagAndAppendToModule;
+  };
+
+  MyVirtualModule tempParent("tempRoot", "", ModuleType::ApplicationModule);
+  MyVirtualModule tempRoot("tempRoot", "", ModuleType::ApplicationModule);
+  ctk::EntityOwner::findTagAndAppendToModule(
+      tempParent, "_logging_internal", eliminateAllHierarchies, eliminateFirstHierarchy, true, tempRoot);
+  tempParent.findTagAndAppendToModule(virtualParent, tag, false, true, negate, root);
+  tempRoot.findTagAndAppendToModule(root, tag, false, true, negate, root);
 }
