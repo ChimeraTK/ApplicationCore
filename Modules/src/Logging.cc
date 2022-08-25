@@ -92,7 +92,7 @@ LoggingModule::LoggingModule(ctk::EntityOwner* owner, const std::string& name, c
         auto msgSource = std::find(sources.begin(), sources.end(), moduleName);
         if(msgSource == sources.end()) {
           // Create new MessageSource
-          auto acc = getAccessorPair(moduleName, it->getOwningModule()->getName());
+          auto acc = getAccessorPair(moduleName);
           (*it) >> acc;
           std::cout << "Registered module " << it->getOwningModule()->getQualifiedName() << " for logging."
                     << std::endl;
