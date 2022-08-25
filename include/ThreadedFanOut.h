@@ -122,7 +122,6 @@ namespace ChimeraTK {
     version = readInitialValues();
     while(true) {
       // send out copies to slaves
-      Profiler::startMeasurement();
       boost::this_thread::interruption_point();
       auto validity = FanOut<UserType>::impl->dataValidity();
       for(auto& slave : FanOut<UserType>::slaves) {
@@ -136,7 +135,6 @@ namespace ChimeraTK {
       }
       // receive data
       boost::this_thread::interruption_point();
-      Profiler::stopMeasurement();
       FanOut<UserType>::impl->read();
       version = FanOut<UserType>::impl->getVersionNumber();
     }
@@ -219,9 +217,7 @@ namespace ChimeraTK {
       }
       // receive data
       boost::this_thread::interruption_point();
-      Profiler::stopMeasurement();
       var = group.readAny();
-      Profiler::startMeasurement();
       boost::this_thread::interruption_point();
       // if the update came through the return channel, return it to the feeder
       if(var == _returnChannelSlave->getId()) {

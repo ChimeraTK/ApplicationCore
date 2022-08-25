@@ -78,7 +78,6 @@ bool Application::testableModeTestLock() {
 
 void Application::registerThread(const std::string& name) {
   Application::getInstance().setThreadName(name);
-  Profiler::registerThread(name);
   pthread_setname_np(pthread_self(), name.substr(0, std::min<std::string::size_type>(name.length(), 15)).c_str());
 }
 
