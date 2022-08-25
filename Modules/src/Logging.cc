@@ -259,7 +259,7 @@ void LoggingModule::mainLoop() {
   }
 }
 
-ctk::VariableNetworkNode LoggingModule::getAccessorPair(const ctk::RegisterPath& namePrefix, const std::string& name) {
+ctk::VariableNetworkNode LoggingModule::getAccessorPair(const ctk::RegisterPath& namePrefix) {
   auto it = std::find_if(sources.begin(), sources.end(),
       boost::bind(&MessageSource::sendingModule, boost::placeholders::_1) == (std::string)namePrefix);
   if(it == sources.end()) {

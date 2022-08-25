@@ -211,7 +211,7 @@ namespace logging {
    */
   class LoggingModule : public ctk::ApplicationModule {
    private:
-    ctk::VariableNetworkNode getAccessorPair(const ctk::RegisterPath& namePrefix, const std::string& name);
+    ctk::VariableNetworkNode getAccessorPair(const ctk::RegisterPath& namePrefix);
 
     /** Map of VariableGroups required to build the hierarchies. The key it the
      * full path name. */
