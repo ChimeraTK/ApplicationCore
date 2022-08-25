@@ -5,18 +5,19 @@
  *      Author: zenker
  */
 
-//#define BOOST_TEST_DYN_LINK
+// #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE LoggingTest
 
-#include <fstream>
-#include <stdlib.h>
+#include "Logging.h"
+#include "ModuleGroup.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/test/included/unit_test.hpp>
 #include <boost/thread.hpp>
 
-#include "Logging.h"
+#include <fstream>
+#include <stdlib.h>
 using namespace logging;
 
 #include "TestFacility.h"
@@ -37,6 +38,18 @@ struct DummyModule : ChimeraTK::ApplicationModule {
   }
 };
 
+struct TestGroup : public ChimeraTK::ModuleGroup {
+  using ChimeraTK::ModuleGroup::ModuleGroup;
+  struct A : public ChimeraTK::ModuleGroup {
+    using ChimeraTK::ModuleGroup::ModuleGroup;
+    DummyModule dummy{this, "Dummy", ""};
+  } a{this, "A", ""};
+  struct B : public ChimeraTK::ModuleGroup {
+    using ChimeraTK::ModuleGroup::ModuleGroup;
+    DummyModule dummy{this, "Dummy", ""};
+  } b{this, "B", "", ctk::HierarchyModifier::hideThis};
+};
+
 /**
  * Define a test app to test the LoggingModule.
  *
@@ -50,8 +63,10 @@ struct testApp : public ChimeraTK::Application {
     dir = std::string(dir_name);
     filename = dir + "/testLogging.log";
   }
-  ~testApp() override {
-    shutdown();
+  virtual ~testApp() {
+    if(!isShutDown) {
+      shutdown();
+    }
     if(fileCreated) {
       BOOST_CHECK_EQUAL(boost::filesystem::remove(filename.c_str()), true);
     }
@@ -63,28 +78,123 @@ struct testApp : public ChimeraTK::Application {
 
   LoggingModule log{this, "LoggingModule", "LoggingModule test"};
 
-  ChimeraTK::ControlSystemModule cs;
-
-  void defineConnections() override { log.findTag("CS").connectTo(cs); }
+  void initialise() override {
+    Application::initialise();
+    dumpConnections();
+  }
 
   bool fileCreated;
   std::string dir;
   std::string filename;
 
+  bool isShutDown{false};
+
   const char* directory = "/tmp/testLogging/";
   const char* fileprefix = "test";
 };
 
+struct MultipleModuleApp : public ChimeraTK::Application {
+  MultipleModuleApp() : Application("test"){};
+  virtual ~MultipleModuleApp() { shutdown(); }
+
+  TestGroup group{this, "MainGroup", ""};
+  LoggingModule log{this, "LoggingModule", "LoggingModule test"};
+
+  void initialise() override {
+    Application::initialise();
+    dumpConnections();
+  }
+};
+
+BOOST_AUTO_TEST_CASE(testMultipleModules) {
+  MultipleModuleApp app;
+  ChimeraTK::TestFacility tf;
+  tf.setScalarDefault("/LoggingModule/maxTailLength", (uint)1);
+  tf.runApplication();
+  BOOST_CHECK_EQUAL(app.log.getNumberOfModules(), 2);
+  app.group.a.dummy.logger->sendMessage("Message from module a", LogLevel::DEBUG);
+  app.group.b.dummy.logger->sendMessage("Message from module b", LogLevel::DEBUG);
+  tf.stepApplication();
+  std::string ss = tf.readScalar<std::string>("/LoggingModule/logTail");
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("->") + 3), std::string("Message from module b\n"));
+  app.group.b.dummy.logger->sendMessage("Message from module b", LogLevel::DEBUG);
+  app.group.a.dummy.logger->sendMessage("Message from module a", LogLevel::DEBUG);
+  tf.stepApplication();
+  ss = tf.readScalar<std::string>("/LoggingModule/logTail");
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("->") + 3), std::string("Message from module a\n"));
+}
+
+BOOST_AUTO_TEST_CASE(testAlias) {
+  testApp app;
+  ChimeraTK::TestFacility tf;
+  tf.setScalarDefault("/LoggingModule/maxTailLength", (uint)1);
+  tf.runApplication();
+  BOOST_CHECK_EQUAL(app.log.getNumberOfModules(), 1);
+  app.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  std::string ss = tf.readScalar<std::string>("/LoggingModule/logTail");
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 5), std::string("Dummy"));
+  auto alias = tf.getScalar<std::string>("/Dummy/Logging/alias");
+  alias = "NewName";
+  alias.write();
+  app.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  // write twice to be sure the alias is set
+  app.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  ss = tf.readScalar<std::string>("/LoggingModule/logTail");
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 7), std::string("NewName"));
+}
+
+BOOST_AUTO_TEST_CASE(testAlias_withHierachies) {
+  MultipleModuleApp app;
+  ChimeraTK::TestFacility tf;
+  tf.setScalarDefault("/LoggingModule/maxTailLength", (uint)1);
+  tf.runApplication();
+  BOOST_CHECK_EQUAL(app.log.getNumberOfModules(), 2);
+  app.group.a.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  std::string ss = tf.readScalar<std::string>("/LoggingModule/logTail");
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 25), std::string("MainGroup/A/Dummy/Logging"));
+
+  app.group.b.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  ss = tf.readScalar<std::string>("/LoggingModule/logTail");
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 25), std::string("MainGroup/B/Dummy/Logging"));
+
+  auto aliasA = tf.getScalar<std::string>("/MainGroup/A/Dummy/Logging/alias");
+  aliasA = "NewName";
+  aliasA.write();
+  app.group.a.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  // write twice to be sure the alias is set
+  app.group.a.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  ss = tf.readScalar<std::string>("/LoggingModule/logTail");
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 7), std::string("NewName"));
+
+  // check if internal variable is removed from CS
+  BOOST_CHECK_THROW(tf.getScalar<std::string>("/MainGroup/B/Dummy/Logging/alias"), ctk::logic_error);
+  auto aliasB = tf.getScalar<std::string>("/MainGroup/Dummy/Logging/alias");
+  aliasB = "NewName";
+  aliasB.write();
+  app.group.b.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  // write twice to be sure the alias is set
+  app.group.b.dummy.logger->sendMessage("TestMessage", LogLevel::DEBUG);
+  tf.stepApplication();
+  ss = tf.readScalar<std::string>("/LoggingModule/logTail");
+  BOOST_CHECK_EQUAL(ss.substr(ss.find("LoggingModule:") + 14, 7), std::string("NewName"));
+}
+
 BOOST_AUTO_TEST_CASE(testLogMsg) {
   testApp app;
   ChimeraTK::TestFacility tf;
+  tf.setScalarDefault("/LoggingModule/maxTailLength", (uint)1);
   tf.runApplication();
-  auto tailLength = tf.getScalar<uint>("maxTailLength");
-  tailLength = 1;
-  tailLength.write();
   app.dummy.logger->sendMessage("test", LogLevel::DEBUG);
   tf.stepApplication();
-  std::string ss = tf.readScalar<std::string>("logTail");
+  std::string ss = tf.readScalar<std::string>("/LoggingModule/logTail");
   BOOST_CHECK_EQUAL(ss.substr(ss.find("->") + 3), std::string("test\n"));
 }
 
@@ -92,7 +202,7 @@ BOOST_AUTO_TEST_CASE(testLogfileFails) {
   testApp app;
   ChimeraTK::TestFacility tf;
 
-  auto logFile = tf.getScalar<std::string>("logFile");
+  auto logFile = tf.getScalar<std::string>("/LoggingModule/logFile");
   tf.runApplication();
   auto tmpStr = app.filename;
   tmpStr.replace(tmpStr.find("testLogging"), 18, "wrongFolder");
@@ -101,7 +211,7 @@ BOOST_AUTO_TEST_CASE(testLogfileFails) {
   // message not considered here but used to step through the application
   app.dummy.logger->sendMessage("test", LogLevel::DEBUG);
   tf.stepApplication();
-  std::string ss = (std::string)tf.readScalar<std::string>("logTail");
+  std::string ss = (std::string)tf.readScalar<std::string>("/LoggingModule/logTail");
   std::vector<std::string> strs;
   boost::split(strs, ss, boost::is_any_of("\n"), boost::token_compress_on);
   BOOST_CHECK_EQUAL(
@@ -112,7 +222,7 @@ BOOST_AUTO_TEST_CASE(testLogfile) {
   testApp app;
   ChimeraTK::TestFacility tf;
 
-  auto logFile = tf.getScalar<std::string>("logFile");
+  auto logFile = tf.getScalar<std::string>("/LoggingModule/logFile");
 
   if(!boost::filesystem::is_directory("/tmp/testLogging/")) boost::filesystem::create_directory("/tmp/testLogging/");
   tf.runApplication();
@@ -138,8 +248,8 @@ BOOST_AUTO_TEST_CASE(testLogging) {
   testApp app;
   ChimeraTK::TestFacility tf;
 
-  auto logLevel = tf.getScalar<uint>("logLevel");
-  auto tailLength = tf.getScalar<uint>("maxTailLength");
+  auto logLevel = tf.getScalar<uint>("/LoggingModule/logLevel");
+  auto tailLength = tf.getScalar<uint>("/LoggingModule/maxTailLength");
 
   tf.runApplication();
   logLevel = 0;
@@ -150,7 +260,7 @@ BOOST_AUTO_TEST_CASE(testLogging) {
   tf.stepApplication();
   app.dummy.logger->sendMessage("2nd test message", LogLevel::DEBUG);
   tf.stepApplication();
-  auto tail = tf.readScalar<std::string>("logTail");
+  auto tail = tf.readScalar<std::string>("/LoggingModule/logTail");
   std::vector<std::string> result;
   boost::algorithm::split(result, tail, boost::is_any_of("\n"));
   // result length should be 3 not 2, because new line is used to split, which
@@ -162,7 +272,7 @@ BOOST_AUTO_TEST_CASE(testLogging) {
   logLevel.write();
   app.dummy.logger->sendMessage("3rd test message", LogLevel::DEBUG);
   tf.stepApplication();
-  tail = tf.readScalar<std::string>("logTail");
+  tail = tf.readScalar<std::string>("/LoggingModule/logTail");
   boost::algorithm::split(result, tail, boost::is_any_of("\n"));
   // should still be 3 because log level was too low!
   BOOST_CHECK_EQUAL(result.size(), 3);
@@ -173,13 +283,13 @@ BOOST_AUTO_TEST_CASE(testLogging) {
   //  tf.stepApplication();
   app.dummy.logger->sendMessage("4th test message", LogLevel::ERROR);
   tf.stepApplication();
-  tail = tf.readScalar<std::string>("logTail");
+  tail = tf.readScalar<std::string>("/LoggingModule/logTail");
   boost::algorithm::split(result, tail, boost::is_any_of("\n"));
   BOOST_CHECK_EQUAL(result.size(), 4);
 
   app.dummy.logger->sendMessage("5th test message", LogLevel::ERROR);
   tf.stepApplication();
-  tail = tf.readScalar<std::string>("logTail");
+  tail = tf.readScalar<std::string>("/LoggingModule/logTail");
   boost::algorithm::split(result, tail, boost::is_any_of("\n"));
   // should still be 4 because tailLength is 3!
   BOOST_CHECK_EQUAL(result.size(), 4);

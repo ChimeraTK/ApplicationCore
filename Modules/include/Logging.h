@@ -111,6 +111,9 @@
 #define MODULES_LOGGING_H_
 
 #include "ApplicationCore.h"
+
+#include <ChimeraTK/RegisterPath.h>
+
 #include <fstream>
 #include <map>
 #include <queue>
@@ -119,8 +122,9 @@ namespace ctk = ChimeraTK;
 
 namespace logging {
 
-  /** Define available logging levels. */
-  enum LogLevel { DEBUG, INFO, WARNING, ERROR, SILENT };
+  /** Define available logging levels. INTERNAL is used to
+   * indicate an already published message  */
+  enum LogLevel { DEBUG, INFO, WARNING, ERROR, SILENT, INTERNAL };
 
   /** Define stream operator to use the LogLevel in streams, e.g. std::cout */
   std::ostream& operator<<(std::ostream& os, const logging::LogLevel& level);
@@ -161,11 +165,17 @@ namespace logging {
      *
      * \param module The owning module that is using the Logger. It will appear as
      * sender in the LoggingModule, which is receiving messages from the Logger.
+     * \param name Name used to initialise the VariableGroup.
+     * \param description Description used to initialise the VariableGroup.
      * \param tag A tag that is used to identify the Logger by the LoggingModule.
      */
-    Logger(ctk::Module* module, const std::string& tag = "Logging");
+    Logger(ctk::Module* module, const std::string& name = "Logging",
+        const std::string& description = "VariableGroup added by the Logger", const std::string& tag = "Logging");
     /** Message to be send to the logging module */
     ctk::ScalarOutput<std::string> message;
+
+    /** Alias that is used instead of the module name when printing messages. */
+    ctk::ScalarPollInput<std::string> alias;
 
     /**
      * \brief Send a message, which means to update the message and messageLevel
@@ -201,13 +211,36 @@ namespace logging {
    */
   class LoggingModule : public ctk::ApplicationModule {
    private:
-    ctk::VariableNetworkNode getAccessorPair(const std::string& sender);
+    ctk::VariableNetworkNode getAccessorPair(const ctk::RegisterPath& namePrefix, const std::string& name);
+
+    /** Map of VariableGroups required to build the hierarchies. The key it the
+     * full path name. */
+    std::map<std::string, ctk::VariableGroup> groupMap;
+
+    /** Create VariableGroups from the full path of the module */
+    ctk::RegisterPath prepareHierarchy(const ctk::RegisterPath& namePrefix);
 
     struct MessageSource {
-      ctk::ScalarPushInput<std::string> msg;
+      /*
+       * Instead of constructing msg variables with name id and connecting it directly to
+       * to the message variable of the Logger one could have a variable group here that holds
+       * the variables message and alias. The variable group name is the id and it is moved
+       * the correct location in the CS in order to achieve an automatic direct connection when
+       * the CS is build. Use a ctk::HierarchyModifyingGroup to do that.
+       */
+      struct Data : ctk::HierarchyModifyingGroup {
+        using ctk::HierarchyModifyingGroup::HierarchyModifyingGroup;
+        ctk::ScalarPushInput<std::string> msg{this, "message", "", "", {"_logging_internal"}};
+        ctk::ScalarPollInput<std::string> alias{this, "alias", "", "", {"_logging_internal"}};
+      };
+
+      Data data;
       std::string sendingModule;
-      MessageSource(const std::string& moduleName, Module* module)
-      : msg{module, moduleName + "Msg", "", ""}, sendingModule(moduleName) {}
+      MessageSource(const ChimeraTK::RegisterPath& path, Module* module)
+      : data(module, (std::string)path, ""), sendingModule(((std::string)path).substr(1)) {}
+
+      bool operator==(const MessageSource& other) { return other.sendingModule == sendingModule; }
+      bool operator==(const std::string& name) { return name == sendingModule; }
     };
     /** List of senders. */
     std::vector<MessageSource> sources;
@@ -252,7 +285,7 @@ namespace logging {
 
     std::unique_ptr<std::ofstream> file; ///< Log file where to write log messages
 
-    void prepare() override;
+    size_t getNumberOfModules() { return sources.size(); }
 
     /**
      * Application core main loop.
@@ -260,6 +293,10 @@ namespace logging {
     void mainLoop() override;
 
     void terminate() override;
+
+    void findTagAndAppendToModule(ctk::VirtualModule& virtualParent, const std::string& tag,
+        bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate,
+        ctk::VirtualModule& root) const override;
   };
 
 } // namespace logging
