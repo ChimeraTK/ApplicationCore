@@ -67,7 +67,7 @@ struct testApp : public ChimeraTK::Application {
   ~testApp() override { shutdown(); }
 
   Dummy<UserType> dummy{this, "Dummy", "Dummy module"};
-  ChimeraTK::ServerHistory<int> hist{this, "history", "History of selected process variables.", 20};
+  ChimeraTK::history::ServerHistory hist{this, "history", "History of selected process variables.", 20};
 
   void initialise() override {
     Application::initialise();
@@ -84,7 +84,7 @@ struct testAppArray : public ChimeraTK::Application {
   ~testAppArray() override { shutdown(); }
 
   DummyArray<UserType> dummy{this, "Dummy", "Dummy module"};
-  ChimeraTK::ServerHistory<int> hist{this, "history", "History of selected process variables.", 20};
+  ChimeraTK::history::ServerHistory hist{this, "history", "History of selected process variables.", 20};
 
   void initialise() override {
     Application::initialise();
@@ -99,13 +99,14 @@ struct testAppDev : public ChimeraTK::Application {
   testAppDev() : Application("test") { ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap"); }
   ~testAppDev() override { shutdown(); }
 
-  ChimeraTK::DeviceModule dev{this, "Dummy1Mapped"};
+  ChimeraTK::ConnectingDeviceModule dev{this, "Dummy1Mapped", "/Dummy/out"};
 
   DummyArray<int> dummy{this, "Dummy", "Dummy module"};
 
-  ChimeraTK::ServerHistory<int> hist{this, "history", "History of selected process variables.", 20, false, "Dummy/out"};
+  ChimeraTK::history::ServerHistory hist{this, "history", "History of selected process variables.", 20, false};
 
   void initialise() override {
+    hist.addSource(dev.getDeviceModule(), "", "", dummy.out);
     Application::initialise();
     dumpConnections();
   }

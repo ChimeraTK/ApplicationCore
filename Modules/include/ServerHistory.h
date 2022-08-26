@@ -92,9 +92,8 @@
 #include <tuple>
 #include <vector>
 
-namespace ChimeraTK { // namespace history {
+namespace ChimeraTK { namespace history {
 
-  template<typename TRIGGERTYPE>
   struct AccessorAttacher;
 
   template<typename UserType>
@@ -107,7 +106,6 @@ namespace ChimeraTK { // namespace history {
     bool withTimeStamps;
   };
 
-  template<typename TRIGGERTYPE>
   class ServerHistory : public ApplicationModule {
    public:
     /**
@@ -119,27 +117,17 @@ namespace ChimeraTK { // namespace history {
      * \param historyLength Length of the history buffers.
      * \param enableTimeStamps An additional ring buffer per variable will be added that holds the time stamps
      *                         corresponding to the data ring buffer entries.
-     * \param trigger Path to a trigger control system variable that is used for
-     *                inputs that are poll type (e.g. Device inputs).
      * \param hierarchyModifier Flag passed to ApplicationModule constructor.
      * \param tags Module tags passed to ApplicationModule constructor.
      */
     ServerHistory(EntityOwner* owner, const std::string& name, const std::string& description,
-        size_t historyLength = 1200, bool enableTimeStamps = false, const std::string& trigger = "",
+        size_t historyLength = 1200, bool enableTimeStamps = false,
         HierarchyModifier hierarchyModifier = HierarchyModifier::none,
         const std::unordered_set<std::string>& tags = {});
 
     /** Default constructor, creates a non-working module. Can be used for late
      * initialisation. */
     ServerHistory() : _historyLength(1200), _enbaleTimeStamps(false) {}
-
-    struct Trigger : HierarchyModifyingGroup {
-      Trigger(EntityOwner* owner, std::string qualifiedName, const std::string& triggerName,
-          const std::string& description, const std::unordered_set<std::string>& tags = {})
-      : HierarchyModifyingGroup(owner, qualifiedName, description, tags), trigger(this, triggerName, "", ""){};
-      Trigger() {}
-      ScalarPushInput<TRIGGERTYPE> trigger;
-    } triggerGroup;
 
     /**
      * Add a Module as a source to this History module.
@@ -153,18 +141,21 @@ namespace ChimeraTK { // namespace history {
      * \param trigger This trigger is used for all poll type variable found in the source module.
      *
      */
-    //    void addSource(const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode& trigger = {});
+    void addSource(const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode& trigger = {});
 
     /**
      * Overload that calls virtualiseFromCatalog. Parameter see addSource(const Module&...)
      * \param submodule If only a submodule should be added give the name. It does not work do create a submodule of the
      * DeviceModule itself!
      */
-    //    void addSource(const DeviceModule& source, const RegisterPath& namePrefix, const std::string& submodule = "",
-    //        const VariableNetworkNode& trigger = {});
+    void addSource(const DeviceModule& source, const RegisterPath& namePrefix, const std::string& submodule = "",
+        const VariableNetworkNode& trigger = {});
 
     void prepare() override;
     void mainLoop() override;
+
+    void findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag, bool eliminateAllHierarchies,
+        bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const override;
 
    private:
     void prepareHierarchy(const RegisterPath& namePrefix);
@@ -198,8 +189,7 @@ namespace ChimeraTK { // namespace history {
     size_t _historyLength;
     bool _enbaleTimeStamps;
 
-    friend struct AccessorAttacher<TRIGGERTYPE>;
+    friend struct AccessorAttacher;
   };
-  DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES_NO_VOID(ServerHistory);
-} // namespace ChimeraTK
+}}     // namespace ChimeraTK::history
 #endif /* MODULES_SERVERHISTORY_H_ */
