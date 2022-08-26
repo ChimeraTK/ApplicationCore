@@ -1,6 +1,5 @@
-// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf HZDR, FWKE,
-//                         ChimeraTK Project  <chimeratk-support@desy.de>
-// <chimeratk-support@desy.de> SPDX-License-Identifier: LGPL-3.0-or-later
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "ServerHistory.h"
 
 #include "boost/date_time/posix_time/posix_time.hpp"
