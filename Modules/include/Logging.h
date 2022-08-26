@@ -261,13 +261,11 @@ namespace logging {
         {"CS", getName()}};
 
     ctk::ScalarPollInput<uint> tailLength{this, "maxTailLength", "",
-        "Maximum number of messages to be shown in the logging stream tail. 0 is treated as 20.", {"CS", getName()}};
+        "Maximum number of messages to be shown in the logging stream tail. 0 is treated as 20.", {getName()}};
 
-    ctk::ScalarPollInput<uint> logLevel{
-        this, "logLevel", "", "Current log level used for messages.", {"CS", getName()}};
+    ctk::ScalarPollInput<uint> logLevel{this, "logLevel", "", "Current log level used for messages.", {getName()}};
 
-    ctk::ScalarOutput<std::string> logTail{
-        this, "logTail", "", "Tail of the logging stream.", {"CS", "PROCESS", getName()}};
+    ctk::ScalarOutput<std::string> logTail{this, "logTail", "", "Tail of the logging stream.", {"PROCESS", getName()}};
 
     std::unique_ptr<std::ofstream> file; ///< Log file where to write log messages
 
