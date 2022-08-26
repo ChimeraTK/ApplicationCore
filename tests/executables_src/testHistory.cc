@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
-// SPDX-License-Identifier: LGPL-3.0-or-later
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf HZDR, FWKE,
+//                         ChimeraTK Project  <chimeratk-support@desy.de>
+// <chimeratk-support@desy.de> SPDX-License-Identifier: LGPL-3.0-or-later
 #define BOOST_TEST_MODULE HistoryTest
 
 #include "ServerHistory.h"
