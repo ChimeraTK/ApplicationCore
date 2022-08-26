@@ -4,32 +4,27 @@
  * \page loggingdoc Logging module and Logger
  * \section loggingintro Introduction to the logging mechanism
  * The logging provided here requires to add the LoggingModule to your
- Application.
- * The module introduces the following input variables, that need to be
- connected to the control system:
+ * Application.
+ * The module introduces the following input variables:
  * - targetStream: Allows to choose where messages send to the logging module
- end up:
+ * end up:
  *   - 0: cout/cerr+logfile
  *   - 1: logfile
  *   - 2: cout/cerr
  *   - 3: controlsystem only
  *   - 4: nowhere
  * - logFile: Give the logfile name. If the file is not empty logging messages
- will be appended. If
- *   you choose targetStream 0 or 1 and don't set a logFile the Logging module
- simply skips the file
- *   writing.
+ *   will be appended. If you choose targetStream 0 or 1 and don't set a logFile
+ *   the Logging module simply skips the file writing.
  * - logLevel: Choose a certain logging level of the Module. Messages send to
- the Logging module also include a logging
- *   level. The Logging module compares both levels and decides if a message is
- dropped (e.g. message level is
- *   DEBUG and Module level is ERROR) or broadcasted.
+ *   the Logging module also include a logging level.
+ *   The Logging module compares both levels and decides if a message is
+ *   dropped (e.g. message level is DEBUG and Module level is ERROR) or broadcasted.
  * - maxTailLength: The number of messages published by the Logging module (see
- logTail), i.e. to the control system. If set to 0 the number of messages defaults to 20.
+ *   logTail), i.e. to the control system. If set to 0 the number of messages defaults to 20.
  *   This length has no influence on the targetStreams, that receive all
- messages (depending on the logLevel). The
- *   logLevel also applies to messages that are published by the Logging module
- via the logTail
+ *   messages (depending on the logLevel). The logLevel also applies to messages
+ *   that are published by the Logging module via the logTail
  *
  * Available logging levels are:
  *  - DEBUG
@@ -39,15 +34,21 @@
  *  - SILENT
  *
  *  The only variable that is published by the Logging module is the logTail. It
- contains the list of latest messages.
+ *  contains the list of latest messages.
  *  Messages are separated by a newline character. The number of messages
- published in the logTail is set via the
+ *  published in the logTail is set via the
  *  input variable tailLength. Other than that, messages are written to
- cout/cerr and/or a log file as explained above.
+ *  cout/cerr and/or a log file as explained above.
  *
  *  A Logger class is used to send messages to the LoggingModule.
  *  The foreseen way of using the Logger is to add a Logger to a module that
- should send log messages.
+ *  should send log messages.
+ *  The Logger adds two variables that will be available in the control system:
+ *  - alias: It can be set at runtime and will be used as prefix in messages of that particular
+ *  Logger. If it is set empty the name of the owning module is used.
+ *  - message: This is the message send to the LoggingModule. It includes the severity encoded
+ *  as number in the first character of the string followed by the message.
+ *
  *
  *  The LoggingModule will take care of finding all Loggers.
  *  Therefore, the LoggingModule needs to be constructed last - after all ApplicationModules
@@ -67,8 +68,6 @@
  *  };
  *  struct myApp : public ChimeraTK::Application{
  *
-  *
- *  ChimeraTK::ControlSystemModule cs;
  *
  *  TestModule { this, "test", "" };
  *
@@ -77,12 +76,6 @@
  *  LoggingModule log { this, "LoggingModule", "LoggingModule test" };
  *  ...
  *  };
- *
- *
- *  void myAPP::defineConnctions(){
- *  log.findTag("CS").connectTo(cs);
- *  ...
- *  }
  *
  *  void TestModule::mainLoop{
  *    logger.sendMessage("Test",LogLevel::DEBUG);
@@ -221,13 +214,6 @@ namespace logging {
     ctk::RegisterPath prepareHierarchy(const ctk::RegisterPath& namePrefix);
 
     struct MessageSource {
-      /*
-       * Instead of constructing msg variables with name id and connecting it directly to
-       * to the message variable of the Logger one could have a variable group here that holds
-       * the variables message and alias. The variable group name is the id and it is moved
-       * the correct location in the CS in order to achieve an automatic direct connection when
-       * the CS is build. Use a ctk::HierarchyModifyingGroup to do that.
-       */
       struct Data : ctk::HierarchyModifyingGroup {
         using ctk::HierarchyModifyingGroup::HierarchyModifyingGroup;
         ctk::ScalarPushInput<std::string> msg{this, "message", "", "", {"_logging_internal"}};
