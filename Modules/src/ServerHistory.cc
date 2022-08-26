@@ -32,8 +32,8 @@ namespace ChimeraTK { namespace history {
   };
 
   ServerHistory::ServerHistory(EntityOwner* owner, const std::string& name, const std::string& description,
-      size_t historyLength, bool enableTimeStamps, HierarchyModifier hierarchyModifier,
-      const std::unordered_set<std::string>& tags)
+      const std::string& historyDirectory, size_t historyLength, bool enableTimeStamps,
+      HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
   : ApplicationModule(owner, name, description, hierarchyModifier, tags), _historyLength(historyLength),
     _enbaleTimeStamps(enableTimeStamps) {
     auto virtualLogging = getOwner()->findTag("history");
@@ -47,7 +47,7 @@ namespace ChimeraTK { namespace history {
         // name , e.g. /test/MyModule
         auto namePrefix =
             it->getOwningModule()->getQualifiedName().substr(virtualLogging.getQualifiedName().length() + 1);
-        namePrefix.insert(0, "history/");
+        namePrefix.insert(0, historyDirectory);
         prepareHierarchy(namePrefix);
         boost::fusion::for_each(_accessorListMap.table, AccessorAttacher(*it, this, namePrefix / it->getName(), {}));
         accessors++;

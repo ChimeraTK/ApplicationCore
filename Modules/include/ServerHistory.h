@@ -114,14 +114,17 @@ namespace ChimeraTK { namespace history {
      * \param owner Module owner passed to ApplicationModule constructor.
      * \param name Module name passed to ApplicationModule constructor.
      * \param description Module description passed to ApplicationModule constructor.
+     * \param historyDirectory All history PVs will appear in the control system under the name given here. The PVs and
+     * the hierarchies of the original PVs are copied in this directory. E.g. a PV /test/myvar will appear
+     * under /history/test/myvar using the default of historyDirectory='history'.
      * \param historyLength Length of the history buffers.
-     * \param enableTimeStamps An additional ring buffer per variable will be added that holds the time stamps
-     *                         corresponding to the data ring buffer entries.
+     * \param enableTimeStamps An additional
+     * ring buffer per variable will be added that holds the time stamps corresponding to the data ring buffer entries.
      * \param hierarchyModifier Flag passed to ApplicationModule constructor.
      * \param tags Module tags passed to ApplicationModule constructor.
      */
     ServerHistory(EntityOwner* owner, const std::string& name, const std::string& description,
-        size_t historyLength = 1200, bool enableTimeStamps = false,
+        const std::string& historyDirectory = "history", size_t historyLength = 1200, bool enableTimeStamps = false,
         HierarchyModifier hierarchyModifier = HierarchyModifier::none,
         const std::unordered_set<std::string>& tags = {});
 
