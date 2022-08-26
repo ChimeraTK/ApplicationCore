@@ -270,7 +270,7 @@ struct D9InitialValueEceptionDummy {
 
 /**
  *  D 9 b for ThreaddedFanOut
- * \anchor testInitialValueThreaddedFanOut_D_9_b \ref initialValueThreaddedFanOut_D_9_b
+ * \anchor testInitialValueThreaddedFanOut_D_9_b_ThreaddedFanOut \ref initialValueThreaddedFanOut_D_9_b
  */
 BOOST_AUTO_TEST_CASE(testPushInitValueAtDeviceD9) {
   std::cout << "===   testPushInitValueAtDeviceD9   === " << std::endl;
@@ -352,7 +352,7 @@ struct TriggerFanOutInitialValueEceptionDummy {
 
 /**
  *  D 9 b for TriggerFanOut
- * \anchor testInitialValueThreaddedFanOut_D_9_b \ref initialValueThreaddedFanOut_D_9_b
+ * \anchor testInitialValueThreaddedFanOut_D_9_b_TriggerFanOut \ref initialValueThreaddedFanOut_D_9_b
  */
 BOOST_AUTO_TEST_CASE(testTriggerFanOutInitValueAtDeviceD9) {
   std::cout << "===   testTriggerFanOutInitValueAtDeviceD9   === " << std::endl;
@@ -429,7 +429,7 @@ struct ConstantD10InitialValueEceptionDummy {
 
 /**
  *  D 10 for Constant
- * \anchor testConstantD10InitialValue_D_10 \ref constantD10InitialValue_D_10
+ * \anchor testConstantD10InitialValue_D_10 \ref initialValue_d_10
  */
 BOOST_AUTO_TEST_CASE(testConstantD10InitialValue) {
   std::cout << "===   testConstantD10InitialValue   === " << std::endl;
@@ -585,7 +585,7 @@ struct ReaderModule : ChimeraTK::ApplicationModule {
     using ChimeraTK::VariableGroup::VariableGroup;
     ChimeraTK::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
   } reg1{this, "REG1", ""};
-  struct : ChimeraTK::VariableGroup {
+  struct Reg2 : ChimeraTK::VariableGroup {
     using ChimeraTK::VariableGroup::VariableGroup;
     ChimeraTK::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
   } reg2{this, "REG2", ""};

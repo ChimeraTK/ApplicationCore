@@ -27,24 +27,24 @@ struct TestApplication : ctk::Application {
 
   void defineConnections() {}
 
-  struct : ctk::ApplicationModule {
+  struct Name : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
-    struct : ctk::VariableGroup {
+    struct Name2 : ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
       ctk::ScalarOutput<uint64_t> tick{this, "tick", "", ""};
-    } name{this, "name", ""};
+    } name{(this), "name", ""}; // extra parentheses are for doxygen...
 
     void prepare() override { name.tick.write(); /* send initial value */ }
     void mainLoop() override {}
   } name{this, "name", ""};
 
-  struct : ctk::ApplicationModule {
+  struct Module : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
     mutable int readMode{0};
 
-    struct : ctk::VariableGroup {
+    struct Vars : ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
       ctk::ScalarPushInput<uint64_t> tick{this, "tick", "", ""};
       ctk::ScalarPollInput<int> read{this, "readBack", "", ""};
