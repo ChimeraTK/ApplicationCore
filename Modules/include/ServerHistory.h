@@ -24,12 +24,19 @@
  * and the element index i is appended to the feeding process variable name. In
  * consequence an input array of length i will result in i output history
  * arrays. The following tags are added to the history output variable:
- *  - CS
  *  - name of the history module
  *
- * It is also possible to connect a DeviceModule to the ServerHistory module. This
- * requires a trigger, which is given as optional parameter to the \c addSource
- * method. If the device variables are writable they are of push type. In this case
+ * The connection of variables with the 'history' tag to the ServerHistory module is
+ * done automatically.
+ * \attention Only variables of modules defined before constructing the ServerHistory
+ * module are considered.
+ *
+ * It is also possible to connect a DeviceModule to the ServerHistory module.
+ * Variables of Devices have no tags and therefor they will not be automatically connected
+ * to the SereverHistory module. One has to call addSource().
+ * In addition a trigger in case the variables are not push type. It is given as optional
+ * parameter to the \c addSource method.
+ * If the device variables are writable they are of push type. In this case
  * the trigger will not be added. One has to use the LogicalNameMapping backend to
  * force the device variables to be read only by using the \c forceReadOnly plugin.
  * Using the LogicalNameMapping backend also allows to select individual device
@@ -40,7 +47,7 @@
  *  \code
  *  sruct TestModule: public ChimeraTK::ApplicationModule{
  *  chimeraTK::ScalarOutput<float> measurement{this, "measurement", "" ,
- * "measurement variable", {"CS", History"}};
+ * "measurement variable", {"history"}};
  *  ...
  *  };
  *  struct myApp : public ChimeraTK::Application{
@@ -50,7 +57,7 @@
  *
  *  ChimeraTK::ControlSystemModule cs;
  *
- *  ChimeraTK::DeviceModule dev{this, "Dummy"};
+ *  ChimeraTK::ConnectingDeviceModule dev{this, "Dummy", "Trigger/tick"};
  *
  *  ChimeraTK::PeriodicTrigger trigger{this, "Trigger", "Trigger used for other modules"};
  *
@@ -60,15 +67,12 @@
  *  };
  *
  *
- *  void myAPP::defineConnctions(){
- *  // connect a module with variables that are updated by the module, which
- *  // triggers an update of the history buffer
- *  history.addSource(test.findTag("History"), "history" + test->getName())
- *  // will show up in the control system as history/test/measurement
- *  // add a device. Updating of the history buffer is trigger external by the given trigger
+ *  void myAPP::intitialise(){
+ *  // The variable of the TestModule will show up in the control system as history/test/measurement automatically
+ * (identified by the tag).
+ *  // Add a device. Updating of the history buffer is trigger external by the given trigger
  *  history.addSource(dev,"device_history",trigger.tick);
- *
- *  history.findTag("CS").connectTo(cs);
+ *  ChimeraTK::Application::initialise();
  *  ...
  *  }
  *
