@@ -140,21 +140,21 @@ namespace ChimeraTK { namespace history {
       if(nElements == 1) {
         // in case of a scalar history only use the variableName
         tmpList.back().second.data.emplace_back(
-            ArrayOutput<UserType>{&groupMap[dirName], baseName, "", _historyLength, "", {"CS", getName()}});
+            ArrayOutput<UserType>{&groupMap[dirName], baseName, "", _historyLength, "", {getName()}});
         if(_enbaleTimeStamps) {
           tmpList.back().second.timeStamp.emplace_back(
               ArrayOutput<uint64_t>{&groupMap[dirName], baseName + "_timeStamps",
-                  "Time stamps for entries in the history buffer", _historyLength, "", {"CS", getName()}});
+                  "Time stamps for entries in the history buffer", _historyLength, "", {getName()}});
         }
       }
       else {
         // in case of an array history append the index to the variableName
         tmpList.back().second.data.emplace_back(ArrayOutput<UserType>{
-            &groupMap[dirName], baseName + "_" + std::to_string(i), "", _historyLength, "", {"CS", getName()}});
+            &groupMap[dirName], baseName + "_" + std::to_string(i), "", _historyLength, "", {getName()}});
         if(_enbaleTimeStamps) {
           tmpList.back().second.timeStamp.emplace_back(
               ArrayOutput<uint64_t>{&groupMap[dirName], baseName + "_" + std::to_string(i) + "_timeStamps",
-                  "Time stamps for entries in the history buffer", _historyLength, "", {"CS", getName()}});
+                  "Time stamps for entries in the history buffer", _historyLength, "", {getName()}});
         }
       }
     }
