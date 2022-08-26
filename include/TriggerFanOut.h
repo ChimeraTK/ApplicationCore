@@ -43,7 +43,6 @@ namespace ChimeraTK {
     void run();
 
    protected:
-
     /** TransferElement acting as our trigger */
     boost::shared_ptr<ChimeraTK::TransferElement> externalTrigger;
 
