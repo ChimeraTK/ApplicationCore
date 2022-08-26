@@ -33,12 +33,40 @@ namespace ChimeraTK { namespace history {
     const std::string& _name;
   };
 
-  void ServerHistory::addSource(
-      const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode& trigger) {
-    // for simplification, first create a VirtualModule containing the correct
-    // hierarchy structure (obeying eliminate hierarchy etc.)
-    auto dynamicModel = source.findTag(".*"); /// @todo use virtualise() instead
+  ServerHistory::ServerHistory(EntityOwner* owner, const std::string& name, const std::string& description,
+      size_t historyLength, bool enableTimeStamps, HierarchyModifier hierarchyModifier,
+      const std::unordered_set<std::string>& tags)
+  : ApplicationModule(owner, name, description, hierarchyModifier, tags), _historyLength(historyLength),
+    _enbaleTimeStamps(enableTimeStamps) {
+    auto virtualLogging = getOwner()->findTag("history");
+    auto list = virtualLogging.getAccessorListRecursive();
+    size_t accessors = 0;
+    for(auto it = list.begin(); it != list.end(); ++it) {
+      // do not add the module itself
+      if(it->getOwningModule() == this) continue;
+      try {
+        // virtualLogging.getQualifiedName() returns the name of the app, e.g. /test and we remove that from the module
+        // name , e.g. /test/MyModule
+        auto namePrefix =
+            it->getOwningModule()->getQualifiedName().substr(virtualLogging.getQualifiedName().length() + 1);
+        prepareHierarchy(namePrefix);
+        boost::fusion::for_each(_accessorListMap.table, AccessorAttacher(*it, this, namePrefix / it->getName(), {}));
+        accessors++;
+      }
+      catch(ChimeraTK::logic_error& e) {
+        std::cerr << "Failed to add history variable: " << it->getQualifiedName() << " Error: " << e.what()
+                  << std::endl;
+      }
+    }
+    if(accessors == 0) {
+      throw logic_error("No accessors for ServerHistory found. Did you use the tag 'history' for any variable?");
+    }
+    else {
+      std::cout << "Added " << accessors << " accessors to the ServerHistory Module." << std::endl;
+    }
+  }
 
+  void ServerHistory::prepareHierarchy(const RegisterPath& namePrefix) {
     // create variable group map for namePrefix if needed
     if(groupMap.find(namePrefix) == groupMap.end()) {
       // search for existing parent (if any)
@@ -58,6 +86,15 @@ namespace ChimeraTK { namespace history {
         groupMap[parentPrefix] = VariableGroup(owner, std::string(name).substr(1), "");
       }
     }
+  }
+
+  void ServerHistory::addSource(
+      const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode& trigger) {
+    // for simplification, first create a VirtualModule containing the correct
+    // hierarchy structure (obeying eliminate hierarchy etc.)
+    auto dynamicModel = source.findTag(".*"); /// @todo use virtualise() instead
+
+    prepareHierarchy(namePrefix);
 
     // add all accessors on this hierarchy level
     for(auto& acc : dynamicModel.getAccessorList()) {
@@ -79,6 +116,11 @@ namespace ChimeraTK { namespace history {
       addSource(mod.submodule(submodule), namePrefix, trigger);
   }
 
+  void ServerHistory::addSource(ConnectingDeviceModule* source, const RegisterPath& namePrefix,
+      const std::string& submodule, const VariableNetworkNode& trigger) {
+    addSource(source->getDeviceModule(), namePrefix, submodule, trigger);
+  }
+
   template<typename UserType>
   VariableNetworkNode ServerHistory::getAccessor(const std::string& variableName, const size_t& nElements) {
     // check if variable name already registered
@@ -97,33 +139,28 @@ namespace ChimeraTK { namespace history {
     auto dirName = variableName.substr(0, variableName.find_last_of("/"));
     auto baseName = variableName.substr(variableName.find_last_of("/") + 1);
     tmpList.emplace_back(std::piecewise_construct,
-        std::forward_as_tuple(ArrayPushInput<UserType>{
-            &groupMap[dirName],
-            baseName + "_in",
-            "",
-            0,
-            "",
-        }),
+        std::forward_as_tuple(
+            ArrayPushInput<UserType>{&groupMap[dirName], baseName + "_in", "", 0, "", {"_history_internal"}}),
         std::forward_as_tuple(HistoryEntry<UserType>{_enbaleTimeStamps}));
     for(size_t i = 0; i < nElements; i++) {
       if(nElements == 1) {
         // in case of a scalar history only use the variableName
         tmpList.back().second.data.emplace_back(
-            ArrayOutput<UserType>{&groupMap[dirName], baseName, "", _historyLength, "", {"CS", getName()}});
+            ArrayOutput<UserType>{&groupMap[dirName], baseName, "", _historyLength, "", {getName()}});
         if(_enbaleTimeStamps) {
           tmpList.back().second.timeStamp.emplace_back(
               ArrayOutput<uint64_t>{&groupMap[dirName], baseName + "_timeStamps",
-                  "Time stamps for entries in the history buffer", _historyLength, "", {"CS", getName()}});
+                  "Time stamps for entries in the history buffer", _historyLength, "", {getName()}});
         }
       }
       else {
         // in case of an array history append the index to the variableName
         tmpList.back().second.data.emplace_back(ArrayOutput<UserType>{
-            &groupMap[dirName], baseName + "_" + std::to_string(i), "", _historyLength, "", {"CS", getName()}});
+            &groupMap[dirName], baseName + "_" + std::to_string(i), "", _historyLength, "", {getName()}});
         if(_enbaleTimeStamps) {
           tmpList.back().second.timeStamp.emplace_back(
               ArrayOutput<uint64_t>{&groupMap[dirName], baseName + "_" + std::to_string(i) + "_timeStamps",
-                  "Time stamps for entries in the history buffer", _historyLength, "", {"CS", getName()}});
+                  "Time stamps for entries in the history buffer", _historyLength, "", {getName()}});
         }
       }
     }
@@ -173,6 +210,28 @@ namespace ChimeraTK { namespace history {
       auto id = group.readAny();
       boost::fusion::for_each(_accessorListMap.table, Update(id));
     }
+  }
+
+  void ServerHistory::findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag,
+      bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const {
+    // Change behaviour to exclude the auto-generated inputs which are connected to the data sources. Otherwise those
+    // variables might get published twice to the control system, if findTag(".*") is used to connect the entire
+    // application to the control system.
+    // This is a temporary solution. In future, instead the inputs should be generated at the same place in the
+    // hierarchy as the source variable, and the connetion should not be made by the module itself. This currently would
+    // be complicated to implement, since it is difficult to find the correct virtual name for the variables.
+
+    struct MyVirtualModule : VirtualModule {
+      using VirtualModule::VirtualModule;
+      using VirtualModule::findTagAndAppendToModule;
+    };
+
+    MyVirtualModule tempParent("tempRoot", "", ModuleType::ApplicationModule);
+    MyVirtualModule tempRoot("tempRoot", "", ModuleType::ApplicationModule);
+    EntityOwner::findTagAndAppendToModule(
+        tempParent, "_history_internal", eliminateAllHierarchies, eliminateFirstHierarchy, true, tempRoot);
+    tempParent.findTagAndAppendToModule(virtualParent, tag, false, true, negate, root);
+    tempRoot.findTagAndAppendToModule(root, tag, false, true, negate, root);
   }
 
 }} // namespace ChimeraTK::history

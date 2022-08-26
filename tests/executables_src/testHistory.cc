@@ -62,14 +62,11 @@ struct testApp : public ChimeraTK::Application {
   ~testApp() override { shutdown(); }
 
   Dummy<UserType> dummy{this, "Dummy", "Dummy module"};
-  ChimeraTK::history::ServerHistory hist{this, "ServerHistory", "History of selected process variables.", 20};
+  ChimeraTK::history::ServerHistory hist{this, "history", "History of selected process variables.", 20};
 
-  ChimeraTK::ControlSystemModule cs;
-
-  void defineConnections() override {
-    hist.addSource(dummy.findTag("history"), "history/" + dummy.getName());
-    hist.findTag("CS").connectTo(cs);
-    dummy.connectTo(cs);
+  void initialise() override {
+    Application::initialise();
+    dumpConnections();
   }
 };
 
@@ -82,14 +79,11 @@ struct testAppArray : public ChimeraTK::Application {
   ~testAppArray() override { shutdown(); }
 
   DummyArray<UserType> dummy{this, "Dummy", "Dummy module"};
-  ChimeraTK::history::ServerHistory hist{this, "ServerHistory", "History of selected process variables.", 20};
+  ChimeraTK::history::ServerHistory hist{this, "history", "History of selected process variables.", 20};
 
-  ChimeraTK::ControlSystemModule cs;
-
-  void defineConnections() override {
-    hist.addSource(dummy.findTag("history"), "history/" + dummy.getName());
-    hist.findTag("CS").connectTo(cs);
-    dummy.connectTo(cs);
+  void initialise() override {
+    Application::initialise();
+    dumpConnections();
   }
 };
 
@@ -100,18 +94,16 @@ struct testAppDev : public ChimeraTK::Application {
   testAppDev() : Application("test") { ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap"); }
   ~testAppDev() override { shutdown(); }
 
-  ChimeraTK::history::ServerHistory hist{this, "ServerHistory", "History of selected process variables.", 20};
-
-  ChimeraTK::DeviceModule dev{this, "Dummy1Mapped"};
+  ChimeraTK::ConnectingDeviceModule dev{this, "Dummy1Mapped", "/Dummy/out"};
 
   DummyArray<int> dummy{this, "Dummy", "Dummy module"};
 
-  ChimeraTK::ControlSystemModule cs;
+  ChimeraTK::history::ServerHistory hist{this, "history", "History of selected process variables.", 20, false};
 
-  void defineConnections() override {
-    dummy.connectTo(cs);
-    hist.addSource(dev, "history", "", dummy.out);
-    hist.findTag("CS").connectTo(cs);
+  void initialise() override {
+    hist.addSource(&dev, "", "", dummy.out);
+    Application::initialise();
+    dumpConnections();
   }
 };
 
@@ -119,7 +111,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testScalarHistory, T, test_types) {
   std::cout << "testScalarHistory " << typeid(T).name() << std::endl;
   testApp<T> app;
   ChimeraTK::TestFacility tf;
-  auto i = tf.getScalar<T>("in");
+  auto i = tf.getScalar<T>("Dummy/in");
   tf.runApplication();
   i = 42.;
   i.write();
@@ -143,7 +135,7 @@ BOOST_AUTO_TEST_CASE(testScalarHistoryString) {
   std::cout << "testScalarHistoryString" << std::endl;
   testApp<std::string> app;
   ChimeraTK::TestFacility tf;
-  auto i = tf.getScalar<std::string>("in");
+  auto i = tf.getScalar<std::string>("Dummy/in");
   tf.runApplication();
   i = "42";
   i.write();
@@ -164,16 +156,16 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testArrayHistory, T, test_types) {
   std::cout << "testArrayHistory " << typeid(T).name() << std::endl;
   testAppArray<T> app;
   ChimeraTK::TestFacility tf;
-  auto arr = tf.getArray<T>("in");
+  auto arr = tf.getArray<T>("Dummy/in");
   tf.runApplication();
   arr[0] = 42.;
   arr[1] = 43.;
   arr[2] = 44.;
   arr.write();
   tf.stepApplication();
-  BOOST_CHECK_EQUAL(tf.readArray<T>("out")[0], 42.0);
-  BOOST_CHECK_EQUAL(tf.readArray<T>("out")[1], 43.0);
-  BOOST_CHECK_EQUAL(tf.readArray<T>("out")[2], 44.0);
+  BOOST_CHECK_EQUAL(tf.readArray<T>("Dummy/out")[0], 42.0);
+  BOOST_CHECK_EQUAL(tf.readArray<T>("Dummy/out")[1], 43.0);
+  BOOST_CHECK_EQUAL(tf.readArray<T>("Dummy/out")[2], 44.0);
   std::vector<T> v_ref(20);
   for(size_t i = 0; i < 3; i++) {
     v_ref.back() = 42.0 + i;
@@ -201,16 +193,16 @@ BOOST_AUTO_TEST_CASE(testArrayHistoryString) {
   std::cout << "testArrayHistoryString" << std::endl;
   testAppArray<std::string> app;
   ChimeraTK::TestFacility tf;
-  auto arr = tf.getArray<std::string>("in");
+  auto arr = tf.getArray<std::string>("Dummy/in");
   tf.runApplication();
   arr[0] = "42";
   arr[1] = "43";
   arr[2] = "44";
   arr.write();
   tf.stepApplication();
-  BOOST_CHECK_EQUAL(tf.readArray<std::string>("out")[0], "42");
-  BOOST_CHECK_EQUAL(tf.readArray<std::string>("out")[1], "43");
-  BOOST_CHECK_EQUAL(tf.readArray<std::string>("out")[2], "44");
+  BOOST_CHECK_EQUAL(tf.readArray<std::string>("Dummy/out")[0], "42");
+  BOOST_CHECK_EQUAL(tf.readArray<std::string>("Dummy/out")[1], "43");
+  BOOST_CHECK_EQUAL(tf.readArray<std::string>("Dummy/out")[2], "44");
   std::vector<std::string> v_ref(20);
   for(size_t i = 0; i < 3; i++) {
     v_ref.back() = std::to_string(42 + i);
@@ -243,7 +235,7 @@ BOOST_AUTO_TEST_CASE(testDeviceHistory) {
   dev.write("/FixedPoint/value", 42);
 
   // Trigger the reading of the device
-  auto i = tf.getScalar<int>("in");
+  auto i = tf.getScalar<int>("Dummy/in");
   BOOST_CHECK(true);
   tf.runApplication();
   i = 1.;
