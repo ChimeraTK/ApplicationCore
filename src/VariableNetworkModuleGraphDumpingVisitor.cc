@@ -1,15 +1,18 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "VariableNetworkModuleGraphDumpingVisitor.h"
+
 #include "Application.h"
+#include "DeviceModule.h"
+#include "Module.h"
 #include "VariableNetwork.h"
 #include "VisitorHelper.h"
-#include "Module.h"
-#include "DeviceModule.h"
+
+#include <boost/algorithm/string.hpp>
 
 #include <algorithm>
 #include <sstream>
 #include <typeinfo>
-
-#include <boost/algorithm/string.hpp>
 
 namespace ChimeraTK {
 

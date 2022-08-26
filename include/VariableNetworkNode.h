@@ -1,37 +1,36 @@
-/*
- * VariableNetworkNode.h
- *
- *  Created on: Jun 23, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_VARIABLE_NETWORK_NODE_H
-#define CHIMERATK_VARIABLE_NETWORK_NODE_H
-
-#include <iostream>
-#include <unordered_map>
-#include <unordered_set>
-
-#include <assert.h>
-
-#include <boost/shared_ptr.hpp>
-
-#include <ChimeraTK/NDRegisterAccessorAbstractor.h>
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "ConstantAccessor.h"
 #include "Flags.h"
 #include "MetaDataPropagatingRegisterDecorator.h"
 #include "Visitor.h"
+#include <unordered_map>
+#include <unordered_set>
+
+#include <ChimeraTK/NDRegisterAccessorAbstractor.h>
+
+#include <boost/shared_ptr.hpp>
+
+#include <assert.h>
+#include <iostream>
 
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
 
   class VariableNetwork;
   class AccessorBase;
   class EntityOwner;
   struct VariableNetworkNode_data;
 
+  /********************************************************************************************************************/
+
   /** Pseudo type to identify nodes which can have arbitrary types */
   class AnyType {};
+
+  /********************************************************************************************************************/
 
   /** Class describing a node of a variable network */
   class VariableNetworkNode {
@@ -193,7 +192,7 @@ namespace ChimeraTK {
     boost::shared_ptr<VariableNetworkNode_data> pdata;
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** A helper class to create accessors with the right length and value. We use this
    *  to create one constant accessor for each consumer so e don't have to use a fanout: The consumers might be mixed
@@ -209,7 +208,7 @@ namespace ChimeraTK {
     virtual ~ConstantAccessorCreator() {}
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** We use a pimpl pattern so copied instances of VariableNetworkNode refer to
    * the same instance of the data structure and thus stay consistent all the
@@ -282,7 +281,7 @@ namespace ChimeraTK {
     size_t circularNetworkHash{0};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   // Templated implementation of the ConstantAccessorCreator
   template<typename UserType>
@@ -297,10 +296,9 @@ namespace ChimeraTK {
     }
   };
 
-  /*********************************************************************************************************************/
-  /*** Implementations
-   * *************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /*** Implementations ************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   VariableNetworkNode VariableNetworkNode::makeConstant(bool makeFeeder, UserType value, size_t length) {
@@ -322,7 +320,7 @@ namespace ChimeraTK {
     return node;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   ChimeraTK::NDRegisterAccessorAbstractor<UserType>& VariableNetworkNode::getAppAccessor() const {
@@ -333,7 +331,7 @@ namespace ChimeraTK {
     return *accessor;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> VariableNetworkNode::createConstAccessor(
@@ -342,7 +340,7 @@ namespace ChimeraTK {
         pdata->constNodeCreator->create(accessModeFlags));
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   void VariableNetworkNode::setAppAccessorImplementation(boost::shared_ptr<NDRegisterAccessor<UserType>> impl) const {
@@ -352,6 +350,6 @@ namespace ChimeraTK {
     assert(flagProvider);
   }
 
-} /* namespace ChimeraTK */
+  /********************************************************************************************************************/
 
-#endif /* CHIMERATK_VARIABLE_NETWORK_NODE_H */
+} /* namespace ChimeraTK */

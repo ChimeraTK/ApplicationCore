@@ -1,11 +1,13 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
 #define BOOST_TEST_MODULE testVirtualHierarchy
-#include <boost/test/included/unit_test.hpp>
-
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ModuleGroup.h"
 #include "TestFacility.h"
+
+#include <boost/test/included/unit_test.hpp>
 
 using namespace boost::unit_test_framework;
 
@@ -39,9 +41,10 @@ struct TestModule3 : public ctk::ApplicationModule {
 };
 
 // Typical connection scenario: One module provides inputs and outputs, and another wants to use them.
-// Hierarcy modifiers are used to move the variable group in the "using" module to the same variable with the same name in the virtual space.
-// Notice: For simplicity we  do not send initial values and have a circular dependency. This code never reaches the main loops.
-// We have to test two different scenarios: The module hierarchy modifyer is placed before and after the module with modifier.
+// Hierarcy modifiers are used to move the variable group in the "using" module to the same variable with the same name
+// in the virtual space. Notice: For simplicity we  do not send initial values and have a circular dependency. This code
+// never reaches the main loops. We have to test two different scenarios: The module hierarchy modifyer is placed before
+// and after the module with modifier.
 struct TestModuleWithVariableGroups : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
@@ -133,7 +136,7 @@ struct TestApplication : public ctk::Application {
     if(!_skipConnection) {
       findTag(".*").connectTo(cs);
     }
-    //cs.dump();
+    // cs.dump();
   }
   bool _skipConnection;
 };
@@ -185,7 +188,7 @@ BOOST_AUTO_TEST_CASE(testGetVirtualQualifiedName) {
     TestApplication app(ctk::HierarchyModifier::none);
     ctk::TestFacility test;
 
-    //app.cs.dump();
+    // app.cs.dump();
     BOOST_CHECK_EQUAL(app.outerModule.getVirtualQualifiedName(), "/outerModule");
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.getVirtualQualifiedName(), "/outerModuleGroup1");
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.outerModule.getVirtualQualifiedName(), "/outerModuleInGroup");
@@ -207,10 +210,10 @@ BOOST_AUTO_TEST_CASE(testGetVirtualQualifiedName) {
         app.outerModuleGroup1.innerGroup.innerModuleWithVariableGroups2.groupOneUpAndHide.getVirtualQualifiedName(),
         "/outerModuleGroup1/innerModuleGroup");
 
-    BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModuleOneUpAndHide.getVirtualQualifiedName(),
-        "/outerModuleGroup1");
-    BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModuleMoveToRoot.getVirtualQualifiedName(),
-        "/innerModuleMoveToRoot");
+    BOOST_CHECK_EQUAL(
+        app.outerModuleGroup1.innerGroup.innerModuleOneUpAndHide.getVirtualQualifiedName(), "/outerModuleGroup1");
+    BOOST_CHECK_EQUAL(
+        app.outerModuleGroup1.innerGroup.innerModuleMoveToRoot.getVirtualQualifiedName(), "/innerModuleMoveToRoot");
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModuleSameNameAsGroup.getVirtualQualifiedName(),
         "/outerModuleGroup1/innerModuleGroup");
   }
@@ -248,8 +251,8 @@ BOOST_AUTO_TEST_CASE(testGetVirtualQualifiedName) {
     BOOST_CHECK_NO_THROW(virtualisedApp["innerModuleMoveToRoot"]);
 
     BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.getVirtualQualifiedName(), "/innerModuleGroup");
-    BOOST_CHECK_EQUAL(app.outerModuleGroup1.innerGroup.innerModule.getVirtualQualifiedName(),
-        "/innerModuleGroup/innerModule");
+    BOOST_CHECK_EQUAL(
+        app.outerModuleGroup1.innerGroup.innerModule.getVirtualQualifiedName(), "/innerModuleGroup/innerModule");
   }
 }
 
@@ -260,10 +263,10 @@ BOOST_AUTO_TEST_CASE(testGetNetworkNodesOnVirtualHierarchy) {
   ctk::TestFacility test;
 
   app.cs.dump();
-  //app.outerModuleGroup1.virtualise().dump();
+  // app.outerModuleGroup1.virtualise().dump();
 
   auto virtualisedApplication = app.findTag(".*");
-  //virtualisedApplication.dump();
+  // virtualisedApplication.dump();
 
   auto pathToInnerModuleOneUpAndHide =
       app.outerModuleGroup1.innerGroup.innerModuleOneUpAndHide.getVirtualQualifiedName();
@@ -340,7 +343,7 @@ BOOST_AUTO_TEST_CASE(testNetworks) {
   ctk::TestFacility test;
 
   auto virtualisedApplication = app.findTag(".*");
-  //app.dumpConnections();
+  // app.dumpConnections();
 
   testNetworkNode(virtualisedApplication["outerModuleGroup1"]["innerModuleGroup"]("var1InGroupOneUpAndHide"),
       "/testApp/outerModuleGroup1/innerModuleGroup/InnerModuleWithVariableGroups1/YoullNeverSee/"

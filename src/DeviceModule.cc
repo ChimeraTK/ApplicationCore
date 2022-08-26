@@ -1,16 +1,12 @@
-/*
- * DeviceModule.cc
- *
- *  Created on: Jun 27, 2016
- *      Author: Martin Hierholzer
- */
-
-#include <ChimeraTK/DeviceBackend.h>
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#include "DeviceModule.h"
 
 #include "Application.h"
-#include "DeviceModule.h"
-#include "ModuleGroup.h"
 #include "HierarchyModifyingGroup.h"
+#include "ModuleGroup.h"
+
+#include <ChimeraTK/DeviceBackend.h>
 
 namespace ChimeraTK {
 
@@ -80,10 +76,42 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  DeviceModule& DeviceModule::operator=(DeviceModule&& other) {
+    assert(!moduleThread.joinable());
+    assert(other.isHoldingInitialValueLatch);
+    if(owner) owner->unregisterDeviceModule(this);
+    Module::operator=(std::move(other));
+    device = std::move(other.device);
+    deviceAliasOrURI = std::move(other.deviceAliasOrURI);
+    registerNamePrefix = std::move(other.registerNamePrefix);
+    deviceError = std::move(other.deviceError);
+    owner = other.owner;
+    proxies = std::move(other.proxies);
+    deviceHasError = other.deviceHasError;
+    for(auto& proxy : proxies) proxy.second._myowner = this;
+    owner->registerDeviceModule(this);
+    return *this;
+  }
+
+  /*********************************************************************************************************************/
+
   VariableNetworkNode DeviceModule::operator()(
       const std::string& registerName, UpdateMode mode, const std::type_info& valueType, size_t nElements) const {
     return {registerName, deviceAliasOrURI, registerNamePrefix / registerName, mode,
         {VariableDirection::invalid, false}, valueType, nElements};
+  }
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode DeviceModule::operator()(
+      const std::string& registerName, const std::type_info& valueType, size_t nElements, UpdateMode mode) const {
+    return operator()(registerName, mode, valueType, nElements);
+  }
+
+  /*********************************************************************************************************************/
+
+  VariableNetworkNode DeviceModule::operator()(const std::string& variableName) const {
+    return operator()(variableName, UpdateMode::poll);
   }
 
   /*********************************************************************************************************************/
@@ -104,7 +132,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  const Module& DeviceModule::virtualise() const { return *this; }
+  const Module& DeviceModule::virtualise() const {
+    return *this;
+  }
 
   /*********************************************************************************************************************/
 
@@ -244,8 +274,8 @@ namespace ChimeraTK {
     // The error queue must only be modified when holding both mutexes (error mutex and testable mode mutex), because
     // the testable mode counter must always be consistent with the content of the queue.
     // To avoid deadlocks you must always first aquire the testable mode mutex if you need both.
-    // You can hold the error mutex without holding the testable mode mutex (for instance for checking the error predicate),
-    // but then you must not try to aquire the testable mode mutex!
+    // You can hold the error mutex without holding the testable mode mutex (for instance for checking the error
+    // predicate), but then you must not try to aquire the testable mode mutex!
     boost::unique_lock<boost::shared_mutex> errorLock(errorMutex);
 
     if(!deviceHasError) { // only report new errors if the device does not have reported errors already
@@ -276,7 +306,8 @@ namespace ChimeraTK {
     std::string error;
     owner->testableModeLock("Startup");
 
-    // We have the testable mode lock. The device has not been initialised yet, but from now on the testableMode_deviceInitialisationCounter will take care or it
+    // We have the testable mode lock. The device has not been initialised yet, but from now on the
+    // testableMode_deviceInitialisationCounter will take care or it
     testableModeReached = true;
 
     // flag whether the devices was opened+initialised for the first time
@@ -348,7 +379,8 @@ namespace ChimeraTK {
       }
 
       // Write all recovery accessors
-      // We are now entering the critical recovery section. It is protected by the recovery mutex until the deviceHasError flag has been cleared.
+      // We are now entering the critical recovery section. It is protected by the recovery mutex until the
+      // deviceHasError flag has been cleared.
       boost::unique_lock<boost::shared_mutex> recoveryLock(recoveryMutex);
       try {
         // sort recovery helpers according to write order
@@ -492,6 +524,12 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  void DeviceModule::setCurrentVersionNumber(VersionNumber versionNumber) {
+    if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
+  }
+
+  /*********************************************************************************************************************/
+
   void DeviceModule::defineConnections() {
     // replace all slashes in the deviceAliasOrURI, because URIs might contain slashes and they are not allowed in
     // module names
@@ -521,7 +559,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  uint64_t DeviceModule::writeOrder() { return ++writeOrderCounter; }
+  uint64_t DeviceModule::writeOrder() {
+    return ++writeOrderCounter;
+  }
 
   /*********************************************************************************************************************/
 
@@ -531,7 +571,38 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void DeviceModule::waitForInitialValues() { initialValueLatch.wait(); }
+  void DeviceModule::waitForInitialValues() {
+    initialValueLatch.wait();
+  }
+
+  /*********************************************************************************************************************/
+
+  std::list<EntityOwner*> DeviceModule::getInputModulesRecursively(std::list<EntityOwner*> startList) {
+    // The DeviceModule is the end of the recursion, and is not considered recursive to itself.
+    // There will always be circular connections to the CS module which does not pose a problem.
+    // Just return the startList without adding anything (not even the DeviceModule itself)
+    return startList;
+  }
+
+  /*********************************************************************************************************************/
+
+  size_t DeviceModule::getCircularNetworkHash() {
+    return 0; // The device module is never part of a circular network
+  }
+
+  /*********************************************************************************************************************/
+
+  void DeviceModule::incrementDataFaultCounter() {
+    throw ChimeraTK::logic_error("incrementDataFaultCounter() called on a DeviceModule. This is probably "
+                                 "caused by incorrect ownership of variables/accessors or VariableGroups.");
+  }
+
+  /*********************************************************************************************************************/
+
+  void DeviceModule::decrementDataFaultCounter() {
+    throw ChimeraTK::logic_error("decrementDataFaultCounter() called on a DeviceModule. This is probably "
+                                 "caused by incorrect ownership of variables/accessors or VariableGroups.");
+  }
 
   /*********************************************************************************************************************/
   /*********************************************************************************************************************/
@@ -592,23 +663,6 @@ namespace ChimeraTK {
       source.connectTo(connectionTarget); // connection without trigger
     }
   }
-
-  /*********************************************************************************************************************/
-
-  std::list<EntityOwner*> DeviceModule::getInputModulesRecursively(std::list<EntityOwner*> startList) {
-    // The DeviceModule is the end of the recursion, and is not considered recursive to itself.
-    // There will always be circular connections to the CS module which does not pose a problem.
-    // Just return the startList without adding anything (not even the DeviceModule itself)
-    return startList;
-  }
-
-  /*********************************************************************************************************************/
-
-  size_t DeviceModule::getCircularNetworkHash() {
-    return 0; // The device module is never part of a circular network
-  }
-
-  /*********************************************************************************************************************/
 
   /*********************************************************************************************************************/
 

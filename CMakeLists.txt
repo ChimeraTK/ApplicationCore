@@ -27,13 +27,6 @@ PKG_CHECK_MODULES(LibXML++ REQUIRED ${LIBXML++_VERSION})
 PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
 include_directories(SYSTEM ${glib_INCLUDE_DIRS} ${LibXML++_INCLUDE_DIRS})
 
-# optional dependency: BOOST unit test framework needed for tests
-option(BUILD_TESTS "Build test programs" ON)
-IF(BUILD_TESTS)
-  FIND_PACKAGE(Boost COMPONENTS unit_test_framework REQUIRED)
-  ENABLE_TESTING()
-ENDIF()
-
 # Find BOOST filesystem
 # Note: we need to search this after looking for the unit_test_framework, since we must not link against the
 #       unit_test_framework library (use header-only)
@@ -41,6 +34,7 @@ FIND_PACKAGE(Boost COMPONENTS filesystem date_time chrono system thread REQUIRED
 
 include(cmake/set_default_build_to_release.cmake)
 include(cmake/set_default_flags.cmake)
+include(cmake/enable_code_coverage_report.cmake)
 
 # linker flags
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
@@ -62,40 +56,10 @@ MACRO( COPY_MAPPING_FILES )
 ENDMACRO( COPY_MAPPING_FILES )
 
 # Create the executables for automated unit testing.
+option(BUILD_TESTS "Build test programs" ON)
 if(BUILD_TESTS)
-  include_directories(${CMAKE_SOURCE_DIR}/tests/include)
-  file(GLOB test_headers "${CMAKE_SOURCE_DIR}/tests/include/*.h")
-  aux_source_directory(${CMAKE_SOURCE_DIR}/tests/executables_src testExecutables)
-  foreach( testExecutableSrcFile ${testExecutables})
-    #NAME_WE means the base name without path and (longest) extension
-    get_filename_component(executableName ${testExecutableSrcFile} NAME_WE)
-    add_executable(${executableName} ${testExecutableSrcFile} ${test_headers})
-    # do not link against the boost unit test library, the tests are not written for it!
-    target_link_libraries(${executableName} ${PROJECT_NAME} ${ChimeraTK-ControlSystemAdapter_LIBRARIES} ${HDF5_LIBRARIES})
-    set_target_properties(${executableName} PROPERTIES LINK_FLAGS "-Wl,-rpath,${PROJECT_BINARY_DIR} ${Boost_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
-    add_test(${executableName} ${executableName})
-  endforeach( testExecutableSrcFile )
-
-  # enable code coverate report
-  include(cmake/enable_code_coverage_report.cmake)
-
-  # copy config files
-  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/test.map DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/test.xlmap DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/test2.map DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/test3.map DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/test4.map DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/test5.map DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/testDataValidity1.map DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/testDataValidity2.map DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/testDataValidityPropagation.map DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/testDataValidityPropagation2.map DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/test.dmap DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/configReaderDevice.map DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/validConfig.xml DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/xmlschema/application.xsd DESTINATION ${PROJECT_BINARY_DIR})
-  FILE( COPY ${CMAKE_SOURCE_DIR}/tests/deviceInitScript1.bash ${CMAKE_SOURCE_DIR}/tests/deviceInitScript2.bash DESTINATION ${PROJECT_BINARY_DIR})
-
+  enable_testing()
+  add_subdirectory("${PROJECT_SOURCE_DIR}/tests")
 endif()
 
 # C++ library

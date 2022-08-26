@@ -1,12 +1,19 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "CircularDependencyDetectionRecursionStopper.h"
+
 #include <ChimeraTK/Exception.h>
 
 namespace ChimeraTK { namespace detail {
 
   size_t CircularDependencyDetectionRecursionStopper::_globalScanCounter{0};
 
-  void CircularDependencyDetectionRecursionStopper::startNewScan() { ++_globalScanCounter; }
-  void CircularDependencyDetectionRecursionStopper::setRecursionDetected() { _localScanCounter = _globalScanCounter; }
+  void CircularDependencyDetectionRecursionStopper::startNewScan() {
+    ++_globalScanCounter;
+  }
+  void CircularDependencyDetectionRecursionStopper::setRecursionDetected() {
+    _localScanCounter = _globalScanCounter;
+  }
   bool CircularDependencyDetectionRecursionStopper::recursionDetected() {
     if(_globalScanCounter == 0) {
       throw ChimeraTK::logic_error(

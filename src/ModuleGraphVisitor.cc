@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "ModuleGraphVisitor.h"
 
 #include "EntityOwner.h"
@@ -37,7 +39,9 @@ namespace ChimeraTK {
     _stream << "}}\", shape=record]" << std::endl;
   }
 
-  void ModuleGraphVisitor::dispatch(const Module& module) { dumpEntityOwner(static_cast<const EntityOwner&>(module)); }
+  void ModuleGraphVisitor::dispatch(const Module& module) {
+    dumpEntityOwner(static_cast<const EntityOwner&>(module));
+  }
 
   void ModuleGraphVisitor::dumpEntityOwner(const EntityOwner& module) {
     std::string myDotNode = detail::encodeDotNodeName(module.getQualifiedName());

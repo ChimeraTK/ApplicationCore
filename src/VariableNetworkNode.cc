@@ -1,20 +1,17 @@
-/*
- * VariableNetworkNode.cc
- *
- *  Created on: Jun 23, 2016
- *      Author: Martin Hierholzer
- */
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "VariableNetworkNode.h"
+
 #include "Application.h"
+#include "ApplicationModule.h"
+#include "CircularDependencyDetectionRecursionStopper.h"
 #include "EntityOwner.h"
+#include "VariableGroup.h"
 #include "VariableNetwork.h"
 #include "VariableNetworkNodeDumpingVisitor.h"
 #include "Visitor.h"
-#include "VariableGroup.h"
+
 #include <boost/container_hash/hash.hpp>
-#include "ApplicationModule.h"
-#include "CircularDependencyDetectionRecursionStopper.h"
 
 namespace ChimeraTK {
 
@@ -108,7 +105,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::clearOwner() { pdata->network = nullptr; }
+  void VariableNetworkNode::clearOwner() {
+    pdata->network = nullptr;
+  }
 
   /*********************************************************************************************************************/
 
@@ -119,7 +118,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::accept(Visitor<VariableNetworkNode>& visitor) const { visitor.dispatch(*this); }
+  void VariableNetworkNode::accept(Visitor<VariableNetworkNode>& visitor) const {
+    visitor.dispatch(*this);
+  }
 
   /*********************************************************************************************************************/
 
@@ -129,7 +130,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool VariableNetworkNode::operator!=(const VariableNetworkNode& other) const { return !operator==(other); }
+  bool VariableNetworkNode::operator!=(const VariableNetworkNode& other) const {
+    return !operator==(other);
+  }
 
   /*********************************************************************************************************************/
 
@@ -241,7 +244,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool VariableNetworkNode::hasExternalTrigger() const { return pdata->externalTrigger.getType() != NodeType::invalid; }
+  bool VariableNetworkNode::hasExternalTrigger() const {
+    return pdata->externalTrigger.getType() != NodeType::invalid;
+  }
 
   /*********************************************************************************************************************/
 
@@ -267,7 +272,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  bool VariableNetworkNode::hasOwner() const { return pdata->network != nullptr; }
+  bool VariableNetworkNode::hasOwner() const {
+    return pdata->network != nullptr;
+  }
 
   /*********************************************************************************************************************/
 
@@ -278,31 +285,45 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  UpdateMode VariableNetworkNode::getMode() const { return pdata->mode; }
+  UpdateMode VariableNetworkNode::getMode() const {
+    return pdata->mode;
+  }
 
   /*********************************************************************************************************************/
 
-  VariableDirection VariableNetworkNode::getDirection() const { return pdata->direction; }
+  VariableDirection VariableNetworkNode::getDirection() const {
+    return pdata->direction;
+  }
 
   /*********************************************************************************************************************/
 
-  const std::type_info& VariableNetworkNode::getValueType() const { return *(pdata->valueType); }
+  const std::type_info& VariableNetworkNode::getValueType() const {
+    return *(pdata->valueType);
+  }
 
   /*********************************************************************************************************************/
 
-  std::string VariableNetworkNode::getName() const { return pdata->name; }
+  std::string VariableNetworkNode::getName() const {
+    return pdata->name;
+  }
 
   /*********************************************************************************************************************/
 
-  std::string VariableNetworkNode::getQualifiedName() const { return pdata->qualifiedName; }
+  std::string VariableNetworkNode::getQualifiedName() const {
+    return pdata->qualifiedName;
+  }
 
   /*********************************************************************************************************************/
 
-  const std::string& VariableNetworkNode::getUnit() const { return pdata->unit; }
+  const std::string& VariableNetworkNode::getUnit() const {
+    return pdata->unit;
+  }
 
   /*********************************************************************************************************************/
 
-  const std::string& VariableNetworkNode::getDescription() const { return pdata->description; }
+  const std::string& VariableNetworkNode::getDescription() const {
+    return pdata->description;
+  }
 
   /*********************************************************************************************************************/
 
@@ -341,15 +362,21 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::setNumberOfElements(size_t nElements) { pdata->nElements = nElements; }
+  void VariableNetworkNode::setNumberOfElements(size_t nElements) {
+    pdata->nElements = nElements;
+  }
 
   /*********************************************************************************************************************/
 
-  size_t VariableNetworkNode::getNumberOfElements() const { return pdata->nElements; }
+  size_t VariableNetworkNode::getNumberOfElements() const {
+    return pdata->nElements;
+  }
 
   /*********************************************************************************************************************/
 
-  ChimeraTK::TransferElementAbstractor& VariableNetworkNode::getAppAccessorNoType() const { return *(pdata->appNode); }
+  ChimeraTK::TransferElementAbstractor& VariableNetworkNode::getAppAccessorNoType() const {
+    return *(pdata->appNode);
+  }
 
   /*********************************************************************************************************************/
 
@@ -375,11 +402,15 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::addTag(const std::string& tag) { pdata->tags.insert(tag); }
+  void VariableNetworkNode::addTag(const std::string& tag) {
+    pdata->tags.insert(tag);
+  }
 
   /*********************************************************************************************************************/
 
-  bool VariableNetworkNode::isCircularInput() const { return pdata->circularNetworkHash != 0; }
+  bool VariableNetworkNode::isCircularInput() const {
+    return pdata->circularNetworkHash != 0;
+  }
 
   /*********************************************************************************************************************/
 
@@ -390,8 +421,8 @@ namespace ChimeraTK {
     // find the feeder of the network
     auto feeder = getOwner().getFeedingNode();
     auto feedingModule = feeder.getOwningModule();
-    // CS modules and device modules don't have an owning module. They stop the circle anyway. So if either the feeder or the
-    // receiver (this) don't have an owning module, there is nothing to do here.
+    // CS modules and device modules don't have an owning module. They stop the circle anyway. So if either the feeder
+    // or the receiver (this) don't have an owning module, there is nothing to do here.
     if(!feedingModule || !getOwningModule()) {
       return {};
     }
@@ -439,7 +470,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  const std::unordered_set<std::string>& VariableNetworkNode::getTags() const { return pdata->tags; }
+  const std::unordered_set<std::string>& VariableNetworkNode::getTags() const {
+    return pdata->tags;
+  }
 
   /*********************************************************************************************************************/
 
@@ -450,18 +483,26 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  EntityOwner* VariableNetworkNode::getOwningModule() const { return pdata->owningModule; }
+  EntityOwner* VariableNetworkNode::getOwningModule() const {
+    return pdata->owningModule;
+  }
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::setOwningModule(EntityOwner* newOwner) const { pdata->owningModule = newOwner; }
+  void VariableNetworkNode::setOwningModule(EntityOwner* newOwner) const {
+    pdata->owningModule = newOwner;
+  }
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::setPublicName(const std::string& name) const { pdata->publicName = name; }
+  void VariableNetworkNode::setPublicName(const std::string& name) const {
+    pdata->publicName = name;
+  }
 
   /*********************************************************************************************************************/
 
-  size_t VariableNetworkNode::getCircularNetworkHash() const { return pdata->circularNetworkHash; }
+  size_t VariableNetworkNode::getCircularNetworkHash() const {
+    return pdata->circularNetworkHash;
+  }
 
 } // namespace ChimeraTK

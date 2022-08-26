@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
+
 /*!
  * \author Klaus Zenker (HZDR)
  * \date 03.04.2018
@@ -100,10 +104,10 @@
 
  */
 
-#ifndef MODULES_LOGGING_H_
-#define MODULES_LOGGING_H_
-
-#include "ApplicationCore.h"
+#include "ApplicationModule.h"
+#include "HierarchyModifyingGroup.h"
+#include "ScalarAccessor.h"
+#include "VariableGroup.h"
 
 #include <ChimeraTK/RegisterPath.h>
 
@@ -284,5 +288,3 @@ namespace logging {
   };
 
 } // namespace logging
-
-#endif /* MODULES_LOGGING_H_ */

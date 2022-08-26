@@ -1,21 +1,17 @@
-/*
- * testDirectDeviceToCS.cc
- *
- *  Created on: Jun 22, 2016
- *      Author: Martin Hierholzer
- */
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #define BOOST_TEST_MODULE testDirectDeviceToCS
 
-#include <boost/mpl/list.hpp>
-
 #include "Application.h"
+#include "check_timeout.h"
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "PeriodicTrigger.h"
 #include "TestFacility.h"
+
 #include <ChimeraTK/Device.h>
-#include "check_timeout.h"
+
+#include <boost/mpl/list.hpp>
 
 #define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>

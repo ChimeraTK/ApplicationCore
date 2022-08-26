@@ -1,26 +1,21 @@
-/*
- * testConnectTo.cc
- *
- *  Created on: Oct 10, 2017
- *      Author: Martin Hierholzer
- */
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include <chrono>
 #include <future>
 
 #define BOOST_TEST_MODULE testConnectTo
 
-#include <boost/mpl/list.hpp>
-#include <boost/test/included/unit_test.hpp>
-#include <boost/thread.hpp>
-
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ModuleGroup.h"
 #include "ScalarAccessor.h"
+#include "TestFacility.h"
 #include "VariableGroup.h"
 #include "VirtualModule.h"
-#include "TestFacility.h"
+
+#include <boost/mpl/list.hpp>
+#include <boost/test/included/unit_test.hpp>
+#include <boost/thread.hpp>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;

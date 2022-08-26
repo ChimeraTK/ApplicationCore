@@ -1,8 +1,9 @@
-#ifndef HIERARCHYMODIFYINGGROUP_H
-#define HIERARCHYMODIFYINGGROUP_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
-#include "VariableGroup.h"
 #include "ApplicationModule.h"
+#include "VariableGroup.h"
 
 #include <boost/algorithm/string.hpp>
 
@@ -26,27 +27,26 @@ namespace ChimeraTK {
     HierarchyModifyingGroup() {}
 
     /**
-       *  Return the last component of the given qualified path name.
-       *  Example: "/some/deep/hierarchy/levels" would return "levels"
-       *
-       *  This function is useful together with getPathName(), when a qualified variable name is given, and a
-       *  HierarchyModifyingGroup with the variable inside needs to be created.
-       */
+     *  Return the last component of the given qualified path name.
+     *  Example: "/some/deep/hierarchy/levels" would return "levels"
+     *
+     *  This function is useful together with getPathName(), when a qualified variable name is given, and a
+     *  HierarchyModifyingGroup with the variable inside needs to be created.
+     */
     static std::string getUnqualifiedName(const std::string& qualifiedName);
 
     /**
-       *  Return all but the last components of the given qualified name.
-       *  Example: "/some/deep/hierarchy/levels" would return "/some/deep/hierarchy"
-       *
-       *  This function is useful together with getUnqualifiedName(), when a qualified variable name is given, and a
-       *  HierarchyModifyingGroup with the variable inside needs to be created.
-       */
+     *  Return all but the last components of the given qualified name.
+     *  Example: "/some/deep/hierarchy/levels" would return "/some/deep/hierarchy"
+     *
+     *  This function is useful together with getUnqualifiedName(), when a qualified variable name is given, and a
+     *  HierarchyModifyingGroup with the variable inside needs to be created.
+     */
     static std::string getPathName(const std::string& qualifiedName);
 
    protected:
-
-    void findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag,
-        bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const override;
+    void findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag, bool eliminateAllHierarchies,
+        bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const override;
 
     bool moveToRoot{false};
     std::vector<std::string> _splittedPath;
@@ -58,7 +58,7 @@ namespace ChimeraTK {
    *  Convenience version of the HierarchyModifyingGroup with exactly one variable inside. The constructor takes the
    *  qualified name of the variable and splits it internally into the path name (for the HierarchyModifyingGroup) and
    *  the unqialified variable name.
-   *  
+   *
    *  The template argument must be one of the Scalar*Input, ScalarOutput classes resp. their Array counterparts.
    */
   template<typename ACCESSOR>
@@ -74,5 +74,3 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
 } // namespace ChimeraTK
-
-#endif // HIERARCHYMODIFYINGGROUP_H

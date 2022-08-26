@@ -1,15 +1,11 @@
-/*
- * Module.cc
- *
- *  Created on: Jun 27, 2016
- *      Author: Martin Hierholzer
- */
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "Module.h"
+
 #include "Application.h"
-#include "VirtualModule.h"
 #include "ApplicationModule.h"
 #include "DeviceModule.h"
+#include "VirtualModule.h"
 
 namespace ChimeraTK {
 
@@ -178,7 +174,7 @@ namespace ChimeraTK {
 
   Module& Module::submodule(std::string_view moduleName) {
     // According to Scott Meyers "Effective C++", the const cast is fine here
-    return const_cast<Module &>(static_cast<const Module &>(*this).submodule(moduleName));
+    return const_cast<Module&>(static_cast<const Module&>(*this).submodule(moduleName));
   }
 
   /*********************************************************************************************************************/
@@ -258,6 +254,28 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error(
           "EntityOwner::findApplicationModule() called on neither an ApplicationModule nor a VariableGroup.");
     }
+  }
+
+  /*********************************************************************************************************************/
+
+  std::string Module::getQualifiedName() const {
+    return ((_owner != nullptr) ? _owner->getQualifiedName() : "") + "/" + _name;
+  }
+
+  /*********************************************************************************************************************/
+
+  std::string Module::getFullDescription() const {
+    if(_owner == nullptr) return _description;
+    auto ownerDescription = _owner->getFullDescription();
+    if(ownerDescription == "") return _description;
+    if(_description == "") return ownerDescription;
+    return ownerDescription + " - " + _description;
+  }
+
+  /*********************************************************************************************************************/
+
+  std::list<EntityOwner*> Module::getInputModulesRecursively(std::list<EntityOwner*> startList) {
+    return _owner->getInputModulesRecursively(startList);
   }
 
   /*********************************************************************************************************************/

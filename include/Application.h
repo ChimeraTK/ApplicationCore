@@ -1,27 +1,21 @@
-/*
- * Application.h
- *
- *  Created on: Jun 07, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_APPLICATION_H
-#define CHIMERATK_APPLICATION_H
-
-#include <atomic>
-#include <mutex>
-
-#include <ChimeraTK/ControlSystemAdapter/ApplicationBase.h>
-#include <ChimeraTK/DeviceBackend.h>
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "EntityOwner.h"
 #include "Flags.h"
 #include "InternalModule.h"
-#include "Profiler.h"
 #include "VariableNetwork.h"
-//#include "DeviceModule.h"
+
+#include <ChimeraTK/ControlSystemAdapter/ApplicationBase.h>
+#include <ChimeraTK/DeviceBackend.h>
+
+#include <atomic>
+#include <mutex>
 
 namespace ChimeraTK {
+
+  /*********************************************************************************************************************/
 
   class Module;
   class AccessorBase;
@@ -37,6 +31,8 @@ namespace ChimeraTK {
   class FanOut;
   template<typename UserType>
   class ConsumingFanOut;
+
+  /*********************************************************************************************************************/
 
   class Application : public ApplicationBase, public EntityOwner {
    public:
@@ -102,11 +98,7 @@ namespace ChimeraTK {
      *  Note: Enabling the testable mode will have a singificant impact on the
      * performance, since it will prevent any module threads to run at the same
      * time! */
-    void enableTestableMode() {
-      threadName() = "TEST THREAD";
-      testableMode = true;
-      testableModeLock("enableTestableMode");
-    }
+    void enableTestableMode();
 
     /**
      * Returns true if application is in testable mode else returns
@@ -152,28 +144,24 @@ namespace ChimeraTK {
     /** Test if the testable mode mutex is locked by the current thread.
      *
      *  This function should generally not be used in user code. */
-    static bool testableModeTestLock() {
-      if(!getInstance().testableMode) return false;
-      return getTestableModeLockObject().owns_lock();
-    }
+    static bool testableModeTestLock();
 
-    /** Set string holding the name of the current thread or the specified thread ID. This is used e.g. for
-     *  debugging output of the testable mode and for the internal profiler. */
+    /**
+     * Set string holding the name of the current thread or the specified thread ID. This is used e.g. for
+     * debugging output of the testable mode.
+     */
     void setThreadName(const std::string& name);
 
-    /** Get string holding the name of the current thread or the specified thread ID. This is used e.g. for
-     *  debugging output of the testable mode and for the internal profiler. Will return "*UNKNOWN_THREAD*" if the name
-     *  for the given ID has not yet been set. */
+    /**
+     * Get string holding the name of the current thread or the specified thread ID. This is used e.g. for debugging
+     * output of the testable mode. Will return "*UNKNOWN_THREAD*" if the name for the given ID has not yet been set.
+     */
     static std::string threadName(const boost::thread::id& threadId = boost::this_thread::get_id());
 
     /** Register the thread in the application system and give it a name. This
      * should be done for all threads used by the application to help with
      * debugging and to allow profiling. */
-    static void registerThread(const std::string& name) {
-      Application::getInstance().setThreadName(name);
-      Profiler::registerThread(name);
-      pthread_setname_np(pthread_self(), name.substr(0, std::min<std::string::size_type>(name.length(), 15)).c_str());
-    }
+    static void registerThread(const std::string& name);
 
     void debugMakeConnections() { enableDebugMakeConnections = true; };
 
@@ -203,27 +191,14 @@ namespace ChimeraTK {
     void enableDebugDataLoss() { debugDataLoss = true; }
 
     /** Incremenet counter for how many write() operations have overwritten unread data */
-    static void incrementDataLossCounter(const std::string& name) {
-      if(getInstance().debugDataLoss) {
-        std::cout << "Data loss in variable " << name << std::endl;
-      }
-      getInstance().dataLossCounter++;
-    }
+    static void incrementDataLossCounter(const std::string& name);
 
-    static size_t getAndResetDataLossCounter() {
-      size_t counter = getInstance().dataLossCounter.load(std::memory_order_relaxed);
-      while(!getInstance().dataLossCounter.compare_exchange_weak(
-          counter, 0, std::memory_order_release, std::memory_order_relaxed))
-        ;
-      return counter;
-    }
+    static size_t getAndResetDataLossCounter();
 
     /** Convenience function for creating constants. See
      * VariableNetworkNode::makeConstant() for details. */
     template<typename UserType>
-    static VariableNetworkNode makeConstant(UserType value, size_t length = 1, bool makeFeeder = true) {
-      return VariableNetworkNode::makeConstant(makeFeeder, value, length);
-    }
+    static VariableNetworkNode makeConstant(UserType value, size_t length = 1, bool makeFeeder = true);
 
     void registerDeviceModule(DeviceModule* deviceModule);
     void unregisterDeviceModule(DeviceModule* deviceModule);
@@ -521,10 +496,8 @@ namespace ChimeraTK {
     std::mutex m_threadNames;
 
     template<typename UserType>
-    friend class TestableModeAccessorDecorator; // needs access to the
-                                                // testableMode_mutex and
-                                                // testableMode_counter and the
-                                                // idMap
+    friend class
+        TestableModeAccessorDecorator; // needs access to the testableMode_mutex and testableMode_counter and the idMap
 
     friend class TestFacility;  // needs access to testableMode_variables
     friend class DeviceModule;  // needs access to testableMode_variables
@@ -568,6 +541,13 @@ namespace ChimeraTK {
     }
   };
 
-} /* namespace ChimeraTK */
+  /*********************************************************************************************************************/
 
-#endif /* CHIMERATK_APPLICATION_H */
+  template<typename UserType>
+  VariableNetworkNode Application::makeConstant(UserType value, size_t length, bool makeFeeder) {
+    return VariableNetworkNode::makeConstant(makeFeeder, value, length);
+  }
+
+  /*********************************************************************************************************************/
+
+} /* namespace ChimeraTK */

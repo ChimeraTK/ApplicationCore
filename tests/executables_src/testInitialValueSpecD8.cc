@@ -1,27 +1,30 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #define BOOST_TEST_MODULE testInitialValues
 
-#include <boost/mpl/list.hpp>
+#include "Application.h"
+#include "ApplicationModule.h"
+#include "check_timeout.h"
+#include "DeviceModule.h"
+#include "ScalarAccessor.h"
+#include "TestFacility.h"
 
-#include <chrono>
-#include <future>
-#include <functional>
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
 
-#include "Application.h"
-#include "ApplicationModule.h"
-#include "DeviceModule.h"
-#include "ScalarAccessor.h"
-#include "TestFacility.h"
-#include "check_timeout.h"
-
+#include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
+
+#include <chrono>
+#include <functional>
+#include <future>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
-// A generic module with just one input. It is connected manually, so we just call the register "REG1" so we easily connect to that register in the device
-// It has a flag and a promise to check whether the module has entered the main loop, and to wait for it.
+// A generic module with just one input. It is connected manually, so we just call the register "REG1" so we easily
+// connect to that register in the device It has a flag and a promise to check whether the module has entered the main
+// loop, and to wait for it.
 template<class INPUT_TYPE>
 struct InputModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
@@ -73,16 +76,16 @@ struct TestFixtureWithEceptionDummy {
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
 };
 /**
-  *  Test Initial Values - Inputs of `ApplicationModule`s
-  *  InitialValuesInputsOfApplicationCore_D_8 "D.8"
-  */
+ *  Test Initial Values - Inputs of `ApplicationModule`s
+ *  InitialValuesInputsOfApplicationCore_D_8 "D.8"
+ */
 BOOST_AUTO_TEST_SUITE(testInitialValuesInputsOfApplicationCore_D_8)
 typedef boost::mpl::list<PollDummyApplication, PushDummyApplication> DeviceTestApplicationTypes;
 
 /**
-  *  For device variables the ExeptionHandlingDecorator freezes the variable until the device is available
-  * \anchor testInitialValue_D_8_b_i \ref initialValue_D_8_b_i
-  */
+ *  For device variables the ExeptionHandlingDecorator freezes the variable until the device is available
+ * \anchor testInitialValue_D_8_b_i \ref initialValue_D_8_b_i
+ */
 BOOST_AUTO_TEST_CASE_TEMPLATE(testInitValueAtDevice8bi, APPLICATION_TYPE, DeviceTestApplicationTypes) {
   std::cout << "===   testInitValueAtDevice8bi " << typeid(APPLICATION_TYPE).name() << "  ===" << std::endl;
   std::chrono::time_point<std::chrono::steady_clock> start, end;
@@ -139,9 +142,9 @@ struct ProcessArryDummyApplication : ChimeraTK::Application {
 typedef boost::mpl::list<ctk::ScalarPollInput<int>, ctk::ScalarPushInput<int>> TestInputTypes;
 
 /**
-  *  ProcessArray freeze in their implementation until the initial value is received
-  * \anchor testInitialValue_D_8_b_ii \ref initialValue_D_8_b_ii
-  */
+ *  ProcessArray freeze in their implementation until the initial value is received
+ * \anchor testInitialValue_D_8_b_ii \ref initialValue_D_8_b_ii
+ */
 BOOST_AUTO_TEST_CASE_TEMPLATE(testProcessArrayInitValueAtDevice8bii, INPUT_TYPE, TestInputTypes) {
   std::cout << "===   testPollProcessArrayInitValueAtDevice8bii " << typeid(INPUT_TYPE).name() << "  === " << std::endl;
   std::chrono::time_point<std::chrono::steady_clock> start, end;
@@ -182,9 +185,9 @@ struct ConstantTestApplication : ChimeraTK::Application {
 };
 
 /**
-  * Constants can be read exactly once in case of `AccessMode::wait_for_new_data`, so the initial value can be received.
-  * \anchor testInitialValue_D_8_b_iii \ref initialValue_D_8_b_iii
-  */
+ * Constants can be read exactly once in case of `AccessMode::wait_for_new_data`, so the initial value can be received.
+ * \anchor testInitialValue_D_8_b_iii \ref initialValue_D_8_b_iii
+ */
 BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantInitValueAtDevice8biii, INPUT_TYPE, TestInputTypes) {
   std::cout << "===   testConstantInitValueAtDevice8biii " << typeid(INPUT_TYPE).name() << "  === " << std::endl;
   TestFixtureWithEceptionDummy<ConstantTestApplication<INPUT_TYPE>> d;
@@ -266,9 +269,9 @@ struct D9InitialValueEceptionDummy {
 };
 
 /**
-  *  D 9 b for ThreaddedFanOut
-  * \anchor testInitialValueThreaddedFanOut_D_9_b \ref initialValueThreaddedFanOut_D_9_b
-  */
+ *  D 9 b for ThreaddedFanOut
+ * \anchor testInitialValueThreaddedFanOut_D_9_b_ThreaddedFanOut \ref initialValueThreaddedFanOut_D_9_b
+ */
 BOOST_AUTO_TEST_CASE(testPushInitValueAtDeviceD9) {
   std::cout << "===   testPushInitValueAtDeviceD9   === " << std::endl;
   std::chrono::time_point<std::chrono::steady_clock> start, end;
@@ -348,9 +351,9 @@ struct TriggerFanOutInitialValueEceptionDummy {
 };
 
 /**
-  *  D 9 b for TriggerFanOut
-  * \anchor testInitialValueThreaddedFanOut_D_9_b \ref initialValueThreaddedFanOut_D_9_b
-  */
+ *  D 9 b for TriggerFanOut
+ * \anchor testInitialValueThreaddedFanOut_D_9_b_TriggerFanOut \ref initialValueThreaddedFanOut_D_9_b
+ */
 BOOST_AUTO_TEST_CASE(testTriggerFanOutInitValueAtDeviceD9) {
   std::cout << "===   testTriggerFanOutInitValueAtDeviceD9   === " << std::endl;
   std::chrono::time_point<std::chrono::steady_clock> start, end;
@@ -425,9 +428,9 @@ struct ConstantD10InitialValueEceptionDummy {
 };
 
 /**
-  *  D 10 for Constant
-  * \anchor testConstantD10InitialValue_D_10 \ref constantD10InitialValue_D_10
-  */
+ *  D 10 for Constant
+ * \anchor testConstantD10InitialValue_D_10 \ref initialValue_d_10
+ */
 BOOST_AUTO_TEST_CASE(testConstantD10InitialValue) {
   std::cout << "===   testConstantD10InitialValue   === " << std::endl;
 
@@ -435,9 +438,9 @@ BOOST_AUTO_TEST_CASE(testConstantD10InitialValue) {
   d.deviceBackend->throwExceptionOpen = true;
   BOOST_CHECK_THROW(d.deviceBackend->open(), std::exception);
   d.application.run();
-  //commented line might fail on jenkins, race cond?
-  //BOOST_CHECK(d.application.constantModule.enteredTheMainLoop == false);
-  //BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+  // commented line might fail on jenkins, race cond?
+  // BOOST_CHECK(d.application.constantModule.enteredTheMainLoop == false);
+  // BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   d.application.constantModule.p.get_future().wait();
   BOOST_CHECK(d.application.constantModule.enteredTheMainLoop == true);
   BOOST_CHECK(d.pushVariable == 24);
@@ -493,19 +496,19 @@ struct TestInitialValueEceptionDummy {
 };
 
 /**
-  *  D 1 for DataValidity::faulty
-  * \anchor testD1InitialValue_D_1 \ref testD1InitialValue_D_1
-  */
-//Todo add missing tests for bi-directional variables
+ *  D 1 for DataValidity::faulty
+ * \anchor testD1InitialValue_D_1 \ref testD1InitialValue_D_1
+ */
+// Todo add missing tests for bi-directional variables
 BOOST_AUTO_TEST_CASE(testD1InitialValue) {
   std::cout << "===   testD1InitialValue   === " << std::endl;
 
   TestInitialValueEceptionDummy d;
   d.application.run();
-  //commented line might fail on jenkins.
-  //BOOST_CHECK(d.application.testModule.enteredTheMainLoop == false);
-  //BOOST_CHECK(d.pushVariable.dataValidity() == ctk::DataValidity::faulty);
-  //BOOST_CHECK(d.outputVariable.dataValidity() == ctk::DataValidity::ok);
+  // commented line might fail on jenkins.
+  // BOOST_CHECK(d.application.testModule.enteredTheMainLoop == false);
+  // BOOST_CHECK(d.pushVariable.dataValidity() == ctk::DataValidity::faulty);
+  // BOOST_CHECK(d.outputVariable.dataValidity() == ctk::DataValidity::ok);
   d.application.testModule.p.get_future().wait();
   BOOST_CHECK(d.application.testModule.enteredTheMainLoop == true);
   BOOST_CHECK(d.pushVariable.dataValidity() == ctk::DataValidity::ok);
@@ -514,20 +517,20 @@ BOOST_AUTO_TEST_CASE(testD1InitialValue) {
 }
 
 /**
-  *  D 2 for DataValidity::faulty
-  * \anchor testD1InitialValue_D_2 \ref testD1InitialValue_D_2
-  */
+ *  D 2 for DataValidity::faulty
+ * \anchor testD1InitialValue_D_2 \ref testD1InitialValue_D_2
+ */
 BOOST_AUTO_TEST_CASE(testD2InitialValue) {
   std::cout << "===   testD2InitialValue   === " << std::endl;
 
   TestInitialValueEceptionDummy d;
   d.application.run();
-  //Commented lines are subject to race conditions because the initial value might or might not have
-  // arrived already when the test is done. One would need a way to stop the application start after the
-  // inversion of control has created all PVs, but before the initial values are propagated
-  //BOOST_CHECK(d.application.testModule.enteredTheMainLoop == false);
-  //BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
-  //BOOST_CHECK(d.outputVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+  // Commented lines are subject to race conditions because the initial value might or might not have
+  //  arrived already when the test is done. One would need a way to stop the application start after the
+  //  inversion of control has created all PVs, but before the initial values are propagated
+  // BOOST_CHECK(d.application.testModule.enteredTheMainLoop == false);
+  // BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+  // BOOST_CHECK(d.outputVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   d.application.testModule.p.get_future().wait();
   d.application.testModule.output.write();
   BOOST_CHECK(d.application.testModule.enteredTheMainLoop == true);
@@ -536,23 +539,24 @@ BOOST_AUTO_TEST_CASE(testD2InitialValue) {
 }
 
 /**
-  *  D 3 for DataValidity::faulty
-  * \anchor testD1InitialValue_D_3 \ref testD1InitialValue_D_3
-  */
+ *  D 3 for DataValidity::faulty
+ * \anchor testD1InitialValue_D_3 \ref testD1InitialValue_D_3
+ */
 BOOST_AUTO_TEST_CASE(testD3InitialValue) {
   std::cout << "===   testD3InitialValue   === " << std::endl;
 
   TestInitialValueEceptionDummy d;
   d.application.run();
-  //commented line might fail on jenkins, race cond?
-  //BOOST_CHECK(d.pushVariable.dataValidity() == ctk::DataValidity::faulty);
-  //BOOST_CHECK(d.outputVariable.dataValidity() == ctk::DataValidity::ok);
-  //d.application.testModule.output.write();
+  // commented line might fail on jenkins, race cond?
+  // BOOST_CHECK(d.pushVariable.dataValidity() == ctk::DataValidity::faulty);
+  // BOOST_CHECK(d.outputVariable.dataValidity() == ctk::DataValidity::ok);
+  // d.application.testModule.output.write();
   d.application.testModule.p.get_future().wait();
   BOOST_CHECK(d.application.testModule.enteredTheMainLoop == true);
   BOOST_CHECK(d.pushVariable.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK(d.outputVariable.dataValidity() == ctk::DataValidity::ok);
-  //Todo. The initial value can also be faulty. Change backend so that it allows to override the data validity without going to an exception state.
+  // Todo. The initial value can also be faulty. Change backend so that it allows to override the data validity without
+  // going to an exception state.
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -581,7 +585,7 @@ struct ReaderModule : ChimeraTK::ApplicationModule {
     using ChimeraTK::VariableGroup::VariableGroup;
     ChimeraTK::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
   } reg1{this, "REG1", ""};
-  struct : ChimeraTK::VariableGroup {
+  struct Reg2 : ChimeraTK::VariableGroup {
     using ChimeraTK::VariableGroup::VariableGroup;
     ChimeraTK::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
   } reg2{this, "REG2", ""};
@@ -611,9 +615,9 @@ struct Test7DummyApplication : ChimeraTK::Application {
 };
 
 /**
-  *  D 7_1
-  * \anchor testD7_1_InitialValue \ref testD7_1_InitialValue
-  */
+ *  D 7_1
+ * \anchor testD7_1_InitialValue \ref testD7_1_InitialValue
+ */
 
 BOOST_AUTO_TEST_CASE(testD7_1_InitialValue) {
   std::cout << "===   testD7_1_InitialValue   === " << std::endl;
@@ -627,9 +631,9 @@ BOOST_AUTO_TEST_CASE(testD7_1_InitialValue) {
 }
 
 /**
-  *  D 7_2
-  * \anchor testD7_2_InitialValue \ref testD7_2_InitialValue
-  */
+ *  D 7_2
+ * \anchor testD7_2_InitialValue \ref testD7_2_InitialValue
+ */
 BOOST_AUTO_TEST_CASE(testD7_2_InitialValue) {
   std::cout << "===   testD7_2_InitialValue   === " << std::endl;
 
@@ -660,7 +664,7 @@ struct Test6_a1_DummyApplication : ChimeraTK::Application {
   void defineConnections() override {
     csModule("REG1") >> device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
     csModule("REG1") >> readerModule.reg1.pushInput;
-    //dumpConnections();
+    // dumpConnections();
   }
 };
 
@@ -678,9 +682,9 @@ struct Test6_a1_InitialValueEceptionDummy {
 };
 
 /**
-  *  D 6_a1 initial value from control system variable
-  * \anchor testD6_a1_InitialValue \ref testD6_a1_InitialValue
-  */
+ *  D 6_a1 initial value from control system variable
+ * \anchor testD6_a1_InitialValue \ref testD6_a1_InitialValue
+ */
 
 BOOST_AUTO_TEST_CASE(testD6_a1_InitialValue) {
   std::cout << "===   testD6_a1_InitialValue   === " << std::endl;
@@ -715,7 +719,7 @@ struct Test6_a2_DummyApplication : ChimeraTK::Application {
     auto trigger = triggerModule["TRIG1"]("PUSH_OUT");
     pollInput1[trigger] >> device("REG2");
     pollInput1[trigger] >> readerModule.reg2.pushInput;
-    //dumpConnections();
+    // dumpConnections();
   }
 };
 
@@ -733,12 +737,12 @@ struct Test6_a2_InitialValueEceptionDummy {
 };
 
 /**
-  *  D 6_a2 initial value from device in poll mode
-  * \anchor testD6_a2_InitialValue \ref testD6_a2_InitialValue
-  *
-  *  The push type variable dev2/REG1 is "directly" connected to dev1/REG2 through a trigger.
-  *  Test that it is written as soon as the initial value is available, i.e. there has been a trigger.
-  */
+ *  D 6_a2 initial value from device in poll mode
+ * \anchor testD6_a2_InitialValue \ref testD6_a2_InitialValue
+ *
+ *  The push type variable dev2/REG1 is "directly" connected to dev1/REG2 through a trigger.
+ *  Test that it is written as soon as the initial value is available, i.e. there has been a trigger.
+ */
 
 BOOST_AUTO_TEST_CASE(testD6_a2_InitialValue) {
   std::cout << "===   testD6_a2_InitialValue   === " << std::endl;
@@ -778,7 +782,7 @@ struct Test6_a3_DummyApplication : ChimeraTK::Application {
   void defineConnections() override {
     device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> device("REG2");
     device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> readerModule.reg2.pushInput;
-    //dumpConnections();
+    // dumpConnections();
   }
 };
 
@@ -796,9 +800,9 @@ struct Test6_a3_InitialValueEceptionDummy {
 };
 
 /**
-  *  D 6_a3 initial value from device in push mode
-  * \anchor testD6_a3_InitialValue \ref testD6_a3_InitialValue
-  */
+ *  D 6_a3 initial value from device in push mode
+ * \anchor testD6_a3_InitialValue \ref testD6_a3_InitialValue
+ */
 BOOST_AUTO_TEST_CASE(testD6_a3_InitialValue) {
   std::cout << "===   testD6_a3_InitialValue   === " << std::endl;
 
@@ -812,7 +816,7 @@ BOOST_AUTO_TEST_CASE(testD6_a3_InitialValue) {
   // The commented line is subject to race conditions because the initial value might or might not have
   // arrived already when the test is done. One would need a way to stop the application start after the
   // inversion of control has created all PVs, but before the initial values are propagated
-  //BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+  // BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
 
   ChimeraTK::Device dev;
   dev.open("(ExceptionDummy:1?map=test.map)");
@@ -835,7 +839,7 @@ struct Test6_a4_DummyApplication : ChimeraTK::Application {
 
   void defineConnections() override {
     writerModule.output1 >> readerModule.reg2.pushInput;
-    //dumpConnections();
+    // dumpConnections();
   }
 };
 
@@ -853,9 +857,9 @@ struct Test6_a4_InitialValueEceptionDummy {
 };
 
 /**
-  *  D 6_a4 initial value from output
-  * \anchor testD6_a4_InitialValue \ref testD6_a4_InitialValue
-  */
+ *  D 6_a4 initial value from output
+ * \anchor testD6_a4_InitialValue \ref testD6_a4_InitialValue
+ */
 BOOST_AUTO_TEST_CASE(testD6_a4_InitialValue) {
   std::cout << "===   testD6_a4_InitialValue   === " << std::endl;
 
@@ -895,7 +899,7 @@ struct Test6_b_DummyApplication : ChimeraTK::Application {
 
   void defineConnections() override {
     device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::poll) >> pollModule.reg1.pollInput;
-    //dumpConnections();
+    // dumpConnections();
   }
 };
 
@@ -913,9 +917,9 @@ struct Test6_b_InitialValueEceptionDummy {
 };
 
 /**
-  *  D 6_b initial value from device in poll mode
-  * \anchor testD6_b_InitialValue \ref testD6_b_InitialValue
-  */
+ *  D 6_b initial value from device in poll mode
+ * \anchor testD6_b_InitialValue \ref testD6_b_InitialValue
+ */
 BOOST_AUTO_TEST_CASE(testD6_b_InitialValue) {
   std::cout << "===   testD6_b_InitialValue   === " << std::endl;
 
@@ -926,9 +930,9 @@ BOOST_AUTO_TEST_CASE(testD6_b_InitialValue) {
   ChimeraTK::Device dev;
   dev.open("(ExceptionDummy:1?map=test.map)");
   dev.write<int>("REG1/DUMMY_WRITEABLE", 99);
-  //commented line might fail on jenkins, race cond?
-  //BOOST_CHECK(d.application.pollModule.enteredTheMainLoop == false);
-  //BOOST_CHECK(d.pollVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+  // commented line might fail on jenkins, race cond?
+  // BOOST_CHECK(d.application.pollModule.enteredTheMainLoop == false);
+  // BOOST_CHECK(d.pollVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   d.application.pollModule.p.get_future().wait();
   BOOST_CHECK(d.application.pollModule.enteredTheMainLoop == true);
   BOOST_CHECK(d.pollVariable == 99);
@@ -947,7 +951,7 @@ struct Test6_c_DummyApplication : ChimeraTK::Application {
 
   void defineConnections() override {
     device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> readerModule.reg2.pushInput;
-    //dumpConnections();
+    // dumpConnections();
   }
 };
 
@@ -964,9 +968,9 @@ struct Test6_c_InitialValueEceptionDummy {
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg2.pushInput};
 };
 /**
-  *  D 6_c initial value from device in push mode
-  * \anchor testD6_c_InitialValue \ref testD6_c_InitialValue
-  */
+ *  D 6_c initial value from device in push mode
+ * \anchor testD6_c_InitialValue \ref testD6_c_InitialValue
+ */
 BOOST_AUTO_TEST_CASE(testD6_c_InitialValue) {
   std::cout << "===   testD6_c_InitialValue   === " << std::endl;
 
@@ -977,9 +981,9 @@ BOOST_AUTO_TEST_CASE(testD6_c_InitialValue) {
   ChimeraTK::Device dev;
   dev.open("(ExceptionDummy:1?map=test.map)");
   dev.write<int>("REG1/DUMMY_WRITEABLE", 99);
-  //commented line might fail on jenkins, race cond?
-  //BOOST_CHECK(d.application.readerModule.enteredTheMainLoop == false);
-  //BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+  // commented line might fail on jenkins, race cond?
+  // BOOST_CHECK(d.application.readerModule.enteredTheMainLoop == false);
+  // BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   d.application.readerModule.p.get_future().wait();
   BOOST_CHECK(d.application.readerModule.enteredTheMainLoop == true);
   BOOST_CHECK(d.pushVariable == 99);

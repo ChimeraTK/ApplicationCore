@@ -1,19 +1,14 @@
-/*
- * VirtualModule.h
- *
- *  Created on: Apr 4, 2017
- *      Author: Martin Hierholzer
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
-#ifndef CHIMERATK_VIRTUAL_MODULE_H
-#define CHIMERATK_VIRTUAL_MODULE_H
+#include "Module.h"
 
-#include <list>
+#include <ChimeraTK/RegisterPath.h>
 
 #include <boost/thread.hpp>
 
-#include "Module.h"
-#include <ChimeraTK/RegisterPath.h>
+#include <list>
 
 namespace ChimeraTK {
 
@@ -21,12 +16,7 @@ namespace ChimeraTK {
   class VirtualModule : public Module {
    public:
     /** Constructor */
-    VirtualModule(const std::string& name, const std::string& description, ModuleType moduleType)
-    : Module(nullptr, name, description), _moduleType(moduleType) {
-      if(name.find_first_of("/") != std::string::npos) {
-        throw ChimeraTK::logic_error("Module names must not contain slashes: '" + name + "'.");
-      }
-    }
+    VirtualModule(const std::string& name, const std::string& description, ModuleType moduleType);
 
     /** Copy constructor */
     VirtualModule(const VirtualModule& other);
@@ -74,5 +64,3 @@ namespace ChimeraTK {
   };
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERATK_VIRTUAL_MODULE_H */

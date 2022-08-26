@@ -1,26 +1,20 @@
-/*
- * testApplication.cc
- *
- *  Created on: Nov 15, 2017
- *      Author: Martin Hierholzer
- */
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include <chrono>
 #include <future>
 
 #define BOOST_TEST_MODULE testApplication
-
-#include <boost/filesystem.hpp>
-#include <boost/mpl/list.hpp>
-#include <boost/thread.hpp>
-
-#include <libxml++/libxml++.h>
 
 #include "Application.h"
 #include "ControlSystemModule.h"
 #include "Multiplier.h"
 #include "Pipe.h"
 #include "TestFacility.h"
+#include <libxml++/libxml++.h>
+
+#include <boost/filesystem.hpp>
+#include <boost/mpl/list.hpp>
+#include <boost/thread.hpp>
 
 #define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
@@ -173,5 +167,4 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
     auto output = test.getScalar<double>("/mySubModule/output");
     BOOST_CHECK_THROW(app.optimiseUnmappedVariables({"/Multiplier/tap", "/this/is/not/known"}), std::out_of_range);
   }
-
 }

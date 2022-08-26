@@ -1,15 +1,10 @@
-/*
- * testLogging.cc
- *
- *  Created on: Apr 11, 2018
- *      Author: zenker
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
 // #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE LoggingTest
 
 #include "Logging.h"
-#include "ModuleGroup.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>

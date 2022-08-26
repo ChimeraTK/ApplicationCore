@@ -1,11 +1,14 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 // Define a name for the test module.
 #define BOOST_TEST_MODULE testTemplateServer
 // Only after defining the name include the unit test header.
-#include <boost/test/included/unit_test.hpp>
+#include "Server.h"
 
 #include <ChimeraTK/ApplicationCore/TestFacility.h>
 
-#include "Server.h"
+#include <boost/test/included/unit_test.hpp>
 
 // Declare the server instance
 static Server theServer;

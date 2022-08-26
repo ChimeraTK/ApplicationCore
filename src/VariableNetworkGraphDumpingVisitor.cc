@@ -1,4 +1,7 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "VariableNetworkGraphDumpingVisitor.h"
+
 #include "Application.h"
 #include "VariableNetwork.h"
 #include "VisitorHelper.h"
@@ -8,6 +11,8 @@
 #include <typeinfo>
 
 namespace ChimeraTK {
+
+  /*********************************************************************************************************************/
 
   void VariableNetworkGraphDumpingVisitor::dispatch(const VariableNetwork& network) {
     std::string networkPrefix = "network_" + std::to_string(_networkCount++);
@@ -98,9 +103,13 @@ namespace ChimeraTK {
     popPrefix();
   }
 
+  /*********************************************************************************************************************/
+
   VariableNetworkGraphDumpingVisitor::VariableNetworkGraphDumpingVisitor(std::ostream& stream)
   : Visitor<Application, VariableNetwork>(), VariableNetworkNodeDumpingVisitor(stream, "\\n"), _triggerMap(),
     _triggerConnections(), _networkCount(0), _triggerCount(0) {}
+
+  /*********************************************************************************************************************/
 
   void VariableNetworkGraphDumpingVisitor::dispatch(const Application& t) {
     stream() << "digraph application {\n"
@@ -133,6 +142,8 @@ namespace ChimeraTK {
     stream() << "}\n";
   }
 
+  /*********************************************************************************************************************/
+
   void VariableNetworkGraphDumpingVisitor::dispatch(const VariableNetworkNode& t) {
     std::string nodeName = prefix() + detail::encodeDotNodeName(detail::nodeName(t));
     stream() << nodeName << "[\n";
@@ -150,4 +161,7 @@ namespace ChimeraTK {
 
     stream() << "\"]\n";
   }
+
+  /*********************************************************************************************************************/
+
 } // namespace ChimeraTK

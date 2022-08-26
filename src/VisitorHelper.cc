@@ -1,7 +1,12 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "VisitorHelper.h"
+
 #include "VariableNetworkNode.h"
 
 namespace ChimeraTK { namespace detail {
+
+  /********************************************************************************************************************/
 
   std::string encodeDotNodeName(std::string name) {
     std::replace(name.begin(), name.end(), '-', 'm'); // minus
@@ -15,8 +20,12 @@ namespace ChimeraTK { namespace detail {
     return name;
   }
 
+  /********************************************************************************************************************/
+
   std::string nodeName(const VariableNetworkNode& node) {
     return node.getQualifiedName().empty() ? node.getName() : node.getQualifiedName();
   }
+
+  /********************************************************************************************************************/
 
 }} // namespace ChimeraTK::detail

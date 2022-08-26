@@ -1,21 +1,32 @@
-#include "Application.h"
-#include "VariableNetworkNode.h"
-#include "VariableGroup.h"
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "XMLGeneratorVisitor.h"
 
-#include <ChimeraTK/RegisterPath.h>
+#include "Application.h"
+#include "VariableGroup.h"
+#include "VariableNetworkNode.h"
 #include <libxml++/libxml++.h>
+
+#include <ChimeraTK/RegisterPath.h>
 
 #include <cassert>
 #include <cxxabi.h>
 
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
+
   XMLGeneratorVisitor::XMLGeneratorVisitor()
   : Visitor<ChimeraTK::Application, ChimeraTK::VariableNetworkNode>(), _doc(std::make_shared<xmlpp::Document>()),
     _rootElement(_doc->create_root_node("application", "https://github.com/ChimeraTK/ApplicationCore")) {}
 
-  void XMLGeneratorVisitor::save(const std::string& fileName) { _doc->write_to_file_formatted(fileName); }
+  /********************************************************************************************************************/
+
+  void XMLGeneratorVisitor::save(const std::string& fileName) {
+    _doc->write_to_file_formatted(fileName);
+  }
+
+  /********************************************************************************************************************/
 
   void XMLGeneratorVisitor::dispatch(const Application& app) {
     _rootElement->set_attribute("name", app.getName());
@@ -30,6 +41,8 @@ namespace ChimeraTK {
       }
     }
   }
+
+  /********************************************************************************************************************/
 
   void XMLGeneratorVisitor::dispatch(const VariableNetworkNode& node) {
     if(node.getType() != NodeType::ControlSystem) return;
@@ -196,5 +209,7 @@ namespace ChimeraTK {
       peer->set_attribute("direction", feeding ? "feeding" : "consuming");
     }
   }
+
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK

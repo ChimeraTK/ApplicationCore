@@ -1,12 +1,6 @@
-/*
- * ModuleImpl.h
- *
- *  Created on: Okt 11, 2017
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_MODULE_IMPL_H
-#define CHIMERATK_MODULE_IMPL_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "Module.h"
 #include "VirtualModule.h"
@@ -23,25 +17,19 @@ namespace ChimeraTK {
    public:
     // constructor inheritances does not work due to a gcc bug!?
     ModuleImpl(EntityOwner* owner, const std::string& name, const std::string& description,
-        HierarchyModifier hierarchyModifier = HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
-    : Module(owner, name, description, hierarchyModifier, tags) {}
+        HierarchyModifier hierarchyModifier = HierarchyModifier::none,
+        const std::unordered_set<std::string>& tags = {});
 
     ModuleImpl(EntityOwner* owner, const std::string& name, const std::string& description, bool eliminateHierarchy,
-        const std::unordered_set<std::string>& tags = {})
-    : Module(owner, name, description, eliminateHierarchy, tags) {}
+        const std::unordered_set<std::string>& tags = {});
 
-    ModuleImpl() : Module() {}
+    ModuleImpl() = default;
 
     /** Move constructor */
     ModuleImpl(ModuleImpl&& other) { operator=(std::move(other)); }
 
     /** Move assignment operator */
-    ModuleImpl& operator=(ModuleImpl&& other) {
-      if(other.virtualisedModule_isValid) virtualisedModule = other.virtualisedModule;
-      virtualisedModule_isValid = other.virtualisedModule_isValid;
-      Module::operator=(std::forward<ModuleImpl>(other));
-      return *this;
-    }
+    ModuleImpl& operator=(ModuleImpl&& other);
 
     VariableNetworkNode operator()(const std::string& variableName) const override;
 
@@ -67,5 +55,3 @@ namespace ChimeraTK {
   };
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERATK_MODULE_IMPL_H */

@@ -1,11 +1,9 @@
-/*
- *  Generic module to restrict a value into a certain range.
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
-#ifndef CHIMERATK_APPLICATION_CORE_LIMIT_VALUE_H
-#define CHIMERATK_APPLICATION_CORE_LIMIT_VALUE_H
-
-#include "ApplicationCore.h"
+#include "ApplicationModule.h"
+#include "ScalarAccessor.h"
 
 namespace ChimeraTK {
 
@@ -79,5 +77,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERATK_APPLICATION_CORE_LIMIT_VALUE_H */

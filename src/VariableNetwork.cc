@@ -1,15 +1,11 @@
-/*
- * VariableNetwork.cc
- *
- *  Created on: Jun 14, 2016
- *      Author: Martin Hierholzer
- */
-
-#include <sstream>
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#include "VariableNetwork.h"
 
 #include "Application.h"
-#include "VariableNetwork.h"
 #include "VariableNetworkDumpingVisitor.h"
+
+#include <sstream>
 
 namespace ChimeraTK {
 
@@ -24,7 +20,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  size_t VariableNetwork::countConsumingNodes() const { return nodeList.size() - (hasFeedingNode() ? 1 : 0); }
+  size_t VariableNetwork::countConsumingNodes() const {
+    return nodeList.size() - (hasFeedingNode() ? 1 : 0);
+  }
 
   /*********************************************************************************************************************/
 
@@ -99,7 +97,9 @@ namespace ChimeraTK {
     accept(visitor);
   }
 
-  void VariableNetwork::accept(Visitor<VariableNetwork>& visitor) const { visitor.dispatch(*this); }
+  void VariableNetwork::accept(Visitor<VariableNetwork>& visitor) const {
+    visitor.dispatch(*this);
+  }
 
   /*********************************************************************************************************************/
 
@@ -339,4 +339,15 @@ namespace ChimeraTK {
 
     return true;
   }
+
+  /*********************************************************************************************************************/
+
+  bool VariableNetwork::operator==(const VariableNetwork& other) const {
+    if(other.valueType != valueType) return false;
+    if(other.nodeList != nodeList) return false;
+    return true;
+  }
+
+  /*********************************************************************************************************************/
+
 } // namespace ChimeraTK

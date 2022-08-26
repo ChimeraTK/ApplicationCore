@@ -1,6 +1,6 @@
 /**
 \page exceptionHandling Exception Handling
-\section Introduction
+\section exceptionHandling_Introduction Introduction
 
 To handle expection, the current simple implementation includes two error state variables:
  - "state" (boolean flag if error occurred)
@@ -19,7 +19,7 @@ operation which lead to exception e.g., read or write, should be repeated after 
 
 Checkout testExceptionTest.cc under tests/executables_src to see how it works.
 
-\section DataValidity
+\section exceptionHandling_DataValidity DataValidity
 
 ChimeraTK supports a DataValidity flag, which is attached to all TransferElements. It can have the two states ok and
 faulty. This flag is propagated through ApplicationModules automatically. If a faulty flag has been received in an read

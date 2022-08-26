@@ -1,8 +1,10 @@
-#ifndef CHIMERATK_APPLICATION_CORE_PERIODIC_TRIGGER_H
-#define CHIMERATK_APPLICATION_CORE_PERIODIC_TRIGGER_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
-#include "ApplicationCore.h"
+#include "ApplicationModule.h"
 #include "HierarchyModifyingGroup.h"
+#include "ScalarAccessor.h"
 
 #include <chrono>
 
@@ -13,12 +15,25 @@ namespace ChimeraTK {
    * After configurable number of seconds it will wrap around
    */
   struct PeriodicTrigger : public ApplicationModule {
-    /** Constructor. In addition to the usual arguments of an ApplicationModule,
-     * the default timeout value is specified.
-     *  This value is used as a timeout if the timeout value is set to 0. The
-     * timeout value is in milliseconds.
-     * @param periodName, tickName Qualified names for the period and the tick variable.
-     *  You can just give a variable name, a relative or an absolute path.*/
+    /**
+     * Create periodic trigger module.
+     *
+     * In addition to the usual arguments of an ApplicationModule, the default timeout value is specified. This value
+     * is used as a timeout if the timeout value is set to 0. The timeout value is in milliseconds.
+     *
+     * @param owner Owning ModuleGroup
+     * @param name The name of the PeriodicTrigger module
+     * @param description The description of the PeriodicTrigger module
+     * @param defaultPeriod Trigger period in milliseconds, used when the trigger period input process variable has the
+     *        value 0.
+     * @param eliminateHierarchy Flag whether the hierarcy of the PeriodicTrigger shal be visible or not. @todo change
+     *        into HierarchyModifyer flag!
+     * @param tags List of tags to attach to all variables
+     * @param periodName Qualified name for the period input process variable
+     * @param tickName Qualified names for the tick output process variable
+     *
+     * For periodName and tickName, you can just give a variable name, a relative or an absolute path.
+     */
     PeriodicTrigger(EntityOwner* owner, const std::string& name, const std::string& description,
         const uint32_t defaultPeriod = 1000, bool eliminateHierarchy = false,
         const std::unordered_set<std::string>& tags = {}, std::string periodName = "period",
@@ -90,5 +105,3 @@ namespace ChimeraTK {
     uint32_t defaultPeriod_;
   };
 } // namespace ChimeraTK
-
-#endif // CHIMERATK_APPLICATION_CORE_PERIODIC_TRIGGER_H

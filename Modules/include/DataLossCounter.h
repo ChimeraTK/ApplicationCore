@@ -1,12 +1,16 @@
-#ifndef CHIMERATK_APPLICATION_CORE_DATA_LOSS_COUNTER_H
-#define CHIMERATK_APPLICATION_CORE_DATA_LOSS_COUNTER_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
-#include <map>
+#include "Application.h"
+#include "ApplicationModule.h"
+#include "HierarchyModifyingGroup.h"
+#include "ScalarAccessor.h"
+#include "VariableGroup.h"
 
 #include <ChimeraTK/SupportedUserTypes.h>
 
-#include "ApplicationCore.h"
-#include "HierarchyModifyingGroup.h"
+#include <map>
 
 namespace ChimeraTK {
 
@@ -75,5 +79,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERATK_APPLICATION_CORE_DATA_LOSS_COUNTER_H */

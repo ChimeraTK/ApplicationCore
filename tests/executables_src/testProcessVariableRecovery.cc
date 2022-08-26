@@ -1,20 +1,24 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #define BOOST_TEST_MODULE testProcessVariableRecovery
 
-#include <boost/test/included/unit_test.hpp>
 #include "Application.h"
+#include "ApplicationModule.h"
+#include "ArrayAccessor.h"
+#include "check_timeout.h"
+#include "ConfigReader.h"
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "TestFacility.h"
-#include "check_timeout.h"
-#include "ApplicationModule.h"
-#include "ArrayAccessor.h"
-#include "ConfigReader.h"
 
-#include <ChimeraTK/ExceptionDummyBackend.h>
 #include <ChimeraTK/Device.h>
-#include <stdlib.h>
-#include <regex>
+#include <ChimeraTK/ExceptionDummyBackend.h>
+
+#include <boost/test/included/unit_test.hpp>
 #include <boost/thread/barrier.hpp>
+
+#include <regex>
+#include <stdlib.h>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -144,7 +148,8 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   // devices are not automatically connected (yet)
   app.dev.connectTo(app.cs,
       app.cs("deviceTrigger", typeid(int),
-          1)); // In TEST it connects to TO_DEV_SCALAR1 and TO_DEV_ARRAY1, and creates TO_DEV_SCALAR2, FROM_DEV1, FROM_DEV2, TO_DEV_AREA2, FROM_DEV_AREA1 and FROM_DEV_AREA2
+          1)); // In TEST it connects to TO_DEV_SCALAR1 and TO_DEV_ARRAY1, and creates TO_DEV_SCALAR2, FROM_DEV1,
+               // FROM_DEV2, TO_DEV_AREA2, FROM_DEV_AREA1 and FROM_DEV_AREA2
 
   // make a constant and connect to the device
   auto constante = ctk::VariableNetworkNode::makeConstant(1, 44252, 1);
@@ -172,9 +177,9 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   // (as they use the same backend it now throws if there has been an exception somewhere else)
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(std::string("/Devices/") + deviceCDD + "/status"), 0, 10000);
 
-  //Check that the initial values are there.
-  //auto reg2 = dummy.getScalarRegisterAccessor<int32_t>("/TEST/TO_DEV_SCALAR2");
-  //CHECK_EQUAL_TIMEOUT([=]()mutable{reg2.readLatest(); return int32_t(reg2);},0,10000);
+  // Check that the initial values are there.
+  // auto reg2 = dummy.getScalarRegisterAccessor<int32_t>("/TEST/TO_DEV_SCALAR2");
+  // CHECK_EQUAL_TIMEOUT([=]()mutable{reg2.readLatest(); return int32_t(reg2);},0,10000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/CONSTANT/VAR32"), 44252, 10000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_SCALAR2"), 42, 10000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2", 1, 0)[0], 99, 10000);
@@ -182,11 +187,11 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2", 1, 2)[0], 99, 10000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2", 1, 3)[0], 99, 10000);
 
-  //Update device register via application module.
+  // Update device register via application module.
   auto trigger = test.getScalar<int32_t>("/TEST/trigger");
   trigger = 100;
   trigger.write();
-  //Check if the values are updated.
+  // Check if the values are updated.
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_SCALAR1"), 100, 10000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1", 1, 0)[0], 100, 10000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1", 1, 1)[0], 100, 10000);
@@ -196,10 +201,10 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   auto dummyBackend =
       boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
 
-  //Set the device to throw.
+  // Set the device to throw.
   dummyBackend->throwExceptionOpen = true;
 
-  //Set dummy registers to 0.
+  // Set dummy registers to 0.
   dummy.write<int32_t>("/CONSTANT/VAR32", 0);
   dummy.write<int32_t>("/TEST/TO_DEV_SCALAR1", 0);
   dummy.write<int32_t>("/TEST/TO_DEV_SCALAR2", 0);
@@ -215,17 +220,17 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   auto trigger2 = test.getScalar<int32_t>("/deviceTrigger");
   trigger2.write();
 
-  //Verify that the device is in error state.
+  // Verify that the device is in error state.
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 10000);
 
-  //Set device back to normal.
+  // Set device back to normal.
   dummyBackend->throwExceptionWrite = false;
   dummyBackend->throwExceptionRead = false;
   dummyBackend->throwExceptionOpen = false;
-  //Verify if the device is ready.
+  // Verify if the device is ready.
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 10000);
 
-  //Device should have the correct values now. Notice that we did not trigger the writer module!
+  // Device should have the correct values now. Notice that we did not trigger the writer module!
   BOOST_CHECK_EQUAL(dummy.read<int32_t>("/TEST/TO_DEV_SCALAR2"), 42);
   BOOST_CHECK((dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2", 0) == std::vector<int32_t>{99, 99, 99, 99}));
 

@@ -1,6 +1,32 @@
-#include "ApplicationCore.h"
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#include "ModuleImpl.h"
+
+#include "Application.h"
+#include "ConfigReader.h"
 
 namespace ChimeraTK {
+
+  /*********************************************************************************************************************/
+
+  ModuleImpl::ModuleImpl(EntityOwner* owner, const std::string& name, const std::string& description,
+      HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
+  : Module(owner, name, description, hierarchyModifier, tags) {}
+
+  /*********************************************************************************************************************/
+
+  ModuleImpl::ModuleImpl(EntityOwner* owner, const std::string& name, const std::string& description,
+      bool eliminateHierarchy, const std::unordered_set<std::string>& tags)
+  : Module(owner, name, description, eliminateHierarchy, tags) {}
+
+  /*********************************************************************************************************************/
+
+  ModuleImpl& ModuleImpl::operator=(ModuleImpl&& other) {
+    if(other.virtualisedModule_isValid) virtualisedModule = other.virtualisedModule;
+    virtualisedModule_isValid = other.virtualisedModule_isValid;
+    Module::operator=(std::forward<ModuleImpl>(other));
+    return *this;
+  }
 
   /*********************************************************************************************************************/
 
@@ -10,7 +36,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  Module& ModuleImpl::operator[](const std::string& moduleName) const { return virtualise()[moduleName]; }
+  Module& ModuleImpl::operator[](const std::string& moduleName) const {
+    return virtualise()[moduleName];
+  }
 
   /*********************************************************************************************************************/
 

@@ -1,16 +1,11 @@
-#ifndef CHIMERATK_EXCEPTION_HANDLING_DECORATOR_H
-#define CHIMERATK_EXCEPTION_HANDLING_DECORATOR_H
-/*
- * ExceptionHandlingDecorator.h
- *
- *  Created on: Mar 18, 2019
- *      Author: Martin Hierholzer
- */
-
-#include <ChimeraTK/NDRegisterAccessorDecorator.h>
-#include "RecoveryHelper.h"
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "Application.h"
+#include "RecoveryHelper.h"
+
+#include <ChimeraTK/NDRegisterAccessorDecorator.h>
 
 namespace ChimeraTK {
 
@@ -50,7 +45,8 @@ namespace ChimeraTK {
     bool previousReadFailed{true};
 
     boost::shared_ptr<RecoveryHelper> _recoveryHelper{nullptr};
-    // store the recoveryAccessor separately. The RecoveryHelper only contains a pointer to TransferElement and can't be used to fill in data.
+    // store the recoveryAccessor separately. The RecoveryHelper only contains a pointer to TransferElement and can't be
+    // used to fill in data.
     boost::shared_ptr<NDRegisterAccessor<UserType>> _recoveryAccessor{nullptr};
 
     VariableDirection _direction;
@@ -70,5 +66,3 @@ namespace ChimeraTK {
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
 
 } /* namespace ChimeraTK */
-
-#endif // CHIMERATK_EXCEPTION_HANDLING_DECORATOR_H

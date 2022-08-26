@@ -1,12 +1,18 @@
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "VariableNetworkNodeDumpingVisitor.h"
+
 #include "VariableNetworkNode.h"
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   VariableNetworkNodeDumpingVisitor::VariableNetworkNodeDumpingVisitor(
       std::ostream& stream, const std::string& separator)
   : Visitor<ChimeraTK::VariableNetworkNode>(), PushableStream(stream), _separator(separator) {}
+
+  /********************************************************************************************************************/
 
   void VariableNetworkNodeDumpingVisitor::dispatch(const VariableNetworkNode& t) {
     if(t.getType() == NodeType::Application) stream() << " type = Application ('" << t.getQualifiedName() << "')";
@@ -47,5 +53,7 @@ namespace ChimeraTK {
 
     stream() << std::endl;
   }
+
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK

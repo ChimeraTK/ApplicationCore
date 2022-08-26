@@ -1,18 +1,20 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "ScalarAccessor.h"
-#include "VariableGroup.h"
 #include "HierarchyModifyingGroup.h"
-#include <ChimeraTK/ForwardDeclarations.h>
-#include <ChimeraTK/RegisterPath.h>
+#include "ScalarAccessor.h"
 #include "StatusAccessor.h"
+#include "VariableGroup.h"
 
 #include <ChimeraTK/ControlSystemAdapter/StatusWithMessageReader.h>
 #include <ChimeraTK/DataConsistencyGroup.h>
+#include <ChimeraTK/ForwardDeclarations.h>
+#include <ChimeraTK/RegisterPath.h>
 
 namespace ChimeraTK {
 
-  /** 
+  /**
    *  A VariableGroup for error status and message reporting.
    *  Convenience methods ensure that status and message are updated consistenly.
    */
@@ -44,7 +46,7 @@ namespace ChimeraTK {
 
   /**
    * This is for consistent readout of StatusWithMessage - ApplicationCore version.
-   *  It can be instantiated with or without message string. 
+   *  It can be instantiated with or without message string.
    *  If instantiated without message, the message is generated automatically from the status.
    */
   struct StatusWithMessageInput : StatusWithMessageReaderBase<StatusWithMessageInput>, public VariableGroup {

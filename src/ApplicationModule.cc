@@ -1,12 +1,11 @@
-/*
- * ApplicationModule.cc
- *
- *  Created on: Jun 17, 2016
- *      Author: Martin Hierholzer
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "ApplicationCore.h"
-#include "ConfigReader.h"
+#include "ApplicationModule.h"
+
+#include "Application.h"
+#include "ModuleGroup.h"
+
 #include <iterator>
 #include <list>
 
@@ -42,6 +41,15 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  ApplicationModule& ApplicationModule::operator=(ApplicationModule&& other) {
+    assert(!moduleThread.joinable()); // if the thread is already running,
+                                      // moving is no longer allowed!
+    ModuleImpl::operator=(std::move(other));
+    return *this;
+  }
+
+  /*********************************************************************************************************************/
+
   void ApplicationModule::run() {
     // start the module thread
     assert(!moduleThread.joinable());
@@ -72,7 +80,15 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  ApplicationModule::~ApplicationModule() { assert(!moduleThread.joinable()); }
+  ApplicationModule::~ApplicationModule() {
+    assert(!moduleThread.joinable());
+  }
+
+  /*********************************************************************************************************************/
+
+  void ApplicationModule::setCurrentVersionNumber(VersionNumber versionNumber) {
+    if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
+  }
 
   /*********************************************************************************************************************/
 
@@ -125,7 +141,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void ApplicationModule::incrementDataFaultCounter() { ++dataFaultCounter; }
+  void ApplicationModule::incrementDataFaultCounter() {
+    ++dataFaultCounter;
+  }
 
   void ApplicationModule::decrementDataFaultCounter() {
     assert(dataFaultCounter > 0);
@@ -145,13 +163,15 @@ namespace ChimeraTK {
       _recursionStopper.setRecursionDetected();
     }
 
-    // Whether a cirular depencency has been detected or not, we must loop all inputs and add this module to the list so the calling
-    // code sees the second instance and can also detect the circle.
-    // The reason why we have to scan all inputs even if a circle is detected is this:
-    // * A single input starts the scan by adding it's owning module. At this point not all inputs if that module are in the circular network.
-    // * When a circle is detected, it might only be one of multiple entangled circled. If we would break the recursion and not scan all the
-    //   inputs this is sufficient to identify that the particular input is in a circle. But at this point we have to tell in which network it
-    //   is and have to scan the complete network to calculate the correct hash value.
+    // Whether a cirular depencency has been detected or not, we must loop all inputs and add this module to the list so
+    // the calling code sees the second instance and can also detect the circle. The reason why we have to scan all
+    // inputs even if a circle is detected is this:
+    // * A single input starts the scan by adding it's owning module. At this point not all inputs if that module are in
+    // the circular network.
+    // * When a circle is detected, it might only be one of multiple entangled circled. If we would break the recursion
+    // and not scan all the
+    //   inputs this is sufficient to identify that the particular input is in a circle. But at this point we have to
+    //   tell in which network it is and have to scan the complete network to calculate the correct hash value.
 
     startList.push_back(this); // first we add this module to the start list. We will call all inputs with it.
     std::list<EntityOwner*> returnList{
@@ -181,7 +201,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  size_t ApplicationModule::getCircularNetworkHash() { return _circularNetworkHash; }
+  size_t ApplicationModule::getCircularNetworkHash() {
+    return _circularNetworkHash;
+  }
 
   /*********************************************************************************************************************/
 

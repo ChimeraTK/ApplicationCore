@@ -1,7 +1,11 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "ScriptedInitialisationHandler.h"
+
 #include "DeviceModule.h"
 
 #include <boost/process.hpp>
+
 #include <functional>
 namespace bp = boost::process;
 

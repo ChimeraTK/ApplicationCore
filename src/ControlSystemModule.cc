@@ -1,11 +1,7 @@
-/*
- * ControlSystemModule.cc
- *
- *  Created on: Jun 28, 2016
- *      Author: Martin Hierholzer
- */
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "ControlSystemModule.h"
+
 #include "Application.h"
 
 namespace ChimeraTK {
@@ -22,6 +18,15 @@ namespace ChimeraTK {
     variableNamePrefix(_variableNamePrefix) {}
 
   /*********************************************************************************************************************/
+
+  ControlSystemModule& ControlSystemModule::operator=(ControlSystemModule&& other) {
+    Module::operator=(std::move(other));
+    variableNamePrefix = std::move(other.variableNamePrefix);
+    subModules = std::move(other.subModules);
+    return *this;
+  }
+
+  /********************************************************************************************************************/
 
   VariableNetworkNode ControlSystemModule::operator()(
       const std::string& variableName, const std::type_info& valueType, size_t nElements) const {
@@ -46,7 +51,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  const Module& ControlSystemModule::virtualise() const { return *this; }
+  const Module& ControlSystemModule::virtualise() const {
+    return *this;
+  }
 
   /*********************************************************************************************************************/
 

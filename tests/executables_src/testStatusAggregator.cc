@@ -1,9 +1,10 @@
-
-#include "StatusMonitor.h"
-#include "StatusAggregator.h"
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "Application.h"
 #include "ModuleGroup.h"
+#include "StatusAggregator.h"
+#include "StatusMonitor.h"
 #include "TestFacility.h"
 
 #define BOOST_NO_EXCEPTIONS

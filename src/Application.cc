@@ -1,37 +1,34 @@
-/*
- * Application.cc
- *
- *  Created on: Jun 10, 2016
- *      Author: Martin Hierholzer
- */
-
-#include <exception>
-#include <fstream>
-#include <string>
-#include <thread>
-
-#include <boost/fusion/container/map.hpp>
-#include <ChimeraTK/BackendFactory.h>
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "Application.h"
+
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
 #include "ConstantAccessor.h"
 #include "ConsumingFanOut.h"
 #include "DebugPrintAccessorDecorator.h"
 #include "DeviceModule.h"
+#include "ExceptionHandlingDecorator.h"
 #include "FeedingFanOut.h"
 #include "ScalarAccessor.h"
-#include "VoidAccessor.h"
 #include "TestableModeAccessorDecorator.h"
 #include "ThreadedFanOut.h"
 #include "TriggerFanOut.h"
-#include "VariableNetworkModuleGraphDumpingVisitor.h"
 #include "VariableNetworkGraphDumpingVisitor.h"
+#include "VariableNetworkModuleGraphDumpingVisitor.h"
 #include "VariableNetworkNode.h"
 #include "Visitor.h"
+#include "VoidAccessor.h"
 #include "XMLGeneratorVisitor.h"
-#include "ExceptionHandlingDecorator.h"
+
+#include <ChimeraTK/BackendFactory.h>
+
+#include <boost/fusion/container/map.hpp>
+
+#include <exception>
+#include <fstream>
+#include <string>
+#include <thread>
 
 using namespace ChimeraTK;
 
@@ -60,6 +57,47 @@ Application::Application(const std::string& name) : ApplicationBase(name), Entit
 void Application::defineConnections() {
   ControlSystemModule cs;
   findTag(".*").connectTo(cs);
+}
+
+/*********************************************************************************************************************/
+
+void Application::enableTestableMode() {
+  threadName() = "TEST THREAD";
+  testableMode = true;
+  testableModeLock("enableTestableMode");
+}
+
+/*********************************************************************************************************************/
+
+bool Application::testableModeTestLock() {
+  if(!getInstance().testableMode) return false;
+  return getTestableModeLockObject().owns_lock();
+}
+
+/*********************************************************************************************************************/
+
+void Application::registerThread(const std::string& name) {
+  Application::getInstance().setThreadName(name);
+  pthread_setname_np(pthread_self(), name.substr(0, std::min<std::string::size_type>(name.length(), 15)).c_str());
+}
+
+/*********************************************************************************************************************/
+
+void Application::incrementDataLossCounter(const std::string& name) {
+  if(getInstance().debugDataLoss) {
+    std::cout << "Data loss in variable " << name << std::endl;
+  }
+  getInstance().dataLossCounter++;
+}
+
+/*********************************************************************************************************************/
+
+size_t Application::getAndResetDataLossCounter() {
+  size_t counter = getInstance().dataLossCounter.load(std::memory_order_relaxed);
+  while(!getInstance().dataLossCounter.compare_exchange_weak(
+      counter, 0, std::memory_order_release, std::memory_order_relaxed)) {
+  }
+  return counter;
 }
 
 /*********************************************************************************************************************/
@@ -1161,7 +1199,8 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           impl->write();
         }
         else if(consumer.getType() == NodeType::Device) {
-          // we register the required accessor as a recovery accessor. This is just a bare RegisterAccessor without any decorations directly from the backend.
+          // we register the required accessor as a recovery accessor. This is just a bare RegisterAccessor without any
+          // decorations directly from the backend.
           if(deviceMap.count(consumer.getDeviceAlias()) == 0) {
             deviceMap[consumer.getDeviceAlias()] =
                 ChimeraTK::BackendFactory::getInstance().createBackend(consumer.getDeviceAlias());
@@ -1173,9 +1212,10 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           assert(deviceModuleMap.find(consumer.getDeviceAlias()) != deviceModuleMap.end());
           DeviceModule* devmod = deviceModuleMap[consumer.getDeviceAlias()];
 
-          // The accessor implementation already has its data in the user buffer. We now just have to add a valid version number
-          // and have a recovery accessors (RecoveryHelper to be excact) which we can register at the DeviceModule.
-          // As this is a constant we don't need to change it later and don't have to store it somewere else.
+          // The accessor implementation already has its data in the user buffer. We now just have to add a valid
+          // version number and have a recovery accessors (RecoveryHelper to be excact) which we can register at the
+          // DeviceModule. As this is a constant we don't need to change it later and don't have to store it somewere
+          // else.
           devmod->addRecoveryAccessor(boost::make_shared<RecoveryHelper>(impl, VersionNumber(), devmod->writeOrder()));
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {

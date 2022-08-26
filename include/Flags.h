@@ -1,14 +1,10 @@
-/*
- * Flags.h
- *
- *  Created on: Jun 14, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_FLAGS_H
-#define CHIMERATK_FLAGS_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
 
   /** Struct to define the direction of variables. The main direction is defined
    * with an enum. In addition the presence of a return channel is specified. */
@@ -27,11 +23,17 @@ namespace ChimeraTK {
     bool operator!=(const VariableDirection& other) const { return !operator==(other); }
   };
 
+  /********************************************************************************************************************/
+
   /** Enum to define the update mode of variables. */
   enum class UpdateMode { poll, push, invalid };
 
+  /********************************************************************************************************************/
+
   /** Enum to define types of VariableNetworkNode */
   enum class NodeType { Device, ControlSystem, Application, TriggerReceiver, TriggerProvider, Constant, invalid };
+
+  /********************************************************************************************************************/
 
   /** Hierarchy modifier: specify if and how the module hierarchy should be modified in EntityOwner::findTag() etc. */
   enum class HierarchyModifier {
@@ -49,6 +51,8 @@ namespace ChimeraTK {
     ///< inside an application.
   };
 
+  /********************************************************************************************************************/
+
   /** Enum to define the life-cycle states of an Application. */
   enum class LifeCycleState {
     initialisation, ///< Initialisation phase including ApplicationModule::prepare(). Single threaded operation. All
@@ -59,6 +63,6 @@ namespace ChimeraTK {
     shutdown ///< The application is in the process of shutting down.
   };
 
-} /* namespace ChimeraTK */
+  /********************************************************************************************************************/
 
-#endif /* CHIMERATK_FLAGS_H */
+} /* namespace ChimeraTK */

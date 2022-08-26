@@ -1,24 +1,19 @@
-/*
- * testIllegalNetworks.cc
- *
- *  Created on: Jun 21, 2016
- *      Author: Martin Hierholzer
- */
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include <future>
 
 #define BOOST_TEST_MODULE testIllegalNetworks
-
-#include <boost/mpl/list.hpp>
-#include <boost/test/included/unit_test.hpp>
-
-#include <ChimeraTK/BackendFactory.h>
 
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
+
+#include <ChimeraTK/BackendFactory.h>
+
+#include <boost/mpl/list.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;

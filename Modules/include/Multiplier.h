@@ -1,14 +1,14 @@
-/*
- *  Generic module to multiply one value with another
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
-#ifndef CHIMERATK_APPLICATION_CORE_MULTIPLIER_H
-#define CHIMERATK_APPLICATION_CORE_MULTIPLIER_H
+#include "ApplicationModule.h"
+#include "ArrayAccessor.h"
+#include "HierarchyModifyingGroup.h"
+#include "ScalarAccessor.h"
 
 #include <cmath>
 #include <limits>
-
-#include "ApplicationCore.h"
 
 namespace ChimeraTK {
 
@@ -50,35 +50,34 @@ namespace ChimeraTK {
     using ApplicationModule::ApplicationModule;
 
     Multiplier(EntityOwner* owner, const std::string& inputPath, const std::string& inputUnit,
-          const std::string& factorPath, const std::string& outputPath,
-          const std::string& outputUnit, const std::string& description,
-          HierarchyModifier hierarchyModifier = HierarchyModifier::hideThis,
-          const std::unordered_set<std::string>& inputTags = {},
-          const std::unordered_set<std::string>& factorTags = {},
-          const std::unordered_set<std::string>& outputTags = {})
-    : ApplicationModule(owner, "Multiplier", "", hierarchyModifier),
-      ig{this, HierarchyModifyingGroup::getPathName(inputPath), ""},
-      fg{this, HierarchyModifyingGroup::getPathName(factorPath), ""},
-      og{this, HierarchyModifyingGroup::getPathName(outputPath), ""}
-    {
-      std::string factorUnit =  "(" + outputUnit + ")/(" + inputUnit + ")";
-      ig.input.replace(ArrayPushInput<InputType>(&ig, HierarchyModifyingGroup::getUnqualifiedName(inputPath),
-                                                 inputUnit, NELEMS, description, inputTags));
-      fg.factor.replace(ScalarPushInput<InputType>(&fg, HierarchyModifyingGroup::getUnqualifiedName(factorPath),
-                                                  factorUnit, description, factorTags));
-      og.output.replace(ArrayOutput<InputType>(&og, HierarchyModifyingGroup::getUnqualifiedName(outputPath),
-                                                  outputUnit, NELEMS, description, outputTags));
+        const std::string& factorPath, const std::string& outputPath, const std::string& outputUnit,
+        const std::string& description, HierarchyModifier hierarchyModifier = HierarchyModifier::hideThis,
+        const std::unordered_set<std::string>& inputTags = {}, const std::unordered_set<std::string>& factorTags = {},
+        const std::unordered_set<std::string>& outputTags = {})
+    : ApplicationModule(owner, "Multiplier", "", hierarchyModifier), ig{this,
+                                                                         HierarchyModifyingGroup::getPathName(
+                                                                             inputPath),
+                                                                         ""},
+      fg{this, HierarchyModifyingGroup::getPathName(factorPath), ""}, og{this,
+                                                                          HierarchyModifyingGroup::getPathName(
+                                                                              outputPath),
+                                                                          ""} {
+      std::string factorUnit = "(" + outputUnit + ")/(" + inputUnit + ")";
+      ig.input.replace(ArrayPushInput<InputType>(
+          &ig, HierarchyModifyingGroup::getUnqualifiedName(inputPath), inputUnit, NELEMS, description, inputTags));
+      fg.factor.replace(ScalarPushInput<InputType>(
+          &fg, HierarchyModifyingGroup::getUnqualifiedName(factorPath), factorUnit, description, factorTags));
+      og.output.replace(ArrayOutput<InputType>(
+          &og, HierarchyModifyingGroup::getUnqualifiedName(outputPath), outputUnit, NELEMS, description, outputTags));
     }
 
     Multiplier(EntityOwner* owner, const std::string& name, const std::string& factorName, const std::string& unitInput,
         const std::string& unitOutput, const std::string& description,
         const std::unordered_set<std::string>& tagsInput = {}, const std::unordered_set<std::string>& tagsOutput = {},
         const std::unordered_set<std::string>& tagsFactor = {})
-    : ApplicationModule(owner, name, "", HierarchyModifier::hideThis),
-      ig{this, ".", ""},
-      fg{this, ".", ""},
-      og{this, ".", ""}
-    {
+    : ApplicationModule(owner, name, "", HierarchyModifier::hideThis), ig{this, ".", ""}, fg{this, ".", ""}, og{this,
+                                                                                                                 ".",
+                                                                                                                 ""} {
       ig.input.replace(ArrayPushInput<InputType>(&ig, name, unitInput, NELEMS, description, tagsInput));
       fg.factor.replace(ScalarPushInput<double>(
           &fg, factorName, "(" + unitOutput + ")/(" + unitInput + ")", description, tagsFactor));
@@ -87,11 +86,9 @@ namespace ChimeraTK {
 
     /** Note: This constructor is deprectated! */
     [[deprecated]] Multiplier(EntityOwner* owner, const std::string& name, const std::string& description)
-      : ApplicationModule(owner, name, "", HierarchyModifier::hideThis),
-        ig{this, ".", ""},
-        fg{this, ".", ""},
-        og{this, ".", ""}
-    {
+    : ApplicationModule(owner, name, "", HierarchyModifier::hideThis), ig{this, ".", ""}, fg{this, ".", ""}, og{this,
+                                                                                                                 ".",
+                                                                                                                 ""} {
       ig.input.replace(ArrayPushInput<InputType>(&ig, "input", "", NELEMS, description));
       fg.factor.replace(ScalarPushInput<double>(&fg, "factor", "", description));
       og.output.replace(ArrayOutput<OutputType>(&og, "factor", "", NELEMS, description));
@@ -167,5 +164,3 @@ namespace ChimeraTK {
   };
 
 } // namespace ChimeraTK
-
-#endif /* CHIMERATK_APPLICATION_CORE_MULTIPLIER_H */

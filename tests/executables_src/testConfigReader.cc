@@ -1,18 +1,18 @@
-/*
- * testConfigReader.cc
- *
- *  Created on: Oct 12, 2017
- *      Author: Martin Hierholzer
- */
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #define BOOST_TEST_MODULE testConfigReader
 
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include "ApplicationCore.h"
-#include "TestFacility.h"
+#include "Application.h"
+#include "ApplicationModule.h"
+#include "ArrayAccessor.h"
 #include "ConfigReader.h"
+#include "DeviceModule.h"
+#include "ScalarAccessor.h"
+#include "TestFacility.h"
+#include "VariableGroup.h"
 
 namespace ctk = ChimeraTK;
 
@@ -245,7 +245,7 @@ BOOST_AUTO_TEST_CASE(testConfigReader) {
   BOOST_CHECK_EQUAL(arrayValueString.size(), 8);
   for(size_t i = 0; i < 8; ++i) BOOST_CHECK_EQUAL(arrayValueString[i], "Hallo" + std::to_string(i + 1));
 
-  //app.config.virtualise().dump();
+  // app.config.virtualise().dump();
   app.config.connectTo(app.testModule);
 
   app.initialise();

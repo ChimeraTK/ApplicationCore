@@ -1,19 +1,13 @@
-/*
- * ControlSystemModule.h
- *
- *  Created on: Jun 28, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_CONTROL_SYSTEM_MODULE_H
-#define CHIMERATK_CONTROL_SYSTEM_MODULE_H
-
-#include <list>
-
-#include <ChimeraTK/RegisterPath.h>
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "Module.h"
 #include "VariableNetworkNode.h"
+
+#include <ChimeraTK/RegisterPath.h>
+
+#include <list>
 
 namespace ChimeraTK {
 
@@ -26,12 +20,7 @@ namespace ChimeraTK {
     ControlSystemModule(ControlSystemModule&& other) { operator=(std::move(other)); }
 
     /** Move assignment */
-    ControlSystemModule& operator=(ControlSystemModule&& other) {
-      Module::operator=(std::move(other));
-      variableNamePrefix = std::move(other.variableNamePrefix);
-      subModules = std::move(other.subModules);
-      return *this;
-    }
+    ControlSystemModule& operator=(ControlSystemModule&& other);
 
     /** The function call operator returns a VariableNetworkNode which can be used
      * in the Application::initialise() function to connect the control system
@@ -74,5 +63,3 @@ namespace ChimeraTK {
   };
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERATK_CONTROL_SYSTEM_MODULE_H */

@@ -1,13 +1,13 @@
-/*
- * VariableGroup.cc
- *
- *  Created on: Jun 27, 2016
- *      Author: Martin Hierholzer
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#include "VariableGroup.h"
 
-#include "ApplicationCore.h"
+#include "ApplicationModule.h"
+#include "DeviceModule.h"
 
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
 
   VariableGroup::VariableGroup(EntityOwner* owner, const std::string& name, const std::string& description,
       HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
@@ -19,6 +19,8 @@ namespace ChimeraTK {
     }
   }
 
+  /********************************************************************************************************************/
+
   VariableGroup::VariableGroup(EntityOwner* owner, const std::string& name, const std::string& description,
       bool eliminateHierarchy, const std::unordered_set<std::string>& tags)
   : ModuleImpl(owner, name, description, eliminateHierarchy, tags) {
@@ -28,5 +30,14 @@ namespace ChimeraTK {
                                    "other VariableGroups!");
     }
   }
+
+  /********************************************************************************************************************/
+
+  VariableGroup& VariableGroup::operator=(VariableGroup&& other) {
+    ModuleImpl::operator=(std::move(other));
+    return *this;
+  }
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

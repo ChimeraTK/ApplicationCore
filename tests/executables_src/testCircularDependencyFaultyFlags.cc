@@ -1,17 +1,20 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #define BOOST_TEST_MODULE testPropagateDataFaultFlag
 
-// Tests never terminate when an exception is caught and BOOST_NO_EXCEPTIONS is set, but the exeption's what() message is printed.
-// Without the define the what() message is not printed, but the test ist not stuck... I leave it commented but in the code so you activate when debugging.
+// Tests never terminate when an exception is caught and BOOST_NO_EXCEPTIONS is set, but the exeption's what() message
+// is printed. Without the define the what() message is not printed, but the test ist not stuck... I leave it commented
+// but in the code so you activate when debugging.
 //#define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
 //#undef BOOST_NO_EXCEPTIONS
 
 #include "ApplicationModule.h"
-#include "VariableGroup.h"
-#include "ScalarAccessor.h"
 #include "ControlSystemModule.h"
-#include "TestFacility.h"
 #include "HierarchyModifyingGroup.h"
+#include "ScalarAccessor.h"
+#include "TestFacility.h"
+#include "VariableGroup.h"
 namespace ctk = ChimeraTK;
 
 // The basic setup has 4 modules connected in a circle
@@ -102,18 +105,20 @@ struct ModuleA : TestModuleBase {
   }   // mainLoop
 };    // ModuleA
 
-/// ModuleC has a trigger together with a readAll.; (it's a trigger for the circle because there is always something at the circular inputs)
+/// ModuleC has a trigger together with a readAll.; (it's a trigger for the circle because there is always something at
+/// the circular inputs)
 struct ModuleC : TestModuleBase {
   using TestModuleBase::TestModuleBase;
   ctk::ScalarPushInput<int> trigger{this, "trigger", "", ""};
 
-  // Special loop to guarantee that the internal inputs are read first, so we don't have unread data in the queue and can use the testable mode
+  // Special loop to guarantee that the internal inputs are read first, so we don't have unread data in the queue and
+  // can use the testable mode
   void mainLoop() override {
     while(true) {
       circularOutput1 = static_cast<int>(inputGroup.circularInput1);
       outputGroup.circularOutput2 = static_cast<int>(circularInput2);
       writeAll();
-      //readAll();
+      // readAll();
       inputGroup.circularInput1.read();
       circularInput2.read();
       trigger.read();
@@ -189,7 +194,8 @@ struct CircularAppTestFixcture {
 /** \anchor dataValidity_test_TestCircularInputDetection
  * Tests Technical specification: data validity propagation
  *  * \ref dataValidity_4_1_1 "4.1.1"  Inputs which are part of a circular dependency are marked as circular input.
- *  * \ref dataValidity_4_1_1_1 "4.1.1.1"  (partly, DeviceModule and other ApplciationModules not tested) Inputs from CS are external inputs.
+ *  * \ref dataValidity_4_1_1_1 "4.1.1.1"  (partly, DeviceModule and other ApplciationModules not tested) Inputs from CS
+ * are external inputs.
  *  * \ref dataValidity_4_1_2 "4.1.2"  All modules which have a circular dependency form a circular network.
  */
 BOOST_AUTO_TEST_CASE(TestCircularInputDetection) {
@@ -197,8 +203,8 @@ BOOST_AUTO_TEST_CASE(TestCircularInputDetection) {
   ctk::TestFacility test;
 
   test.runApplication();
-  //app.dumpConnections();
-  //app.dump();
+  // app.dumpConnections();
+  // app.dump();
 
   // just test that the circular inputs have been detected correctly
   BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.A.inputGroup.circularInput1).isCircularInput() == true);
@@ -234,7 +240,8 @@ BOOST_AUTO_TEST_CASE(TestCircularInputDetection) {
  *  * \ref dataValidity_4_1_4 "4.1.4"  Propagation of the invalidity flag in a circle.
  *  * \ref dataValidity_4_1_5 "4.1.5"  Breaking the circular dependency.
  *
- *  This test intentionally does set more than one external input to faulty to make it easier to see where problems are coming from.
+ *  This test intentionally does set more than one external input to faulty to make it easier to see where problems are
+ * coming from.
  */
 BOOST_FIXTURE_TEST_CASE(OneInvalidVariable, CircularAppTestFixcture<TestApplication1>) {
   a.setDataValidity(ctk::DataValidity::faulty);
@@ -395,8 +402,7 @@ BOOST_FIXTURE_TEST_CASE(OutputManuallyFaulty, CircularAppTestFixcture<TestApplic
 
 /** \anchor dataValidity_test_TwoFaultyInTwoModules
  * Tests Technical specification: data validity propagation
- *  * \ref dataValidity_4_2_3 "4.2.3"  Modules do no go to OK if all its external inputs are OK
- *                                     if other modules in the circular  network have external inputs which are faulty.
+ *  * \ref dataValidity_4_1_5 "4.1.5"  Breaking the circular dependency only when all variables go to ok.
  */
 BOOST_FIXTURE_TEST_CASE(TwoFaultyInTwoModules, CircularAppTestFixcture<TestApplication1>) {
   a.setDataValidity(ctk::DataValidity::faulty);
@@ -455,10 +461,11 @@ BOOST_FIXTURE_TEST_CASE(TwoFaultyInTwoModules, CircularAppTestFixcture<TestAppli
 //
 // The important part of this test is to check that the whole network AA,..,FF is always detected for each input,
 // even if the scan is only for a variable that starts the scan in only in a local circle (like AA/fromEE).
-// In addition it tests that not everything is mixed into a single circular network (GG,HH is detected as separate circular network).
+// In addition it tests that not everything is mixed into a single circular network (GG,HH is detected as separate
+// circular network).
 
-// Don't try to pass any data through the network. It will be stuck because there are no real main loops. Only the initial value is passed (write exaclty once, then never read).
-// It's just used to test the static circular network detection.
+// Don't try to pass any data through the network. It will be stuck because there are no real main loops. Only the initial
+// value is passed (write exaclty once, then never read). It's just used to test the static circular network detection.
 
 struct TestModuleBase2 : ctk::ApplicationModule {
   using ApplicationModule::ApplicationModule;
@@ -495,7 +502,7 @@ struct BB : TestModuleBase2 {
     ctk::ScalarOutput<int> fromBB{this, "fromBB", "", ""};
   } outputGroup{this, "CC", "", ctk::HierarchyModifier::oneLevelUp};
 
-  struct /*OutputGroup*/ : public ctk::VariableGroup {
+  struct OutputGroup2 : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromBB{this, "fromBB", "", ""};
   } outputGroup2{this, "EE", "", ctk::HierarchyModifier::oneLevelUp};
@@ -522,7 +529,7 @@ struct CC : TestModuleBase2 {
     ctk::ScalarOutput<int> fromCC{this, "fromCC", "", ""};
   } outputGroup{this, "DD", "", ctk::HierarchyModifier::oneLevelUp};
 
-  struct /*OutputGroup*/ : public ctk::VariableGroup {
+  struct OutputGroup2 : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromCC{this, "fromCC", "", ""};
   } outputGroup2{this, "FF", "", ctk::HierarchyModifier::oneLevelUp};
@@ -607,7 +614,7 @@ BOOST_AUTO_TEST_CASE(TestCircularInputDetection2) {
   ctk::TestFacility test;
 
   test.runApplication();
-  //app.dumpConnections();
+  // app.dumpConnections();
 
   // Check that all inputs have been identified correctly
   BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.aa.fromEE).isCircularInput() == true);

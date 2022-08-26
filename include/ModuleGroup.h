@@ -1,18 +1,12 @@
-/*
- * ModuleGroup.h
- *
- *  Created on: Aug 23, 2017
- *      Author: Martin Hierholzer
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
-#ifndef CHIMERATK_MODULE_GROUP_H
-#define CHIMERATK_MODULE_GROUP_H
-
-#include <list>
+#include "ModuleImpl.h"
 
 #include <boost/thread.hpp>
 
-#include "ModuleImpl.h"
+#include <list>
 
 namespace ChimeraTK {
 
@@ -45,17 +39,9 @@ namespace ChimeraTK {
     ModuleGroup(ModuleGroup&& other) { operator=(std::move(other)); }
 
     /** Move assignment */
-    ModuleGroup& operator=(ModuleGroup&& other) {
-      ModuleImpl::operator=(std::move(other));
-      return *this;
-    }
-
-    /** Destructor */
-    virtual ~ModuleGroup(){};
+    ModuleGroup& operator=(ModuleGroup&& other);
 
     ModuleType getModuleType() const override { return ModuleType::ModuleGroup; }
   };
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERATK_MODULE_GROUP_H */

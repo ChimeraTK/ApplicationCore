@@ -1,25 +1,20 @@
-/*
- * testDeviceAccessors.cc
- *
- *  Created on: Jun 22, 2016
- *      Author: Martin Hierholzer
- */
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include <future>
 
 #define BOOST_TEST_MODULE testDeviceAccessors
-
-#include <boost/mpl/list.hpp>
-
-#include <ChimeraTK/BackendFactory.h>
-#include <ChimeraTK/Device.h>
-#include <ChimeraTK/NDRegisterAccessor.h>
 
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
+
+#include <ChimeraTK/BackendFactory.h>
+#include <ChimeraTK/Device.h>
+#include <ChimeraTK/NDRegisterAccessor.h>
+
+#include <boost/mpl/list.hpp>
 
 #define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>

@@ -1,17 +1,20 @@
-#ifndef VERSIONNUMBERUPDATINGREGISTERDECORATOR_H
-#define VERSIONNUMBERUPDATINGREGISTERDECORATOR_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include <ChimeraTK/NDRegisterAccessorDecorator.h>
 
-/********************************************************************************************************************/
-
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
 
   // we can only declare the classes here but not use them/include the header to avoid a circular dependency
   class EntityOwner;
   class VariableNetworkNode;
 
-  /** 
+  /********************************************************************************************************************/
+
+  /**
    *  A mix-in helper class so you can set the flags without knowing the user data type.
    */
   class MetaDataPropagationFlagProvider {
@@ -24,16 +27,18 @@ namespace ChimeraTK {
      */
     bool _isCircularInput{false};
 
-    /** 
+    /**
      *  Value of validity flag from last read or write operation.
      *  This is atomic to allow the InvalidityTracer module to access this information.
      */
     std::atomic<DataValidity> lastValidity{DataValidity::ok};
 
-    // The VariableNetworkNode needs access to _isCircularInput. It cannot be set at construction time because the network is not complete yet
-    // and isCircularInput is not know at that moment.
+    // The VariableNetworkNode needs access to _isCircularInput. It cannot be set at construction time because the
+    // network is not complete yet and isCircularInput is not know at that moment.
     friend class VariableNetworkNode;
   };
+
+  /********************************************************************************************************************/
 
   /**
    *  NDRegisterAccessorDecorator which propagates meta data attached to input process variables through the owning
@@ -61,8 +66,10 @@ namespace ChimeraTK {
     using MetaDataPropagationFlagProvider::_isCircularInput;
   };
 
+  /********************************************************************************************************************/
+
   DECLARE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(MetaDataPropagatingRegisterDecorator);
 
-} /* namespace ChimeraTK */
+  /********************************************************************************************************************/
 
-#endif // VERSIONNUMBERUPDATINGREGISTERDECORATOR_H
+} /* namespace ChimeraTK */

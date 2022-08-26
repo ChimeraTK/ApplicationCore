@@ -1,7 +1,9 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "HierarchyModifyingGroup.h"
 
-#include "VariableGroup.h"
 #include "ApplicationModule.h"
+#include "VariableGroup.h"
 
 #include <boost/algorithm/string.hpp>
 
@@ -9,39 +11,38 @@ namespace ChimeraTK {
 
   HierarchyModifyingGroup::HierarchyModifyingGroup(EntityOwner* owner, std::string qualifiedName,
       const std::string& description, const std::unordered_set<std::string>& tags)
-  : VariableGroup(owner, "temporaryName", description, HierarchyModifier::none, tags)
-  {
-      // qualifiedName must not be empty
-      if(qualifiedName.size() == 0) {
-        throw ChimeraTK::logic_error("HierarchyModifyingGroup: qualifiedName must not be empty.");
+  : VariableGroup(owner, "temporaryName", description, HierarchyModifier::none, tags) {
+    // qualifiedName must not be empty
+    if(qualifiedName.size() == 0) {
+      throw ChimeraTK::logic_error("HierarchyModifyingGroup: qualifiedName must not be empty.");
+    }
+
+    // If path starts with slash, the entire tree is moved to root
+    if(qualifiedName[0] == '/') {
+      moveToRoot = true;
+    }
+
+    // Split path into pieces
+    std::vector<std::string> splittedPath;
+    boost::split(splittedPath, qualifiedName, boost::is_any_of("/"));
+
+    // Clean splitted path by removing extra slashes and resolving internal . and .. elements where possible. As a
+    // result, no "." element may occur, and ".." can only occur at the beginning.
+    for(auto& pathElement : splittedPath) {
+      if(pathElement.size() == 0) continue;
+      if(pathElement == "." && splittedPath.size() != 1) continue;
+      if(pathElement == ".." && _splittedPath.size() > 0 && _splittedPath.back() != "..") {
+        _splittedPath.pop_back();
+        continue;
       }
-
-      // If path starts with slash, the entire tree is moved to root
-      if(qualifiedName[0] == '/') {
-        moveToRoot = true;
+      if(pathElement == ".." && moveToRoot) {
+        throw ChimeraTK::logic_error("QualifiedName of HierarchyModifyingGroup must not start with '/..'!");
       }
+      _splittedPath.push_back(pathElement);
+    }
 
-      // Split path into pieces
-      std::vector<std::string> splittedPath;
-      boost::split(splittedPath, qualifiedName, boost::is_any_of("/"));
-
-      // Clean splitted path by removing extra slashes and resolving internal . and .. elements where possible. As a
-      // result, no "." element may occur, and ".." can only occur at the beginning.
-      for(auto& pathElement : splittedPath) {
-        if(pathElement.size() == 0) continue;
-        if(pathElement == "." && splittedPath.size() != 1) continue;
-        if(pathElement == ".." && _splittedPath.size() > 0 && _splittedPath.back() != "..") {
-          _splittedPath.pop_back();
-          continue;
-        }
-        if(pathElement == ".." && moveToRoot) {
-          throw ChimeraTK::logic_error("QualifiedName of HierarchyModifyingGroup must not start with '/..'!");
-        }
-        _splittedPath.push_back(pathElement);
-      }
-
-      // Change name to last element of cleaned path
-      _name = _splittedPath.back();
+    // Change name to last element of cleaned path
+    _name = _splittedPath.back();
   }
 
   /********************************************************************************************************************/
@@ -65,7 +66,7 @@ namespace ChimeraTK {
   void HierarchyModifyingGroup::findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag,
       bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const {
     // the virtual parent to use depends on moveToRoot and will change while walking through the tree
-    VirtualModule *currentVirtualParent = &virtualParent;
+    VirtualModule* currentVirtualParent = &virtualParent;
     if(moveToRoot) {
       currentVirtualParent = &root;
     }
@@ -86,8 +87,8 @@ namespace ChimeraTK {
         assert(!moveToRoot);
         eliminateFirstHierarchy = true;
       }
-      VariableGroup::findTagAndAppendToModule(*currentVirtualParent, tag, eliminateAllHierarchies,
-                                              eliminateFirstHierarchy, negate, root);
+      VariableGroup::findTagAndAppendToModule(
+          *currentVirtualParent, tag, eliminateAllHierarchies, eliminateFirstHierarchy, negate, root);
       return;
     }
 

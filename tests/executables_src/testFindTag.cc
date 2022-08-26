@@ -1,21 +1,22 @@
-/*
- * testFindTag.cc
- *
- *  Created on: Feb 27, 2019
- *      Author: Martin Hierholzer
- */
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include <chrono>
 #include <future>
 
 #define BOOST_TEST_MODULE testFindTag
 
+#include "Application.h"
+#include "ApplicationModule.h"
+#include "ControlSystemModule.h"
+#include "ModuleGroup.h"
+#include "ScalarAccessor.h"
+#include "TestFacility.h"
+#include "VariableGroup.h"
+#include "VirtualModule.h"
+
 #include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
 #include <boost/thread.hpp>
-
-#include "ApplicationCore.h"
-#include "TestFacility.h"
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -40,7 +41,7 @@ struct FirstHierarchy : ctk::ModuleGroup {
         struct : ctk::VariableGroup {
           using ctk::VariableGroup::VariableGroup;
           ctk::ScalarOutput<int> varC{this, "childOfNieceGroup", "MV/m", "Desc"};
-        } moveMeAlong{this, "NieceGroup", ""};
+        } moveMeAlong{(this), "NieceGroup", ""}; // extra parentheses are for doxygen...
       } movedUp{this, "SisterGroupOfVarGroup", "minus one test 1", ctk::HierarchyModifier::oneLevelUp, {"Partial"}};
       struct : ctk::VariableGroup {
         using ctk::VariableGroup::VariableGroup;
@@ -48,7 +49,7 @@ struct FirstHierarchy : ctk::ModuleGroup {
         struct : ctk::VariableGroup {
           using ctk::VariableGroup::VariableGroup;
           ctk::ScalarOutput<int> varC{this, "anotherNieceVar", "MV/m", "Desc"};
-        } moveMeAlong{this, "AnotherSisterGroup", ""};
+        } moveMeAlong{(this), "AnotherSisterGroup", ""}; // extra parentheses are for doxygen...
       } movedUpAndHidden{this, "YouLNeverSee", "minus one test 2", ctk::HierarchyModifier::oneUpAndHide, {"Partial"}};
     } varGroup{this, "VarGroup", "A group", ctk::HierarchyModifier::none, {"Exclude", "Partial"}};
 

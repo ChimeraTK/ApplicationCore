@@ -1,26 +1,20 @@
-/*
- * testBidirectionalVariables.cc
- *
- *  Created on: Jan 21, 2019
- *      Author: Martin Hierholzer
- */
-
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include <future>
 
 #define BOOST_TEST_MODULE testBidirectionalVariables
 
-#include <boost/mpl/list.hpp>
-
-#include <ChimeraTK/BackendFactory.h>
-
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
+#include "check_timeout.h"
 #include "ControlSystemModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
 
-#include "check_timeout.h"
+#include <ChimeraTK/BackendFactory.h>
+
+#include <boost/mpl/list.hpp>
 
 #define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>

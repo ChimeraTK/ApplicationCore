@@ -1,23 +1,21 @@
-/*
- * VariableGroup.h
- *
- *  Created on: Nov 8, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_VARIABLE_GROUP_H
-#define CHIMERATK_VARIABLE_GROUP_H
-
-#include <list>
-
-#include <boost/thread.hpp>
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "ModuleImpl.h"
 
+#include <boost/thread.hpp>
+
+#include <list>
+
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
 
   class ApplicationModule;
   struct ConfigReader;
+
+  /********************************************************************************************************************/
 
   class VariableGroup : public ModuleImpl {
    public:
@@ -42,23 +40,20 @@ namespace ChimeraTK {
      * to allow constructor inheritance of modules owning other modules. This
      * constructor will not actually be called then. See this bug report:
      * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-    VariableGroup() {}
+    VariableGroup() = default;
 
     /** Destructor */
-    virtual ~VariableGroup(){};
+    virtual ~VariableGroup() = default;
 
     /** Move constructor */
     VariableGroup(VariableGroup&& other) { operator=(std::move(other)); }
 
     /** Move assignment */
-    VariableGroup& operator=(VariableGroup&& other) {
-      ModuleImpl::operator=(std::move(other));
-      return *this;
-    }
+    VariableGroup& operator=(VariableGroup&& other);
 
     ModuleType getModuleType() const override { return ModuleType::VariableGroup; }
   };
 
-} /* namespace ChimeraTK */
+  /********************************************************************************************************************/
 
-#endif /* CHIMERATK_VARIABLE_GROUP_H */
+} /* namespace ChimeraTK */

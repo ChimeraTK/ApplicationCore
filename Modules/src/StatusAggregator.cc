@@ -1,6 +1,9 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #include "StatusAggregator.h"
-#include "ControlSystemModule.h"
+
 #include "ConfigReader.h"
+#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 
 #include <list>

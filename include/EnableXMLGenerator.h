@@ -1,15 +1,11 @@
-/**
- * EnableXMLGenerator.h
- *
- *  Created on: May 5, 2017
- *      Author: Martin Hierholzer
- *
- *  Include this header file in your main application .cc file, so the xml
- * generator can be compiled using the compiler switch -DGENERATE_XML
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
-#ifndef CHIMERATK_APPLICATION_CORE_H
-#define CHIMERATK_APPLICATION_CORE_H
+/**
+ * Include this header file in your main application .cc file, so the xml generator can be compiled using the compiler
+ * switch -DGENERATE_XML
+ */
 
 /** Compile-time switch: two executables will be created. One will generate an
  * XML file containing the application's variable list. The other will be the
@@ -25,5 +21,3 @@ int main(int, char**) {
 }
 
 #endif /* GENERATE_XML */
-
-#endif /* CHIMERATK_APPLICATION_CORE_H */

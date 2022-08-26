@@ -1,20 +1,21 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #define BOOST_TEST_MODULE testDeviceExceptionFlagPropagation
 
 #include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-#include <ChimeraTK/DummyRegisterAccessor.h>
-#include <ChimeraTK/ExceptionDummyBackend.h>
-
 #include "Application.h"
 #include "ApplicationModule.h"
+#include "check_timeout.h"
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "PeriodicTrigger.h"
 #include "TestFacility.h"
 #include "VariableGroup.h"
 
-#include "check_timeout.h"
+#include <ChimeraTK/DummyRegisterAccessor.h>
+#include <ChimeraTK/ExceptionDummyBackend.h>
 
 namespace ctk = ChimeraTK;
 
@@ -26,24 +27,24 @@ struct TestApplication : ctk::Application {
 
   void defineConnections() {}
 
-  struct : ctk::ApplicationModule {
+  struct Name : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
-    struct : ctk::VariableGroup {
+    struct Name2 : ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
       ctk::ScalarOutput<uint64_t> tick{this, "tick", "", ""};
-    } name{this, "name", ""};
+    } name{(this), "name", ""}; // extra parentheses are for doxygen...
 
     void prepare() override { name.tick.write(); /* send initial value */ }
     void mainLoop() override {}
   } name{this, "name", ""};
 
-  struct : ctk::ApplicationModule {
+  struct Module : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
     mutable int readMode{0};
 
-    struct : ctk::VariableGroup {
+    struct Vars : ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
       ctk::ScalarPushInput<uint64_t> tick{this, "tick", "", ""};
       ctk::ScalarPollInput<int> read{this, "readBack", "", ""};

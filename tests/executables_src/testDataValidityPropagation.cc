@@ -1,21 +1,24 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #define BOOST_TEST_MODULE testDataValidityPropagation
+
+#include "Application.h"
+#include "ApplicationModule.h"
+#include "check_timeout.h"
+#include "ControlSystemModule.h"
+#include "DeviceModule.h"
+#include "ScalarAccessor.h"
+#include "TestFacility.h"
+
+#include <ChimeraTK/Device.h>
+#include <ChimeraTK/DummyRegisterAccessor.h>
+#include <ChimeraTK/ExceptionDummyBackend.h>
+#include <ChimeraTK/NDRegisterAccessor.h>
 
 #include <boost/mpl/list.hpp>
 
 #include <chrono>
 #include <cstring>
-#include <ChimeraTK/Device.h>
-#include <ChimeraTK/NDRegisterAccessor.h>
-#include <ChimeraTK/ExceptionDummyBackend.h>
-#include <ChimeraTK/DummyRegisterAccessor.h>
-
-#include "Application.h"
-#include "ApplicationModule.h"
-#include "ControlSystemModule.h"
-#include "DeviceModule.h"
-#include "ScalarAccessor.h"
-#include "TestFacility.h"
-#include "check_timeout.h"
 
 // this #include must come last
 #define BOOST_NO_EXCEPTIONS
@@ -129,7 +132,7 @@ struct TestApplication1 : ctk::Application {
   }
 };
 
-//BOOST_AUTO_TEST_SUITE(dataValidityPropagation)
+// BOOST_AUTO_TEST_SUITE(dataValidityPropagation)
 
 struct TestApplication3 : ctk::Application {
   constexpr static char const* ExceptionDummyCDD = "(ExceptionDummy?map=testDataValidityPropagation2.map)";
@@ -141,16 +144,16 @@ struct TestApplication3 : ctk::Application {
   ctk::ControlSystemModule cs;
   ctk::ConnectingDeviceModule device1{this, ExceptionDummyCDD, "/m2/o1"};
 
-  //ctk::DeviceModule device1{this, ExceptionDummyCDD};
-  //  void defineConnections() override {
-  //    // use manual connection setup instead of ConnectingDeviceModule.
-  //    // note, differently from automatic connection setup, registers contain . and not / as separator
-  //    auto pollInput1 = device1("dev.i1", typeid(int), 1, ChimeraTK::UpdateMode::poll);
-  //    auto pollInput2 = device1("dev.i2", typeid(int), 1, ChimeraTK::UpdateMode::poll);
-  //    auto trigger = m2("o1");
-  //    pollInput1[trigger] >> cs("dev.i1", typeid(int));
-  //    pollInput2[trigger] >> cs("dev.i2", typeid(int));
-  //  }
+  // ctk::DeviceModule device1{this, ExceptionDummyCDD};
+  //   void defineConnections() override {
+  //     // use manual connection setup instead of ConnectingDeviceModule.
+  //     // note, differently from automatic connection setup, registers contain . and not / as separator
+  //     auto pollInput1 = device1("dev.i1", typeid(int), 1, ChimeraTK::UpdateMode::poll);
+  //     auto pollInput2 = device1("dev.i2", typeid(int), 1, ChimeraTK::UpdateMode::poll);
+  //     auto trigger = m2("o1");
+  //     pollInput1[trigger] >> cs("dev.i1", typeid(int));
+  //     pollInput2[trigger] >> cs("dev.i2", typeid(int));
+  //   }
 };
 /**
  *  tests the ExceptionDummyPollDecorator of the ExceptionDummyBackend, which provides a way for
@@ -159,7 +162,7 @@ struct TestApplication3 : ctk::Application {
 BOOST_AUTO_TEST_CASE(testDataValidity_exceptionDummy) {
   TestApplication3 app;
   ctk::TestFacility test;
-  //app.dumpConnections();
+  // app.dumpConnections();
 
   auto devI1 = test.getScalar<int>("/dev/i1");
   auto devI2 = test.getScalar<int>("/dev/i2");
@@ -267,7 +270,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_1_6) {
   app.mod2.outputValidity = ctk::DataValidity::ok;
   ctk::TestFacility test;
 
-  //app.dumpConnections();
+  // app.dumpConnections();
   auto input = test.getScalar<int>("/m1/i1");
   auto result = test.getScalar<int>("/m2/o1");
   test.runApplication();
@@ -320,9 +323,9 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_1_1) {
   auto i1 = test.getScalar<int>("/m1/i1");
   test.runApplication();
   assert(app.mod.getDataValidity() == ctk::DataValidity::ok);
-  // we cannot check inputs via dynamic_cast to MetaDataPropagatingRegisterDecorator, since implementation detail is hidden by TransferElementAbstractor
-  // instead, check what the decorator is supposed to do.
-  // check that the MetaDataPropagatingRegisterDecorator counts data validity changes ( in doPostRead)
+  // we cannot check inputs via dynamic_cast to MetaDataPropagatingRegisterDecorator, since implementation detail is
+  // hidden by TransferElementAbstractor instead, check what the decorator is supposed to do. check that the
+  // MetaDataPropagatingRegisterDecorator counts data validity changes ( in doPostRead)
   i1 = 0;
   i1.write();
   test.stepApplication(); // triggers m1.i1.read()
@@ -462,11 +465,11 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_3_4) {
 BOOST_AUTO_TEST_CASE(testDataValidity_2_4_1) {
   TestApplication1<TestModule1> app;
   ctk::TestFacility test;
-  //app.debugTestableMode();
+  // app.debugTestableMode();
 
   // the TriggerFanOut is realized via device module connected to control system,
   // using a trigger from TriggerModule
-  auto result1 = test.getScalar<int>("dev/i3"); //RO
+  auto result1 = test.getScalar<int>("dev/i3"); // RO
 
   test.runApplication();
 
@@ -553,4 +556,4 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_4_3) {
  * Not tested since it's an implementation detail.
  */
 
-//BOOST_AUTO_TEST_SUITE_END()
+// BOOST_AUTO_TEST_SUITE_END()

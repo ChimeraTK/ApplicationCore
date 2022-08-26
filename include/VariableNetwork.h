@@ -1,24 +1,19 @@
-/*
- * VariableNetwork.h
- *
- *  Created on: Jun 14, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_VARIABLE_NETWORK_H
-#define CHIMERATK_VARIABLE_NETWORK_H
-
-#include <boost/mpl/for_each.hpp>
-#include <iostream>
-#include <list>
-#include <string>
-#include <typeinfo>
-
-#include <ChimeraTK/ControlSystemAdapter/ProcessVariable.h>
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "Flags.h"
 #include "VariableNetworkNode.h"
 #include "Visitor.h"
+
+#include <ChimeraTK/ControlSystemAdapter/ProcessVariable.h>
+
+#include <boost/mpl/for_each.hpp>
+
+#include <iostream>
+#include <list>
+#include <string>
+#include <typeinfo>
 
 namespace ChimeraTK {
 
@@ -88,11 +83,7 @@ namespace ChimeraTK {
     void accept(Visitor<VariableNetwork>& visitor) const;
 
     /** Compare two networks */
-    bool operator==(const VariableNetwork& other) const {
-      if(other.valueType != valueType) return false;
-      if(other.nodeList != nodeList) return false;
-      return true;
-    }
+    bool operator==(const VariableNetwork& other) const;
     bool operator!=(const VariableNetwork& other) const { return !operator==(other); }
 
     /** Return the trigger type. This function will also do some checking if the
@@ -139,7 +130,7 @@ namespace ChimeraTK {
     bool merge(VariableNetwork& other);
 
     /** Set FanOut used to realise this network */
-    void setFanOut(const boost::shared_ptr<FanOutBase> &fanOut) { _fanOut = fanOut; }
+    void setFanOut(const boost::shared_ptr<FanOutBase>& fanOut) { _fanOut = fanOut; }
 
     /** Return FanOut used to realise this network if present, empty shared_ptr otherwise. */
     boost::shared_ptr<FanOutBase> getFanOut() const { return _fanOut.lock(); }
@@ -175,9 +166,6 @@ namespace ChimeraTK {
 
     /** The fan out to realise this network. Only valid if a FanOut is needed. */
     boost::weak_ptr<FanOutBase> _fanOut;
-
   };
 
 } /* namespace ChimeraTK */
-
-#endif /* CHIMERATK_VARIABLE_NETWORK_H */

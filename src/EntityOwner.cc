@@ -1,22 +1,20 @@
-/*
- * EntityOwner.cc
- *
- *  Created on: Nov 15, 2016
- *      Author: Martin Hierholzer
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#include "EntityOwner.h"
+
+#include "Application.h"
+#include "Module.h"
+#include "ModuleGraphVisitor.h"
+#include "VirtualModule.h"
 
 #include <cassert>
 #include <fstream>
 #include <iostream>
 #include <regex>
 
-#include "EntityOwner.h"
-#include "Module.h"
-#include "ModuleGraphVisitor.h"
-#include "VirtualModule.h"
-#include "Application.h"
-
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
 
   EntityOwner::EntityOwner(const std::string& name, const std::string& description, bool eliminateHierarchy,
       const std::unordered_set<std::string>& tags)
@@ -24,17 +22,23 @@ namespace ChimeraTK {
     if(eliminateHierarchy) _hierarchyModifier = HierarchyModifier::hideThis;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   EntityOwner::EntityOwner(const std::string& name, const std::string& description, HierarchyModifier hierarchyModifier,
       const std::unordered_set<std::string>& tags)
   : _name(name), _description(description), _hierarchyModifier(hierarchyModifier), _tags(tags) {}
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  EntityOwner::EntityOwner()
+  : _name("**INVALID**"), _description("Invalid EntityOwner created by default constructor just "
+                                       "as a place holder") {}
+
+  /********************************************************************************************************************/
 
   EntityOwner::~EntityOwner() {}
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   EntityOwner& EntityOwner::operator=(EntityOwner&& other) {
     _name = std::move(other._name);
@@ -52,7 +56,7 @@ namespace ChimeraTK {
     return *this;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void EntityOwner::registerModule(Module* module, bool addTags) {
     if(addTags)
@@ -60,11 +64,13 @@ namespace ChimeraTK {
     moduleList.push_back(module);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
-  void EntityOwner::unregisterModule(Module* module) { moduleList.remove(module); }
+  void EntityOwner::unregisterModule(Module* module) {
+    moduleList.remove(module);
+  }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::list<VariableNetworkNode> EntityOwner::getAccessorListRecursive() const {
     // add accessors of this instance itself
@@ -78,7 +84,7 @@ namespace ChimeraTK {
     return list;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::list<Module*> EntityOwner::getSubmoduleListRecursive() const {
     // add modules of this instance itself
@@ -92,14 +98,14 @@ namespace ChimeraTK {
     return list;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   bool EntityOwner::getEliminateHierarchy() const {
     return (_hierarchyModifier == HierarchyModifier::hideThis) ||
         (_hierarchyModifier == HierarchyModifier::oneUpAndHide);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   VirtualModule EntityOwner::findTag(const std::string& tag) const {
     // create new module to return
@@ -122,7 +128,7 @@ namespace ChimeraTK {
     return module;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   VirtualModule EntityOwner::excludeTag(const std::string& tag) const {
     // create new module to return
@@ -145,7 +151,14 @@ namespace ChimeraTK {
     return module;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  void EntityOwner::registerAccessor(VariableNetworkNode accessor) {
+    for(auto& tag : _tags) accessor.addTag(tag);
+    accessorList.push_back(accessor);
+  }
+
+  /********************************************************************************************************************/
 
   // The function adds virtual versions of the EntityOwner itself anf all its children to a virtual module (parent).
   void EntityOwner::findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag,
@@ -190,7 +203,8 @@ namespace ChimeraTK {
         }
       }
       else {
-        // just hide -> add to the parent (could also an already existing object with the same hierarchy level as virtualMe, where we just add to)
+        // just hide -> add to the parent (could also an already existing object with the same hierarchy level as
+        // virtualMe, where we just add to)
         moduleToAddTo = &virtualParent;
       }
     }
@@ -222,7 +236,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   bool EntityOwner::hasSubmodule(const std::string& name) const {
     for(auto submodule : getSubmoduleList()) {
@@ -231,7 +245,7 @@ namespace ChimeraTK {
     return false;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   Module* EntityOwner::getSubmodule(const std::string& name) const {
     for(auto submodule : getSubmoduleList()) {
@@ -240,7 +254,7 @@ namespace ChimeraTK {
     throw ChimeraTK::logic_error("Submodule '" + name + "' not found in module '" + getName() + "'!");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void EntityOwner::dump(const std::string& prefix) const {
     if(prefix == "") {
@@ -258,7 +272,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void EntityOwner::dumpGraph(const std::string& fileName) const {
     std::fstream file(fileName, std::ios_base::out);
@@ -266,7 +280,7 @@ namespace ChimeraTK {
     v.dispatch(*this);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void EntityOwner::dumpModuleGraph(const std::string& fileName) const {
     std::fstream file(fileName, std::ios_base::out);
@@ -274,7 +288,7 @@ namespace ChimeraTK {
     v.dispatch(*this);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void EntityOwner::addTag(const std::string& tag) {
     for(auto& node : getAccessorList()) node.addTag(tag);
@@ -282,7 +296,7 @@ namespace ChimeraTK {
     _tags.insert(tag);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   VirtualModule EntityOwner::flatten() {
     VirtualModule nextmodule{_name, _description, getModuleType()};
@@ -292,10 +306,12 @@ namespace ChimeraTK {
     return nextmodule;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
-  bool EntityOwner::hasReachedTestableMode() { return testableModeReached; }
+  bool EntityOwner::hasReachedTestableMode() {
+    return testableModeReached;
+  }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

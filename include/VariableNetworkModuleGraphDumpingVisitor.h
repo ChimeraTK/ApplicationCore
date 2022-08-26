@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
 #include "VariableNetworkNodeDumpingVisitor.h"
@@ -7,11 +9,14 @@
 
 namespace ChimeraTK {
 
-  // Forward Declarations
+  /*********************************************************************************************************************/
 
+  // Forward Declarations
   class Application;
   class VariableNetwork;
   class Module;
+
+  /*********************************************************************************************************************/
 
   /**
    * @brief The VariableNetworkModuleGraphDumpingVisitor class
@@ -35,5 +40,7 @@ namespace ChimeraTK {
     std::map<std::string, std::pair<std::string, bool>> _edgeMap;
     std::list<std::string> _deviceList;
   };
+
+  /*********************************************************************************************************************/
 
 } // namespace ChimeraTK

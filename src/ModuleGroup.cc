@@ -1,13 +1,12 @@
-/*
- * ModuleGroup.cc
- *
- *  Created on: Aug 23, 2017
- *      Author: Martin Hierholzer
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#include "ModuleGroup.h"
 
-#include "ApplicationCore.h"
+#include "Application.h"
 
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
 
   ModuleGroup::ModuleGroup(EntityOwner* owner, const std::string& name, const std::string& description,
       HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
@@ -18,6 +17,8 @@ namespace ChimeraTK {
     }
   }
 
+  /********************************************************************************************************************/
+
   ModuleGroup::ModuleGroup(EntityOwner* owner, const std::string& name, const std::string& description,
       bool eliminateHierarchy, const std::unordered_set<std::string>& tags)
   : ModuleImpl(owner, name, description, eliminateHierarchy, tags) {
@@ -26,5 +27,14 @@ namespace ChimeraTK {
                                    "Application or other ModuleGroups!");
     }
   }
+
+  /********************************************************************************************************************/
+
+  ModuleGroup& ModuleGroup::operator=(ModuleGroup&& other) {
+    ModuleImpl::operator=(std::move(other));
+    return *this;
+  }
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

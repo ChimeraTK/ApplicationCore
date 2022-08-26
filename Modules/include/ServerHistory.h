@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
+
 /*!
  * \author Klaus Zenker (HZDR)
  * \date 10.08.2018
@@ -84,10 +88,10 @@
  *  write them once before the main loop of the module containing the history variables.
  */
 
-#ifndef MODULES_SERVERHISTORY_H_
-#define MODULES_SERVERHISTORY_H_
-
-#include "ApplicationCore.h"
+#include "ApplicationModule.h"
+#include "ArrayAccessor.h"
+#include "DeviceModule.h"
+#include "VariableGroup.h"
 #include <unordered_set>
 
 #include <ChimeraTK/SupportedUserTypes.h>
@@ -200,5 +204,4 @@ namespace ChimeraTK { namespace history {
 
     friend struct AccessorAttacher;
   };
-}}     // namespace ChimeraTK::history
-#endif /* MODULES_SERVERHISTORY_H_ */
+}} // namespace ChimeraTK::history

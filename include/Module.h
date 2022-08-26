@@ -1,21 +1,20 @@
-/*
- * Module.h
- *
- *  Created on: Jun 27, 2016
- *      Author: Martin Hierholzer
- */
-
-#ifndef CHIMERATK_MODULE_H
-#define CHIMERATK_MODULE_H
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
 #include "EntityOwner.h"
 #include "VariableNetworkNode.h"
+
 #include <ChimeraTK/ReadAnyGroup.h>
 #include <ChimeraTK/TransferElement.h>
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   class ApplicationModule;
+
+  /********************************************************************************************************************/
 
   /** Base class for ApplicationModule, DeviceModule and ControlSystemModule, to
    * have a common interface for these module types. */
@@ -126,19 +125,11 @@ namespace ChimeraTK {
      */
     virtual void connectTo(const Module& target, VariableNetworkNode trigger = {}) const = 0;
 
-    std::string getQualifiedName() const override {
-      return ((_owner != nullptr) ? _owner->getQualifiedName() : "") + "/" + _name;
-    }
+    std::string getQualifiedName() const override;
 
     virtual std::string getVirtualQualifiedName() const;
 
-    std::string getFullDescription() const override {
-      if(_owner == nullptr) return _description;
-      auto ownerDescription = _owner->getFullDescription();
-      if(ownerDescription == "") return _description;
-      if(_description == "") return ownerDescription;
-      return ownerDescription + " - " + _description;
-    }
+    std::string getFullDescription() const override;
 
     /** Set a new owner. The caller has to take care himself that the Module gets
      * unregistered with the old owner
@@ -153,14 +144,16 @@ namespace ChimeraTK {
     void accept(Visitor<Module>& visitor) const { visitor.dispatch(*this); }
 
     VersionNumber getCurrentVersionNumber() const override { return _owner->getCurrentVersionNumber(); }
+
     void setCurrentVersionNumber(VersionNumber version) override { _owner->setCurrentVersionNumber(version); }
 
     DataValidity getDataValidity() const override { return _owner->getDataValidity(); }
+
     void incrementDataFaultCounter() override { _owner->incrementDataFaultCounter(); }
+
     void decrementDataFaultCounter() override { _owner->decrementDataFaultCounter(); }
-    std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override {
-      return _owner->getInputModulesRecursively(startList);
-    }
+
+    std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override;
 
     size_t getCircularNetworkHash() override { return _owner->getCircularNetworkHash(); }
 
@@ -179,6 +172,6 @@ namespace ChimeraTK {
     EntityOwner* _owner{nullptr};
   };
 
-} /* namespace ChimeraTK */
+  /********************************************************************************************************************/
 
-#endif /* CHIMERATK_MODULE_H */
+} /* namespace ChimeraTK */

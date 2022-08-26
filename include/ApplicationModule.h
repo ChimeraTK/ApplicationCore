@@ -1,35 +1,41 @@
-/*
- * ApplicationModule.h
- *
- *  Created on: Jun 10, 2016
- *      Author: Martin Hierholzer
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
-#ifndef CHIMERATK_APPLICATION_MODULE_H
-#define CHIMERATK_APPLICATION_MODULE_H
-
-#include <list>
+#include "CircularDependencyDetectionRecursionStopper.h"
+#include "ModuleImpl.h"
 
 #include <boost/thread.hpp>
 
-#include "ModuleImpl.h"
-#include "Application.h"
-#include "CircularDependencyDetectionRecursionStopper.h"
+#include <list>
 
 namespace ChimeraTK {
+
+  /*********************************************************************************************************************/
 
   class Application;
   class ModuleGroup;
   struct ConfigReader;
 
+  /*********************************************************************************************************************/
+
   class ApplicationModule : public ModuleImpl {
    public:
-    /** Constructor: Create ApplicationModule by the given name with the given description and register it with its
-     *  owner. The hierarchy will be modified according to the hierarchyModifier (when VirtualModules are created e.g.
-     *  in findTag()). The specified list of tags will be added to all elements directly or indirectly owned by this
-     *  instance.
+    /**
+     * Create ApplicationModule and register it with its owner
      *
-     *  Note: ApplicationModules may only be owned by ModuleGroups or Applications. */
+     * The hierarchy will be modified according to the hierarchyModifier (when VirtualModules are created e.g.
+     * in findTag()). The specified list of tags will be added to all elements directly or indirectly owned by this
+     * instance.
+     *
+     * @param owner The owner to register the ApplicationMoule with (ModuleGroup or Application)
+     * @param name The name of the new ApplicationModule
+     * @param description A description visible to the control system
+     * @param hierarchyModifier Specifies how the hierarchy should be modified
+     * @param tags List of tags to be added to all child variabls (default: empty)
+     *
+     * @exception ChimeraTK::logic_error thrown if owner is of the wrong type or name is illegal.
+     */
     ApplicationModule(EntityOwner* owner, const std::string& name, const std::string& description,
         HierarchyModifier hierarchyModifier = HierarchyModifier::none,
         const std::unordered_set<std::string>& tags = {});
@@ -51,12 +57,7 @@ namespace ChimeraTK {
     ApplicationModule(ApplicationModule&& other) { operator=(std::move(other)); }
 
     /** Move assignment */
-    ApplicationModule& operator=(ApplicationModule&& other) {
-      assert(!moduleThread.joinable()); // if the thread is already running,
-                                        // moving is no longer allowed!
-      ModuleImpl::operator=(std::move(other));
-      return *this;
-    }
+    ApplicationModule& operator=(ApplicationModule&& other);
 
     /** Destructor */
     virtual ~ApplicationModule();
@@ -78,9 +79,7 @@ namespace ChimeraTK {
     void incrementDataFaultCounter() override;
     void decrementDataFaultCounter() override;
 
-    void setCurrentVersionNumber(VersionNumber versionNumber) override {
-      if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
-    }
+    void setCurrentVersionNumber(VersionNumber versionNumber) override;
 
     std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override;
 
@@ -103,13 +102,13 @@ namespace ChimeraTK {
      * write operations */
     VersionNumber currentVersionNumber{nullptr};
 
-    /** 
+    /**
      *  Number of inputs which report DataValidity::faulty.
      *  This is atomic to allow the InvalidityTracer module to access this information.
      */
     std::atomic<size_t> dataFaultCounter{0};
 
-    /** 
+    /**
      *  Unique ID for the circular dependency network. 0 if the EntityOwner is not in a circular dependency network.
      *  Only write when in LifeCycleState::initialisation (so getDataValidity() is thread safe, required by
      *  InvalidityTracer).
@@ -122,6 +121,6 @@ namespace ChimeraTK {
     detail::CircularDependencyDetectionRecursionStopper _recursionStopper;
   };
 
-} /* namespace ChimeraTK */
+  /*********************************************************************************************************************/
 
-#endif /* CHIMERATK_APPLICATION_MODULE_H */
+} /* namespace ChimeraTK */

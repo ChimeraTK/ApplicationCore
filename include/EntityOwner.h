@@ -1,32 +1,32 @@
-/*
- * EntityOwner.h
- *
- *  Created on: Nov 15, 2016
- *      Author: Martin Hierholzer
- */
+// SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
 
-#ifndef CHIMERATK_ENTITY_OWNER_H
-#define CHIMERATK_ENTITY_OWNER_H
+#include "Flags.h"
+#include "VariableNetworkNode.h"
 
 #include <list>
 #include <string>
 
-#include "VariableNetworkNode.h"
-#include "Flags.h"
-
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
 
   class AccessorBase;
   class Module;
   class VirtualModule;
 
-  /** 
+  /********************************************************************************************************************/
+
+  /**
    *  Convenience type definition which can optionally be used as a shortcut for the type which defines a list of
    *  tags.
    */
   using TAGS = const std::unordered_set<std::string>;
 
-  /** 
+  /********************************************************************************************************************/
+
+  /**
    *  Base class for owners of other EntityOwners (e.g. Modules) and Accessors.
    *  FIXME: Unify with Module class (not straight forward!).
    */
@@ -44,9 +44,7 @@ namespace ChimeraTK {
         const std::unordered_set<std::string>& tags = {});
 
     /** Default constructor just for late initialisation */
-    EntityOwner()
-    : _name("**INVALID**"), _description("Invalid EntityOwner created by default constructor just "
-                                         "as a place holder") {}
+    EntityOwner();
 
     /** Virtual destructor to make the type polymorphic */
     virtual ~EntityOwner();
@@ -112,10 +110,7 @@ namespace ChimeraTK {
 
     /** Called inside the constructor of Accessor: adds the accessor to the list
      */
-    void registerAccessor(VariableNetworkNode accessor) {
-      for(auto& tag : _tags) accessor.addTag(tag);
-      accessorList.push_back(accessor);
-    }
+    void registerAccessor(VariableNetworkNode accessor);
 
     /** Called inside the destructor of Accessor: removes the accessor from the
      * list */
@@ -152,7 +147,8 @@ namespace ChimeraTK {
     void setEliminateHierarchy() { _hierarchyModifier = HierarchyModifier::hideThis; }
 
     /** Returns the flag whether this level of hierarchy should be eliminated. It returns true
-        if hiding the hierarchy is required by the hierarchy modifier (HierarchyModifier::hideThis or HierarchyModifier::oneUpAndHide) */
+        if hiding the hierarchy is required by the hierarchy modifier (HierarchyModifier::hideThis or
+       HierarchyModifier::oneUpAndHide) */
     bool getEliminateHierarchy() const;
 
     /** Returns the hierarchy modifier of this entity. FIXE: One of those useless code comments.
@@ -226,7 +222,7 @@ namespace ChimeraTK {
      *  instantiating generic modules which expect a parameter by variable name, when the parameter shall be set to
      *  a constant value.
      *
-     *  This function is a static member of the EntityOwner, since it is normally called in constructors of 
+     *  This function is a static member of the EntityOwner, since it is normally called in constructors of
      *  EntityOwners.
      */
     template<typename T>
@@ -277,6 +273,6 @@ namespace ChimeraTK {
     return "@CONST@" + userTypeToUserType<std::string>(value);
   }
 
-} /* namespace ChimeraTK */
+  /********************************************************************************************************************/
 
-#endif /* CHIMERATK_ENTITY_OWNER_H */
+} /* namespace ChimeraTK */
