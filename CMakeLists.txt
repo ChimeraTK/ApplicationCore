@@ -80,6 +80,9 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
 # add a target to generate API documentation with Doxygen
 include(cmake/enable_doxygen_documentation.cmake)
 
+# enable coding style test
+include(cmake/enable_code_style_check.cmake)
+
 # Install the library and the executables
 install( TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin LIBRARY DESTINATION lib )
 
