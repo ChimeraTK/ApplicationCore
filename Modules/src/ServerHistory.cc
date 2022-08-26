@@ -32,8 +32,8 @@ namespace ChimeraTK { namespace history {
   };
 
   ServerHistory::ServerHistory(EntityOwner* owner, const std::string& name, const std::string& description,
-      const std::string& historyDirectory, size_t historyLength, bool enableTimeStamps,
-      HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
+      size_t historyLength, bool enableTimeStamps, HierarchyModifier hierarchyModifier,
+      const std::unordered_set<std::string>& tags)
   : ApplicationModule(owner, name, description, hierarchyModifier, tags), _historyLength(historyLength),
     _enbaleTimeStamps(enableTimeStamps) {
     auto virtualLogging = getOwner()->findTag("history");
@@ -47,7 +47,6 @@ namespace ChimeraTK { namespace history {
         // name , e.g. /test/MyModule
         auto namePrefix =
             it->getOwningModule()->getQualifiedName().substr(virtualLogging.getQualifiedName().length() + 1);
-        namePrefix.insert(0, historyDirectory);
         prepareHierarchy(namePrefix);
         boost::fusion::for_each(_accessorListMap.table, AccessorAttacher(*it, this, namePrefix / it->getName(), {}));
         accessors++;
@@ -61,7 +60,7 @@ namespace ChimeraTK { namespace history {
       throw logic_error("No accessors for ServerHistory found. Did you use the tag 'history' for any variable?");
     }
     else {
-      std::cout << "Added " << accessors << " to the ServerHistory Module." << std::endl;
+      std::cout << "Added " << accessors << " accessors to the ServerHistory Module." << std::endl;
     }
   }
 
@@ -113,6 +112,11 @@ namespace ChimeraTK { namespace history {
       addSource(mod, namePrefix, trigger);
     else
       addSource(mod.submodule(submodule), namePrefix, trigger);
+  }
+
+  void ServerHistory::addSource(ConnectingDeviceModule* source, const RegisterPath& namePrefix,
+      const std::string& submodule, const VariableNetworkNode& trigger) {
+    addSource(source->getDeviceModule(), namePrefix, submodule, trigger);
   }
 
   template<typename UserType>

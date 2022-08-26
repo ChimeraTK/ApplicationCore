@@ -71,7 +71,7 @@
  *  // The variable of the TestModule will show up in the control system as history/test/measurement automatically
  * (identified by the tag).
  *  // Add a device. Updating of the history buffer is trigger external by the given trigger
- *  history.addSource(dev,"device_history",trigger.tick);
+ *  history.addSource(&dev,"device_history",trigger.tick);
  *  ChimeraTK::Application::initialise();
  *  ...
  *  }
@@ -118,9 +118,6 @@ namespace ChimeraTK { namespace history {
      * \param owner Module owner passed to ApplicationModule constructor.
      * \param name Module name passed to ApplicationModule constructor.
      * \param description Module description passed to ApplicationModule constructor.
-     * \param historyDirectory All history PVs will appear in the control system under the name given here. The PVs and
-     * the hierarchies of the original PVs are copied in this directory. E.g. a PV /test/myvar will appear
-     * under /history/test/myvar using the default of historyDirectory='history'.
      * \param historyLength Length of the history buffers.
      * \param enableTimeStamps An additional
      * ring buffer per variable will be added that holds the time stamps corresponding to the data ring buffer entries.
@@ -128,7 +125,7 @@ namespace ChimeraTK { namespace history {
      * \param tags Module tags passed to ApplicationModule constructor.
      */
     ServerHistory(EntityOwner* owner, const std::string& name, const std::string& description,
-        const std::string& historyDirectory = "history", size_t historyLength = 1200, bool enableTimeStamps = false,
+        size_t historyLength = 1200, bool enableTimeStamps = false,
         HierarchyModifier hierarchyModifier = HierarchyModifier::none,
         const std::unordered_set<std::string>& tags = {});
 
@@ -137,25 +134,25 @@ namespace ChimeraTK { namespace history {
     ServerHistory() : _historyLength(1200), _enbaleTimeStamps(false) {}
 
     /**
-     * Add a Module as a source to this History module.
+     * Ad variables of a device to the ServerHistory. Calls virtualiseFromCatalog to get access to the internal variables.
      *
-     * \param source For all variables of this module ring buffers are created. Use \c findTag in combination
-     *                   with a dedicated history tag. In case device modules use the LogicalNameMapping to create
-     *                   a virtual device module that holds all variables that should be passed to the history module.
+     * \param source For all variables of this module ring buffers are created.
+     *               Use the LogicalNameMapping to create a virtual device module that holds all variables that should be
+     *               passed to the history module.
      * \param namePrefix This prefix is added to variable names added to the root directory in the process variable
-     *                       tree. E.g. a prefix \c history for a variable names data will appear as history/dummy/data
-     *                       if dummy is the name of the source module.
+     *                   tree. E.g. a prefix \c history for a variable names data will appear as history/dummy/data
+     *                   if dummy is the name of the source module.
+     * \param submodule If only a submodule should be added give the name.
+     *                  It does not work do create a submodule of the DeviceModule itself!
      * \param trigger This trigger is used for all poll type variable found in the source module.
-     *
-     */
-    void addSource(const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode& trigger = {});
-
-    /**
-     * Overload that calls virtualiseFromCatalog. Parameter see addSource(const Module&...)
-     * \param submodule If only a submodule should be added give the name. It does not work do create a submodule of the
-     * DeviceModule itself!
      */
     void addSource(const DeviceModule& source, const RegisterPath& namePrefix, const std::string& submodule = "",
+        const VariableNetworkNode& trigger = {});
+
+    /**
+     * Just gets the device module from the ConnectingDeviceModule before calling the DeviceModule version of addSource.
+     */
+    void addSource(ConnectingDeviceModule* source, const RegisterPath& namePrefix, const std::string& submodule = "",
         const VariableNetworkNode& trigger = {});
 
     void prepare() override;
@@ -166,6 +163,11 @@ namespace ChimeraTK { namespace history {
 
    private:
     void prepareHierarchy(const RegisterPath& namePrefix);
+
+    /**
+     * See public method for documentation.
+     */
+    void addSource(const Module& source, const RegisterPath& namePrefix, const VariableNetworkNode& trigger = {});
 
     template<typename UserType>
     VariableNetworkNode getAccessor(const std::string& variableName, const size_t& nElements);

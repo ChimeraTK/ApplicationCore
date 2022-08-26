@@ -106,7 +106,7 @@ struct testAppDev : public ChimeraTK::Application {
   ChimeraTK::history::ServerHistory hist{this, "history", "History of selected process variables.", 20, false};
 
   void initialise() override {
-    hist.addSource(dev.getDeviceModule(), "", "", dummy.out);
+    hist.addSource(&dev, "", "", dummy.out);
     Application::initialise();
     dumpConnections();
   }
