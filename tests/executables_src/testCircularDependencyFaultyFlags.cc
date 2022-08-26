@@ -402,8 +402,7 @@ BOOST_FIXTURE_TEST_CASE(OutputManuallyFaulty, CircularAppTestFixcture<TestApplic
 
 /** \anchor dataValidity_test_TwoFaultyInTwoModules
  * Tests Technical specification: data validity propagation
- *  * \ref dataValidity_4_2_3 "4.2.3"  Modules do no go to OK if all its external inputs are OK
- *                                     if other modules in the circular  network have external inputs which are faulty.
+ *  * \ref dataValidity_4_1_5 "4.1.5"  Breaking the circular dependency only when all variables go to ok.
  */
 BOOST_FIXTURE_TEST_CASE(TwoFaultyInTwoModules, CircularAppTestFixcture<TestApplication1>) {
   a.setDataValidity(ctk::DataValidity::faulty);
@@ -503,7 +502,7 @@ struct BB : TestModuleBase2 {
     ctk::ScalarOutput<int> fromBB{this, "fromBB", "", ""};
   } outputGroup{this, "CC", "", ctk::HierarchyModifier::oneLevelUp};
 
-  struct /*OutputGroup*/ : public ctk::VariableGroup {
+  struct OutputGroup2 : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromBB{this, "fromBB", "", ""};
   } outputGroup2{this, "EE", "", ctk::HierarchyModifier::oneLevelUp};
@@ -530,7 +529,7 @@ struct CC : TestModuleBase2 {
     ctk::ScalarOutput<int> fromCC{this, "fromCC", "", ""};
   } outputGroup{this, "DD", "", ctk::HierarchyModifier::oneLevelUp};
 
-  struct /*OutputGroup*/ : public ctk::VariableGroup {
+  struct OutputGroup2 : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromCC{this, "fromCC", "", ""};
   } outputGroup2{this, "FF", "", ctk::HierarchyModifier::oneLevelUp};

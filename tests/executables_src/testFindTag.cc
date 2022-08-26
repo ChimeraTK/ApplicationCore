@@ -41,7 +41,7 @@ struct FirstHierarchy : ctk::ModuleGroup {
         struct : ctk::VariableGroup {
           using ctk::VariableGroup::VariableGroup;
           ctk::ScalarOutput<int> varC{this, "childOfNieceGroup", "MV/m", "Desc"};
-        } moveMeAlong{this, "NieceGroup", ""};
+        } moveMeAlong{(this), "NieceGroup", ""}; // extra parentheses are for doxygen...
       } movedUp{this, "SisterGroupOfVarGroup", "minus one test 1", ctk::HierarchyModifier::oneLevelUp, {"Partial"}};
       struct : ctk::VariableGroup {
         using ctk::VariableGroup::VariableGroup;
@@ -49,7 +49,7 @@ struct FirstHierarchy : ctk::ModuleGroup {
         struct : ctk::VariableGroup {
           using ctk::VariableGroup::VariableGroup;
           ctk::ScalarOutput<int> varC{this, "anotherNieceVar", "MV/m", "Desc"};
-        } moveMeAlong{this, "AnotherSisterGroup", ""};
+        } moveMeAlong{(this), "AnotherSisterGroup", ""}; // extra parentheses are for doxygen...
       } movedUpAndHidden{this, "YouLNeverSee", "minus one test 2", ctk::HierarchyModifier::oneUpAndHide, {"Partial"}};
     } varGroup{this, "VarGroup", "A group", ctk::HierarchyModifier::none, {"Exclude", "Partial"}};
 
