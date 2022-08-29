@@ -31,8 +31,8 @@ namespace ChimeraTK {
     VariableNetworkModuleGraphDumpingVisitor(std::ostream& stream);
     virtual ~VariableNetworkModuleGraphDumpingVisitor() {}
     void dispatch(const Application& t) override;
-    void dispatch(const Module& t);
-    void dispatch(const VariableNetwork& t);
+    void dispatch(const Module& t) override;
+    void dispatch(const VariableNetwork& t) override;
 
    private:
     // edge map contains all edges. key is the edge in graphviz notation ("NodeA->NodeB"), value is the label and

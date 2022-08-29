@@ -24,7 +24,11 @@ namespace ChimeraTK {
   class DeviceModule;
   namespace history {
     struct ServerHistory;
-  }
+  } // namespace history
+
+  namespace detail {
+    struct CircularDependencyDetector;
+  } // namespace detail
 
   /*********************************************************************************************************************/
 
@@ -62,7 +66,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  /** Implementes access to a ChimeraTK::Device.
+  /** Implements access to a ChimeraTK::Device.
    */
   class DeviceModule : public Module {
    public:
@@ -127,7 +131,7 @@ namespace ChimeraTK {
 
     VersionNumber currentVersionNumber{nullptr};
 
-    /** This function connects DeviceError VariableGroup to ContolSystem*/
+    /** This function connects DeviceError VariableGroup to ControlSystem*/
     void defineConnections() override;
 
     mutable Device device;
@@ -143,7 +147,7 @@ namespace ChimeraTK {
      *  Initialisation handlers are called after the device has been opened, or after the device is recovering
      *  from an error (i.e. an accessor has thrown an exception and Device::isFunctional() returns true afterwards).
      *
-     *  You can add mupltiple handlers. They are executed in the sequence in which they are registered. If a handler
+     *  You can add multiple handlers. They are executed in the sequence in which they are registered. If a handler
      *  has been registered in the constructor, it is called first.
      *
      *  The handler function is called from the DeviceModule thread (not from the thread with the accessor that threw
@@ -178,7 +182,7 @@ namespace ChimeraTK {
     void addRecoveryAccessor(boost::shared_ptr<RecoveryHelper> recoveryAccessor);
 
     /** Each call to this function gives a unique number. It is atomically increased with each call.
-     *  The smalled valid write order is 1.
+     *  The smallest valid write order is 1.
      */
     uint64_t writeOrder();
 
@@ -288,7 +292,9 @@ namespace ChimeraTK {
 
     friend class ConnectingDeviceModule;
 
-    friend class StatusAggregator;
+    friend struct StatusAggregator;
+
+    friend struct detail::CircularDependencyDetector;
   };
 
   /*********************************************************************************************************************/

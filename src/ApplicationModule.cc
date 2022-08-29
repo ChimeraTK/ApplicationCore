@@ -4,6 +4,7 @@
 #include "ApplicationModule.h"
 
 #include "Application.h"
+#include "CircularDependencyDetector.h"
 #include "ModuleGroup.h"
 
 #include <iterator>
@@ -112,7 +113,7 @@ namespace ChimeraTK {
         Application::getInstance().circularDependencyDetector.unregisterDependencyWait(variable);
         if(!Application::testableModeTestLock()) {
           // The lock may have already been acquired if the above read() goes to a ConsumingFanOut, which sends out
-          // the data to a slave decorated by a TestableModeAccessorDecorator. Hence we heer must acquire the lock only
+          // the data to a slave decorated by a TestableModeAccessorDecorator. Hence we here must acquire the lock only
           // if we do not have it.
           Application::testableModeLock("Initial value read for poll-type " + variable.getName());
         }

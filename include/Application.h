@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "CircularDependencyDetector.h"
 #include "EntityOwner.h"
 #include "Flags.h"
 #include "InternalModule.h"
@@ -31,6 +32,10 @@ namespace ChimeraTK {
   class FanOut;
   template<typename UserType>
   class ConsumingFanOut;
+
+  namespace detail {
+    struct TestableMode;
+  } // namespace detail
 
   /*********************************************************************************************************************/
 
@@ -72,7 +77,7 @@ namespace ChimeraTK {
     void dumpConnections(std::ostream& stream = std::cout);
 
     /** Create Graphviz dot graph and write to file. The graph will contain the
-     * connections made in the initilise() function. @see dumpConnections */
+     * connections made in the initialise() function. @see dumpConnections */
     void dumpConnectionGraph(const std::string& filename = {"connections-graph.dot"});
 
     /** Create Graphviz dot graph representing the connections between the modules, and write to file.*/
@@ -95,7 +100,7 @@ namespace ChimeraTK {
      *  This function must be called before the application is initialised (i.e.
      * before the call to initialise()).
      *
-     *  Note: Enabling the testable mode will have a singificant impact on the
+     *  Note: Enabling the testable mode will have a significant impact on the
      * performance, since it will prevent any module threads to run at the same
      * time! */
     void enableTestableMode();
@@ -104,7 +109,7 @@ namespace ChimeraTK {
      * Returns true if application is in testable mode else returns
      * false.
      **/
-    bool isTestableModeEnabled() { return testableMode; }
+    bool isTestableModeEnabled() const { return testableMode; }
 
     /**
      * Check whether data has been sent to the application so stepApplication() can be called.
@@ -114,7 +119,7 @@ namespace ChimeraTK {
     /** Resume the application until all application threads are stuck in a blocking read operation. Works only when
      *  the testable mode was enabled.
      *  The optional argument controls whether to wait as well for devices to be completely (re-)initialised. Disabling
-     *  this behavior allows to test proper response to runtime exceptions. */
+     *  this behaviour allows to test proper response to runtime exceptions. */
     void stepApplication(bool waitForDeviceInitialisation = true);
 
     /** Enable some additional (potentially noisy) debug output for the testable
@@ -163,7 +168,7 @@ namespace ChimeraTK {
      * debugging and to allow profiling. */
     static void registerThread(const std::string& name);
 
-    void debugMakeConnections() { enableDebugMakeConnections = true; };
+    void debugMakeConnections() { enableDebugMakeConnections = true; }
 
     ModuleType getModuleType() const override { return ModuleType::ModuleGroup; }
 
@@ -185,12 +190,12 @@ namespace ChimeraTK {
     /** Enable debug output for a given variable. */
     void enableVariableDebugging(const VariableNetworkNode& node) { debugMode_variableList.insert(node.getUniqueId()); }
 
-    /** Enable debug output for lost data. This will print to stdout everytime data is lost in internal queues as it
+    /** Enable debug output for lost data. This will print to stdout every time data is lost in internal queues as it
      *  is counted with the DataLossCounter module. Do not enable in production environments. Do not call after
      *  initialisation phase of application. */
     void enableDebugDataLoss() { debugDataLoss = true; }
 
-    /** Incremenet counter for how many write() operations have overwritten unread data */
+    /** Increment counter for how many write() operations have overwritten unread data */
     static void incrementDataLossCounter(const std::string& name);
 
     static size_t getAndResetDataLossCounter();
@@ -207,44 +212,6 @@ namespace ChimeraTK {
 
     VersionNumber getStartVersion() const { return _startVersion; }
 
-    /** Detection mechanism for cirular dependencies of initial values in ApplicationModules */
-    struct CircularDependencyDetector {
-      /// Call before an ApplicationModule waits for an initial value on the given node. Calls with
-      /// non-Application-typed nodes are ignored.
-      void registerDependencyWait(VariableNetworkNode& node);
-
-      /// Call after an ApplicationModule has received an initial value on the given node. Calls with
-      /// non-Application-typed nodes are ignored.
-      void unregisterDependencyWait(VariableNetworkNode& node);
-
-      /// Print modules which are currently waiting for initial values.
-      void printWaiters();
-
-      /// Stop the thread before ApplicationBase::terminate() is called.
-      void terminate();
-
-      ~CircularDependencyDetector();
-
-     protected:
-      /// Start detection thread
-      void startDetectBlockedModules();
-
-      /// Function executed in thread
-      void detectBlockedModules();
-
-      std::mutex _mutex;
-      std::map<Module*, Module*> _waitMap;
-      std::map<Module*, std::string> _awaitedVariables;
-      std::map<EntityOwner*, VariableNetworkNode> _awaitedNodes;
-      std::unordered_set<Module*> _modulesWeHaveWarnedAbout;
-      std::unordered_set<std::string> _devicesWeHaveWarnedAbout;
-      std::unordered_set<NodeType> _otherThingsWeHaveWarnedAbout;
-      boost::thread _thread;
-
-      friend class Application;
-
-    } circularDependencyDetector;
-
    protected:
     friend class Module;
     friend class VariableNetwork;
@@ -253,7 +220,8 @@ namespace ChimeraTK {
     friend class VariableNetworkModuleGraphDumpingVisitor;
     friend class XMLGeneratorVisitor;
     friend class ConnectingDeviceModule;
-    friend class StatusAggregator;
+    friend struct StatusAggregator;
+    friend struct detail::TestableMode;
 
     template<typename UserType>
     friend class Accessor;
@@ -296,7 +264,7 @@ namespace ChimeraTK {
     /** Make the connections for a single network */
     void makeConnectionsForNetwork(VariableNetwork& network);
 
-    /** Scan for circular dependencies and mark all affcted consuming nodes.
+    /** Scan for circular dependencies and mark all affected consuming nodes.
      *  This can only be done after all connections have been established. */
     void markCircularConsumers(VariableNetwork& variableNetwork);
 
@@ -432,6 +400,7 @@ namespace ChimeraTK {
       return ++nextId;
     }
 
+    detail::CircularDependencyDetector circularDependencyDetector;
     /** Last thread which successfully obtained the lock for the testable mode.
      * This is used to prevent spamming repeating messages if the same thread
      * acquires and releases the lock in a loop without another thread
@@ -451,7 +420,7 @@ namespace ChimeraTK {
      * unique ID of the variable. */
     std::map<size_t, size_t> testableMode_perVarCounter;
 
-    /** Map of unique IDs to namess, used along with testableMode_perVarCounter to
+    /** Map of unique IDs to names, used along with testableMode_perVarCounter to
      * print sensible information. */
     std::map<size_t, std::string> testableMode_names;
 
@@ -486,7 +455,7 @@ namespace ChimeraTK {
      */
     std::map<size_t, std::atomic<uint64_t>> circularNetworkInvalidityCounters;
 
-    /** The networks of circlular dependencies, reachable by their hash, which serves as unique ID
+    /** The networks of circular dependencies, reachable by their hash, which serves as unique ID
      */
     std::map<size_t, std::list<EntityOwner*>> circularDependencyNetworks;
 
@@ -510,6 +479,7 @@ namespace ChimeraTK {
     template<typename UserType>
     friend class MetaDataPropagatingRegisterDecorator; // needs to access circularNetworkInvalidityCounters
     friend class ApplicationModule;                    // needs to access circularNetworkInvalidityCounters
+    friend struct detail::CircularDependencyDetector;
 
     VersionNumber getCurrentVersionNumber() const override {
       throw ChimeraTK::logic_error("getCurrentVersionNumber() called on the application. This is probably "
