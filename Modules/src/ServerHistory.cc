@@ -59,10 +59,12 @@ namespace ChimeraTK { namespace history {
       }
     }
     if(accessors == 0) {
-      throw logic_error("No accessors for ServerHistory found. Did you use the tag 'history' for any variable?");
+      std::cout << "Warning: No accessors for ServerHistory automatically found. Did you use the tag 'history' for "
+                   "any variable? If you connect a Device that is ok!"
+                << std::endl;
     }
     else {
-      std::cout << "Added " << accessors << " accessors to the ServerHistory Module." << std::endl;
+      std::cout << "Added " << accessors << " accessors to the ServerHistory Module automatically." << std::endl;
     }
   }
 
