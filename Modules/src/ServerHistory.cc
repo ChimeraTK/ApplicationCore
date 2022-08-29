@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "ServerHistory.h"
 
-#include "boost/date_time/posix_time/posix_time.hpp"
+#include <chrono>
 
 namespace ChimeraTK { namespace history {
 
@@ -187,7 +187,8 @@ namespace ChimeraTK { namespace history {
               std::rotate(accessor->second.timeStamp.at(i).begin(), accessor->second.timeStamp.at(i).begin() + 1,
                   accessor->second.timeStamp.at(i).end());
               *(accessor->second.timeStamp.at(i).end() - 1) =
-                  boost::posix_time::to_time_t(boost::posix_time::second_clock::local_time());
+                  std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
+                      .count();
               accessor->second.timeStamp.at(i).write();
             }
           }
