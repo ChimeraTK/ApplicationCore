@@ -2,23 +2,18 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "Application.h"
 
-#include "ApplicationModule.h"
-#include "ArrayAccessor.h"
-#include "ConstantAccessor.h"
+#include "CircularDependencyDetector.h"
 #include "ConsumingFanOut.h"
 #include "DebugPrintAccessorDecorator.h"
 #include "DeviceModule.h"
 #include "ExceptionHandlingDecorator.h"
 #include "FeedingFanOut.h"
-#include "ScalarAccessor.h"
 #include "TestableModeAccessorDecorator.h"
 #include "ThreadedFanOut.h"
 #include "TriggerFanOut.h"
 #include "VariableNetworkGraphDumpingVisitor.h"
 #include "VariableNetworkModuleGraphDumpingVisitor.h"
 #include "VariableNetworkNode.h"
-#include "Visitor.h"
-#include "VoidAccessor.h"
 #include "XMLGeneratorVisitor.h"
 
 #include <ChimeraTK/BackendFactory.h>
@@ -113,7 +108,7 @@ void Application::initialise() {
     module->defineConnections();
   }
 
-  // call defineConnections() for alldevice modules
+  // call defineConnections() for all device modules
   for(auto& devModule : deviceModuleMap) {
     devModule.second->defineConnections();
   }
@@ -147,7 +142,7 @@ void Application::optimiseUnmappedVariables(const std::set<std::string>& names) 
         callForType(network.getValueType(), [&](auto t) {
           using UserType = decltype(t);
 
-          // replace comsuming node with constant in the model
+          // replace consuming node with constant in the model
           network.removeNode(network.getConsumingNodes().front());
           auto constNode = VariableNetworkNode::makeConstant<UserType>(
               false, UserType(), network.getFeedingNode().getNumberOfElements());
@@ -298,7 +293,7 @@ void Application::run() {
     module->run();
   }
 
-  // When in testable mode, wait for all modules to report that they have reched the testable mode.
+  // When in testable mode, wait for all modules to report that they have reached the testable mode.
   // We have to start all module threads first because some modules might only send the initial
   // values in their main loop, and following modules need them to enter testable mode.
 
@@ -383,7 +378,7 @@ void Application::generateXML() {
   processUnconnectedNodes();
 
   // finalise connections: decide still-undecided details, in particular for
-  // control-system and device varibales, which get created "on the fly".
+  // control-system and device variables, which get created "on the fly".
   finaliseNetworks();
 
   XMLGeneratorVisitor visitor;
@@ -563,7 +558,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
     if(node.getDirection().dir == VariableDirection::feeding) {
       // The transfer mode of this process variable is considered to be polling,
       // if only one consumer exists and this consumer is polling. Reason:
-      // mulitple consumers will result in the use of a FanOut, so the
+      // multiple consumers will result in the use of a FanOut, so the
       // communication up to the FanOut will be push-type, even if all consumers
       // are poll-type.
       /// @todo Check if this is true!
@@ -684,7 +679,7 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
 
 void Application::makeConnections() {
   // finalise connections: decide still-undecided details, in particular for
-  // control-system and device varibales, which get created "on the fly".
+  // control-system and device variables, which get created "on the fly".
   finaliseNetworks();
 
   // apply optimisations
@@ -817,11 +812,11 @@ void Application::optimiseConnections() {
       // this optimisation is only necessary for device-type nodes, since
       // application and control-system nodes will automatically create merged
       // networks when having the same feeder
-      /// @todo check if this assumtion is true! control-system nodes can be
+      /// @todo check if this assumption is true! control-system nodes can be
       /// created with different types, too!
       if(feeder1.getType() != NodeType::Device || feeder2.getType() != NodeType::Device) continue;
 
-      // check if referrring to same register
+      // check if referring to same register
       if(feeder1.getDeviceAlias() != feeder2.getDeviceAlias()) continue;
       if(feeder1.getRegisterName() != feeder2.getRegisterName()) continue;
 
@@ -875,7 +870,7 @@ void Application::dumpConnections(std::ostream& stream) {                       
   for(auto& network : networkList) {                                                               // LCOV_EXCL_LINE
     network.dump("", stream);                                                                      // LCOV_EXCL_LINE
   }                                                                                                // LCOV_EXCL_LINE
-  stream << "==== List of all circlular connections in the current Application ====" << std::endl; // LCOV_EXCL_LINE
+  stream << "==== List of all circular connections in the current Application ====" << std::endl;  // LCOV_EXCL_LINE
   for(auto& circularDependency : circularDependencyNetworks) {
     stream << "Circular dependency network " << circularDependency.first << " : ";
     for(auto& module : circularDependency.second) {
@@ -944,7 +939,7 @@ void Application::makeConnectionsForNetwork(VariableNetwork& network) {
 void Application::markCircularConsumers(VariableNetwork& variableNetwork) {
   for(auto& node : variableNetwork.getConsumingNodes()) {
     // A variable network is a tree-like network of VariableNetworkNodes (one feeder and one or more multiple consumers)
-    // A circlular network is a list of modules (EntityOwners) which have a circular dependency
+    // A circular network is a list of modules (EntityOwners) which have a circular dependency
     auto circularNetwork = node.scanForCircularDepencency();
     if(circularNetwork.size() > 0) {
       auto circularNetworkHash = boost::hash_range(circularNetwork.begin(), circularNetwork.end());
@@ -972,7 +967,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
     bool useFeederTrigger = network.getTriggerType() == VariableNetwork::TriggerType::feeder;
     bool constantFeeder = feeder.getType() == NodeType::Constant;
 
-    // 1st case: the feeder requires a fixed implementation
+    // first case: the feeder requires a fixed implementation
     if(feeder.hasImplementation() && !constantFeeder) {
       if(enableDebugMakeConnections) {
         std::cout << "  Creating fixed implementation for feeder '" << feeder.getName() << "'..." << std::endl;
@@ -1042,7 +1037,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         boost::shared_ptr<FanOut<UserType>> fanOut;
         boost::shared_ptr<ConsumingFanOut<UserType>> consumingFanOut;
 
-        // Fanouts need to know the consumers on contruction, so we collect them first
+        // Fanouts need to know the consumers on construction, so we collect them first
         auto consumerImplementationPairs = setConsumerImplementations<UserType>(feeder, consumers);
 
         if(useExternalTrigger) {
@@ -1071,7 +1066,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
             std::cout << "      Using trigger provided by the feeder." << std::endl;
           }
 
-          // if the trigger is provided by the pushing feeder, use the treaded
+          // if the trigger is provided by the pushing feeder, use the threaded
           // version of the FanOut to distribute new values immediately to all
           // consumers. Depending on whether we have a return channel or not, pick
           // the right implementation of the FanOut
@@ -1110,7 +1105,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         connectionMade = true;
       }
     }
-    // 2nd case: the feeder does not require a fixed implementation
+    // second case: the feeder does not require a fixed implementation
     else if(!constantFeeder) { /* !feeder.hasImplementation() */
 
       if(enableDebugMakeConnections) {
@@ -1213,8 +1208,8 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           DeviceModule* devmod = deviceModuleMap[consumer.getDeviceAlias()];
 
           // The accessor implementation already has its data in the user buffer. We now just have to add a valid
-          // version number and have a recovery accessors (RecoveryHelper to be excact) which we can register at the
-          // DeviceModule. As this is a constant we don't need to change it later and don't have to store it somewere
+          // version number and have a recovery accessors (RecoveryHelper to be exact) which we can register at the
+          // DeviceModule. As this is a constant we don't need to change it later and don't have to store it somewhere
           // else.
           devmod->addRecoveryAccessor(boost::make_shared<RecoveryHelper>(impl, VersionNumber(), devmod->writeOrder()));
         }
@@ -1434,7 +1429,7 @@ repeatTryLock:
       }
       std::cerr << "(end of list)" << std::endl;
       // Check for modules waiting for initial values (prints nothing if there are no such modules)
-      getInstance().circularDependencyDetector.printWaiters();
+      detail::CircularDependencyDetector::getInstance().printWaiters();
       // throw a specialised exception to make sure whoever catches it really knows what he does...
       throw TestsStalled();
     }
@@ -1506,227 +1501,3 @@ void Application::registerDeviceModule(DeviceModule* deviceModule) {
 void Application::unregisterDeviceModule(DeviceModule* deviceModule) {
   deviceModuleMap.erase(deviceModule->deviceAliasOrURI);
 }
-
-/*********************************************************************************************************************/
-
-void Application::CircularDependencyDetector::registerDependencyWait(VariableNetworkNode& node) {
-  assert(node.getType() == NodeType::Application);
-  std::unique_lock<std::mutex> lock(_mutex);
-
-  auto* dependent = dynamic_cast<Module*>(node.getOwningModule())->findApplicationModule();
-
-  // register the waiting node in the map (used for the detectBlockedModules() thread). This is done also for Device
-  // variables etc.
-  _awaitedNodes[dependent] = node;
-
-  // checking of direct circular dependencies is only done for Application-type feeders
-  if(node.getOwner().getFeedingNode().getType() != NodeType::Application) return;
-  auto* dependency = dynamic_cast<Module*>(node.getOwner().getFeedingNode().getOwningModule())->findApplicationModule();
-
-  // If a module depends on itself, the detector would always detect a circular dependency, even if it is resolved
-  // by writing initial values in prepare(). Hence we do not check anything in this case.
-  if(dependent == dependency) return;
-
-  // Register dependent-dependency relation in map
-  _awaitedVariables[dependent] = node.getQualifiedName();
-  _waitMap[dependent] = dependency;
-
-  // check for circular dependencies
-  auto* depdep = dependency;
-  while(_waitMap.find(depdep) != _waitMap.end()) {
-    auto* depdep_prev = depdep;
-    depdep = _waitMap[depdep];
-    if(depdep == dependent) {
-      // The detected circular dependency might still resolve itself, because registerDependencyWait() is called even
-      // if initial values are already present in the queues.
-      for(size_t i = 0; i < 1000; ++i) {
-        // give other thread a chance to read their initial value
-        lock.unlock();
-        usleep(10000);
-        lock.lock();
-        // if the module depending on an initial value for "us" is no longer waiting for us to send an initial value,
-        // the circular dependency is resolved.
-        if(_waitMap.find(depdep_prev) == _waitMap.end() || _waitMap[depdep] != dependent) return;
-      }
-
-      std::cerr << "*** Cirular dependency of ApplicationModules found while waiting for initial values!" << std::endl;
-      std::cerr << std::endl;
-
-      std::cerr << dependent->getQualifiedName() << " waits for " << node.getQualifiedName() << " from:" << std::endl;
-      auto* depdep2 = dependency;
-      while(_waitMap.find(depdep2) != _waitMap.end()) {
-        auto waitsFor = _awaitedVariables[depdep2];
-        std::cerr << depdep2->getQualifiedName();
-        if(depdep2 == dependent) break;
-        depdep2 = _waitMap[depdep2];
-        std::cerr << " waits for " << waitsFor << " from:" << std::endl;
-      }
-      std::cerr << "." << std::endl;
-
-      std::cerr << std::endl;
-      std::cerr
-          << "Please provide an initial value in the prepare() function of one of the involved ApplicationModules!"
-          << std::endl;
-
-      throw ChimeraTK::logic_error("Cirular dependency of ApplicationModules while waiting for initial values");
-    }
-    else {
-      // Give other threads a chance to add to the wait map
-      lock.unlock();
-      usleep(10000);
-      lock.lock();
-    }
-  }
-}
-
-/*********************************************************************************************************************/
-
-void Application::CircularDependencyDetector::printWaiters() {
-  if(_waitMap.size() == 0) return;
-  std::cerr << "The following modules are still waiting for initial values:" << std::endl;
-  for(auto& waiters : getInstance().circularDependencyDetector._waitMap) {
-    std::cerr << waiters.first->getQualifiedName() << " waits for " << _awaitedVariables[waiters.first] << " from "
-              << waiters.second->getQualifiedName() << std::endl;
-  }
-  std::cerr << "(end of list)" << std::endl;
-}
-
-/*********************************************************************************************************************/
-
-void Application::CircularDependencyDetector::unregisterDependencyWait(VariableNetworkNode& node) {
-  assert(node.getType() == NodeType::Application);
-  std::lock_guard<std::mutex> lock(_mutex);
-  auto* mod = dynamic_cast<Module*>(node.getOwningModule())->findApplicationModule();
-  _waitMap.erase(mod);
-  _awaitedVariables.erase(mod);
-  _awaitedNodes.erase(mod);
-}
-
-/*********************************************************************************************************************/
-
-void Application::CircularDependencyDetector::startDetectBlockedModules() {
-  _thread = boost::thread([this] { detectBlockedModules(); });
-}
-
-/*********************************************************************************************************************/
-
-void Application::CircularDependencyDetector::detectBlockedModules() {
-  auto& app = Application::getInstance();
-  while(true) {
-    // wait some time to slow down this check
-    boost::this_thread::sleep_for(boost::chrono::seconds(60));
-
-    // check for modules which did not yet reach their mainLoop
-    bool allModulesEnteredMainLoop = true;
-    for(auto* module : app.getSubmoduleListRecursive()) {
-      // Note: We are "abusing" this flag which was introduced for the testable mode. It actually just shows whether
-      // the mainLoop() has benn called already (resp. will be called very soon). It is not depending on the
-      // testableMode. FIXME: Rename this flag!
-      if(module->hasReachedTestableMode()) {
-        continue;
-      }
-
-      // Found a module which is still waiting for initial values
-      allModulesEnteredMainLoop = false;
-
-      // require lock against concurrent accesses on the maps
-      std::lock_guard<std::mutex> lock(_mutex);
-
-      // Check if module has registered a dependency wait. If not, situation will either resolve soon or module will
-      // register a dependency wait soon. Both cases can be found in the next interation.
-      if(_awaitedNodes.find(module) == _awaitedNodes.end()) continue;
-
-      auto* appModule = dynamic_cast<ApplicationModule*>(module);
-      if(!appModule) {
-        // only ApplicationModule can have hasReachedTestableMode() == true, so it should not happen
-        std::cout << "CircularDependencyDetector found non-application module: " << module->getQualifiedName()
-                  << std::endl;
-        continue;
-      }
-
-      // Iteratively seach for reason the module blocks
-      std::function<void(const VariableNetworkNode& node)> iterativeSearch = [&](const VariableNetworkNode& node) {
-        const auto& feeder = node.getOwner().getFeedingNode();
-        if(feeder.getType() == NodeType::Application) {
-          // fed by other ApplicationModule: check if that one is waiting, too
-          auto* feedingAppModule = dynamic_cast<Module*>(feeder.getOwningModule())->findApplicationModule();
-          if(feedingAppModule->hasReachedTestableMode()) {
-            // the feeding module has started its mainLoop(), but not sent us an initial value
-            // FIXME: There is a race condition, if the situation has right now resolved and the feeding module just
-            // not yet sent the initial value. Ideally we should wait another iteration before printing warnings!
-            if(_modulesWeHaveWarnedAbout.find(feedingAppModule) == _modulesWeHaveWarnedAbout.end()) {
-              _modulesWeHaveWarnedAbout.insert(feedingAppModule);
-              std::cout << "Note: ApplicationModule " << appModule->getQualifiedName() << " is waiting for an "
-                        << "initial value, because " << feedingAppModule->getQualifiedName() << " has not yet sent one."
-                        << std::endl;
-            }
-            return;
-          }
-          if(_awaitedNodes.find(feedingAppModule) == _awaitedNodes.end()) {
-            // The other module is not right now waiting. It will either enter the mainLoop soon, or start waiting soon.
-            // Let's just wait another iteration.
-            return;
-          }
-          // The other module is right now waiting: continue iterative search
-          iterativeSearch(_awaitedNodes.at(feedingAppModule));
-        }
-        else if(feeder.getType() == NodeType::Device) {
-          // fed by device
-          const auto& deviceName = feeder.getDeviceAlias();
-          if(_devicesWeHaveWarnedAbout.find(deviceName) == _devicesWeHaveWarnedAbout.end()) {
-            _devicesWeHaveWarnedAbout.insert(deviceName);
-            std::cout << "Note: Still waiting for device " << deviceName << " to come up";
-            auto* dm = Application::getInstance().deviceModuleMap[deviceName];
-            std::unique_lock dmLock(dm->errorMutex);
-            if(dm->deviceHasError) {
-              std::cout << " (" << std::string(dm->deviceError._message) << ")";
-            }
-            std::cout << "..." << std::endl;
-          }
-        }
-        else {
-          // fed by anything else
-          if(_otherThingsWeHaveWarnedAbout.find(feeder.getType()) == _otherThingsWeHaveWarnedAbout.end()) {
-            _otherThingsWeHaveWarnedAbout.insert(feeder.getType());
-            std::cout << "At least one ApplicationModule (" << appModule->getQualifiedName() << " is waiting for an "
-                      << "initial value from NodeType " << int(feeder.getType()) << "." << std::endl;
-            std::cout << "This is probably a BUG in the ChimeraTK framework." << std::endl;
-            std::cout << "Network:" << std::endl;
-            feeder.getOwner().dump();
-          }
-        }
-      };
-      iterativeSearch(_awaitedNodes.at(appModule));
-    }
-
-    // if all modules are in the mainLoop, stop this thread
-    if(allModulesEnteredMainLoop) break;
-  }
-
-  std::cout << "All application modules are running." << std::endl;
-
-  // free some memory
-  _waitMap.clear();
-  _awaitedVariables.clear();
-  _awaitedNodes.clear();
-  _modulesWeHaveWarnedAbout.clear();
-  _devicesWeHaveWarnedAbout.clear();
-  _otherThingsWeHaveWarnedAbout.clear();
-}
-
-/*********************************************************************************************************************/
-
-void Application::CircularDependencyDetector::terminate() {
-  if(_thread.joinable()) {
-    _thread.interrupt();
-    _thread.join();
-  }
-}
-
-/*********************************************************************************************************************/
-
-Application::CircularDependencyDetector::~CircularDependencyDetector() {
-  assert(!_thread.joinable());
-}
-
-/*********************************************************************************************************************/
