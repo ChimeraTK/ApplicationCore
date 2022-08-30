@@ -267,8 +267,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void DeviceModule::reportException(std::string errMsg) {
-    if(owner->isTestableModeEnabled()) {
-      assert(owner->testableModeTestLock());
+    if(owner->getTestableMode().enabled) {
+      assert(owner->getTestableMode().testLock());
     }
 
     // The error queue must only be modified when holding both mutexes (error mutex and testable mode mutex), because
@@ -280,7 +280,7 @@ namespace ChimeraTK {
 
     if(!deviceHasError) { // only report new errors if the device does not have reported errors already
       if(errorQueue.push(errMsg)) {
-        if(owner->isTestableModeEnabled()) ++owner->testableMode_counter;
+        if(owner->getTestableMode().enabled) ++owner->getTestableMode().counter;
       } // else do nothing. There are plenty of errors reported already: The queue is full.
       // set the error flag and notify the other threads
       deviceHasError = true;
@@ -304,10 +304,10 @@ namespace ChimeraTK {
   void DeviceModule::handleException() {
     Application::registerThread("DM_" + getName());
     std::string error;
-    owner->testableModeLock("Startup");
+    owner->getTestableMode().lock("Startup");
 
     // We have the testable mode lock. The device has not been initialised yet, but from now on the
-    // testableMode_deviceInitialisationCounter will take care or it
+    // testableMode.deviceInitialisationCounter will take care or it
     testableModeReached = true;
 
     // flag whether the devices was opened+initialised for the first time
@@ -316,10 +316,10 @@ namespace ChimeraTK {
     while(true) {
       // [Spec: 2.3.1] (Re)-open the device.
       do {
-        owner->testableModeUnlock("Wait before open/recover device");
+        owner->getTestableMode().unlock("Wait before open/recover device");
         usleep(500000);
         boost::this_thread::interruption_point();
-        owner->testableModeLock("Attempt open/recover device");
+        owner->getTestableMode().lock("Attempt open/recover device");
         try {
           device.open();
         }
@@ -339,9 +339,9 @@ namespace ChimeraTK {
 
       // [Spec: 2.3.3] Empty exception reporting queue.
       while(errorQueue.pop()) {
-        if(owner->isTestableModeEnabled()) {
-          assert(owner->testableMode_counter > 0);
-          --owner->testableMode_counter;
+        if(owner->getTestableMode().enabled) {
+          assert(owner->getTestableMode().counter > 0);
+          --owner->getTestableMode().counter;
         }
       }
       errorLock.unlock(); // we don't need to hold the lock for now, but we will need it later
@@ -429,11 +429,11 @@ namespace ChimeraTK {
 
       // decrement special testable mode counter, was incremented manually above to make sure initialisation completes
       // within one "application step"
-      if(Application::getInstance().testableMode) --owner->testableMode_deviceInitialisationCounter;
+      if(Application::getInstance().getTestableMode().enabled) --owner->getTestableMode().deviceInitialisationCounter;
 
       // [Spec: 2.3.8] Wait for an exception being reported by the ExceptionHandlingDecorators
       // release the testable mode mutex for waiting for the exception.
-      owner->testableModeUnlock("Wait for exception");
+      owner->getTestableMode().unlock("Wait for exception");
 
       // Do not modify the queue without holding the testable mode lock, because we also consistently have to modify
       // the counter protected by that mutex.
@@ -442,11 +442,11 @@ namespace ChimeraTK {
       errorQueue.wait();
       boost::this_thread::interruption_point();
 
-      owner->testableModeLock("Process exception");
+      owner->getTestableMode().lock("Process exception");
       // increment special testable mode counter to make sure the initialisation completes within one
       // "application step"
-      if(Application::getInstance().testableMode) {
-        ++owner->testableMode_deviceInitialisationCounter; // matched above with a decrement
+      if(Application::getInstance().getTestableMode().enabled) {
+        ++owner->getTestableMode().deviceInitialisationCounter; // matched above with a decrement
       }
 
       errorLock.lock(); // we need both locks to modify the queue
@@ -454,9 +454,9 @@ namespace ChimeraTK {
       auto popResult = errorQueue.pop(error);
       assert(popResult); // this if should always be true, otherwise the waiting did not work.
       (void)popResult;   // avoid warning in production build. g++5.4 does not support [[maybe_unused]] yet.
-      if(owner->isTestableModeEnabled()) {
-        assert(owner->testableMode_counter > 0);
-        --owner->testableMode_counter;
+      if(owner->getTestableMode().enabled) {
+        assert(owner->getTestableMode().counter > 0);
+        --owner->getTestableMode().counter;
       }
 
       // [ExceptionHandling Spec: C.3.3.14] report exception to the control system
@@ -492,8 +492,8 @@ namespace ChimeraTK {
     // Increment special testable mode counter to make sure the initialisation completes within one
     // "application step". Start with counter increased (device not initialised yet, wait).
     // We can to this here without testable mode lock because the application is still single threaded.
-    if(Application::getInstance().testableMode) {
-      ++owner->testableMode_deviceInitialisationCounter; // released and increased in handeException loop
+    if(Application::getInstance().getTestableMode().enabled) {
+      ++owner->getTestableMode().deviceInitialisationCounter; // released and increased in handeException loop
     }
   }
 

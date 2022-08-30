@@ -47,7 +47,7 @@ struct TestApp : public ctk::Application {
 
 BOOST_AUTO_TEST_CASE(testSumLimiter) {
   TestApp theTestApp;
-  ChimeraTK::TestFacility testFacility;
+  ChimeraTK::TestFacility testFacility(theTestApp);
   testFacility.setScalarDefault<double>("/input", 25.);
 
   testFacility.runApplication();

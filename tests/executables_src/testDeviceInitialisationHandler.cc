@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   var3 = 0;
 
   app.dev.connectTo(app.cs);
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   test.runApplication();
   // app.dumpConnections();
   ctk::Device dummy;
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
   app.dev.addInitialisationHandler(&initialiseReg2);
   app.dev.addInitialisationHandler(&initialiseReg3);
   app.dev.connectTo(app.cs);
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   test.runApplication();
   // app.dumpConnections();
 
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   app.dev.addInitialisationHandler(&initialiseReg2);
   app.dev.addInitialisationHandler(&initialiseReg3);
   app.dev.connectTo(app.cs);
-  ctk::TestFacility test(false); // test facility without testable mode
+  ctk::TestFacility test(app, false); // test facility without testable mode
   ctk::Device dummy;
   dummy.open(deviceCDD);
 

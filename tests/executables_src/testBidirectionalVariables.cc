@@ -6,7 +6,6 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "ArrayAccessor.h"
 #include "check_timeout.h"
 #include "ControlSystemModule.h"
 #include "ScalarAccessor.h"
@@ -15,6 +14,7 @@
 #include <ChimeraTK/BackendFactory.h>
 
 #include <boost/mpl/list.hpp>
+#include <boost/thread/latch.hpp>
 
 #define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(testDirectAppToCSConnections) {
   app.b = {&app, "b", ""};
   app.b.connectTo(app.cs);
 
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
   test.runApplication();
   auto var2 = test.getScalar<double>("var2");
   auto var3 = test.getScalar<double>("var3");
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(testRealisticExample) {
   app.a.connectTo(app.cs);
   app.b.connectTo(app.cs);
   app.a.var1 >> app.cs("var1_copied"); // add a ThreadedFanOut with return channel as well...
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
   auto var1 = test.getScalar<int>("var1");
   auto var1_copied = test.getScalar<int>("var1_copied");
   auto var2 = test.getScalar<double>("var2");
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE(testStartup) {
   std::cout << "*** testStartup" << std::endl;
 
   InitTestApplication testApp;
-  ChimeraTK::TestFacility testFacility;
+  ChimeraTK::TestFacility testFacility(testApp);
 
   //  testApp.dump();
   //  testApp.dumpConnections();
@@ -401,7 +401,7 @@ BOOST_AUTO_TEST_CASE(testReadWriteAll) {
   std::cout << "*** testReadWriteAll" << std::endl;
 
   TestApplication2 app;
-  ChimeraTK::TestFacility test;
+  ChimeraTK::TestFacility test{app};
 
   test.runApplication();
 
@@ -431,7 +431,7 @@ BOOST_AUTO_TEST_CASE(testDataValidityReturn) {
   // forward channel
   {
     TestApplication2 app;
-    ChimeraTK::TestFacility test;
+    ChimeraTK::TestFacility test{app};
 
     test.runApplication();
     assert(app.lower.getDataValidity() == ctk::DataValidity::ok);
@@ -448,7 +448,7 @@ BOOST_AUTO_TEST_CASE(testDataValidityReturn) {
   // return channel
   {
     TestApplication2 app;
-    ChimeraTK::TestFacility test;
+    ChimeraTK::TestFacility test{app};
 
     test.runApplication();
     assert(app.upper.getDataValidity() == ctk::DataValidity::ok);
@@ -459,7 +459,7 @@ BOOST_AUTO_TEST_CASE(testDataValidityReturn) {
     BOOST_CHECK(app.upper.var.dataValidity() == ctk::DataValidity::faulty);
 
     //=====================================================================
-    // TODO This check would fail - intended behaviour inclear!!!
+    // TODO This check would fail - intended behaviour unclear!!!
     //
     // See redmine issue #8607
     //
@@ -475,7 +475,7 @@ BOOST_AUTO_TEST_CASE(testInitialValues) {
 
   TestApplication2 app;
   app.upper.sendInitialValue = false;
-  ChimeraTK::TestFacility test(false);
+  ChimeraTK::TestFacility test(app, false);
 
   test.runApplication();
 

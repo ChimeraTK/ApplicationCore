@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
   TestApplication app;
   app.first.connectTo(app.second);
 
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
   test.runApplication();
 
   app.second.testModule.varGroup.varA = 1;
@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(testConnectTwice) {
   app.second.testModule.varA >> app.first.testModule.varA;
   app.first.connectTo(app.second);
 
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
   test.runApplication();
 
   app.second.testModule.varGroup.varA = 1;

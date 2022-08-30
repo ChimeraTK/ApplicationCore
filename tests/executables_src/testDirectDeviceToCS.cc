@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
   TestApplicationConnectTo app;
   app.dev.connectTo(app.cs, app.trigger.tick);
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   auto devActuator = dev.getScalarRegisterAccessor<int32_t>("/MyModule/actuator");
   // The direction of 'readback' is "device to application". For this to work it had to be read only.
   // In order to write to it in the test, we use the "DUMMY_WRITEABLE" variable.
@@ -254,7 +254,7 @@ BOOST_AUTO_TEST_CASE(testConnectToSubHierarchies) {
   app.dev["Deep"]["Hierarchies"].connectTo(app.cs, app.trigger.tick);
   app.dev["Integers"].connectTo(app.cs["Ints"], app.trigger.tick);
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   auto devint32 = dev.getScalarRegisterAccessor<int32_t>("/Integers/signed32");
   auto devuint32 = dev.getScalarRegisterAccessor<uint32_t>("/Integers/unsigned32");
   auto devint16 = dev.getScalarRegisterAccessor<int16_t>("/Integers/signed16");

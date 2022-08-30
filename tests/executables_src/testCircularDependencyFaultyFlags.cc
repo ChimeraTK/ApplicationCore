@@ -10,7 +10,7 @@
 //#undef BOOST_NO_EXCEPTIONS
 
 #include "ApplicationModule.h"
-#include "ControlSystemModule.h"
+#include "DeviceModule.h"
 #include "HierarchyModifyingGroup.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
@@ -149,7 +149,7 @@ struct TestApplication1 : ctk::Application {
 template<typename APP_TYPE>
 struct CircularAppTestFixcture {
   APP_TYPE app;
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
 
   ctk::ScalarRegisterAccessor<int> a{test.getScalar<int>("A/a")};
   ctk::ScalarRegisterAccessor<int> b{test.getScalar<int>("A/b")};
@@ -200,7 +200,7 @@ struct CircularAppTestFixcture {
  */
 BOOST_AUTO_TEST_CASE(TestCircularInputDetection) {
   TestApplication1 app;
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
 
   test.runApplication();
   // app.dumpConnections();
@@ -611,7 +611,7 @@ struct TestApplication2 : ctk::Application {
  */
 BOOST_AUTO_TEST_CASE(TestCircularInputDetection2) {
   TestApplication2 app;
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
 
   test.runApplication();
   // app.dumpConnections();

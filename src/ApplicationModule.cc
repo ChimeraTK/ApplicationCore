@@ -97,7 +97,7 @@ namespace ChimeraTK {
     Application::registerThread("AM_" + getName());
 
     // Acquire testable mode lock, so from this point on we are running only one user thread concurrently
-    Application::testableModeLock("start");
+    Application::getInstance().getTestableMode().lock("start");
 
     // Read all variables once to obtain the initial values from the devices and from the control system persistency
     // layer. This is done in two steps, first for all poll-type variables and then for all push-types, because
@@ -107,28 +107,29 @@ namespace ChimeraTK {
       if(variable.getMode() == UpdateMode::poll) {
         assert(!variable.getAppAccessorNoType().getHighLevelImplElement()->getAccessModeFlags().has(
             AccessMode::wait_for_new_data));
-        Application::testableModeUnlock("Initial value read for poll-type " + variable.getName());
+        Application::getInstance().getTestableMode().unlock("Initial value read for poll-type " + variable.getName());
         Application::getInstance().circularDependencyDetector.registerDependencyWait(variable);
         variable.getAppAccessorNoType().read();
         Application::getInstance().circularDependencyDetector.unregisterDependencyWait(variable);
-        if(!Application::testableModeTestLock()) {
+        if(not Application::getInstance().getTestableMode().testLock()) {
           // The lock may have already been acquired if the above read() goes to a ConsumingFanOut, which sends out
           // the data to a slave decorated by a TestableModeAccessorDecorator. Hence we here must acquire the lock only
           // if we do not have it.
-          Application::testableModeLock("Initial value read for poll-type " + variable.getName());
+          Application::getInstance().getTestableMode().lock("Initial value read for poll-type " + variable.getName());
         }
       }
     }
     for(auto& variable : getAccessorListRecursive()) {
       if(variable.getDirection().dir != VariableDirection::consuming) continue;
       if(variable.getMode() == UpdateMode::push) {
-        Application::testableModeUnlock("Initial value read for push-type " + variable.getName());
+        Application::getInstance().getTestableMode().unlock("Initial value read for push-type " + variable.getName());
         Application::getInstance().circularDependencyDetector.registerDependencyWait(variable);
-        Application::testableModeLock("Initial value read for push-type " + variable.getName());
+        // Will internally release and lock during the read, hence surround with lock/unlock
+        Application::getInstance().getTestableMode().lock("Initial value read for push-type " + variable.getName());
         variable.getAppAccessorNoType().read();
-        Application::testableModeUnlock("Initial value read for push-type " + variable.getName());
+        Application::getInstance().getTestableMode().unlock("Initial value read for push-type " + variable.getName());
         Application::getInstance().circularDependencyDetector.unregisterDependencyWait(variable);
-        Application::testableModeLock("Initial value read for push-type " + variable.getName());
+        Application::getInstance().getTestableMode().lock("Initial value read for push-type " + variable.getName());
       }
     }
 
@@ -137,7 +138,7 @@ namespace ChimeraTK {
 
     // enter the main loop
     mainLoop();
-    Application::testableModeUnlock("terminate");
+    Application::getInstance().getTestableMode().unlock("terminate");
   }
 
   /*********************************************************************************************************************/

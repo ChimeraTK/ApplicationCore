@@ -9,8 +9,10 @@
 #include "ArrayAccessor.h"
 #include "check_timeout.h"
 #include "ControlSystemModule.h"
+#include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
+#include "VariableGroup.h"
 
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/Device.h>
@@ -85,7 +87,7 @@ struct TestApplication2 : ctk::Application {
 BOOST_AUTO_TEST_CASE(testDirectConnections) {
   std::cout << "testDirectConnections" << std::endl;
   TestApplication1 app;
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
 
   auto i1 = test.getScalar<int>("i1");
   auto i2 = test.getArray<int>("i2");
@@ -225,7 +227,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnections) {
 BOOST_AUTO_TEST_CASE(testWithFanOut) {
   std::cout << "testWithFanOut" << std::endl;
   TestApplication2 app;
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
 
   auto Ai1 = test.getScalar<int>("A/i1");
   auto Ai2 = test.getArray<int>("A/i2");
@@ -456,7 +458,7 @@ struct Fixture_testFacility {
   boost::shared_ptr<ctk::ExceptionDummy> device1DummyBackend;
   boost::shared_ptr<ctk::ExceptionDummy> device2DummyBackend;
   TestApplication3 app;
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
 };
 
 BOOST_FIXTURE_TEST_SUITE(data_validity_propagation, Fixture_testFacility)
@@ -612,7 +614,7 @@ struct Fixture_noTestableMode {
   boost::shared_ptr<ctk::ExceptionDummy> device1DummyBackend;
   boost::shared_ptr<ctk::ExceptionDummy> device2DummyBackend;
   TestApplication3 app;
-  ctk::TestFacility test{false};
+  ctk::TestFacility test{app, false};
   ChimeraTK::ScalarRegisterAccessor<int> device1Status;
   ChimeraTK::ScalarRegisterAccessor<int> device2Status;
 };
@@ -991,7 +993,7 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   ctk::Device device2(TestApplication3::ExceptionDummyCDD2);
 
   TestApplication4 app;
-  ctk::TestFacility test{false};
+  ctk::TestFacility test{app, false};
 
   auto pollRegister = device2.getScalarRegisterAccessor<int>("/m1/i2.DUMMY_WRITEABLE");
   device2.open();

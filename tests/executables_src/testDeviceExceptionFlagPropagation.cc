@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
     app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
     app.name.name.tick >> app.module.vars.tick;
 
-    ctk::TestFacility test(false);
+    ctk::TestFacility test(app, false);
 
     // Throw on device open and check if DataValidity::faulty gets propagated
     dummyBackend1->throwExceptionOpen = true;
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
   app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
   app.trigger.tick >> app.module.vars.tick;
 
-  ctk::TestFacility test(true);
+  ctk::TestFacility test(app, true);
   test.runApplication();
 
   // Advance through all read methods
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectWrite) {
   app.module.readMode = 3;
   app.trigger.tick >> app.module.vars.tick;
 
-  ctk::TestFacility test(true);
+  ctk::TestFacility test(app, true);
   test.runApplication();
 
   // Advance through all non-blocking read methods

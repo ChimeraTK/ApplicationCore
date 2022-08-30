@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(testSingleNoTags) {
   std::cout << "testSingleNoTags" << std::endl;
 
   TestApplication app;
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
 
   auto status = test.getScalar<int>("/Aggregated/status");
 
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(testPriorities) {
     TestPrioApplication app;
     app.aggregator = ctk::StatusAggregator{&app, "Aggregated/status", "aggregated status description", mode};
 
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
 
     auto status = test.getScalar<int>("/Aggregated/status");
 
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(testTwoLevels) {
   std::cout << "testTwoLevels" << std::endl;
   TestApplication2Levels app;
 
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
 
   auto status = test.getScalar<int>("/Aggregated/status");
   auto extraStatus = test.getScalar<int>("/Aggregated/extraStatus");
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(testTags) {
   std::cout << "testTags" << std::endl;
 
   TestApplicationTags app;
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
 
   auto aggregateA = test.getScalar<int>("/aggregateA");
   auto aggregateB = test.getScalar<int>("/aggregateB");
@@ -373,7 +373,7 @@ BOOST_AUTO_TEST_CASE(testStatusMessage) {
   std::cout << "testStatusMessage" << std::endl;
   TestApplication2Levels app;
 
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
 
   auto status = test.getScalar<int>("/Aggregated/status");
   auto statusMessage = test.getScalar<std::string>("/Aggregated/status_message");

@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Application.h"
-#include "DeviceModule.h"
 #include "TestableModeAccessorDecorator.h"
 
 #include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
@@ -40,7 +39,12 @@ namespace ChimeraTK {
      * the instance of the TestFacility must not be created before the application
      * (i.e. usually not before the main() routine). The application will
      *  automatically be put into the testable mode and initialised. */
-    explicit TestFacility(bool enableTestableMode = true);
+    [[deprecated("Use TestFacility(Application&, bool) instead")]] explicit TestFacility(
+        bool enableTestableMode = true);
+
+    /** The passed application will
+     *  automatically be put into the testable mode and initialised. */
+    explicit TestFacility(Application& app, bool enableTestableMode = true);
 
     /** Start the application in testable mode. */
     void runApplication() const;
@@ -101,6 +105,11 @@ namespace ChimeraTK {
     template<typename T>
     void setArrayDefault(const ChimeraTK::RegisterPath& name, const std::vector<T>& value);
 
+    /** Function to obtain a process variable from the control system. For conveniently creating arrays and scalars,
+     see getArray, getScalar and getVoid */
+    template<typename T>
+    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> getAccessor(const ChimeraTK::RegisterPath& name) const;
+
    protected:
     boost::shared_ptr<ControlSystemPVManager> pvManager;
 
@@ -116,6 +125,8 @@ namespace ChimeraTK {
     template<typename UserType>
     using Defaults = std::map<std::string, std::vector<UserType>>;
     ChimeraTK::TemplateUserTypeMap<Defaults> defaults;
+
+    Application& app;
   };
 
   /********************************************************************************************************************/
@@ -123,68 +134,14 @@ namespace ChimeraTK {
 
   template<typename T>
   ChimeraTK::ScalarRegisterAccessor<T> TestFacility::getScalar(const ChimeraTK::RegisterPath& name) const {
-    // check for existing accessor in cache
-    if(boost::fusion::at_key<T>(accessorMap.table).count(name) > 0) {
-      return boost::fusion::at_key<T>(accessorMap.table)[name];
-    }
-
-    // obtain accessor from ControlSystemPVManager
-    auto pv = pvManager->getProcessArray<T>(name);
-    if(pv == nullptr) {
-      throw ChimeraTK::logic_error("Process variable '" + name + "' does not exist.");
-    }
-
-    // obtain variable id from pvIdMap and transfer it to idMap (required by the
-    // TestableModeAccessorDecorator)
-    size_t varId = Application::getInstance().pvIdMap[pv->getUniqueId()];
-
-    // decorate with TestableModeAccessorDecorator if variable is sender and
-    // receiver is not poll-type, and store it in cache
-    if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[varId]) {
-      auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv, false, true, varId, varId);
-      Application::getInstance().testableMode_names[varId] = "ControlSystem:" + name;
-      boost::fusion::at_key<T>(accessorMap.table)[name] = deco;
-    }
-    else {
-      boost::fusion::at_key<T>(accessorMap.table)[name] = pv;
-    }
-
-    // return the accessor as stored in the cache
-    return boost::fusion::at_key<T>(accessorMap.table)[name];
+    return getAccessor<T>(name);
   }
 
   /********************************************************************************************************************/
 
   template<typename T>
   ChimeraTK::OneDRegisterAccessor<T> TestFacility::getArray(const ChimeraTK::RegisterPath& name) const {
-    // check for existing accessor in cache
-    if(boost::fusion::at_key<T>(accessorMap.table).count(name) > 0) {
-      return boost::fusion::at_key<T>(accessorMap.table)[name];
-    }
-
-    // obtain accessor from ControlSystemPVManager
-    auto pv = pvManager->getProcessArray<T>(name);
-    if(pv == nullptr) {
-      throw ChimeraTK::logic_error("Process variable '" + name + "' does not exist.");
-    }
-
-    // obtain variable id from pvIdMap and transfer it to idMap (required by the
-    // TestableModeAccessorDecorator)
-    size_t varId = Application::getInstance().pvIdMap[pv->getUniqueId()];
-
-    // decorate with TestableModeAccessorDecorator if variable is sender and
-    // receiver is not poll-type, and store it in cache
-    if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[varId]) {
-      auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv, false, true, varId, varId);
-      Application::getInstance().testableMode_names[varId] = "ControlSystem:" + name;
-      boost::fusion::at_key<T>(accessorMap.table)[name] = deco;
-    }
-    else {
-      boost::fusion::at_key<T>(accessorMap.table)[name] = pv;
-    }
-
-    // return the accessor as stored in the cache
-    return boost::fusion::at_key<T>(accessorMap.table)[name];
+    return getAccessor<T>(name);
   }
 
   /********************************************************************************************************************/
@@ -233,7 +190,7 @@ namespace ChimeraTK {
 
   template<typename T>
   void TestFacility::setScalarDefault(const ChimeraTK::RegisterPath& name, const T& value) {
-    if(Application::getInstance().testFacilityRunApplicationCalled) {
+    if(app.testFacilityRunApplicationCalled) {
       throw ChimeraTK::logic_error("TestFacility::setScalarDefault() called after runApplication().");
     }
     std::vector<T> vv;
@@ -245,7 +202,7 @@ namespace ChimeraTK {
 
   template<typename T>
   void TestFacility::setArrayDefault(const ChimeraTK::RegisterPath& name, const std::vector<T>& value) {
-    if(Application::getInstance().testFacilityRunApplicationCalled) {
+    if(app.testFacilityRunApplicationCalled) {
       throw ChimeraTK::logic_error("TestFacility::setArrayDefault() called after runApplication().");
     }
     // check if PV exists
@@ -262,6 +219,42 @@ namespace ChimeraTK {
       tv.resize(value.size());
       std::transform(value.begin(), value.end(), tv.begin(), [](const bool& v) -> ChimeraTK::Boolean { return v; });
     }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename T>
+  boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> TestFacility::getAccessor(
+      const ChimeraTK::RegisterPath& name) const {
+    // check for existing accessor in cache
+    if(boost::fusion::at_key<T>(accessorMap.table).count(name) > 0) {
+      return boost::fusion::at_key<T>(accessorMap.table)[name];
+    }
+
+    // obtain accessor from ControlSystemPVManager
+    auto pv = pvManager->getProcessArray<T>(name);
+    if(pv == nullptr) {
+      throw ChimeraTK::logic_error("Process variable '" + name + "' does not exist.");
+    }
+
+    // obtain variable id from pvIdMap and transfer it to idMap (required by the
+    // TestableModeAccessorDecorator)
+    size_t varId = app.pvIdMap[pv->getUniqueId()];
+
+    // decorate with TestableModeAccessorDecorator if variable is sender and
+    // receiver is not poll-type, and store it in cache
+    auto& variable = app.getTestableMode().variables[varId];
+    if(pv->isWriteable() && not variable.isPollMode) {
+      auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv, false, true, varId, varId);
+      variable.name = "ControlSystem:" + name;
+      boost::fusion::at_key<T>(accessorMap.table)[name] = deco;
+    }
+    else {
+      boost::fusion::at_key<T>(accessorMap.table)[name] = pv;
+    }
+
+    // return the accessor as stored in the cache
+    return boost::fusion::at_key<T>(accessorMap.table)[name];
   }
 
   /********************************************************************************************************************/

@@ -7,18 +7,21 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  TestFacility::TestFacility(bool enableTestableMode) {
+  TestFacility::TestFacility(bool enableTestableMode) : TestFacility(Application::getInstance(), enableTestableMode) {}
+
+  /********************************************************************************************************************/
+  TestFacility::TestFacility(Application& application, bool enableTestableMode) : app(application) {
     auto pvManagers = createPVManager();
     pvManager = pvManagers.first;
-    Application::getInstance().setPVManager(pvManagers.second);
-    if(enableTestableMode) Application::getInstance().enableTestableMode();
-    Application::getInstance().initialise();
+    app.setPVManager(pvManagers.second);
+    if(enableTestableMode) app.enableTestableMode();
+    app.initialise();
   }
 
   /********************************************************************************************************************/
 
   void TestFacility::runApplication() const {
-    Application::getInstance().testFacilityRunApplicationCalled = true;
+    app.testFacilityRunApplicationCalled = true;
     // send default values for all control system variables
     for(auto& pv : pvManager->getAllProcessVariables()) {
       callForTypeNoVoid(pv->getValueType(), [&pv, this](auto arg) {
@@ -57,20 +60,19 @@ namespace ChimeraTK {
       });
     }
     // start the application
-    Application::getInstance().run();
+    app.run();
     // set thread name
     Application::registerThread("TestThread");
     // make sure all initial values have been propagated when in testable mode
-    if(Application::getInstance().isTestableModeEnabled()) {
+    if(app.getTestableMode().enabled) {
       // call stepApplication() only in testable mode and only if the queues are not empty
-      if(Application::getInstance().testableMode_counter != 0 ||
-          Application::getInstance().testableMode_deviceInitialisationCounter != 0) {
+      if(app.getTestableMode().counter != 0 || app.getTestableMode().deviceInitialisationCounter != 0) {
         stepApplication();
       }
     }
 
     // receive all initial values for the control system variables
-    if(Application::getInstance().isTestableModeEnabled()) {
+    if(app.getTestableMode().enabled) {
       for(auto& pv : pvManager->getAllProcessVariables()) {
         if(!pv->isReadable()) continue;
         callForTypeNoVoid(pv->getValueType(), [&](auto t) {
@@ -84,46 +86,19 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   bool TestFacility::canStepApplication() const {
-    return Application::getInstance().canStepApplication();
+    return app.getTestableMode().canStep();
   }
 
   /********************************************************************************************************************/
 
   void TestFacility::stepApplication(bool waitForDeviceInitialisation) const {
-    Application::getInstance().stepApplication(waitForDeviceInitialisation);
+    app.getTestableMode().step(waitForDeviceInitialisation);
   }
 
   /********************************************************************************************************************/
 
   ChimeraTK::VoidRegisterAccessor TestFacility::getVoid(const ChimeraTK::RegisterPath& name) const {
-    // check for existing accessor in cache
-    if(boost::fusion::at_key<ChimeraTK::Void>(accessorMap.table).count(name) > 0) {
-      return boost::fusion::at_key<ChimeraTK::Void>(accessorMap.table)[name];
-    }
-
-    // obtain accessor from ControlSystemPVManager
-    auto pv = pvManager->getProcessArray<ChimeraTK::Void>(name);
-    if(pv == nullptr) {
-      throw ChimeraTK::logic_error("Process variable '" + name + "' does not exist.");
-    }
-
-    // obtain variable id from pvIdMap and transfer it to idMap (required by the
-    // TestableModeAccessorDecorator)
-    size_t varId = Application::getInstance().pvIdMap[pv->getUniqueId()];
-
-    // decorate with TestableModeAccessorDecorator if variable is sender and
-    // receiver is not poll-type, and store it in cache
-    if(pv->isWriteable() && !Application::getInstance().testableMode_isPollMode[varId]) {
-      auto deco = boost::make_shared<TestableModeAccessorDecorator<ChimeraTK::Void>>(pv, false, true, varId, varId);
-      Application::getInstance().testableMode_names[varId] = "ControlSystem:" + name;
-      boost::fusion::at_key<ChimeraTK::Void>(accessorMap.table)[name] = deco;
-    }
-    else {
-      boost::fusion::at_key<ChimeraTK::Void>(accessorMap.table)[name] = pv;
-    }
-
-    // return the accessor as stored in the cache
-    return boost::fusion::at_key<ChimeraTK::Void>(accessorMap.table)[name];
+    return getAccessor<ChimeraTK::Void>(name);
   }
 
   /********************************************************************************************************************/

@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(testEverythingTag) {
 
   TestApplication app;
   app.findTag("Everything").connectTo(app.cs);
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   test.runApplication();
   app.cs.dump();
 
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(testPartialTag) {
 
   TestApplication app;
   app.findTag("Partial").connectTo(app.cs);
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   test.runApplication();
 
   // check if all variables are found on the ControlSystem - read/write dummy values as a consistency check. We have
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(testExcludeTag) {
 
   TestApplication app;
   app.findTag("Partial").excludeTag("Exclude").connectTo(app.cs);
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   test.runApplication();
 
   // check if all variables are found on the ControlSystem - read/write dummy values as a consistency check. We have

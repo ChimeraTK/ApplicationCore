@@ -77,7 +77,7 @@ struct TestApp : public Application {
 
 BOOST_AUTO_TEST_CASE(testBIsHidden) {
   TestApp t;
-  ChimeraTK::TestFacility testFacility;
+  ChimeraTK::TestFacility testFacility(t);
   testFacility.runApplication();
 
   t.dumpConnections();

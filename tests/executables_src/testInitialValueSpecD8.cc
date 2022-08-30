@@ -72,7 +72,7 @@ struct TestFixtureWithEceptionDummy {
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   APPLICATION_TYPE application;
-  ChimeraTK::TestFacility testFacitiy{false};
+  ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
 };
 /**
@@ -262,7 +262,7 @@ struct D9InitialValueEceptionDummy {
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   PushD9DummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
+  ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
   ChimeraTK::ScalarPushInput<int>& pushVariable1{application.pushModuleD9_1.reg1.pushInput};
   ChimeraTK::ScalarPushInput<int>& pushVariable2{application.pushModuleD9_2.reg1.pushInput};
@@ -344,7 +344,7 @@ struct TriggerFanOutInitialValueEceptionDummy {
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   TriggerFanOutD9DummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
+  ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
   ChimeraTK::ScalarPushInput<int>& pushVariable1{application.pushModuleD9_1.reg1.pushInput};
   ChimeraTK::ScalarPushInput<int>& pushVariable2{application.pushModuleD9_2.reg1.pushInput};
@@ -423,7 +423,7 @@ struct ConstantD10InitialValueEceptionDummy {
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   ConstantD10DummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
+  ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.constantModule.reg1.constant};
 };
 
@@ -490,7 +490,7 @@ struct TestInitialValueEceptionDummy {
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   TestDummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
+  ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.testModule.reg1.pushInput};
   ChimeraTK::ScalarOutput<int>& outputVariable{application.testModule.output};
 };
@@ -623,7 +623,7 @@ BOOST_AUTO_TEST_CASE(testD7_1_InitialValue) {
   std::cout << "===   testD7_1_InitialValue   === " << std::endl;
 
   Test7DummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
+  ChimeraTK::TestFacility testFacitiy{application, false};
   application.run();
   BOOST_CHECK(application.writerModule.enteredThePrepareLoop == true);
   application.readerModule.p.get_future().wait();
@@ -638,7 +638,7 @@ BOOST_AUTO_TEST_CASE(testD7_2_InitialValue) {
   std::cout << "===   testD7_2_InitialValue   === " << std::endl;
 
   Test7DummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
+  ChimeraTK::TestFacility testFacitiy{application, false};
   application.run();
   // The commented line is subject to race conditions because the initial value might or might not have
   // arrived already when the test is done. One would need a way to stop the application start after the
@@ -676,7 +676,7 @@ struct Test6_a1_InitialValueEceptionDummy {
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   Test6_a1_DummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
+  ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg1.pushInput};
 };
@@ -731,7 +731,7 @@ struct Test6_a2_InitialValueEceptionDummy {
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   Test6_a2_DummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
+  ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg2.pushInput};
 };
@@ -794,7 +794,7 @@ struct Test6_a3_InitialValueEceptionDummy {
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   Test6_a3_DummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
+  ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg2.pushInput};
 };
@@ -851,7 +851,7 @@ struct Test6_a4_InitialValueEceptionDummy {
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   Test6_a4_DummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
+  ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg2.pushInput};
 };
@@ -911,7 +911,7 @@ struct Test6_b_InitialValueEceptionDummy {
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   Test6_b_DummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
+  ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
   ChimeraTK::ScalarPollInput<int>& pollVariable{application.pollModule.reg1.pollInput};
 };
@@ -963,7 +963,7 @@ struct Test6_c_InitialValueEceptionDummy {
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   Test6_c_DummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{false};
+  ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg2.pushInput};
 };
