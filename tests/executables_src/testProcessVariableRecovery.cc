@@ -6,7 +6,6 @@
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
 #include "check_timeout.h"
-#include "ConfigReader.h"
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "TestFacility.h"
@@ -127,7 +126,7 @@ BOOST_AUTO_TEST_CASE(testWriteToReadOnly) {
 
   ReadOnlyTestApplication app;
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
 
   test.runApplication();
 
@@ -155,7 +154,7 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   auto constante = ctk::VariableNetworkNode::makeConstant(1, 44252, 1);
   constante >> app.dev["CONSTANT"]("VAR32");
 
-  ctk::TestFacility test(false);
+  ctk::TestFacility test{app, false};
   // Write initial values manually since we do not use the testable mode.
   // Otherwise the main loops never start.
 

@@ -199,7 +199,7 @@ struct fixture_with_poll_and_push_input {
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend2;
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend3;
   DummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{enableTestFacility};
+  ChimeraTK::TestFacility testFacitiy{application, enableTestFacility};
 
   ChimeraTK::ScalarRegisterAccessor<int> status, status2;
   ChimeraTK::ScalarRegisterAccessor<int> deviceBecameFunctional;

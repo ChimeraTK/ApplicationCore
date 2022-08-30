@@ -1,11 +1,15 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+#include "ScalarAccessor.h"
 #define BOOST_TEST_MODULE testVirtualHierarchy
 #include "Application.h"
 #include "ApplicationModule.h"
+#include "ControlSystemModule.h"
 #include "ModuleGroup.h"
+#include "ScalarAccessor.h"
 #include "TestFacility.h"
+#include "VariableGroup.h"
 
 #include <boost/test/included/unit_test.hpp>
 
@@ -150,7 +154,7 @@ BOOST_AUTO_TEST_CASE(testIllegalModifiers) {
     std::cout << "  Creating TestApplication with outerModuleModifier = none " << std::endl;
     // Should work
     TestApplication app(ctk::HierarchyModifier::none);
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     std::cout << std::endl;
   }
 
@@ -158,7 +162,7 @@ BOOST_AUTO_TEST_CASE(testIllegalModifiers) {
     std::cout << "  Creating TestApplication with outerModuleModifier = oneLevelUp " << std::endl;
     TestApplication app(ctk::HierarchyModifier::oneLevelUp);
     // Should detect illegal usage of oneLevelUp on first level below Application and throw
-    BOOST_CHECK_THROW(ctk::TestFacility test, ctk::logic_error);
+    BOOST_CHECK_THROW(ctk::TestFacility test(app), ctk::logic_error);
     std::cout << std::endl;
   }
 
@@ -176,7 +180,7 @@ BOOST_AUTO_TEST_CASE(testIllegalModifiers) {
     std::cout << "  Creating TestApplication with outerModuleModifier = moveToRoot " << std::endl;
     // Should work
     TestApplication app(ctk::HierarchyModifier::moveToRoot);
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     std::cout << std::endl;
   }
 }
@@ -186,7 +190,7 @@ BOOST_AUTO_TEST_CASE(testGetVirtualQualifiedName) {
 
   {
     TestApplication app(ctk::HierarchyModifier::none);
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
 
     // app.cs.dump();
     BOOST_CHECK_EQUAL(app.outerModule.getVirtualQualifiedName(), "/outerModule");
@@ -220,7 +224,7 @@ BOOST_AUTO_TEST_CASE(testGetVirtualQualifiedName) {
 
   {
     TestApplication app(ctk::HierarchyModifier::hideThis);
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
 
     //    app.cs.dump();
     BOOST_CHECK_EQUAL(app.outerModule.getVirtualQualifiedName(), "/");
@@ -231,18 +235,18 @@ BOOST_AUTO_TEST_CASE(testGetVirtualQualifiedName) {
   // the error is catched there, this is avoided by the boolean constructor arguments below
   {
     TestApplication app(ctk::HierarchyModifier::oneLevelUp, ctk::HierarchyModifier::none, true);
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     BOOST_CHECK_THROW(app.outerModule.getVirtualQualifiedName(), ctk::logic_error);
   }
   {
     TestApplication app(ctk::HierarchyModifier::oneUpAndHide, ctk::HierarchyModifier::none, true);
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     BOOST_CHECK_THROW(app.outerModule.getVirtualQualifiedName(), ctk::logic_error);
   }
 
   {
     TestApplication app(ctk::HierarchyModifier::moveToRoot, ctk::HierarchyModifier::moveToRoot);
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
 
     //    app.cs.dump();
     BOOST_CHECK_EQUAL(app.outerModule.getVirtualQualifiedName(), "/outerModule");
@@ -260,7 +264,7 @@ BOOST_AUTO_TEST_CASE(testGetNetworkNodesOnVirtualHierarchy) {
   std::cout << "testGetNetworkNodesOnVirtualHierarchy" << std::endl;
 
   TestApplication app(ctk::HierarchyModifier::none);
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
 
   app.cs.dump();
   // app.outerModuleGroup1.virtualise().dump();
@@ -337,10 +341,10 @@ void testNetworkNode(ctk::VariableNetworkNode node, std::string feederName, std:
 BOOST_AUTO_TEST_CASE(testNetworks) {
   std::cout << "testNetworks" << std::endl;
 
-  // check that all variables that should be connected with the modifed hierarchies actually are tin the same network
+  // check that all variables that should be connected with the modified hierarchies actually are tin the same network
 
   TestApplication app(ctk::HierarchyModifier::none);
-  ctk::TestFacility test;
+  ChimeraTK::TestFacility test(app);
 
   auto virtualisedApplication = app.findTag(".*");
   // app.dumpConnections();

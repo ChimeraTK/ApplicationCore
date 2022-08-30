@@ -27,8 +27,6 @@
 
 using namespace ChimeraTK;
 
-std::timed_mutex Application::testableMode_mutex;
-
 /*********************************************************************************************************************/
 
 Application::Application(const std::string& name) : ApplicationBase(name), EntityOwner(name, "") {
@@ -57,22 +55,14 @@ void Application::defineConnections() {
 /*********************************************************************************************************************/
 
 void Application::enableTestableMode() {
-  threadName() = "TEST THREAD";
-  testableMode = true;
-  testableModeLock("enableTestableMode");
-}
-
-/*********************************************************************************************************************/
-
-bool Application::testableModeTestLock() {
-  if(!getInstance().testableMode) return false;
-  return getTestableModeLockObject().owns_lock();
+  assert(not initialiseCalled);
+  testableMode.enable();
 }
 
 /*********************************************************************************************************************/
 
 void Application::registerThread(const std::string& name) {
-  Application::getInstance().setThreadName(name);
+  getInstance().testableMode.setThreadName(name);
   pthread_setname_np(pthread_self(), name.substr(0, std::min<std::string::size_type>(name.length(), 15)).c_str());
 }
 
@@ -250,7 +240,7 @@ void Application::checkConnections() {
 void Application::run() {
   assert(applicationName != "");
 
-  if(testableMode) {
+  if(testableMode.enabled) {
     if(!testFacilityRunApplicationCalled) {
       throw ChimeraTK::logic_error(
           "Testable mode enabled but Application::run() called directly. Call TestFacility::runApplication() instead.");
@@ -300,13 +290,13 @@ void Application::run() {
   // just a small helper lambda to avoid code repetition
   auto waitForTestableMode = [](EntityOwner* module) {
     while(!module->hasReachedTestableMode()) {
-      Application::getInstance().testableModeUnlock("releaseForReachTestableMode");
+      Application::getInstance().getTestableMode().unlock("releaseForReachTestableMode");
       usleep(100);
-      Application::getInstance().testableModeLock("acquireForReachTestableMode");
+      Application::getInstance().getTestableMode().lock("acquireForReachTestableMode");
     }
   };
 
-  if(Application::getInstance().isTestableModeEnabled()) {
+  if(Application::getInstance().getTestableMode().enabled) {
     for(auto& internalModule : internalModuleList) {
       waitForTestableMode(internalModule.get());
     }
@@ -330,8 +320,8 @@ void Application::shutdown() {
 
   // first allow to run the application threads again, if we are in testable
   // mode
-  if(testableMode && testableModeTestLock()) {
-    testableModeUnlock("shutdown");
+  if(testableMode.enabled && testableMode.testLock()) {
+    testableMode.unlock("shutdown");
   }
 
   // deactivate the FanOuts first, since they have running threads inside
@@ -472,8 +462,8 @@ VariableNetwork& Application::connect(VariableNetworkNode a, VariableNetworkNode
 template<typename UserType>
 boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDeviceVariable(
     VariableNetworkNode const& node) {
-  auto deviceAlias = node.getDeviceAlias();
-  auto registerName = node.getRegisterName();
+  const auto& deviceAlias = node.getDeviceAlias();
+  const auto& registerName = node.getRegisterName();
   auto direction = node.getDirection();
   auto mode = node.getMode();
   auto nElements = node.getNumberOfElements();
@@ -498,7 +488,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   }
 
   // decorate push-type feeders with testable mode decorator, if needed
-  if(testableMode) {
+  if(testableMode.enabled) {
     if(mode == UpdateMode::push && direction.dir == VariableDirection::feeding) {
       auto varId = getNextVariableId();
       accessor = boost::make_shared<TestableModeAccessorDecorator<UserType>>(accessor, true, false, varId, varId);
@@ -554,7 +544,8 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
   // Decorate the process variable if testable mode is enabled and this is the receiving end of the variable (feeding
   // to the network), or a bidirectional consumer. Also don't decorate, if the mode is polling. Instead flag the
   // variable to be polling, so the TestFacility is aware of this.
-  if(testableMode) {
+  if(testableMode.enabled) {
+    auto& variable = testableMode.variables[varId];
     if(node.getDirection().dir == VariableDirection::feeding) {
       // The transfer mode of this process variable is considered to be polling,
       // if only one consumer exists and this consumer is polling. Reason:
@@ -569,18 +560,18 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
 
       if(mode != UpdateMode::poll) {
         auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvar, true, false, varId, varId);
-        testableMode_names[varId] = "ControlSystem:" + node.getPublicName();
+        variable.name = "ControlSystem:" + node.getPublicName();
         return pvarDec;
       }
       else {
-        testableMode_isPollMode[varId] = true;
+        variable.isPollMode = true;
       }
     }
     else if(node.getDirection().withReturn) {
       // Return channels are always push. The decorator must handle only reads on the return channel, since writes into
       // the control system do not block the testable mode.
       auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvar, true, false, varId, varId);
-      testableMode_names[varId] = "ControlSystem:" + node.getPublicName();
+      variable.name = "ControlSystem:" + node.getPublicName();
       return pvarDec;
     }
   }
@@ -630,7 +621,7 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
   if(node.getDirection().withReturn) varIdReturn = getNextVariableId();
 
   // decorate the process variable if testable mode is enabled and mode is push-type
-  if(testableMode && flags.has(AccessMode::wait_for_new_data)) {
+  if(testableMode.enabled && flags.has(AccessMode::wait_for_new_data)) {
     if(!node.getDirection().withReturn) {
       pvarPair.first =
           boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.first, false, true, varId, varId);
@@ -645,11 +636,13 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
     }
 
     // put the decorators into the list
-    testableMode_names[varId] = "Internal:" + node.getQualifiedName();
+    auto& variable = testableMode.variables[varId];
+    variable.name = "Internal:" + node.getQualifiedName();
     if(consumer.getType() != NodeType::invalid) {
-      testableMode_names[varId] += "->" + consumer.getQualifiedName();
+      variable.name += "->" + consumer.getQualifiedName();
     }
-    if(node.getDirection().withReturn) testableMode_names[varIdReturn] = testableMode_names[varId] + " (return)";
+    auto& returnVariable = testableMode.variables[varIdReturn];
+    if(node.getDirection().withReturn) returnVariable.name = variable.name + " (return)";
   }
 
   // if debug mode was requested for either node, decorate both accessors
@@ -1177,11 +1170,11 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         auto feedingImpl = feeder.createConstAccessor<UserType>(flags);
 
         if(consumer.getType() == NodeType::Application) {
-          if(testableMode && consumer.getMode() == UpdateMode::push) {
+          if(testableMode.enabled && consumer.getMode() == UpdateMode::push) {
             auto varId = getNextVariableId();
             auto pvarDec =
                 boost::make_shared<TestableModeAccessorDecorator<UserType>>(feedingImpl, true, false, varId, varId);
-            testableMode_names[varId] = "Constant";
+            testableMode.variables[varId].name = "Constant";
             consumer.setAppAccessorImplementation<UserType>(pvarDec);
           }
           else {
@@ -1312,182 +1305,6 @@ VariableNetwork& Application::createNetwork() {
 
 Application& Application::getInstance() {
   return dynamic_cast<Application&>(ApplicationBase::getInstance());
-}
-
-/*********************************************************************************************************************/
-
-bool Application::canStepApplication() const {
-  return (testableMode_counter != 0);
-}
-
-/*********************************************************************************************************************/
-
-void Application::stepApplication(bool waitForDeviceInitialisation) {
-  // testableMode_counter must be non-zero, otherwise there is no input for the application to process. It is also
-  // sufficient if testableMode_deviceInitialisationCounter is non-zero, if waitForDeviceInitialisation == true. In that
-  // case we only wait for the device initialisation to be completed.
-  if(testableMode_counter == 0 && (!waitForDeviceInitialisation || testableMode_deviceInitialisationCounter == 0)) {
-    throw ChimeraTK::logic_error("Application::stepApplication() called despite no input was provided "
-                                 "to the application to process!");
-  }
-  // let the application run until it has processed all data (i.e. the semaphore
-  // counter is 0)
-  size_t oldCounter = 0;
-  while(testableMode_counter > 0 || (waitForDeviceInitialisation && testableMode_deviceInitialisationCounter > 0)) {
-    if(enableDebugTestableMode && (oldCounter != testableMode_counter)) { // LCOV_EXCL_LINE (only cout)
-      std::cout << "Application::stepApplication(): testableMode_counter = " << testableMode_counter
-                << std::endl;            // LCOV_EXCL_LINE (only cout)
-      oldCounter = testableMode_counter; // LCOV_EXCL_LINE (only cout)
-    }
-    testableModeUnlock("stepApplication");
-    boost::this_thread::yield();
-    testableModeLock("stepApplication");
-  }
-}
-
-/*********************************************************************************************************************/
-
-void Application::testableModeLock(const std::string& name) {
-  // don't do anything if testable mode is not enabled
-  if(!getInstance().testableMode) return;
-
-  // debug output if enabled (also prevent spamming the same message)
-  if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) { // LCOV_EXCL_LINE
-                                                                                                     // (only cout)
-    std::cout << "Application::testableModeLock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
-              << " tries to obtain lock for " << name << std::endl;         // LCOV_EXCL_LINE (only cout)
-  }                                                                         // LCOV_EXCL_LINE (only cout)
-
-  // if last lock was obtained repeatedly by the same thread, sleep a short time
-  // before obtaining the lock to give the other threads a chance to get the
-  // lock first
-  if(getInstance().testableMode_repeatingMutexOwner > 0) usleep(10000);
-
-  // obtain the lock
-  auto lastSeen_lastOwner = getInstance().testableMode_lastMutexOwner;
-repeatTryLock:
-  auto success = getTestableModeLockObject().try_lock_for(std::chrono::seconds(30));
-  if(!success) {
-    auto currentLastOwner = getInstance().testableMode_lastMutexOwner;
-    if(currentLastOwner != lastSeen_lastOwner) {
-      lastSeen_lastOwner = currentLastOwner;
-      goto repeatTryLock;
-    }
-    std::cout << "Application::testableModeLock(): Thread " << threadName()                       // LCOV_EXCL_LINE
-              << " could not obtain lock for 30 seconds, presumably because "                     // LCOV_EXCL_LINE
-              << threadName(getInstance().testableMode_lastMutexOwner) << " does not release it." // LCOV_EXCL_LINE
-              << std::endl;                                                                       // LCOV_EXCL_LINE
-
-    // throw a specialised exception to make sure whoever catches it really knows what he does...
-    throw TestsStalled(); // LCOV_EXCL_LINE
-  }                       // LCOV_EXCL_LINE
-
-  // check if the last owner of the mutex was this thread, which may be a hint
-  // that no other thread is waiting for the lock
-  if(getInstance().testableMode_lastMutexOwner == boost::this_thread::get_id()) {
-    // debug output if enabled
-    if(getInstance().enableDebugTestableMode && getInstance().testableMode_repeatingMutexOwner == 0) { // LCOV_EXCL_LINE
-                                                                                                       // (only cout)
-      std::cout << "Application::testableModeLock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
-                << " repeatedly obtained lock successfully for " << name      // LCOV_EXCL_LINE (only cout)
-                << ". Further messages will be suppressed." << std::endl;     // LCOV_EXCL_LINE (only cout)
-    }                                                                         // LCOV_EXCL_LINE (only cout)
-
-    // increase counter for stall detection
-    getInstance().testableMode_repeatingMutexOwner++;
-
-    // detect stall: if the same thread got the mutex with no other thread
-    // obtaining it in between for one second, we assume no other thread is able
-    // to process data at this time. The test should fail in this case
-    if(getInstance().testableMode_repeatingMutexOwner > 100) {
-      // print an informative message first, which lists also all variables
-      // currently containing unread data.
-      std::cerr << "*** Tests are stalled due to data which has been sent but not received." << std::endl;
-      std::cerr << "    The following variables still contain unread values or had data loss due to a queue overflow:"
-                << std::endl;
-      for(auto& pair : Application::getInstance().testableMode_perVarCounter) {
-        if(pair.second > 0) {
-          std::cerr << "    - " << Application::getInstance().testableMode_names[pair.first] << " ["
-                    << getInstance().testableMode_processVars[pair.first]->getId() << "]";
-          // check if process variable still has data in the queue
-          try {
-            if(getInstance().testableMode_processVars[pair.first]->readNonBlocking()) {
-              std::cerr << " (unread data in queue)";
-            }
-            else {
-              std::cerr << " (data loss)";
-            }
-          }
-          catch(std::logic_error&) {
-            // if we receive a logic_error in readNonBlocking() it just means
-            // another thread is waiting on a TransferFuture of this variable,
-            // and we actually were not allowed to read...
-            std::cerr << " (data loss)";
-          }
-          std::cerr << std::endl;
-        }
-      }
-      std::cerr << "(end of list)" << std::endl;
-      // Check for modules waiting for initial values (prints nothing if there are no such modules)
-      detail::CircularDependencyDetector::getInstance().printWaiters();
-      // throw a specialised exception to make sure whoever catches it really knows what he does...
-      throw TestsStalled();
-    }
-  }
-  else {
-    // last owner of the mutex was different: reset the counter and store the
-    // thread id
-    getInstance().testableMode_repeatingMutexOwner = 0;
-    getInstance().testableMode_lastMutexOwner = boost::this_thread::get_id();
-
-    // debug output if enabled
-    if(getInstance().enableDebugTestableMode) {                               // LCOV_EXCL_LINE (only cout)
-      std::cout << "Application::testableModeLock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
-                << " obtained lock successfully for " << name << std::endl;   // LCOV_EXCL_LINE (only cout)
-    }                                                                         // LCOV_EXCL_LINE (only cout)
-  }
-}
-
-/*********************************************************************************************************************/
-
-void Application::testableModeUnlock(const std::string& name) {
-  if(!getInstance().testableMode) return;
-  if(getInstance().enableDebugTestableMode &&
-      (!getInstance().testableMode_repeatingMutexOwner                                     // LCOV_EXCL_LINE (only cout)
-          || getInstance().testableMode_lastMutexOwner != boost::this_thread::get_id())) { // LCOV_EXCL_LINE (only cout)
-    std::cout << "Application::testableModeUnlock(): Thread " << threadName()              // LCOV_EXCL_LINE (only cout)
-              << " releases lock for " << name << std::endl;                               // LCOV_EXCL_LINE (only cout)
-  }                                                                                        // LCOV_EXCL_LINE (only cout)
-  getTestableModeLockObject().unlock();
-}
-/*********************************************************************************************************************/
-
-void Application::setThreadName(const std::string& name) {
-  std::unique_lock<std::mutex> myLock(m_threadNames);
-  threadNames[boost::this_thread::get_id()] = name;
-}
-
-/*********************************************************************************************************************/
-
-std::string Application::threadName(const boost::thread::id& threadId) {
-  std::unique_lock<std::mutex> myLock(Application::getInstance().m_threadNames);
-  auto& names = Application::getInstance().threadNames;
-  if(names.find(threadId) == names.end()) {
-    return "*UNKNOWN_THREAD*";
-  }
-  return names.at(threadId);
-}
-
-/*********************************************************************************************************************/
-
-std::unique_lock<std::timed_mutex>& Application::getTestableModeLockObject() {
-  // Note: due to a presumed bug in gcc (still present in gcc 7), the
-  // thread_local definition must be in the cc file to prevent seeing different
-  // objects in the same thread under some conditions. Another workaround for
-  // this problem can be found in commit
-  // dc051bfe35ce6c1ed954010559186f63646cf5d4
-  thread_local std::unique_lock<std::timed_mutex> myLock(Application::testableMode_mutex, std::defer_lock);
-  return myLock;
 }
 
 /*********************************************************************************************************************/

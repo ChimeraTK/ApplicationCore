@@ -75,7 +75,7 @@ namespace ChimeraTK {
 
   void TriggerFanOut::run() {
     Application::registerThread("TrFO" + externalTrigger->getName());
-    Application::testableModeLock("start");
+    Application::getInstance().getTestableMode().lock("start");
     testableModeReached = true;
 
     ChimeraTK::VersionNumber version = Application::getInstance().getStartVersion();
@@ -90,11 +90,13 @@ namespace ChimeraTK {
     // We don't have to store the lock. Just need it as a synchronisation point.
     // But we have to increase the testable mode counter because we don't want to fall out of testable mode at this
     // point already.
-    if(Application::getInstance().testableMode) ++Application::getInstance().testableMode_deviceInitialisationCounter;
-    Application::testableModeUnlock("WaitInitialValueLock");
+    if(Application::getInstance().getTestableMode().enabled)
+      ++Application::getInstance().getTestableMode().deviceInitialisationCounter;
+    Application::getInstance().getTestableMode().unlock("WaitInitialValueLock");
     (void)_deviceModule.waitForInitialValues();
-    Application::testableModeLock("Enter while loop");
-    if(Application::getInstance().testableMode) --Application::getInstance().testableMode_deviceInitialisationCounter;
+    Application::getInstance().getTestableMode().lock("Enter while loop");
+    if(Application::getInstance().getTestableMode().enabled)
+      --Application::getInstance().getTestableMode().deviceInitialisationCounter;
 
     while(true) {
       transferGroup.read();

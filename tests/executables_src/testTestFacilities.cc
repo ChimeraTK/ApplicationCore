@@ -83,7 +83,7 @@ struct ReadAnyTestModule : public ctk::ApplicationModule {
       this, "index", "", "The index (1..4) of the input where the last value was received"};
 
   void prepare() override {
-    incrementDataFaultCounter(); // foce all outputs  to invalid
+    incrementDataFaultCounter(); // force all outputs  to invalid
     writeAll();
     decrementDataFaultCounter(); // validity according to input validity
   }
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testBlockingRead, T, test_types) {
   app.blockingReadTestModule.someOutput >> app.cs("output");
   app.readAnyTestModule.connectTo(app.cs["readAny"]); // avoid runtime warning
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   auto pvInput = test.getScalar<T>("input");
   auto pvOutput = test.getScalar<T>("output");
   test.runApplication();
@@ -330,7 +330,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testReadAny, T, test_types) {
   app.readAnyTestModule.index >> app.cs("index");
   app.blockingReadTestModule.connectTo(app.cs["blocking"]); // avoid runtime warning
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   auto value = test.getScalar<T>("value");
   auto index = test.getScalar<uint32_t>("index");
   auto v1 = test.getScalar<T>("input/v1");
@@ -473,7 +473,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testChainedModules, T, test_types) {
   app.blockingReadTestModule.someOutput >> app.cs("value");
   app.readAnyTestModule.index >> app.cs("index");
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   auto value = test.getScalar<T>("value");
   auto index = test.getScalar<uint32_t>("index");
   auto v1 = test.getScalar<T>("input/v1");
@@ -567,7 +567,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithFanOut, T, test_types) {
   app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
   app.readAnyTestModule.index >> app.cs("index");
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   auto valueFromBlocking = test.getScalar<T>("valueFromBlocking");
   auto index = test.getScalar<uint32_t>("index");
   auto v1 = test.getScalar<T>("input/v1");
@@ -664,7 +664,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTrigger, T, test_types) {
   app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
   app.readAnyTestModule.index >> app.cs("index");
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   ctk::Device dev;
   dev.open(dummySdm);
   auto valueFromBlocking = test.getScalar<T>("valueFromBlocking");
@@ -749,7 +749,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTriggerFanOut, T, test_types) {
   app.readAnyTestModule.index >> app.cs("index");
   app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   ctk::Device dev;
   dev.open(dummySdm);
   auto valueFromBlocking = test.getScalar<T>("valueFromBlocking");
@@ -852,7 +852,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConvenienceRead, T, test_types) {
   app.blockingReadTestModule.someOutput >> app.cs("output");
   app.readAnyTestModule.connectTo(app.cs["readAny"]); // avoid runtime warning
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   test.runApplication();
 
   // test blocking read when taking control in the test thread (note: the
@@ -894,7 +894,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
     app.readAnyTestModule.value >> app.cs("value");
     app.readAnyTestModule.index >> app.cs("index");
 
-    ctk::TestFacility test;
+    ctk::TestFacility test{app};
     test.runApplication();
 
     BOOST_CHECK_EQUAL((T)app.blockingReadTestModule.someInput, 18);
@@ -920,7 +920,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
     ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.pollingReadModule.poll;
     app.pollingReadModule.connectTo(app.cs);
 
-    ctk::TestFacility test;
+    ctk::TestFacility test{app};
     test.runApplication();
 
     BOOST_CHECK_EQUAL((T)app.pollingReadModule.push2, 18);
@@ -940,7 +940,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
       test.stepApplication();
       BOOST_ERROR("Exception expected.");
     }
-    catch(ctk::Application::TestsStalled&) {
+    catch(ctk::detail::TestableMode::TestsStalled&) {
     }
   }
 }
@@ -957,7 +957,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testPolling, T, test_types) {
   PollingTestApplication<T> app;
   app.pollingReadModule.connectTo(app.cs);
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   test.runApplication();
 
   auto pv_push = test.getScalar<T>("push");
@@ -1048,7 +1048,7 @@ BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
     std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
     std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
 
-    ctk::TestFacility test;
+    ctk::TestFacility test{app};
     test.runApplication();
 
     // test single value
@@ -1094,7 +1094,7 @@ BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
     ctk::Device dev(dummySdm);
     auto reg1 = dev.getScalarRegisterAccessor<int>("REG1");
 
-    ctk::TestFacility test;
+    ctk::TestFacility test{app};
     test.runApplication();
 
     reg1 = 42;
@@ -1125,7 +1125,7 @@ BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
     std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
     std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
 
-    ctk::TestFacility test;
+    ctk::TestFacility test{app};
     auto var = test.getScalar<int>("/var");
     test.runApplication();
 
@@ -1180,7 +1180,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDevice, T, test_types) {
   app.cs("push2") >> app.pollingReadModule.push2;
   app.pollingReadModule.valuePoll >> app.cs("valuePoll");
 
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
   auto push = test.getScalar<T>("push");
   auto push2 = test.getScalar<T>("push2");
   auto valuePoll = test.getScalar<T>("valuePoll");
@@ -1194,7 +1194,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDevice, T, test_types) {
   r1 = 42;
   r1.write();
   push.write();
-  app.stepApplication();
+  test.stepApplication();
   valuePoll.read();
   BOOST_CHECK_EQUAL(valuePoll, 42);
 
@@ -1202,7 +1202,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDevice, T, test_types) {
   r1 = 43;
   r1.write();
   push2.write();
-  app.stepApplication();
+  test.stepApplication();
   valuePoll.read();
   BOOST_CHECK_EQUAL(valuePoll, 43);
 
@@ -1210,7 +1210,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDevice, T, test_types) {
   r1 = 44;
   r1.write();
   push2.write();
-  app.stepApplication();
+  test.stepApplication();
   valuePoll.read();
   BOOST_CHECK_EQUAL(valuePoll, 44);
 }
@@ -1230,7 +1230,7 @@ BOOST_AUTO_TEST_CASE(testInitialValues) {
   std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
   std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
 
   test.setScalarDefault<int>("/m1/push1", 42);
   test.setScalarDefault<int>("/m1/poll1", 43);

@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDevice, T, test_types) {
 
   app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   test.runApplication();
   ChimeraTK::Device dev;
   dev.open("Dummy0");
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDeviceFanOut, T, test_types) {
   TestApplication<T> app;
 
   app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator") >> app.dev["Deeper"]["hierarchies"]("also");
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   test.runApplication();
   ChimeraTK::Device dev;
   dev.open("Dummy0");
@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromDevice, T, test_types) {
   // We intentionally use an r/w register here to use it as an input only. Just to test the case
   // (might only be written in initialication and only read in the server itself)
   app.dev("/MyModule/actuator") >> app.testModule.consumingPoll;
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumingFanOut, T, test_types) {
 
   app.dev("/MyModule/actuator") >> app.testModule.consumingPoll >> app.testModule.consumingPush >>
       app.testModule.consumingPush2;
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMergedNetworks, T, test_types) {
   BOOST_CHECK_EQUAL(nDeviceFeeders, 2);
 
   // the optimisation to test takes place here
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
 
   // check we are left with just one network fed by the device
   nDeviceFeeders = 0;
@@ -364,7 +364,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantToDevice, T, test_types) {
   TestApplication<T> app;
 
   ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.dev("/MyModule/actuator");
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   test.runApplication();
 
   ChimeraTK::Device dev;
@@ -385,7 +385,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantToDeviceFanOut, T, test_types) {
 
   ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.dev("/MyModule/actuator") >>
       app.dev("/Deeper/hierarchies/also");
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   test.runApplication();
 
   ChimeraTK::Device dev;
@@ -406,7 +406,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDeviceModuleSubscriptOp, T, test_types) {
   TestApplication<T> app;
 
   app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
@@ -437,7 +437,7 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleVirtuallise) {
 
   app.testModule.feedingToDevice >> app.dev.virtualise()["MyModule"]("actuator");
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
 
   BOOST_CHECK(&(app.dev.virtualise()) == &(app.dev));
 }
@@ -500,7 +500,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo, T, test_types) {
   app.deeper.hierarchies.need.connectTo(app.dev["Deeper"]["hierarchies"]["need"]);
   app.deeper.hierarchies.findTag("ALSO").connectTo(app.dev["Deeper"]["hierarchies"]);
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   test.runApplication();
 
   ctk::Device dev;
@@ -561,7 +561,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo2, T, test_types) {
   TestApplication2<int> app;
   app.findTag(".*").connectTo(app.dev);
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   test.runApplication();
 
   ctk::Device dev;
@@ -684,7 +684,7 @@ BOOST_AUTO_TEST_CASE(testConnectingDeviceModule) {
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
   TestApplication3<int> app;
 
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   test.runApplication();
   BOOST_CHECK_EQUAL(app.initHandlerCallCount, 1);
 
@@ -779,7 +779,7 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleMove) {
     dev = std::move(dev2);              // test move-assign
     app.devs.push_back(std::move(dev)); // test move-construct
     app.devs.back()["MyModule"].connectTo(app.m);
-    ctk::TestFacility test;
+    ctk::TestFacility test{app};
     test.runApplication();
     ctk::Device dummy0("Dummy0");
     auto readBack = dummy0.getScalarRegisterAccessor<int>("MyModule/readBack/DUMMY_WRITEABLE");
@@ -798,7 +798,7 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleMove) {
     ctk::ConnectingDeviceModule dev2{&app, "Dummy0"};
     dev = std::move(dev2);               // test move-assign
     app.cdevs.push_back(std::move(dev)); // test move-construct
-    ctk::TestFacility test;
+    ctk::TestFacility test{app};
     app.dumpConnections();
     test.runApplication();
     ctk::Device dummy0("Dummy0");

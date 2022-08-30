@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
 BOOST_AUTO_TEST_CASE(testDirectWriteToDevice) {
   std::cout << "==> testDirectWriteToDevice" << std::endl;
   TestApplicationWithDevice app;
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
   test.runApplication();
   auto var32u = app.device.device.getScalarRegisterAccessor<uint32_t>("var32u");
   auto var16 = app.device.device.getScalarRegisterAccessor<int16_t>("var16");

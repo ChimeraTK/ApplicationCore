@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
   // test without even calling the function
   {
     TestApp app("testApp");
-    ctk::TestFacility test;
+    ctk::TestFacility test{app};
     auto input = test.getScalar<double>("/Multiplier/input");
     auto tap = test.getScalar<double>("/Multiplier/tap");
     auto output = test.getScalar<double>("/mySubModule/output");
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
   // test passing empty set
   {
     TestApp app("testApp");
-    ctk::TestFacility test;
+    ctk::TestFacility test{app};
     auto input = test.getScalar<double>("/Multiplier/input");
     auto tap = test.getScalar<double>("/Multiplier/tap");
     auto output = test.getScalar<double>("/mySubModule/output");
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
   // test passing single variable
   {
     TestApp app("testApp");
-    ctk::TestFacility test;
+    ctk::TestFacility test{app};
     auto input = test.getScalar<double>("/Multiplier/input");
     auto tap = test.getScalar<double>("/Multiplier/tap");
     auto output = test.getScalar<double>("/mySubModule/output");
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
   // test passing two variables
   {
     TestApp app("testApp");
-    ctk::TestFacility test;
+    ctk::TestFacility test{app};
     auto input = test.getScalar<double>("/Multiplier/input");
     auto tap = test.getScalar<double>("/Multiplier/tap");
     auto output = test.getScalar<double>("/mySubModule/output");
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
   // test passing two variables, now with the other copy of the output
   {
     TestApp app("testApp");
-    ctk::TestFacility test;
+    ctk::TestFacility test{app};
     auto input = test.getScalar<double>("/Multiplier/input");
     auto tap = test.getScalar<double>("/Multiplier/tap");
     auto output = test.getScalar<double>("/mySubModule/output");
@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
   // test passing unknown variables
   {
     TestApp app("testApp");
-    ctk::TestFacility test;
+    ctk::TestFacility test{app};
     auto input = test.getScalar<double>("/Multiplier/input");
     auto tap = test.getScalar<double>("/Multiplier/tap");
     auto output = test.getScalar<double>("/mySubModule/output");

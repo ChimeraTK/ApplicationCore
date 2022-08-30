@@ -161,7 +161,7 @@ struct TestApplication3 : ctk::Application {
  */
 BOOST_AUTO_TEST_CASE(testDataValidity_exceptionDummy) {
   TestApplication3 app;
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   // app.dumpConnections();
 
   auto devI1 = test.getScalar<int>("/dev/i1");
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_1_3) {
   TestApplication1<TestModule1> app;
   app.deviceError = true;
   // testable mode cannot be used here, since it would wait on initial values (which are not provided)
-  ctk::TestFacility test(false);
+  ctk::TestFacility test(app, false);
 
   auto i1 = test.getScalar<int>("/dev/i1");
   test.runApplication();
@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_1_6) {
   TestApplication16 app;
   app.mod1.outputValidity = ctk::DataValidity::faulty;
   app.mod2.outputValidity = ctk::DataValidity::ok;
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
 
   // app.dumpConnections();
   auto input = test.getScalar<int>("/m1/i1");
@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_1_6) {
 BOOST_AUTO_TEST_CASE(testDataValidity_1_8) {
   TestApplication1<TestModule0> app;
   // testable mode cannot be used here, since it would wait on initial values (which are not provided)
-  ctk::TestFacility test(false);
+  ctk::TestFacility test(app, false);
 
   auto o0 = test.getScalar<int>("/m1/oNothing");
   test.runApplication();
@@ -319,7 +319,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_1_8) {
  */
 BOOST_AUTO_TEST_CASE(testDataValidity_2_1_1) {
   TestApplication1<TestModule1> app;
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   auto i1 = test.getScalar<int>("/m1/i1");
   test.runApplication();
   assert(app.mod.getDataValidity() == ctk::DataValidity::ok);
@@ -354,7 +354,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_1_1) {
  */
 BOOST_AUTO_TEST_CASE(testDataValidity_2_1_3) {
   TestApplication1<TestModule1> app;
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
 
   auto i1 = test.getScalar<int>("/m1/i1");
 
@@ -412,7 +412,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_3_1) {
  */
 BOOST_AUTO_TEST_CASE(testDataValidity_2_3_3) {
   TestApplication1<TestModule1> app;
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
 
   auto i1 = test.getScalar<int>("/m1/i1");
   auto o1 = test.getScalar<int>("/m1/o1");
@@ -441,7 +441,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_3_3) {
  */
 BOOST_AUTO_TEST_CASE(testDataValidity_2_3_4) {
   TestApplication1<TestModule2> app;
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
 
   auto i1 = test.getScalar<int>("/m1/i1");
   test.runApplication();
@@ -464,7 +464,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_3_4) {
  */
 BOOST_AUTO_TEST_CASE(testDataValidity_2_4_1) {
   TestApplication1<TestModule1> app;
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
   // app.debugTestableMode();
 
   // the TriggerFanOut is realized via device module connected to control system,
@@ -495,7 +495,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_4_1) {
  */
 BOOST_AUTO_TEST_CASE(testDataValidity_2_4_3) {
   TestApplication1<TestModule1> app;
-  ctk::TestFacility test;
+  ctk::TestFacility test{app};
 
   // the TriggerFanOut is realized via device module connected to control system,
   // using a trigger from TriggerModule

@@ -115,7 +115,7 @@ namespace ChimeraTK {
   template<typename UserType>
   void ThreadedFanOut<UserType>::run() {
     Application::registerThread("ThFO" + FanOut<UserType>::impl->getName());
-    Application::testableModeLock("start");
+    Application::getInstance().getTestableMode().lock("start");
     testableModeReached = true;
 
     ChimeraTK::VersionNumber version{nullptr};
@@ -144,10 +144,10 @@ namespace ChimeraTK {
 
   template<typename UserType>
   VersionNumber ThreadedFanOut<UserType>::readInitialValues() {
-    Application::testableModeUnlock("readInitialValues");
+    Application::getInstance().getTestableMode().unlock("readInitialValues");
     FanOut<UserType>::impl->read();
-    if(!Application::testableModeTestLock()) {
-      Application::testableModeLock("readInitialValues");
+    if(!Application::getInstance().getTestableMode().testLock()) {
+      Application::getInstance().getTestableMode().lock("readInitialValues");
     }
     return FanOut<UserType>::impl->getVersionNumber();
   }
@@ -194,7 +194,7 @@ namespace ChimeraTK {
   template<typename UserType>
   void ThreadedFanOutWithReturn<UserType>::run() {
     Application::registerThread("ThFO" + FanOut<UserType>::impl->getName());
-    Application::testableModeLock("start");
+    Application::getInstance().getTestableMode().lock("start");
     testableModeReached = true;
 
     TransferElementID var;

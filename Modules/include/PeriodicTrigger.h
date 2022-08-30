@@ -80,7 +80,7 @@ namespace ChimeraTK {
     }
 
     void mainLoop() override {
-      if(Application::getInstance().isTestableModeEnabled()) {
+      if(Application::getInstance().getTestableMode().enabled) {
         return;
       }
       tick = 0;

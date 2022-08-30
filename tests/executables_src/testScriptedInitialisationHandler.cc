@@ -37,7 +37,7 @@ struct TestApp : public Application {
 struct Fixture {
   DMapSetter dmapSetter;
   TestApp testApp{"ScriptedInitApp"};
-  TestFacility testFacility{false};
+  TestFacility testFacility{testApp, false};
 };
 
 BOOST_FIXTURE_TEST_CASE(testSuccess, Fixture) {

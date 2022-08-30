@@ -32,7 +32,6 @@ namespace ChimeraTK::detail {
     /// Stop the thread before ApplicationBase::terminate() is called.
     void terminate();
 
-
     /// Start detection thread
     void startDetectBlockedModules();
 

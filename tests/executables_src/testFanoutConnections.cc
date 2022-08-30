@@ -4,6 +4,8 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
+#include "ControlSystemModule.h"
+#include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
 
@@ -63,7 +65,7 @@ struct TestApplication1 : ctk::Application {
 BOOST_AUTO_TEST_CASE(testConnectConsumingFanout) {
   for(int deviceFirst = 0; deviceFirst < 2; ++deviceFirst) {
     TestApplication1 theApp(deviceFirst);
-    ctk::TestFacility testFacility;
+    ctk::TestFacility testFacility{theApp};
     ChimeraTK::Device dummy(TestApplication1::dummyCDD1);
 
     // write iniial values to the dummy before starting the application

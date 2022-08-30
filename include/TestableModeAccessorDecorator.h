@@ -61,7 +61,7 @@ namespace ChimeraTK {
 
     // if receiving end, register for testable mode (stall detection)
     if(this->isReadable() && handleRead) {
-      Application::getInstance().testableMode_processVars[_variableIdRead] = accessor;
+      Application::getInstance().getTestableMode().variables[_variableIdRead].processVariable = accessor;
       assert(accessor->getAccessModeFlags().has(AccessMode::wait_for_new_data));
     }
 
@@ -83,24 +83,24 @@ namespace ChimeraTK {
     if(!_handleWrite) return _target->writeTransfer(versionNumber);
 
     bool dataLost = false;
-    if(!Application::testableModeTestLock()) {
+    if(!Application::getInstance().getTestableMode().testLock()) {
       // may happen if first write in thread is done before first blocking read
-      Application::testableModeLock("write " + this->getName());
+      Application::getInstance().getTestableMode().lock("write " + this->getName());
     }
     dataLost = _target->writeTransfer(versionNumber);
     if(!dataLost) {
-      ++Application::getInstance().testableMode_counter;
-      ++Application::getInstance().testableMode_perVarCounter[_variableIdWrite];
-      if(Application::getInstance().enableDebugTestableMode) {
+      ++Application::getInstance().getTestableMode().counter;
+      ++Application::getInstance().getTestableMode().variables[_variableIdWrite].counter;
+      if(Application::getInstance().getTestableMode().enableDebug) {
         std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
-                  << "]: testableMode_counter increased, now at value "
-                  << Application::getInstance().testableMode_counter << std::endl;
+                  << "]: testableMode.counter increased, now at value "
+                  << Application::getInstance().getTestableMode().counter << std::endl;
       }
     }
     else {
-      if(Application::getInstance().enableDebugTestableMode) {
+      if(Application::getInstance().getTestableMode().enableDebug) {
         std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
-                  << "]: testableMode_counter not increased due to lost data" << std::endl;
+                  << "]: testableMode.counter not increased due to lost data" << std::endl;
       }
     }
     return dataLost;
@@ -113,24 +113,24 @@ namespace ChimeraTK {
     if(!_handleWrite) return _target->writeTransferDestructively(versionNumber);
 
     bool dataLost = false;
-    if(!Application::testableModeTestLock()) {
+    if(!Application::getInstance().getTestableMode().testLock()) {
       // may happen if first write in thread is done before first blocking read
-      Application::testableModeLock("write " + this->getName());
+      Application::getInstance().getTestableMode().lock("write " + this->getName());
     }
     dataLost = _target->writeTransferDestructively(versionNumber);
     if(!dataLost) {
-      ++Application::getInstance().testableMode_counter;
-      ++Application::getInstance().testableMode_perVarCounter[_variableIdWrite];
-      if(Application::getInstance().enableDebugTestableMode) {
+      ++Application::getInstance().getTestableMode().counter;
+      ++Application::getInstance().getTestableMode().variables[_variableIdWrite].counter;
+      if(Application::getInstance().getTestableMode().enableDebug) {
         std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
-                  << "]: testableMode_counter increased, now at value "
-                  << Application::getInstance().testableMode_counter << std::endl;
+                  << "]: testableMode.counter increased, now at value "
+                  << Application::getInstance().getTestableMode().counter << std::endl;
       }
     }
     else {
-      if(Application::getInstance().enableDebugTestableMode) {
+      if(Application::getInstance().getTestableMode().enableDebug) {
         std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
-                  << "]: testableMode_counter not increased due to lost data" << std::endl;
+                  << "]: testableMode.counter not increased due to lost data" << std::endl;
       }
     }
     return dataLost;
@@ -140,7 +140,8 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void TestableModeAccessorDecorator<UserType>::releaseLock() {
-    if(Application::testableModeTestLock()) Application::testableModeUnlock("doReadTransfer " + this->getName());
+    if(Application::getInstance().getTestableMode().testLock())
+      Application::getInstance().getTestableMode().unlock("doReadTransfer " + this->getName());
   }
 
   /********************************************************************************************************************/
@@ -160,26 +161,26 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void TestableModeAccessorDecorator<UserType>::obtainLockAndDecrementCounter(bool hasNewData) {
-    if(!Application::testableModeTestLock()) Application::testableModeLock("doReadTransfer " + this->getName());
+    if(!Application::getInstance().getTestableMode().testLock())
+      Application::getInstance().getTestableMode().lock("doReadTransfer " + this->getName());
     if(!hasNewData) return;
-    if(Application::getInstance().testableMode_perVarCounter[_variableIdRead] > 0) {
-      assert(Application::getInstance().testableMode_counter > 0);
-      --Application::getInstance().testableMode_counter;
-      --Application::getInstance().testableMode_perVarCounter[_variableIdRead];
-      if(Application::getInstance().enableDebugTestableMode) {
+    auto& variable = Application::getInstance().getTestableMode().variables[_variableIdRead];
+    if(variable.counter > 0) {
+      assert(Application::getInstance().getTestableMode().counter > 0);
+      --Application::getInstance().getTestableMode().counter;
+      --variable.counter;
+      if(Application::getInstance().getTestableMode().enableDebug) {
         std::cout << "TestableModeAccessorDecorator[name='" << this->getName() << "', id=" << _variableIdRead
-                  << "]: testableMode_counter decreased, now at value "
-                  << Application::getInstance().testableMode_counter << " / "
-                  << Application::getInstance().testableMode_perVarCounter[_variableIdRead] << std::endl;
+                  << "]: testableMode.counter decreased, now at value "
+                  << Application::getInstance().getTestableMode().counter << " / " << variable.counter << std::endl;
       }
     }
     else {
-      if(Application::getInstance().enableDebugTestableMode) {
+      if(Application::getInstance().getTestableMode().enableDebug) {
         std::cout << "TestableModeAccessorDecorator[name='" << this->getName() << "', id=" << _variableIdRead
-                  << "]: testableMode_counter NOT decreased, was already at value "
-                  << Application::getInstance().testableMode_counter << " / "
-                  << Application::getInstance().testableMode_perVarCounter[_variableIdRead] << std::endl;
-        std::cout << Application::getInstance().testableMode_names[_variableIdRead] << std::endl;
+                  << "]: testableMode.counter NOT decreased, was already at value "
+                  << Application::getInstance().getTestableMode().counter << " / " << variable.counter << std::endl;
+        std::cout << variable.name << std::endl;
       }
     }
   }

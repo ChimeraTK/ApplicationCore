@@ -33,7 +33,7 @@ struct TestApplication : Application {
 BOOST_AUTO_TEST_CASE(testIterface) {
   BOOST_CHECK(true);
   TestApplication app;
-  TestFacility test;
+  TestFacility test{app};
   test.runApplication();
 
   app.dumpConnections();
