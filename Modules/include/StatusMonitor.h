@@ -194,6 +194,230 @@ namespace ChimeraTK {
     }
   };
 
+  // NEW INTERFACE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  template<typename T>
+  struct MaxMonitor2 : ApplicationModule {
+    MaxMonitor2(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+        const std::string& parameterPath, const std::string& description,
+        const std::unordered_set<std::string>& outputTags = {},
+        const std::unordered_set<std::string>& parameterTags = {})
+    : MaxMonitor2(owner, inputPath, outputPath, parameterPath + "/upperWarningThreshold",
+          parameterPath + "/upperFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
+
+    MaxMonitor2(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+        const std::string& warningThreholdPath, const std::string& faultThreholdPath, const std::string& disablePath,
+        const std::string& description, const std::unordered_set<std::string>& outputTags = {},
+        const std::unordered_set<std::string>& parameterTags = {})
+    : ApplicationModule(owner, "hidden", description, HierarchyModifier::hideThis),
+      watch(this, inputPath, "", "Value to monitor"),
+      warningThreshold(this, warningThreholdPath, "", "Warning threhold to compare with", parameterTags),
+      faultThreshold(this, faultThreholdPath, "", "Fault threshold to compare with", parameterTags),
+      disable(this, disablePath, "", "Disable the status monitor", parameterTags),
+      status(this, outputPath, "Resulting status", outputTags) {}
+
+    MaxMonitor2() = default;
+
+    /** Variable to monitor */
+    ModifyHierarchy<ScalarPushInput<T>> watch;
+
+    /** WARNING state to be reported if threshold is reached or exceeded*/
+    ModifyHierarchy<ScalarPushInput<T>> warningThreshold;
+
+    /** FAULT state to be reported if threshold is reached or exceeded*/
+    ModifyHierarchy<ScalarPushInput<T>> faultThreshold;
+
+    /** Disable/enable the entire status monitor */
+    ModifyHierarchy<ScalarPushInput<int>> disable;
+
+    /** Result of the monitor */
+    ModifyHierarchy<StatusOutput> status;
+
+    /** This is where state evaluation is done */
+    void mainLoop() {
+      // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
+      ReadAnyGroup group{watch.value, disable.value, warningThreshold.value, faultThreshold.value};
+
+      DataValidity lastStatusValidity = DataValidity::ok;
+
+      while(true) {
+        StatusOutput::Status newStatus;
+        if(disable.value != 0) {
+          newStatus = StatusOutput::Status::OFF;
+        }
+        else if(watch.value >= faultThreshold.value) {
+          newStatus = StatusOutput::Status::FAULT;
+        }
+        else if(watch.value >= warningThreshold.value) {
+          newStatus = StatusOutput::Status::WARNING;
+        }
+        else {
+          newStatus = StatusOutput::Status::OK;
+        }
+
+        // update only if status has changed, but always in case of initial value
+        if(status.value != newStatus || getDataValidity() != lastStatusValidity ||
+            status.value.getVersionNumber() == VersionNumber{nullptr}) {
+          status.value = newStatus;
+          status.value.write();
+          lastStatusValidity = getDataValidity();
+        }
+        group.readAny();
+      }
+    }
+  };
+
+  template<typename T>
+  struct MinMonitor2 : ApplicationModule {
+    MinMonitor2(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+        const std::string& parameterPath, const std::string& description,
+        const std::unordered_set<std::string>& outputTags = {},
+        const std::unordered_set<std::string>& parameterTags = {})
+    : MinMonitor2(owner, inputPath, outputPath, parameterPath + "/lowerWarningThreshold",
+          parameterPath + "/lowerFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
+
+    MinMonitor2(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+        const std::string& warningThreholdPath, const std::string& faultThreholdPath, const std::string& disablePath,
+        const std::string& description, const std::unordered_set<std::string>& outputTags = {},
+        const std::unordered_set<std::string>& parameterTags = {})
+    : ApplicationModule(owner, "hidden", description, HierarchyModifier::hideThis),
+      watch(this, inputPath, "", "Value to monitor"),
+      warningThreshold(this, warningThreholdPath, "", "Warning threhold to compare with", parameterTags),
+      faultThreshold(this, faultThreholdPath, "", "Fault threshold to compare with", parameterTags),
+      disable(this, disablePath, "", "Disable the status monitor", parameterTags),
+      status(this, outputPath, "Resulting status", outputTags) {}
+
+    MinMonitor2() = default;
+
+    /** Variable to monitor */
+    ModifyHierarchy<ScalarPushInput<T>> watch;
+
+    /** WARNING state to be reported if threshold is reached or exceeded*/
+    ModifyHierarchy<ScalarPushInput<T>> warningThreshold;
+
+    /** FAULT state to be reported if threshold is reached or exceeded*/
+    ModifyHierarchy<ScalarPushInput<T>> faultThreshold;
+
+    /** Disable/enable the entire status monitor */
+    ModifyHierarchy<ScalarPushInput<int>> disable;
+
+    /** Result of the monitor */
+    ModifyHierarchy<StatusOutput> status;
+
+    /** This is where state evaluation is done */
+    void mainLoop() {
+      // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
+      ReadAnyGroup group{watch.value, disable.value, warningThreshold.value, faultThreshold.value};
+
+      DataValidity lastStatusValidity = DataValidity::ok;
+
+      while(true) {
+        StatusOutput::Status newStatus;
+        if(disable.value != 0) {
+          newStatus = StatusOutput::Status::OFF;
+        }
+        else if(watch.value <= faultThreshold.value) {
+          newStatus = StatusOutput::Status::FAULT;
+        }
+        else if(watch.value <= warningThreshold.value) {
+          newStatus = StatusOutput::Status::WARNING;
+        }
+        else {
+          newStatus = StatusOutput::Status::OK;
+        }
+
+        // update only if status has changed, but always in case of initial value
+        if(status.value != newStatus || getDataValidity() != lastStatusValidity ||
+            status.value.getVersionNumber() == VersionNumber{nullptr}) {
+          status.value = newStatus;
+          status.value.write();
+          lastStatusValidity = getDataValidity();
+        }
+        group.readAny();
+      }
+    }
+  };
+
+  template<typename T>
+  struct RangeMonitor2 : ApplicationModule {
+    RangeMonitor2(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+        const std::string& parameterPath, const std::string& description,
+        const std::unordered_set<std::string>& outputTags = {},
+        const std::unordered_set<std::string>& parameterTags = {})
+    : RangeMonitor2(owner, inputPath, outputPath, parameterPath + "/lowerWarningThreshold",
+          parameterPath + "/upperWarningThreshold", parameterPath + "/lowerFaultThreshold",
+          parameterPath + "/upperFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
+
+    RangeMonitor2(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+        const std::string& warningLowerThreholdPath, const std::string& warningUpperThreholdPath,
+        const std::string& faultLowerThreholdPath, const std::string& faultUpperThreholdPath,
+        const std::string& disablePath, const std::string& description,
+        const std::unordered_set<std::string>& outputTags = {},
+        const std::unordered_set<std::string>& parameterTags = {})
+    : ApplicationModule(owner, "hidden", description, HierarchyModifier::hideThis),
+      watch(this, inputPath, "", "Value to monitor"), warningLowerThreshold(this, warningLowerThreholdPath, "",
+                                                          "Lower warning threhold to compare with", parameterTags),
+      warningUpperThreshold(
+          this, warningUpperThreholdPath, "", "Upper warning threhold to compare with", parameterTags),
+      faultLowerThreshold(this, faultLowerThreholdPath, "", "Lower fault threshold to compare with", parameterTags),
+      faultUpperThreshold(this, faultUpperThreholdPath, "", "Upper fault threshold to compare with", parameterTags),
+      disable(this, disablePath, "", "Disable the status monitor", parameterTags),
+      status(this, outputPath, "Resulting status", outputTags) {}
+
+    RangeMonitor2() = default;
+
+    /** Variable to monitor */
+    ModifyHierarchy<ScalarPushInput<T>> watch;
+
+    /** WARNING state to be reported if threshold is reached or exceeded*/
+    ModifyHierarchy<ScalarPushInput<T>> warningLowerThreshold;
+    ModifyHierarchy<ScalarPushInput<T>> warningUpperThreshold;
+
+    /** FAULT state to be reported if threshold is reached or exceeded*/
+    ModifyHierarchy<ScalarPushInput<T>> faultLowerThreshold;
+    ModifyHierarchy<ScalarPushInput<T>> faultUpperThreshold;
+
+    /** Disable/enable the entire status monitor */
+    ModifyHierarchy<ScalarPushInput<int>> disable;
+
+    /** Result of the monitor */
+    ModifyHierarchy<StatusOutput> status;
+
+    /** This is where state evaluation is done */
+    void mainLoop() {
+      // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
+      ReadAnyGroup group{watch.value, disable.value, warningLowerThreshold.value, warningUpperThreshold.value,
+          faultLowerThreshold.value, faultUpperThreshold.value};
+
+      DataValidity lastStatusValidity = DataValidity::ok;
+
+      while(true) {
+        StatusOutput::Status newStatus;
+        if(disable.value != 0) {
+          newStatus = StatusOutput::Status::OFF;
+        }
+        else if(watch.value <= faultLowerThreshold.value || watch.value >= faultUpperThreshold.value) {
+          newStatus = StatusOutput::Status::FAULT;
+        }
+        else if(watch.value <= warningLowerThreshold.value || watch.value >= warningUpperThreshold.value) {
+          newStatus = StatusOutput::Status::WARNING;
+        }
+        else {
+          newStatus = StatusOutput::Status::OK;
+        }
+
+        // update only if status has changed, but always in case of initial value
+        if(status.value != newStatus || getDataValidity() != lastStatusValidity ||
+            status.value.getVersionNumber() == VersionNumber{nullptr}) {
+          status.value = newStatus;
+          status.value.write();
+          lastStatusValidity = getDataValidity();
+        }
+        group.readAny();
+      }
+    }
+  };
+
   /**
    *  Module for status monitoring of an exact value.
    *
