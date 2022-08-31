@@ -183,7 +183,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
 
 /*********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testMinMonitor2) {
+BOOST_AUTO_TEST_CASE(testMinMonitor) {
   std::cout << "testMinMonitor" << std::endl;
 
   TestApplicationNewInterface<ctk::MinMonitor<uint>> app;
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor2) {
 
 /*********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testRangeMonitor2) {
+BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   std::cout << "testRangeMonitor" << std::endl;
   TestApplicationNewInterface<ctk::RangeMonitor<int>> app;
 

@@ -37,9 +37,40 @@ For more info see \ref statusmonitordoc
 
 namespace ChimeraTK {
 
+  struct MonitorBase : ApplicationModule {
+    // make constructors protected not to allow of instantiancion of this object - this is just a base class for other monitors
+   protected:
+    MonitorBase(EntityOwner* owner, const std::string& description, const std::string& outputPath,
+        const std::string& disablePath, const std::unordered_set<std::string>& outputTags = {},
+        const std::unordered_set<std::string>& parameterTags = {})
+    : ApplicationModule(owner, "hidden", description, HierarchyModifier::hideThis),
+      disable(this, disablePath, "", "Disable the status monitor", parameterTags),
+      status(this, outputPath, "Resulting status", outputTags) {}
+
+    MonitorBase() = default;
+
+   public:
+    /** Disable/enable the entire status monitor */
+    ModifyHierarchy<ScalarPushInput<int>> disable;
+    /** Result of the monitor */
+    ModifyHierarchy<StatusOutput> status;
+
+   protected:
+    DataValidity lastStatusValidity = DataValidity::ok;
+    void setStatus(StatusOutput::Status newStatus) {
+      // update only if status has changed, but always in case of initial value
+      if(status.value != newStatus || getDataValidity() != lastStatusValidity ||
+          status.value.getVersionNumber() == VersionNumber{nullptr}) {
+        status.value = newStatus;
+        status.value.write();
+        lastStatusValidity = getDataValidity();
+      }
+    }
+  };
+
   /** Module for status monitoring depending on a maximum threshold value*/
   template<typename T>
-  struct MaxMonitor : ApplicationModule {
+  struct MaxMonitor : MonitorBase {
     MaxMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& parameterPath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
@@ -51,12 +82,10 @@ namespace ChimeraTK {
         const std::string& warningThreholdPath, const std::string& faultThreholdPath, const std::string& disablePath,
         const std::string& description, const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {})
-    : ApplicationModule(owner, "hidden", description, HierarchyModifier::hideThis),
+    : MonitorBase(owner, description, outputPath, disablePath, outputTags, parameterTags),
       watch(this, inputPath, "", "Value to monitor"),
       warningThreshold(this, warningThreholdPath, "", "Warning threhold to compare with", parameterTags),
-      faultThreshold(this, faultThreholdPath, "", "Fault threshold to compare with", parameterTags),
-      disable(this, disablePath, "", "Disable the status monitor", parameterTags),
-      status(this, outputPath, "Resulting status", outputTags) {}
+      faultThreshold(this, faultThreholdPath, "", "Fault threshold to compare with", parameterTags) {}
 
     MaxMonitor() = default;
 
@@ -74,40 +103,23 @@ namespace ChimeraTK {
      * always enabled.
      */
 
-    /** Disable/enable the entire status monitor */
-    ModifyHierarchy<ScalarPushInput<int>> disable;
-
-    /** Result of the monitor */
-    ModifyHierarchy<StatusOutput> status;
-
     /** This is where state evaluation is done */
     void mainLoop() {
       // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
       ReadAnyGroup group{watch.value, disable.value, warningThreshold.value, faultThreshold.value};
 
-      DataValidity lastStatusValidity = DataValidity::ok;
-
       while(true) {
-        StatusOutput::Status newStatus;
         if(disable.value != 0) {
-          newStatus = StatusOutput::Status::OFF;
+          setStatus(StatusOutput::Status::OFF);
         }
         else if(watch.value >= faultThreshold.value) {
-          newStatus = StatusOutput::Status::FAULT;
+          setStatus(StatusOutput::Status::FAULT);
         }
         else if(watch.value >= warningThreshold.value) {
-          newStatus = StatusOutput::Status::WARNING;
+          setStatus(StatusOutput::Status::WARNING);
         }
         else {
-          newStatus = StatusOutput::Status::OK;
-        }
-
-        // update only if status has changed, but always in case of initial value
-        if(status.value != newStatus || getDataValidity() != lastStatusValidity ||
-            status.value.getVersionNumber() == VersionNumber{nullptr}) {
-          status.value = newStatus;
-          status.value.write();
-          lastStatusValidity = getDataValidity();
+          setStatus(StatusOutput::Status::OK);
         }
         group.readAny();
       }
@@ -116,7 +128,7 @@ namespace ChimeraTK {
 
   /** Module for status monitoring depending on a minimum threshold value*/
   template<typename T>
-  struct MinMonitor : ApplicationModule {
+  struct MinMonitor : MonitorBase {
     MinMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& parameterPath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
@@ -128,12 +140,10 @@ namespace ChimeraTK {
         const std::string& warningThreholdPath, const std::string& faultThreholdPath, const std::string& disablePath,
         const std::string& description, const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {})
-    : ApplicationModule(owner, "hidden", description, HierarchyModifier::hideThis),
+    : MonitorBase(owner, description, outputPath, disablePath, outputTags, parameterTags),
       watch(this, inputPath, "", "Value to monitor"),
       warningThreshold(this, warningThreholdPath, "", "Warning threhold to compare with", parameterTags),
-      faultThreshold(this, faultThreholdPath, "", "Fault threshold to compare with", parameterTags),
-      disable(this, disablePath, "", "Disable the status monitor", parameterTags),
-      status(this, outputPath, "Resulting status", outputTags) {}
+      faultThreshold(this, faultThreholdPath, "", "Fault threshold to compare with", parameterTags) {}
 
     MinMonitor() = default;
 
@@ -146,40 +156,23 @@ namespace ChimeraTK {
     /** FAULT state to be reported if threshold is reached or exceeded*/
     ModifyHierarchy<ScalarPushInput<T>> faultThreshold;
 
-    /** Disable/enable the entire status monitor */
-    ModifyHierarchy<ScalarPushInput<int>> disable;
-
-    /** Result of the monitor */
-    ModifyHierarchy<StatusOutput> status;
-
     /** This is where state evaluation is done */
     void mainLoop() {
       // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
       ReadAnyGroup group{watch.value, disable.value, warningThreshold.value, faultThreshold.value};
 
-      DataValidity lastStatusValidity = DataValidity::ok;
-
       while(true) {
-        StatusOutput::Status newStatus;
         if(disable.value != 0) {
-          newStatus = StatusOutput::Status::OFF;
+          setStatus(StatusOutput::Status::OFF);
         }
         else if(watch.value <= faultThreshold.value) {
-          newStatus = StatusOutput::Status::FAULT;
+          setStatus(StatusOutput::Status::FAULT);
         }
         else if(watch.value <= warningThreshold.value) {
-          newStatus = StatusOutput::Status::WARNING;
+          setStatus(StatusOutput::Status::WARNING);
         }
         else {
-          newStatus = StatusOutput::Status::OK;
-        }
-
-        // update only if status has changed, but always in case of initial value
-        if(status.value != newStatus || getDataValidity() != lastStatusValidity ||
-            status.value.getVersionNumber() == VersionNumber{nullptr}) {
-          status.value = newStatus;
-          status.value.write();
-          lastStatusValidity = getDataValidity();
+          setStatus(StatusOutput::Status::OK);
         }
         group.readAny();
       }
@@ -194,7 +187,7 @@ namespace ChimeraTK {
    * set the ranges correctly to issue warning or fault.
    */
   template<typename T>
-  struct RangeMonitor : ApplicationModule {
+  struct RangeMonitor : MonitorBase {
     RangeMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& parameterPath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
@@ -209,15 +202,13 @@ namespace ChimeraTK {
         const std::string& disablePath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {})
-    : ApplicationModule(owner, "hidden", description, HierarchyModifier::hideThis),
+    : MonitorBase(owner, description, outputPath, disablePath, outputTags, parameterTags),
       watch(this, inputPath, "", "Value to monitor"), warningLowerThreshold(this, warningLowerThreholdPath, "",
                                                           "Lower warning threhold to compare with", parameterTags),
       warningUpperThreshold(
           this, warningUpperThreholdPath, "", "Upper warning threhold to compare with", parameterTags),
       faultLowerThreshold(this, faultLowerThreholdPath, "", "Lower fault threshold to compare with", parameterTags),
-      faultUpperThreshold(this, faultUpperThreholdPath, "", "Upper fault threshold to compare with", parameterTags),
-      disable(this, disablePath, "", "Disable the status monitor", parameterTags),
-      status(this, outputPath, "Resulting status", outputTags) {}
+      faultUpperThreshold(this, faultUpperThreholdPath, "", "Upper fault threshold to compare with", parameterTags) {}
 
     RangeMonitor() = default;
 
@@ -236,43 +227,26 @@ namespace ChimeraTK {
     ModifyHierarchy<ScalarPushInput<T>> faultLowerThreshold;
     ModifyHierarchy<ScalarPushInput<T>> faultUpperThreshold;
 
-    /** Disable/enable the entire status monitor */
-    ModifyHierarchy<ScalarPushInput<int>> disable;
-
-    /** Result of the monitor */
-    ModifyHierarchy<StatusOutput> status;
-
     /** This is where state evaluation is done */
     void mainLoop() {
       // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
       ReadAnyGroup group{watch.value, disable.value, warningLowerThreshold.value, warningUpperThreshold.value,
           faultLowerThreshold.value, faultUpperThreshold.value};
 
-      DataValidity lastStatusValidity = DataValidity::ok;
-
       while(true) {
-        StatusOutput::Status newStatus;
         if(disable.value != 0) {
-          newStatus = StatusOutput::Status::OFF;
+          setStatus(StatusOutput::Status::OFF);
         }
         // Check for fault limits first. Like this they supersede the warning,
         // even if they are stricter then the warning limits (mis-configuration)
         else if(watch.value <= faultLowerThreshold.value || watch.value >= faultUpperThreshold.value) {
-          newStatus = StatusOutput::Status::FAULT;
+          setStatus(StatusOutput::Status::FAULT);
         }
         else if(watch.value <= warningLowerThreshold.value || watch.value >= warningUpperThreshold.value) {
-          newStatus = StatusOutput::Status::WARNING;
+          setStatus(StatusOutput::Status::WARNING);
         }
         else {
-          newStatus = StatusOutput::Status::OK;
-        }
-
-        // update only if status has changed, but always in case of initial value
-        if(status.value != newStatus || getDataValidity() != lastStatusValidity ||
-            status.value.getVersionNumber() == VersionNumber{nullptr}) {
-          status.value = newStatus;
-          status.value.write();
-          lastStatusValidity = getDataValidity();
+          setStatus(StatusOutput::Status::OK);
         }
         group.readAny();
       }
@@ -290,7 +264,7 @@ namespace ChimeraTK {
    *  data types should never be compared with exact equality.
    */
   template<typename T>
-  struct ExactMonitor : ApplicationModule {
+  struct ExactMonitor : MonitorBase {
     /**
      *  Constructor for exact monitoring module.
      *
@@ -323,11 +297,9 @@ namespace ChimeraTK {
         const std::string& requiredValuePath, const std::string& disablePath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {})
-    : ApplicationModule(owner, "hidden", description, HierarchyModifier::hideThis),
+    : MonitorBase(owner, description, outputPath, disablePath, outputTags, parameterTags),
       watch(this, inputPath, "", "Value to monitor"),
-      requiredValue(this, requiredValuePath, "", "Value to compare with", parameterTags),
-      disable(this, disablePath, "", "Disable the status monitor", parameterTags),
-      status(this, outputPath, "Resulting status", outputTags) {}
+      requiredValue(this, requiredValuePath, "", "Value to compare with", parameterTags) {}
 
     ExactMonitor() = default;
 
@@ -337,37 +309,20 @@ namespace ChimeraTK {
     /** The required value to compare with */
     ModifyHierarchy<ScalarPushInput<T>> requiredValue;
 
-    /** Disable/enable the entire status monitor */
-    ModifyHierarchy<ScalarPushInput<int>> disable;
-
-    /** Result of the monitor */
-    ModifyHierarchy<StatusOutput> status;
-
     /** This is where state evaluation is done */
     void mainLoop() {
       // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
       ReadAnyGroup group{watch.value, disable.value, requiredValue.value};
 
-      DataValidity lastStatusValidity = DataValidity::ok;
-
       while(true) {
-        StatusOutput::Status newStatus;
         if(disable.value != 0) {
-          newStatus = StatusOutput::Status::OFF;
+          setStatus(StatusOutput::Status::OFF);
         }
         else if(watch.value != requiredValue.value) {
-          newStatus = StatusOutput::Status::FAULT;
+          setStatus(StatusOutput::Status::FAULT);
         }
         else {
-          newStatus = StatusOutput::Status::OK;
-        }
-
-        // update only if status has changed, but always in case of initial value
-        if(status.value != newStatus || getDataValidity() != lastStatusValidity ||
-            status.value.getVersionNumber() == VersionNumber{nullptr}) {
-          status.value = newStatus;
-          status.value.write();
-          lastStatusValidity = getDataValidity();
+          setStatus(StatusOutput::Status::OK);
         }
         group.readAny();
       }
