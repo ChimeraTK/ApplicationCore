@@ -4,6 +4,7 @@
 
 #include "CircularDependencyDetectionRecursionStopper.h"
 #include "VariableGroup.h"
+#include "Model.h"
 
 #include <boost/thread.hpp>
 
@@ -31,17 +32,27 @@ namespace ChimeraTK {
      * @param owner The owner to register the ApplicationMoule with (ModuleGroup or Application)
      * @param name The name of the new ApplicationModule
      * @param description A description visible to the control system
-     * @param hierarchyModifier Specifies how the hierarchy should be modified
      * @param tags List of tags to be added to all child variables (default: empty)
      *
      * @exception ChimeraTK::logic_error thrown if owner is of the wrong type or name is illegal.
      */
-    ApplicationModule(EntityOwner* owner, const std::string& name, const std::string& description,
+    ApplicationModule(ModuleGroup* owner, const std::string& name, const std::string& description,
+        const std::unordered_set<std::string>& tags = {});
+
+    /**
+     * Deprecated form of the constructor. Use the new signature without hierarchy modifier and if necessary qualitfied
+     * names instead.
+     */
+    [[deprecated]] ApplicationModule(ModuleGroup* owner, const std::string& name, const std::string& description,
+        HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags = {});
+
+    /** Deprecated form of the constructor. Use the new signature instead. */
+    [[deprecated]] ApplicationModule(EntityOwner* owner, const std::string& name, const std::string& description,
         HierarchyModifier hierarchyModifier = HierarchyModifier::none,
         const std::unordered_set<std::string>& tags = {});
 
     /** Deprecated form of the constructor. Use the new signature instead. */
-    ApplicationModule(EntityOwner* owner, const std::string& name, const std::string& description,
+    [[deprecated]] ApplicationModule(EntityOwner* owner, const std::string& name, const std::string& description,
         bool eliminateHierarchy, const std::unordered_set<std::string>& tags = {});
 
     /** Default constructor: Allows late initialisation of modules (e.g. when
@@ -90,6 +101,9 @@ namespace ChimeraTK {
      */
     void setCircularNetworkHash(size_t circularNetworkHash);
 
+    /** Return the application model proxy representing this module */
+    ChimeraTK::Model::ApplicationModuleProxy getModel() { return _model; }
+
    protected:
     /** Wrapper around mainLoop(), to execute additional tasks in the thread
      * before entering the main loop */
@@ -119,6 +133,8 @@ namespace ChimeraTK {
      *  Only used in the setup phase.
      */
     detail::CircularDependencyDetectionRecursionStopper _recursionStopper;
+
+    ChimeraTK::Model::ApplicationModuleProxy _model;
   };
 
   /*********************************************************************************************************************/

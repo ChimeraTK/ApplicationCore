@@ -229,6 +229,29 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  void VariableNetworkNode::addExternalTrigger(VariableNetworkNode trigger) {
+    // check if node already has a trigger
+    if(pdata->externalTrigger.getType() != NodeType::invalid) {
+      throw ChimeraTK::logic_error("Only one external trigger per variable network is allowed.");
+    }
+
+    // check direction
+    if(pdata->direction.dir != VariableDirection::feeding) {
+      throw ChimeraTK::logic_error("Only feeding variables can get a trigger.");
+    }
+
+    // add ourselves as a trigger receiver to the other network
+    if(!trigger.hasOwner()) {
+      Application::getInstance().createNetwork().addNode(trigger);
+    }
+    trigger.getOwner().addNodeToTrigger(*this);
+
+    // add trigger
+    pdata->externalTrigger = trigger;
+  }
+
+  /*********************************************************************************************************************/
+
   void VariableNetworkNode::setValueType(const std::type_info& newType) const {
     assert(*pdata->valueType == typeid(AnyType));
     pdata->valueType = &newType;
@@ -404,6 +427,7 @@ namespace ChimeraTK {
 
   void VariableNetworkNode::addTag(const std::string& tag) {
     pdata->tags.insert(tag);
+    pdata->_model.addTag(tag);
   }
 
   /*********************************************************************************************************************/
@@ -505,4 +529,17 @@ namespace ChimeraTK {
     return pdata->circularNetworkHash;
   }
 
+  /*********************************************************************************************************************/
+
+  Model::ProcessVariableProxy VariableNetworkNode::getModel() const {
+    return pdata->_model;
+  }
+
+  /*********************************************************************************************************************/
+
+  void VariableNetworkNode::setModel(Model::ProcessVariableProxy model) {
+    pdata->_model = std::move(model);
+  }
+
+  /*********************************************************************************************************************/
 } // namespace ChimeraTK

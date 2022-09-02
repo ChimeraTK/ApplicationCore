@@ -104,7 +104,7 @@ struct InnerGroup : public ctk::ModuleGroup {
 };
 
 struct OuterGroup : public ctk::ModuleGroup {
-  OuterGroup(EntityOwner* owner, const std::string& name, const std::string& description,
+  OuterGroup(ModuleGroup* owner, const std::string& name, const std::string& description,
       ctk::HierarchyModifier modifier, ctk::HierarchyModifier innerGroupModifier = ctk::HierarchyModifier::none)
   : ModuleGroup{owner, name, description, modifier}, innerGroup{this, "innerModuleGroup", "", innerGroupModifier} {
     // Here, findTag should give proper exceptions if HierarchyModifiers are used illegally

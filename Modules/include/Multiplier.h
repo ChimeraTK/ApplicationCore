@@ -15,10 +15,8 @@ namespace ChimeraTK {
   template<typename InputType, typename OutputType = InputType, size_t NELEMS = 1>
   struct ConstMultiplier : public ApplicationModule {
     ConstMultiplier(ModuleGroup* owner, const std::string& name, const std::string& description, double factor)
-    : ApplicationModule(owner, name, ""), input(this, "input", "", NELEMS, description),
-      output(this, "output", "", NELEMS, description), _factor(factor) {
-      setEliminateHierarchy();
-    }
+    : ApplicationModule(owner, name, "", HierarchyModifier::hideThis), input(this, "input", "", NELEMS, description),
+      output(this, "output", "", NELEMS, description), _factor(factor) {}
 
     ArrayPushInput<InputType> input;
     ArrayOutput<OutputType> output;
@@ -132,11 +130,9 @@ namespace ChimeraTK {
   struct Divider : public ApplicationModule {
     using ApplicationModule::ApplicationModule;
     Divider(EntityOwner* owner, const std::string& name, const std::string& description)
-    : ApplicationModule(owner, name, ""), input(this, "input", "", NELEMS, description),
+    : ApplicationModule(owner, name, "", HierarchyModifier::hideThis), input(this, "input", "", NELEMS, description),
       divider(this, "divider", "", "Divider to scale the input value with"),
-      output(this, "output", "", NELEMS, description) {
-      setEliminateHierarchy();
-    }
+      output(this, "output", "", NELEMS, description) {}
 
     ArrayPushInput<InputType> input;
     ScalarPushInput<double> divider;

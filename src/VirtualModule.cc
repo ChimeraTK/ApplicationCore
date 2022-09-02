@@ -24,7 +24,6 @@ namespace ChimeraTK {
     // since moduleList stores plain pointers, we need to regenerate this list
     for(auto& mod : other.submodules) addSubModule(mod); // this creates a copy (call by value)
     accessorList = other.accessorList;
-    _hierarchyModifier = other._hierarchyModifier;
     _moduleType = other.getModuleType();
   }
 
@@ -43,7 +42,6 @@ namespace ChimeraTK {
     // since moduleList stores plain pointers, we need to regenerate this list
     for(auto& mod : other.submodules) addSubModule(mod); // this creates a copy (call by value)
     accessorList = other.accessorList;
-    _hierarchyModifier = other._hierarchyModifier;
     return *this;
   }
 
@@ -184,6 +182,19 @@ namespace ChimeraTK {
         removeSubModule(child->getName());
       }
     }
+  }
+
+  /********************************************************************************************************************/
+
+  std::string VirtualModule::getVirtualQualifiedName() const {
+    /// @todo FIXME change implementation to use model instead!
+    std::string qualifiedName = "/" + getName();
+    auto mod = dynamic_cast<Module*>(_owner);
+    while(mod != nullptr) {
+      qualifiedName = "/" + mod->getName() + qualifiedName;
+      mod = dynamic_cast<Module*>(mod->getOwner());
+    }
+    return qualifiedName;
   }
 
   /********************************************************************************************************************/

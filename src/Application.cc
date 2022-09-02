@@ -29,6 +29,12 @@ using namespace ChimeraTK;
 /*********************************************************************************************************************/
 
 Application::Application(const std::string& name) : ApplicationBase(name), ModuleGroup(name) {
+  // Create the model and its root.
+  Application::_model = Model::RootProxy(*this);
+
+  // Make sure the ModuleGroup base class has the model, too.
+  ModuleGroup::_model = Model::ModuleGroupProxy(_model);
+
   // check if the application name has been set
   if(applicationName.empty()) {
     Application::shutdown();
@@ -509,7 +515,6 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
   auto pvar = _processVariableManager->createProcessArray<UserType>(dir, node.getPublicName(),
       node.getNumberOfElements(), node.getOwner().getUnit(), node.getOwner().getDescription(), {}, 3, flags);
   assert(pvar->getName() != "");
-
 
   // Decorate the process variable if testable mode is enabled and this is the receiving end of the variable (feeding
   // to the network), or a bidirectional consumer. Also don't decorate, if the mode is polling. Instead flag the

@@ -129,7 +129,7 @@ struct VectorModule : public ctk::ApplicationModule {
 /* An module group with a vector of a application modules */
 
 struct VectorModuleGroup : public ctk::ModuleGroup {
-  VectorModuleGroup(EntityOwner* owner, const std::string& name, const std::string& description, size_t nInstances,
+  VectorModuleGroup(ModuleGroup* owner, const std::string& name, const std::string& description, size_t nInstances,
       ctk::HierarchyModifier modifier = ctk::HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
   : ctk::ModuleGroup(owner, name, description, modifier, tags) {
     for(size_t i = 0; i < nInstances; ++i) {
@@ -223,6 +223,7 @@ BOOST_AUTO_TEST_CASE(test_badHierarchies) {
   // ******************************************
   // *** Tests for ApplicationModule
 
+  /* -> Reactivate once the deprecated constructor of ApplicationModule has been removed which makes this ambiguous
   // check app ApplicationModules cannot be owned by nothing
   {
     OneModuleApp app;
@@ -233,6 +234,7 @@ BOOST_AUTO_TEST_CASE(test_badHierarchies) {
     catch(ChimeraTK::logic_error&) {
     }
   }
+  */
 
   // ******************************************
   // *** Tests for VariableGroup
@@ -250,28 +252,6 @@ BOOST_AUTO_TEST_CASE(test_badHierarchies) {
 
   // ******************************************
   // *** Tests for ModuleGroup
-
-  // check app ModuleGroups cannot be owned by ApplicationModules
-  {
-    OneModuleApp app;
-    try {
-      VectorModuleGroup willFail(&(app.testModule), "willFail", "", 1);
-      BOOST_FAIL("Exception expected");
-    }
-    catch(ChimeraTK::logic_error&) {
-    }
-  }
-
-  // check app ModuleGroups cannot be owned by VariableGroups
-  {
-    OneModuleApp app;
-    try {
-      VectorModuleGroup willFail(&(app.testModule.someGroup), "willFail", "", 1);
-      BOOST_FAIL("Exception expected");
-    }
-    catch(ChimeraTK::logic_error&) {
-    }
-  }
 
   // check app ModuleGroups cannot be owned by nothing
   {

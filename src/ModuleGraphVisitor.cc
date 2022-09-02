@@ -46,9 +46,6 @@ namespace ChimeraTK {
   void ModuleGraphVisitor::dumpEntityOwner(const EntityOwner& module) {
     std::string myDotNode = detail::encodeDotNodeName(module.getQualifiedName());
     _stream << "  " << myDotNode << "[label=\"" << module.getName() << "\"";
-    if(module.getEliminateHierarchy()) {
-      _stream << ",style=dotted";
-    }
     if(module.getModuleType() == EntityOwner::ModuleType::ModuleGroup) {
       _stream << ",peripheries=2";
     }

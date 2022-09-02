@@ -49,6 +49,8 @@ namespace ChimeraTK {
 
     size_t getCircularNetworkHash() override;
 
+    std::string getVirtualQualifiedName() const override { throw ChimeraTK::logic_error("Not implemented."); }
+
    protected:
     /** Constructor: the variableNamePrefix will be prepended to all control system variable names (separated by a
      *  slash). Applications should use the [] operator to obtain submodules instead. */

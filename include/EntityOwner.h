@@ -32,16 +32,10 @@ namespace ChimeraTK {
    */
   class EntityOwner {
    public:
-    /** Constructor: Create EntityOwner by the given name with the given description. The hierarchy will be modified
-     *  according to the hierarchyModifier (when VirtualModules are created e.g. in findTag()). The specified list of
+    /** Constructor: Create EntityOwner by the given name with the given description. The specified list of
      *  tags will be added to all elements directly or indirectly owned by this instance. */
-    EntityOwner(const std::string& name, const std::string& description,
-        HierarchyModifier hierarchyModifier = HierarchyModifier::none,
-        const std::unordered_set<std::string>& tags = {});
-
-    /** Deprecated form of the constructor. Use the new signature instead. */
-    EntityOwner(const std::string& name, const std::string& description, bool eliminateHierarchy,
-        const std::unordered_set<std::string>& tags = {});
+    EntityOwner(
+        const std::string& name, const std::string& description, const std::unordered_set<std::string>& tags = {});
 
     /** Default constructor just for late initialisation */
     EntityOwner();
@@ -132,29 +126,6 @@ namespace ChimeraTK {
      * information about tags. */
     void addTag(const std::string& tag);
 
-    /** Note: this function is deprectated. Use the constructor parameter instead. If this is not sufficient, write a
-     *  feature request for a function to set the HierarchyModifier.
-     *
-     * Eliminate the level of hierarchy represented by this EntityOwner. This is
-     * e.g. used when building the hierarchy of VirtualModules in findTag().
-     * Eliminating one level of hierarchy will make all childs of that hierarchy
-     * level to appear as if there were direct childs of the next higher hierarchy
-     * level. If e.g. there is a variable on the third level "A.B.C" and one
-     * selects to eliminate the second level of hierarchy (e.g. calls
-     *  B.eliminateHierarchy()), the structure would look like "A.C". This of
-     * course only affects the "dynamic" data
-     *  model, while the static C++ model is fixed at compile time. */
-    void setEliminateHierarchy() { _hierarchyModifier = HierarchyModifier::hideThis; }
-
-    /** Returns the flag whether this level of hierarchy should be eliminated. It returns true
-        if hiding the hierarchy is required by the hierarchy modifier (HierarchyModifier::hideThis or
-       HierarchyModifier::oneUpAndHide) */
-    bool getEliminateHierarchy() const;
-
-    /** Returns the hierarchy modifier of this entity. FIXE: One of those useless code comments.
-     */
-    HierarchyModifier getHierarchyModifier() const { return _hierarchyModifier; }
-
     /** Create a VirtualModule which contains all variables of this EntityOwner in
      * a flat hierarchy. It will recurse
      *  through all sub-modules and add all found variables directly to the
@@ -234,7 +205,14 @@ namespace ChimeraTK {
     virtual void findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag,
         bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const;
 
+    /** Check whether this module has declared that it reached the testable mode. */
+
+    bool hasReachedTestableMode();
+
    protected:
+    /** Convert HierarchyModifier into path qualification (for backwards compatibility only!) */
+    void applyHierarchyModifierToName(HierarchyModifier hierarchyModifier);
+
     /** The name of this instance */
     std::string _name;
 
@@ -247,9 +225,6 @@ namespace ChimeraTK {
     /** List of modules owned by this instance */
     std::list<Module*> moduleList;
 
-    /** Hierarchy modifier flag */
-    HierarchyModifier _hierarchyModifier{HierarchyModifier::none};
-
     /** List of tags to be added to all accessors and modules inside this module
      */
     std::unordered_set<std::string> _tags;
@@ -259,11 +234,6 @@ namespace ChimeraTK {
      *  @todo This should be moved to a more proper place in the hierarchy (e.g. ModuleImpl) after InternalModule class
      *  has been properly unified with the normal Module class. */
     std::atomic<bool> testableModeReached{false};
-
-   public:
-    /** Check whether this module has declared that it reached the testable mode. */
-
-    bool hasReachedTestableMode();
   };
 
   /********************************************************************************************************************/
