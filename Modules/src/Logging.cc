@@ -67,7 +67,10 @@ void Logger::sendMessage(const std::string& msg, const logging::LogLevel& level)
 
 void Logger::prepare() {
   // write initial value in order to bring LoggingModule to mainLoop()
+  incrementDataFaultCounter(); // force data to be flagged as faulty
+  message = "5";
   message.write();
+  decrementDataFaultCounter(); // data validity depends on inputs
 }
 
 LoggingModule::LoggingModule(ctk::EntityOwner* owner, const std::string& name, const std::string& description,
@@ -213,7 +216,7 @@ void LoggingModule::mainLoop() {
       throw ChimeraTK::logic_error("Cannot find  message level"
                                    "when updating logging variables.");
     }
-    // if log level is INTERANEL someone called writeAll() in a module containing the Logger -> ignore
+    // if log level is INTERNAL someone called writeAll() in a module containing the Logger -> ignore
     if(level == LogLevel::INTERNAL) {
       continue;
     }
