@@ -531,18 +531,11 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void DeviceModule::defineConnections() {
-    // replace all slashes in the deviceAliasOrURI, because URIs might contain slashes and they are not allowed in
-    // module names
-    std::string deviceAliasOrURI_withoutSlashes = deviceAliasOrURI;
-    size_t i = 0;
-    while((i = deviceAliasOrURI_withoutSlashes.find_first_of('/', i)) != std::string::npos) {
-      deviceAliasOrURI_withoutSlashes[i] = '_';
-    }
 
     // Connect device status module to the control system
     ControlSystemModule cs;
-    deviceError.connectTo(cs["Devices"][deviceAliasOrURI_withoutSlashes]);
-    deviceBecameFunctional >> cs["Devices"][deviceAliasOrURI_withoutSlashes]("deviceBecameFunctional");
+    deviceError.connectTo(cs["Devices"][getDeviceAliasOrURI_withoutSlashes()]);
+    deviceBecameFunctional >> cs["Devices"][getDeviceAliasOrURI_withoutSlashes()]("deviceBecameFunctional");
   }
 
   /*********************************************************************************************************************/
@@ -605,9 +598,23 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
+
+  std::string DeviceModule::getDeviceAliasOrURI_withoutSlashes() {
+    // replace all slashes in the deviceAliasOrURI, because URIs might contain slashes and they are not allowed in
+    // module names
+    auto deviceAliasOrURI_withoutSlashes = deviceAliasOrURI;
+    size_t i = 0;
+    while((i = deviceAliasOrURI_withoutSlashes.find_first_of('/', i)) != std::string::npos) {
+      deviceAliasOrURI_withoutSlashes[i] = '_';
+    }
+
+    return deviceAliasOrURI_withoutSlashes;
+  }
+
+  /*********************************************************************************************************************/
   /*********************************************************************************************************************/
 
-  ConnectingDeviceModule::ConnectingDeviceModule(EntityOwner* owner, const std::string& _deviceAliasOrCDD,
+  ConnectingDeviceModule::ConnectingDeviceModule(ModuleGroup* owner, const std::string& _deviceAliasOrCDD,
       const std::string& _triggerPath, std::function<void(DeviceModule*)> initialisationHandler,
       const std::string& _pathInDevice)
   : ModuleGroup(owner, "**ConnectingDeviceModule**", ""), _initHandler(initialisationHandler) {
@@ -628,10 +635,52 @@ namespace ChimeraTK {
     }
 
     // set other information required for the connection later
-    triggerPath = _triggerPath;
     pathInDevice = _pathInDevice;
-    if(triggerPath.size() != 0 && triggerPath[0] != '/') {
+    triggerPath = _triggerPath;
+    if(!triggerPath.empty() && triggerPath[0] != '/') {
       throw ChimeraTK::logic_error("DeviceModule triggerPath must be absolute!");
+    }
+
+    // create the process variables in the model from the device registers
+    // -------------------------------------------------------------------
+    _model = owner->getModel().add(*this);
+    auto neighbourDirectory = _model.visit(
+        Model::returnDirectory, Model::getNeighbourDirectory, Model::returnFirstHit(Model::DirectoryProxy{}));
+    assert(neighbourDirectory.isValid());
+
+    // get the virtualised version of the device for the given pathInDevice
+    auto source = _dm->virtualiseFromCatalog();
+    if(pathInDevice != "/") {
+      source = dynamic_cast<const VirtualModule&>(source.submodule(pathInDevice));
+    }
+
+    // iterate all registers and add them to the model
+    for(auto& node : source.getAccessorListRecursive()) {
+      // add trigger to feeding nodes, if necessary
+      if(node.getDirection().dir == VariableDirection::feeding && node.getMode() != UpdateMode::push &&
+          !node.hasExternalTrigger()) {
+        if(triggerPath.empty()) {
+          throw ChimeraTK::logic_error("DeviceModule '" + _deviceAliasOrCDD + "': Feeding poll-typed register '" +
+              node.getRegisterName() + "' needs trigger but none provided.");
+        }
+      }
+
+      // obtain register name relative to pathInDevice
+      assert(boost::starts_with(node.getRegisterName(), pathInDevice));
+      auto cut = pathInDevice.size();
+      if(!boost::ends_with(pathInDevice, "/")) {
+        ++cut;
+      }
+      auto relativePath = node.getRegisterName().substr(cut);
+
+      /// create subdirectory if necessary
+      auto dir = neighbourDirectory.addDirectoryRecursive(HierarchyModifyingGroup::getPathName(relativePath));
+
+      // add the PV to the directory (or get it if already existing)
+      auto var = dir.addVariable(HierarchyModifyingGroup::getUnqualifiedName(relativePath));
+
+      // connect the node and the PV
+      _model.addVariable(var, node);
     }
   }
 

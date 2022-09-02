@@ -21,15 +21,8 @@ namespace ChimeraTK {
   class Module : public EntityOwner {
    public:
     /** Constructor: Create Module by the given name with the given description and register it with its owner. The
-     *  hierarchy will be modified according to the hierarchyModifier (when VirtualModules are created e.g. in
-     *  findTag()). The specified list of tags will be added to all elements directly or indirectly owned by this
-     *  instance. */
+     * specified list of tags will be added to all elements directly or indirectly owned by this instance. */
     Module(EntityOwner* owner, const std::string& name, const std::string& description,
-        HierarchyModifier hierarchyModifier = HierarchyModifier::none,
-        const std::unordered_set<std::string>& tags = {});
-
-    /** Deprecated form of the constructor. Use the new signature instead. */
-    Module(EntityOwner* owner, const std::string& name, const std::string& description, bool eliminateHierarchy,
         const std::unordered_set<std::string>& tags = {});
 
     /** Default constructor: Allows late initialisation of modules (e.g. when
@@ -127,7 +120,7 @@ namespace ChimeraTK {
 
     std::string getQualifiedName() const override;
 
-    virtual std::string getVirtualQualifiedName() const;
+    virtual std::string getVirtualQualifiedName() const = 0;
 
     std::string getFullDescription() const override;
 

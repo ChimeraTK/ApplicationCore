@@ -5,6 +5,7 @@
 #include "CircularDependencyDetector.h"
 #include "Flags.h"
 #include "InternalModule.h"
+#include "Model.h"
 #include "ModuleGroup.h"
 #include "TestableMode.h"
 #include "VariableNetwork.h"
@@ -67,6 +68,9 @@ namespace ChimeraTK {
     void optimiseUnmappedVariables(const std::set<std::string>& names) override;
 
     void run() override;
+
+    /** Return the root of the application model */
+    Model::RootProxy getModel() { return _model; }
 
     /** Instead of running the application, just initialise it and output the
      * published variables to an XML file. */
@@ -237,6 +241,9 @@ namespace ChimeraTK {
     std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
         boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>>
         createApplicationVariable(VariableNetworkNode const& node, VariableNetworkNode const& consumer = {});
+
+    /** The model of the application */
+    Model::RootProxy _model;
 
     /** List of InternalModules */
     std::list<boost::shared_ptr<InternalModule>> internalModuleList;

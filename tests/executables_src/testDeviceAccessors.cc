@@ -660,24 +660,15 @@ BOOST_AUTO_TEST_CASE(testConnectingDeviceModuleExceptions) {
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
   TestApplication3<int> app;
 
-  // wrong owner
-  BOOST_CHECK_THROW(
-      ctk::ConnectingDeviceModule(&app.deeper.hierarchies, "Dummy0", "", nullptr, "/MyModule"), ctk::logic_error);
-  BOOST_CHECK_THROW(
-      ctk::ConnectingDeviceModule(&app.deeper.hierarchies.need, "Dummy0", "", nullptr, "/MyModule"), ctk::logic_error);
-
   // non-absolute trigger path
   BOOST_CHECK_THROW(
-      ctk::ConnectingDeviceModule(&app.deeper.hierarchies, "Dummy0", "unqualifiedName", nullptr, "/MyModule"),
-      ctk::logic_error);
+      ctk::ConnectingDeviceModule(&app.deeper, "Dummy0", "unqualifiedName", nullptr, "/MyModule"), ctk::logic_error);
   BOOST_CHECK_THROW(
-      ctk::ConnectingDeviceModule(&app.deeper.hierarchies, "Dummy0", "relative/name", nullptr, "/MyModule"),
-      ctk::logic_error);
+      ctk::ConnectingDeviceModule(&app.deeper, "Dummy0", "relative/name", nullptr, "/MyModule"), ctk::logic_error);
   BOOST_CHECK_THROW(
-      ctk::ConnectingDeviceModule(&app.deeper.hierarchies, "Dummy0", "./also/relative", nullptr, "/MyModule"),
-      ctk::logic_error);
+      ctk::ConnectingDeviceModule(&app.deeper, "Dummy0", "./also/relative", nullptr, "/MyModule"), ctk::logic_error);
   BOOST_CHECK_THROW(
-      ctk::ConnectingDeviceModule(&app.deeper.hierarchies, "Dummy0", "../another/relative/name", nullptr, "/MyModule"),
+      ctk::ConnectingDeviceModule(&app.deeper, "Dummy0", "../another/relative/name", nullptr, "/MyModule"),
       ctk::logic_error);
 }
 

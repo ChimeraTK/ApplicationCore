@@ -57,6 +57,8 @@ namespace ChimeraTK {
 
       DeviceModuleProxy& operator=(DeviceModuleProxy&& other);
 
+      std::string getVirtualQualifiedName() const override { throw ChimeraTK::logic_error("Not implemented."); }
+
      private:
       friend class ChimeraTK::DeviceModule;
       const DeviceModule* _myowner;
@@ -69,6 +71,10 @@ namespace ChimeraTK {
   /** Implements access to a ChimeraTK::Device.
    */
   class DeviceModule : public ApplicationModule {
+   protected:
+    // Neede by some public member constructors, so it comes first
+    std::string deviceAliasOrURI;
+
    public:
     /**
      *  Create (non-connecting) DeviceModule
@@ -175,8 +181,9 @@ namespace ChimeraTK {
      *  Like the deviceError, it is automatically published to the control systen to ensure that there is at least one
      *  consumer connected.
      */
-    ScalarOutput<int> deviceBecameFunctional{
-        this, "deviceBecameFunctional", "", ""}; // should be changed to data type void
+    ScalarOutput<int> deviceBecameFunctional{this,
+        "/Devices/" + getDeviceAliasOrURI_withoutSlashes() + "/deviceBecameFunctional", "",
+        ""}; // should be changed to data type void
 
     /** Add a TransferElement to the list DeviceModule::writeRecoveryOpen. This list will be written during a recovery,
      * after the constant accessors DeviceModule::writeAfterOpen are written. This is locked by a unique_lock.
@@ -207,6 +214,8 @@ namespace ChimeraTK {
      */
     std::string getDeviceAliasOrURI() const { return deviceAliasOrURI; }
 
+    std::string getVirtualQualifiedName() const override { throw ChimeraTK::logic_error("Not implemented."); }
+
    protected:
     // populate virtualisedModuleFromCatalog based on the information in the
     // device's catalogue
@@ -215,8 +224,9 @@ namespace ChimeraTK {
     mutable VirtualModule virtualisedModuleFromCatalog{"INVALID", "", ModuleType::Invalid};
     mutable bool virtualisedModuleFromCatalog_isValid{false};
 
-    std::string deviceAliasOrURI;
     ChimeraTK::RegisterPath registerNamePrefix;
+
+    std::string getDeviceAliasOrURI_withoutSlashes();
 
     // List of proxies accessed through the operator[]. This is mutable since
     // it is little more than a cache and thus does not change the logical state
@@ -229,7 +239,8 @@ namespace ChimeraTK {
     /** A  VariableGroup for exception status and message. It can be protected, as
      * it is automatically connected to the control system in
      * DeviceModule::defineConnections() */
-    StatusWithMessage deviceError{this, "DeviceError/status", "Error status of the device"};
+    StatusWithMessage deviceError{
+        this, "/Devices/" + getDeviceAliasOrURI_withoutSlashes() + "/status", "Error status of the device"};
 
     /** The thread waiting for reportException(). It runs handleException() */
     boost::thread moduleThread;
@@ -329,13 +340,18 @@ namespace ChimeraTK {
      *  Keep in mind that multiple DeviceModules will perform independent and asynchronous recovery procedures after
      *  an exception, even when pointing to the same device.
      */
-    ConnectingDeviceModule(EntityOwner* owner, const std::string& deviceAliasOrCDD, const std::string& triggerPath = {},
+    ConnectingDeviceModule(ModuleGroup* owner, const std::string& deviceAliasOrCDD, const std::string& triggerPath = {},
         std::function<void(DeviceModule*)> initialisationHandler = nullptr, const std::string& pathInDevice = "/");
 
     /**
      *  Return the underlying DeviceModule
      */
     DeviceModule& getDeviceModule() { return *_dm; }
+    const DeviceModule& getDeviceModule() const { return *_dm; }
+
+    Model::DeviceModuleProxy getModel() { return _model; };
+
+    const std::string& getTriggerPath() const { return triggerPath; }
 
    protected:
     void defineConnections() override;
@@ -354,6 +370,19 @@ namespace ChimeraTK {
 
     /// Shared pointer holding the DeviceModule if (and only if) this ConnectingDeviceModule owns the DeviceModule
     boost::shared_ptr<DeviceModule> _dmHolder;
+
+    Model::DeviceModuleProxy _model;
+  };
+
+  /*********************************************************************************************************************/
+
+  /**
+   * Helper class to set the DMAP file path. This shall be used as a first member in an Application to ensure the DMAP
+   * file path is set before any DeviceModule is created.
+   */
+  class SetDMapFilePath {
+   public:
+    explicit SetDMapFilePath(const std::string& dmapFilePath) { ChimeraTK::setDMapFilePath(dmapFilePath); }
   };
 
 } /* namespace ChimeraTK */

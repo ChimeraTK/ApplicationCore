@@ -16,17 +16,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  EntityOwner::EntityOwner(const std::string& name, const std::string& description, bool eliminateHierarchy,
-      const std::unordered_set<std::string>& tags)
-  : _name(name), _description(description), _tags(tags) {
-    if(eliminateHierarchy) _hierarchyModifier = HierarchyModifier::hideThis;
-  }
-
-  /********************************************************************************************************************/
-
-  EntityOwner::EntityOwner(const std::string& name, const std::string& description, HierarchyModifier hierarchyModifier,
-      const std::unordered_set<std::string>& tags)
-  : _name(name), _description(description), _hierarchyModifier(hierarchyModifier), _tags(tags) {}
+  EntityOwner::EntityOwner(
+      const std::string& name, const std::string& description, const std::unordered_set<std::string>& tags)
+  : _name(name), _description(description), _tags(tags) {}
 
   /********************************************************************************************************************/
 
@@ -45,7 +37,6 @@ namespace ChimeraTK {
     _description = std::move(other._description);
     accessorList = std::move(other.accessorList);
     moduleList = std::move(other.moduleList);
-    _hierarchyModifier = other._hierarchyModifier;
     _tags = std::move(other._tags);
     for(auto mod : moduleList) {
       mod->setOwner(this);
@@ -96,13 +87,6 @@ namespace ChimeraTK {
       list.insert(list.end(), sublist.begin(), sublist.end());
     }
     return list;
-  }
-
-  /********************************************************************************************************************/
-
-  bool EntityOwner::getEliminateHierarchy() const {
-    return (_hierarchyModifier == HierarchyModifier::hideThis) ||
-        (_hierarchyModifier == HierarchyModifier::oneUpAndHide);
   }
 
   /********************************************************************************************************************/
@@ -163,6 +147,8 @@ namespace ChimeraTK {
   // The function adds virtual versions of the EntityOwner itself anf all its children to a virtual module (parent).
   void EntityOwner::findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag,
       bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const {
+    throw ChimeraTK::logic_error("sorry, currently not implemented ;-)");
+    /*
     // It might be that it is requested to hide ourselves. In this case we do not add
     // ourselves but directly put the children into the parent (or grand parent, depending on the hierarchy modifier).
     // So we store which module to add to (either a new virtual module, the virtual parent or virtual grand parent)
@@ -234,6 +220,7 @@ namespace ChimeraTK {
       // Duplicate childs will not be created, since createAndGetSubmodule() prevents that.
       submodule->findTagAndAppendToModule(*moduleToAddTo, tag, eliminateAllHierarchies, false, negate, root);
     }
+*/
   }
 
   /********************************************************************************************************************/
@@ -310,6 +297,23 @@ namespace ChimeraTK {
 
   bool EntityOwner::hasReachedTestableMode() {
     return testableModeReached;
+  }
+
+  /********************************************************************************************************************/
+
+  void EntityOwner::applyHierarchyModifierToName(HierarchyModifier hierarchyModifier) {
+    if(hierarchyModifier == HierarchyModifier::hideThis) {
+      _name = ".";
+    }
+    else if(hierarchyModifier == HierarchyModifier::moveToRoot) {
+      _name = "/" + _name;
+    }
+    else if(hierarchyModifier == HierarchyModifier::oneLevelUp) {
+      _name = "../" + _name;
+    }
+    else if(hierarchyModifier == HierarchyModifier::oneUpAndHide) {
+      _name = "..";
+    }
   }
 
   /********************************************************************************************************************/

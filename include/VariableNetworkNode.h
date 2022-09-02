@@ -5,6 +5,7 @@
 #include "ConstantAccessor.h"
 #include "Flags.h"
 #include "MetaDataPropagatingRegisterDecorator.h"
+#include "Model.h"
 #include "Visitor.h"
 #include <unordered_map>
 #include <unordered_set>
@@ -107,8 +108,11 @@ namespace ChimeraTK {
     /** Connect two nodes */
     VariableNetworkNode operator>>(VariableNetworkNode other);
 
-    /** Add a trigger */
+    /** Add a trigger TO BE REMOVED!!! */
     VariableNetworkNode operator[](VariableNetworkNode trigger);
+
+    /** Add a trigger */
+    void addExternalTrigger(VariableNetworkNode trigger);
 
     /** Check for presence of an external trigger */
     bool hasExternalTrigger() const;
@@ -161,6 +165,10 @@ namespace ChimeraTK {
     void setNumberOfElements(size_t nElements);
     size_t getNumberOfElements() const;
     ChimeraTK::TransferElementAbstractor& getAppAccessorNoType() const;
+
+    Model::ProcessVariableProxy getModel() const;
+
+    void setModel(Model::ProcessVariableProxy model);
 
     void setPublicName(const std::string& name) const;
 
@@ -279,6 +287,9 @@ namespace ChimeraTK {
 
     /** Hash which idientifies a circular network. 0 if the node is not part if a circular dependency. */
     size_t circularNetworkHash{0};
+
+    /** Model representation of this variable */
+    Model::ProcessVariableProxy _model;
   };
 
   /********************************************************************************************************************/

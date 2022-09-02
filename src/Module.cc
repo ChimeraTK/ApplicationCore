@@ -10,16 +10,8 @@
 namespace ChimeraTK {
 
   Module::Module(EntityOwner* owner, const std::string& name, const std::string& description,
-      HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
-  : EntityOwner(name, description, hierarchyModifier, tags), _owner(owner) {
-    if(_owner != nullptr) _owner->registerModule(this);
-  }
-
-  /*********************************************************************************************************************/
-
-  Module::Module(EntityOwner* owner, const std::string& name, const std::string& description, bool eliminateHierarchy,
       const std::unordered_set<std::string>& tags)
-  : EntityOwner(name, description, eliminateHierarchy, tags), _owner(owner) {
+  : EntityOwner(name, description, tags), _owner(owner) {
     if(_owner != nullptr) _owner->registerModule(this);
   }
 
@@ -175,61 +167,6 @@ namespace ChimeraTK {
   Module& Module::submodule(std::string_view moduleName) {
     // According to Scott Meyers "Effective C++", the const cast is fine here
     return const_cast<Module&>(static_cast<const Module&>(*this).submodule(moduleName));
-  }
-
-  /*********************************************************************************************************************/
-
-  std::string Module::getVirtualQualifiedName() const {
-    std::string virtualQualifiedName{""};
-    const EntityOwner* currentLevelModule{this};
-
-    bool rootReached{false};
-    do {
-      if(currentLevelModule == &Application::getInstance()) {
-        break;
-      }
-
-      auto currentLevelModifier = currentLevelModule->getHierarchyModifier();
-      bool skipNextLevel{false};
-
-      switch(currentLevelModifier) {
-        case HierarchyModifier::none:
-          virtualQualifiedName = "/" + currentLevelModule->getName() + virtualQualifiedName;
-          break;
-        case HierarchyModifier::hideThis:
-          // Omit name of current level
-          break;
-        case HierarchyModifier::oneLevelUp:
-          virtualQualifiedName = "/" + currentLevelModule->getName() + virtualQualifiedName;
-          skipNextLevel = true;
-          break;
-        case HierarchyModifier::oneUpAndHide:
-          skipNextLevel = true;
-          break;
-        case HierarchyModifier::moveToRoot:
-          virtualQualifiedName = "/" + currentLevelModule->getName() + virtualQualifiedName;
-          rootReached = true;
-          break;
-      }
-
-      if(skipNextLevel) {
-        auto lastLevelModule = currentLevelModule;
-        currentLevelModule = dynamic_cast<const Module*>(currentLevelModule)->getOwner();
-
-        if(currentLevelModule == &Application::getInstance()) {
-          throw logic_error(std::string("Module ") + lastLevelModule->getName() +
-              ": cannot have hierarchy modifier 'oneLevelUp' or oneUpAndHide in root of the application.");
-        }
-      }
-
-      if(!rootReached) {
-        currentLevelModule = dynamic_cast<const Module*>(currentLevelModule)->getOwner();
-      }
-    } while(!rootReached);
-
-    if(virtualQualifiedName == "") virtualQualifiedName = "/";
-
-    return virtualQualifiedName;
   }
 
   /*********************************************************************************************************************/

@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "ApplicationModule.h"
+#include "HierarchyModifyingGroup.h"
 #include "Module.h"
+#include "VariableGroup.h"
 #include "VariableNetworkNode.h"
 
 #include <boost/smart_ptr/shared_ptr.hpp>
@@ -51,6 +54,8 @@ namespace ChimeraTK {
     /** Return the owning module */
     EntityOwner* getOwner() const { return node.getOwningModule(); }
 
+    Model::ProcessVariableProxy getModel() const { return node.getModel(); };
+
    protected:
     /// complete the description with the full description from the owner
     std::string completeDescription(EntityOwner* owner, const std::string& description);
@@ -59,8 +64,7 @@ namespace ChimeraTK {
         size_t nElements, UpdateMode mode, const std::string& description, const std::type_info* valueType,
         const std::unordered_set<std::string>& tags = {});
 
-    /** Default constructor creates a dysfunctional accessor (to be assigned with
-     * a real accessor later) */
+    /** Default constructor creates a dysfunctional accessor (to be assigned with a real accessor later) */
     InversionOfControlAccessor() = default;
 
     VariableNetworkNode node;
@@ -72,6 +76,9 @@ namespace ChimeraTK {
   template<typename Derived>
   InversionOfControlAccessor<Derived>::~InversionOfControlAccessor() {
     if(getOwner() != nullptr) getOwner()->unregisterAccessor(node);
+    if(getModel().isValid()) {
+      getModel().removeNode(node);
+    }
   }
 
   /********************************************************************************************************************/
@@ -94,7 +101,7 @@ namespace ChimeraTK {
 
   template<typename Derived>
   void InversionOfControlAccessor<Derived>::addTags(const std::unordered_set<std::string>& tags) {
-    for(auto& tag : tags) node.addTag(tag);
+    for(const auto& tag : tags) node.addTag(tag);
   }
 
   /********************************************************************************************************************/
@@ -102,9 +109,10 @@ namespace ChimeraTK {
   template<typename Derived>
   void InversionOfControlAccessor<Derived>::replace(Derived&& other) {
     assert(static_cast<Derived*>(this)->_impl == nullptr && other._impl == nullptr);
-    if(getOwner() != nullptr) getOwner()->unregisterAccessor(node);
-    node = other.node; // just copies the pointer, but other will be destroyed
-                       // right after this move constructor
+    if(getModel().isValid()) {
+      getModel().removeNode(node);
+    }
+    node = other.node; // just copies the pointer, but other will be destroyed right after this move constructor
     other.node = VariableNetworkNode();
     if(node.getType() == NodeType::Application) {
       node.setAppAccessorPointer(static_cast<Derived*>(this));
@@ -112,8 +120,7 @@ namespace ChimeraTK {
     else {
       assert(node.getType() == NodeType::invalid);
     }
-    // Note: the accessor is registered by the VariableNetworkNode, so we don't
-    // have to re-register.
+    // Note: the accessor is registered by the VariableNetworkNode, so we don't have to re-register.
   }
 
   /********************************************************************************************************************/
@@ -136,12 +143,40 @@ namespace ChimeraTK {
   : node(owner, static_cast<Derived*>(this), name, direction, unit, nElements, mode,
         completeDescription(owner, description), valueType, tags) {
     static_assert(std::is_base_of<InversionOfControlAccessor<Derived>, Derived>::value,
-        "InversionOfControlAccessor<> must be used in a curiously recurring "
-        "template pattern!");
-    if(name.find_first_of("/") != std::string::npos) {
-      throw ChimeraTK::logic_error(
-          "Accessor names must not contain slashes: '" + name + "' in module '" + owner->getQualifiedName() + "'.");
+        "InversionOfControlAccessor<> must be used in a curiously recurring template pattern!");
+
+    auto path = HierarchyModifyingGroup::getPathName(name);
+    auto unqualName = HierarchyModifyingGroup::getUnqualifiedName(name);
+
+    /// @todo FIXME eliminate dynamic_cast and the "lambda trick" by changing owner pointer type
+    auto addToOnwer = [&](auto& owner_casted) {
+      auto model = owner_casted.getModel();
+      if(!model.isValid()) {
+        // this happens e.g. for default-constructed owners and their sub-modules
+        return;
+      }
+      auto neighbourDir = model.visit(
+          Model::returnDirectory, Model::getNeighbourDirectory, Model::returnFirstHit(Model::DirectoryProxy{}));
+
+      auto dir = neighbourDir.addDirectoryRecursive(ChimeraTK::HierarchyModifyingGroup::getPathName(name));
+      auto var = dir.addVariable(ChimeraTK::HierarchyModifyingGroup::getUnqualifiedName(name));
+
+      node.setModel(var);
+
+      model.addVariable(var, node);
+    };
+    auto* owner_am = dynamic_cast<ApplicationModule*>(owner);
+    auto* owner_vg = dynamic_cast<VariableGroup*>(owner);
+    if(owner_am) {
+      addToOnwer(*owner_am);
     }
+    else if(owner_vg) {
+      addToOnwer(*owner_vg);
+    }
+    else {
+      throw ChimeraTK::logic_error("Hierarchy error!?");
+    }
+
     owner->registerAccessor(node);
   }
 

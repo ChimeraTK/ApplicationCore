@@ -12,19 +12,10 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /**
-   *  A HierarchyModifyingGroup is a VariableGroup which can easily appear at a different place in the hierarchy by
-   *  specifying a qualified name. The qualifiedName can contain multiple hierarchy levels separated by slashes "/".
-   *  It can also start with a "/" to move the tree to the root of the application, or it can start with "../"
-   *  (also repeated times) to move it one or more levels up.
-   *
-   *  If the qualifiedName is just a plain name without slashes, the HierarchyModifyingGroup behaves identical to a
-   *  VariableGroup.
+   *  Deprecated class for backwards compatibility ownly. Use VariableGroup instead!
    */
   struct HierarchyModifyingGroup : VariableGroup {
-    HierarchyModifyingGroup(VariableGroup* owner, std::string qualifiedName, const std::string& description,
-        const std::unordered_set<std::string>& tags = {});
-
-    HierarchyModifyingGroup() {}
+    using VariableGroup::VariableGroup;
 
     /**
      *  Return the last component of the given qualified path name.
@@ -43,13 +34,6 @@ namespace ChimeraTK {
      *  HierarchyModifyingGroup with the variable inside needs to be created.
      */
     static std::string getPathName(const std::string& qualifiedName);
-
-   protected:
-    void findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag, bool eliminateAllHierarchies,
-        bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const override;
-
-    bool moveToRoot{false};
-    std::vector<std::string> _splittedPath;
   };
 
   /********************************************************************************************************************/

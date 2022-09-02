@@ -58,6 +58,8 @@ namespace ChimeraTK {
 
     void stripEmptyChildsRecursive();
 
+    std::string getVirtualQualifiedName() const override;
+
    protected:
     std::list<VirtualModule> submodules;
     ModuleType _moduleType;
