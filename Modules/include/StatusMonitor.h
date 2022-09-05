@@ -37,15 +37,15 @@ For more info see \ref statusmonitordoc
 
 namespace ChimeraTK {
 
+  /*******************************************************************************************************************/
+  /* Definition of MonitorBase ***************************************************************************************/
+  /*******************************************************************************************************************/
   struct MonitorBase : ApplicationModule {
     // make constructors protected not to allow of instantiancion of this object - this is just a base class for other monitors
    protected:
     MonitorBase(EntityOwner* owner, const std::string& description, const std::string& outputPath,
         const std::string& disablePath, const std::unordered_set<std::string>& outputTags = {},
-        const std::unordered_set<std::string>& parameterTags = {})
-    : ApplicationModule(owner, "hidden", description, HierarchyModifier::hideThis),
-      disable(this, disablePath, "", "Disable the status monitor", parameterTags),
-      status(this, outputPath, "Resulting status", outputTags) {}
+        const std::unordered_set<std::string>& parameterTags = {});
 
     MonitorBase() = default;
 
@@ -57,16 +57,12 @@ namespace ChimeraTK {
 
    protected:
     DataValidity lastStatusValidity = DataValidity::ok;
-    void setStatus(StatusOutput::Status newStatus) {
-      // update only if status has changed, but always in case of initial value
-      if(status.value != newStatus || getDataValidity() != lastStatusValidity ||
-          status.value.getVersionNumber() == VersionNumber{nullptr}) {
-        status.value = newStatus;
-        status.value.write();
-        lastStatusValidity = getDataValidity();
-      }
-    }
+    void setStatus(StatusOutput::Status newStatus);
   };
+
+  /*******************************************************************************************************************/
+  /* Definition of MaxMonitor ****************************************************************************************/
+  /*******************************************************************************************************************/
 
   /** Module for status monitoring depending on a maximum threshold value*/
   template<typename T>
@@ -74,18 +70,12 @@ namespace ChimeraTK {
     MaxMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& parameterPath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
-        const std::unordered_set<std::string>& parameterTags = {})
-    : MaxMonitor(owner, inputPath, outputPath, parameterPath + "/upperWarningThreshold",
-          parameterPath + "/upperFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
+        const std::unordered_set<std::string>& parameterTags = {});
 
     MaxMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
-        const std::string& warningThreholdPath, const std::string& faultThreholdPath, const std::string& disablePath,
+        const std::string& warningThresholdPath, const std::string& faultThresholdPath, const std::string& disablePath,
         const std::string& description, const std::unordered_set<std::string>& outputTags = {},
-        const std::unordered_set<std::string>& parameterTags = {})
-    : MonitorBase(owner, description, outputPath, disablePath, outputTags, parameterTags),
-      watch(this, inputPath, "", "Value to monitor"),
-      warningThreshold(this, warningThreholdPath, "", "Warning threhold to compare with", parameterTags),
-      faultThreshold(this, faultThreholdPath, "", "Fault threshold to compare with", parameterTags) {}
+        const std::unordered_set<std::string>& parameterTags = {});
 
     MaxMonitor() = default;
 
@@ -104,27 +94,12 @@ namespace ChimeraTK {
      */
 
     /** This is where state evaluation is done */
-    void mainLoop() {
-      // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
-      ReadAnyGroup group{watch.value, disable.value, warningThreshold.value, faultThreshold.value};
-
-      while(true) {
-        if(disable.value != 0) {
-          setStatus(StatusOutput::Status::OFF);
-        }
-        else if(watch.value >= faultThreshold.value) {
-          setStatus(StatusOutput::Status::FAULT);
-        }
-        else if(watch.value >= warningThreshold.value) {
-          setStatus(StatusOutput::Status::WARNING);
-        }
-        else {
-          setStatus(StatusOutput::Status::OK);
-        }
-        group.readAny();
-      }
-    }
+    void mainLoop();
   };
+
+  /*******************************************************************************************************************/
+  /* Definition of MinMonitor ****************************************************************************************/
+  /*******************************************************************************************************************/
 
   /** Module for status monitoring depending on a minimum threshold value*/
   template<typename T>
@@ -132,18 +107,12 @@ namespace ChimeraTK {
     MinMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& parameterPath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
-        const std::unordered_set<std::string>& parameterTags = {})
-    : MinMonitor(owner, inputPath, outputPath, parameterPath + "/lowerWarningThreshold",
-          parameterPath + "/lowerFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
+        const std::unordered_set<std::string>& parameterTags = {});
 
     MinMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
-        const std::string& warningThreholdPath, const std::string& faultThreholdPath, const std::string& disablePath,
+        const std::string& warningThresholdPath, const std::string& faultThresholdPath, const std::string& disablePath,
         const std::string& description, const std::unordered_set<std::string>& outputTags = {},
-        const std::unordered_set<std::string>& parameterTags = {})
-    : MonitorBase(owner, description, outputPath, disablePath, outputTags, parameterTags),
-      watch(this, inputPath, "", "Value to monitor"),
-      warningThreshold(this, warningThreholdPath, "", "Warning threhold to compare with", parameterTags),
-      faultThreshold(this, faultThreholdPath, "", "Fault threshold to compare with", parameterTags) {}
+        const std::unordered_set<std::string>& parameterTags = {});
 
     MinMonitor() = default;
 
@@ -157,27 +126,12 @@ namespace ChimeraTK {
     ModifyHierarchy<ScalarPushInput<T>> faultThreshold;
 
     /** This is where state evaluation is done */
-    void mainLoop() {
-      // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
-      ReadAnyGroup group{watch.value, disable.value, warningThreshold.value, faultThreshold.value};
-
-      while(true) {
-        if(disable.value != 0) {
-          setStatus(StatusOutput::Status::OFF);
-        }
-        else if(watch.value <= faultThreshold.value) {
-          setStatus(StatusOutput::Status::FAULT);
-        }
-        else if(watch.value <= warningThreshold.value) {
-          setStatus(StatusOutput::Status::WARNING);
-        }
-        else {
-          setStatus(StatusOutput::Status::OK);
-        }
-        group.readAny();
-      }
-    }
+    void mainLoop();
   };
+
+  /*******************************************************************************************************************/
+  /* Definition of RangeMonitor **************************************************************************************/
+  /*******************************************************************************************************************/
 
   /** Module for status monitoring depending on range of threshold values.
    * As long as a monitored value is in the range defined by user it goes
@@ -191,24 +145,14 @@ namespace ChimeraTK {
     RangeMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& parameterPath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
-        const std::unordered_set<std::string>& parameterTags = {})
-    : RangeMonitor(owner, inputPath, outputPath, parameterPath + "/lowerWarningThreshold",
-          parameterPath + "/upperWarningThreshold", parameterPath + "/lowerFaultThreshold",
-          parameterPath + "/upperFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
+        const std::unordered_set<std::string>& parameterTags = {});
 
     RangeMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
-        const std::string& warningLowerThreholdPath, const std::string& warningUpperThreholdPath,
-        const std::string& faultLowerThreholdPath, const std::string& faultUpperThreholdPath,
+        const std::string& warningLowerThresholdPath, const std::string& warningUpperThresholdPath,
+        const std::string& faultLowerThresholdPath, const std::string& faultUpperThresholdPath,
         const std::string& disablePath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
-        const std::unordered_set<std::string>& parameterTags = {})
-    : MonitorBase(owner, description, outputPath, disablePath, outputTags, parameterTags),
-      watch(this, inputPath, "", "Value to monitor"), warningLowerThreshold(this, warningLowerThreholdPath, "",
-                                                          "Lower warning threhold to compare with", parameterTags),
-      warningUpperThreshold(
-          this, warningUpperThreholdPath, "", "Upper warning threhold to compare with", parameterTags),
-      faultLowerThreshold(this, faultLowerThreholdPath, "", "Lower fault threshold to compare with", parameterTags),
-      faultUpperThreshold(this, faultUpperThreholdPath, "", "Upper fault threshold to compare with", parameterTags) {}
+        const std::unordered_set<std::string>& parameterTags = {});
 
     RangeMonitor() = default;
 
@@ -228,30 +172,12 @@ namespace ChimeraTK {
     ModifyHierarchy<ScalarPushInput<T>> faultUpperThreshold;
 
     /** This is where state evaluation is done */
-    void mainLoop() {
-      // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
-      ReadAnyGroup group{watch.value, disable.value, warningLowerThreshold.value, warningUpperThreshold.value,
-          faultLowerThreshold.value, faultUpperThreshold.value};
-
-      while(true) {
-        if(disable.value != 0) {
-          setStatus(StatusOutput::Status::OFF);
-        }
-        // Check for fault limits first. Like this they supersede the warning,
-        // even if they are stricter then the warning limits (mis-configuration)
-        else if(watch.value <= faultLowerThreshold.value || watch.value >= faultUpperThreshold.value) {
-          setStatus(StatusOutput::Status::FAULT);
-        }
-        else if(watch.value <= warningLowerThreshold.value || watch.value >= warningUpperThreshold.value) {
-          setStatus(StatusOutput::Status::WARNING);
-        }
-        else {
-          setStatus(StatusOutput::Status::OK);
-        }
-        group.readAny();
-      }
-    }
+    void mainLoop();
   };
+
+  /*******************************************************************************************************************/
+  /* Definition of ExactMonitor **************************************************************************************/
+  /*******************************************************************************************************************/
 
   /**
    *  Module for status monitoring of an exact value.
@@ -278,9 +204,7 @@ namespace ChimeraTK {
     ExactMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& parameterPath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
-        const std::unordered_set<std::string>& parameterTags = {})
-    : ExactMonitor(owner, inputPath, outputPath, parameterPath + "/requiredValue", parameterPath + "/disable",
-          description, outputTags, parameterTags) {}
+        const std::unordered_set<std::string>& parameterTags = {});
 
     /**
      *  Constructor for exact monitoring module.
@@ -296,10 +220,7 @@ namespace ChimeraTK {
     ExactMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& requiredValuePath, const std::string& disablePath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
-        const std::unordered_set<std::string>& parameterTags = {})
-    : MonitorBase(owner, description, outputPath, disablePath, outputTags, parameterTags),
-      watch(this, inputPath, "", "Value to monitor"),
-      requiredValue(this, requiredValuePath, "", "Value to compare with", parameterTags) {}
+        const std::unordered_set<std::string>& parameterTags = {});
 
     ExactMonitor() = default;
 
@@ -310,23 +231,202 @@ namespace ChimeraTK {
     ModifyHierarchy<ScalarPushInput<T>> requiredValue;
 
     /** This is where state evaluation is done */
-    void mainLoop() {
-      // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
-      ReadAnyGroup group{watch.value, disable.value, requiredValue.value};
-
-      while(true) {
-        if(disable.value != 0) {
-          setStatus(StatusOutput::Status::OFF);
-        }
-        else if(watch.value != requiredValue.value) {
-          setStatus(StatusOutput::Status::FAULT);
-        }
-        else {
-          setStatus(StatusOutput::Status::OK);
-        }
-        group.readAny();
-      }
-    }
+    void mainLoop();
   };
+
+  /*******************************************************************************************************************/
+  /* Implementation starts here **************************************************************************************/
+  /*******************************************************************************************************************/
+
+  /*******************************************************************************************************************/
+  /* Implementation of MonitorBase ***********************************************************************************/
+  /*******************************************************************************************************************/
+  MonitorBase::MonitorBase(EntityOwner* owner, const std::string& description, const std::string& outputPath,
+      const std::string& disablePath, const std::unordered_set<std::string>& outputTags,
+      const std::unordered_set<std::string>& parameterTags)
+  : ApplicationModule(owner, "hidden", description, HierarchyModifier::hideThis),
+    disable(this, disablePath, "", "Disable the status monitor", parameterTags),
+    status(this, outputPath, "Resulting status", outputTags) {}
+
+  void MonitorBase::setStatus(StatusOutput::Status newStatus) {
+    // update only if status has changed, but always in case of initial value
+    if(status.value != newStatus || getDataValidity() != lastStatusValidity ||
+        status.value.getVersionNumber() == VersionNumber{nullptr}) {
+      status.value = newStatus;
+      status.value.write();
+      lastStatusValidity = getDataValidity();
+    }
+  }
+
+  /*******************************************************************************************************************/
+  /* Implementation of MaxMonitor ************************************************************************************/
+  /*******************************************************************************************************************/
+  template<typename T>
+  MaxMonitor<T>::MaxMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+      const std::string& parameterPath, const std::string& description,
+      const std::unordered_set<std::string>& outputTags, const std::unordered_set<std::string>& parameterTags)
+  : MaxMonitor(owner, inputPath, outputPath, parameterPath + "/upperWarningThreshold",
+        parameterPath + "/upperFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
+
+  template<typename T>
+  MaxMonitor<T>::MaxMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+      const std::string& warningThresholdPath, const std::string& faultThresholdPath, const std::string& disablePath,
+      const std::string& description, const std::unordered_set<std::string>& outputTags,
+      const std::unordered_set<std::string>& parameterTags)
+  : MonitorBase(owner, description, outputPath, disablePath, outputTags, parameterTags),
+    watch(this, inputPath, "", "Value to monitor"),
+    warningThreshold(this, warningThresholdPath, "", "Warning threshold to compare with", parameterTags),
+    faultThreshold(this, faultThresholdPath, "", "Fault threshold to compare with", parameterTags) {}
+
+  template<typename T>
+  void MaxMonitor<T>::mainLoop() {
+    // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
+    ReadAnyGroup group{watch.value, disable.value, warningThreshold.value, faultThreshold.value};
+
+    while(true) {
+      if(disable.value != 0) {
+        setStatus(StatusOutput::Status::OFF);
+      }
+      else if(watch.value >= faultThreshold.value) {
+        setStatus(StatusOutput::Status::FAULT);
+      }
+      else if(watch.value >= warningThreshold.value) {
+        setStatus(StatusOutput::Status::WARNING);
+      }
+      else {
+        setStatus(StatusOutput::Status::OK);
+      }
+      group.readAny();
+    }
+  }
+
+  /*******************************************************************************************************************/
+  /* Implementation of MinMonitor ************************************************************************************/
+  /*******************************************************************************************************************/
+  template<typename T>
+  MinMonitor<T>::MinMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+      const std::string& parameterPath, const std::string& description,
+      const std::unordered_set<std::string>& outputTags, const std::unordered_set<std::string>& parameterTags)
+  : MinMonitor(owner, inputPath, outputPath, parameterPath + "/lowerWarningThreshold",
+        parameterPath + "/lowerFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
+
+  template<typename T>
+  MinMonitor<T>::MinMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+      const std::string& warningThresholdPath, const std::string& faultThresholdPath, const std::string& disablePath,
+      const std::string& description, const std::unordered_set<std::string>& outputTags,
+      const std::unordered_set<std::string>& parameterTags)
+  : MonitorBase(owner, description, outputPath, disablePath, outputTags, parameterTags),
+    watch(this, inputPath, "", "Value to monitor"),
+    warningThreshold(this, warningThresholdPath, "", "Warning threshold to compare with", parameterTags),
+    faultThreshold(this, faultThresholdPath, "", "Fault threshold to compare with", parameterTags) {}
+
+  template<typename T>
+  void MinMonitor<T>::mainLoop() {
+    // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
+    ReadAnyGroup group{watch.value, disable.value, warningThreshold.value, faultThreshold.value};
+
+    while(true) {
+      if(disable.value != 0) {
+        setStatus(StatusOutput::Status::OFF);
+      }
+      else if(watch.value <= faultThreshold.value) {
+        setStatus(StatusOutput::Status::FAULT);
+      }
+      else if(watch.value <= warningThreshold.value) {
+        setStatus(StatusOutput::Status::WARNING);
+      }
+      else {
+        setStatus(StatusOutput::Status::OK);
+      }
+      group.readAny();
+    }
+  }
+
+  /*******************************************************************************************************************/
+  /* Implementation of RangeMonitor **********************************************************************************/
+  /*******************************************************************************************************************/
+  template<typename T>
+  RangeMonitor<T>::RangeMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+      const std::string& parameterPath, const std::string& description,
+      const std::unordered_set<std::string>& outputTags, const std::unordered_set<std::string>& parameterTags)
+  : RangeMonitor(owner, inputPath, outputPath, parameterPath + "/lowerWarningThreshold",
+        parameterPath + "/upperWarningThreshold", parameterPath + "/lowerFaultThreshold",
+        parameterPath + "/upperFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
+
+  template<typename T>
+  RangeMonitor<T>::RangeMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+      const std::string& warningLowerThresholdPath, const std::string& warningUpperThresholdPath,
+      const std::string& faultLowerThresholdPath, const std::string& faultUpperThresholdPath,
+      const std::string& disablePath, const std::string& description, const std::unordered_set<std::string>& outputTags,
+      const std::unordered_set<std::string>& parameterTags)
+  : MonitorBase(owner, description, outputPath, disablePath, outputTags, parameterTags),
+    watch(this, inputPath, "", "Value to monitor"), warningLowerThreshold(this, warningLowerThresholdPath, "",
+                                                        "Lower warning threshold to compare with", parameterTags),
+    warningUpperThreshold(
+        this, warningUpperThresholdPath, "", "Upper warning threshold to compare with", parameterTags),
+    faultLowerThreshold(this, faultLowerThresholdPath, "", "Lower fault threshold to compare with", parameterTags),
+    faultUpperThreshold(this, faultUpperThresholdPath, "", "Upper fault threshold to compare with", parameterTags) {}
+
+  template<typename T>
+  void RangeMonitor<T>::mainLoop() {
+    // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
+    ReadAnyGroup group{watch.value, disable.value, warningLowerThreshold.value, warningUpperThreshold.value,
+        faultLowerThreshold.value, faultUpperThreshold.value};
+
+    while(true) {
+      if(disable.value != 0) {
+        setStatus(StatusOutput::Status::OFF);
+      }
+      // Check for fault limits first. Like this they supersede the warning,
+      // even if they are stricter then the warning limits (mis-configuration)
+      else if(watch.value <= faultLowerThreshold.value || watch.value >= faultUpperThreshold.value) {
+        setStatus(StatusOutput::Status::FAULT);
+      }
+      else if(watch.value <= warningLowerThreshold.value || watch.value >= warningUpperThreshold.value) {
+        setStatus(StatusOutput::Status::WARNING);
+      }
+      else {
+        setStatus(StatusOutput::Status::OK);
+      }
+      group.readAny();
+    }
+  }
+
+  /*******************************************************************************************************************/
+  /* Implementation of ExactMonitor **********************************************************************************/
+  /*******************************************************************************************************************/
+  template<typename T>
+  ExactMonitor<T>::ExactMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+      const std::string& parameterPath, const std::string& description,
+      const std::unordered_set<std::string>& outputTags, const std::unordered_set<std::string>& parameterTags)
+  : ExactMonitor(owner, inputPath, outputPath, parameterPath + "/requiredValue", parameterPath + "/disable",
+        description, outputTags, parameterTags) {}
+
+  template<typename T>
+  ExactMonitor<T>::ExactMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+      const std::string& requiredValuePath, const std::string& disablePath, const std::string& description,
+      const std::unordered_set<std::string>& outputTags, const std::unordered_set<std::string>& parameterTags)
+  : MonitorBase(owner, description, outputPath, disablePath, outputTags, parameterTags),
+    watch(this, inputPath, "", "Value to monitor"),
+    requiredValue(this, requiredValuePath, "", "Value to compare with", parameterTags) {}
+
+  template<typename T>
+  void ExactMonitor<T>::mainLoop() {
+    // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
+    ReadAnyGroup group{watch.value, disable.value, requiredValue.value};
+
+    while(true) {
+      if(disable.value != 0) {
+        setStatus(StatusOutput::Status::OFF);
+      }
+      else if(watch.value != requiredValue.value) {
+        setStatus(StatusOutput::Status::FAULT);
+      }
+      else {
+        setStatus(StatusOutput::Status::OK);
+      }
+      group.readAny();
+    }
+  }
 
 } // namespace ChimeraTK
