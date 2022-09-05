@@ -129,15 +129,15 @@ struct VectorModule : public ctk::ApplicationModule {
 
 struct VectorModuleGroup : public ctk::ModuleGroup {
   VectorModuleGroup(EntityOwner* owner, const std::string& name, const std::string& description, size_t nInstances,
-      bool eliminateHierarchy = false, const std::unordered_set<std::string>& tags = {})
-  : ctk::ModuleGroup(owner, name, description, eliminateHierarchy, tags) {
+      ctk::HierarchyModifier modifier = ctk::HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
+  : ctk::ModuleGroup(owner, name, description, modifier, tags) {
     for(size_t i = 0; i < nInstances; ++i) {
       std::string vovModuleName = "test_" + std::to_string(i);
       vectorOfVectorModule.emplace_back(this, vovModuleName, "Description 3", nInstances);
     }
   }
 
-  VectorModuleGroup() {}
+  VectorModuleGroup() = default;
 
   std::vector<VectorModule> vectorOfVectorModule;
 };

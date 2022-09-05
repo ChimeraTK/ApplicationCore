@@ -10,6 +10,8 @@
 
 namespace ChimeraTK {
 
+  class Application;
+
   class ModuleGroup : public ModuleImpl {
    public:
     /** Constructor: Create ModuleGroup by the given name with the given description and register it with its
@@ -23,25 +25,24 @@ namespace ChimeraTK {
         const std::unordered_set<std::string>& tags = {});
 
     /** Deprecated form of the constructor. Use the new signature instead. */
-    ModuleGroup(EntityOwner* owner, const std::string& name, const std::string& description, bool eliminateHierarchy,
-        const std::unordered_set<std::string>& tags = {});
+    [[deprecated]] ModuleGroup(EntityOwner* owner, const std::string& name, const std::string& description,
+        bool eliminateHierarchy, const std::unordered_set<std::string>& tags = {});
 
-    /** Default constructor: Allows late initialisation of ModuleGroups (e.g. when
-     * creating arrays of ModuleGroups).
-     *
-     *  This construtor also has to be here to mitigate a bug in gcc. It is needed
-     * to allow constructor inheritance of modules owning other modules. This
-     * constructor will not actually be called then. See this bug report:
-     * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-    ModuleGroup() : ModuleImpl() {}
+    /// Default constructor to allow late initialisation of module groups
+    ModuleGroup() = default;
 
     /** Move constructor */
-    ModuleGroup(ModuleGroup&& other) { operator=(std::move(other)); }
+    ModuleGroup(ModuleGroup&& other) noexcept { operator=(std::move(other)); }
 
     /** Move assignment */
-    ModuleGroup& operator=(ModuleGroup&& other);
+    ModuleGroup& operator=(ModuleGroup&& other) noexcept;
 
     ModuleType getModuleType() const override { return ModuleType::ModuleGroup; }
+
+   private:
+    friend class Application;
+    /// Convenience constructor used by Application bypassing the owner sanity checks
+    explicit ModuleGroup(const std::string& name);
   };
 
 } /* namespace ChimeraTK */

@@ -3,9 +3,9 @@
 #pragma once
 
 #include "CircularDependencyDetector.h"
-#include "EntityOwner.h"
 #include "Flags.h"
 #include "InternalModule.h"
+#include "ModuleGroup.h"
 #include "TestableMode.h"
 #include "VariableNetwork.h"
 
@@ -40,7 +40,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  class Application : public ApplicationBase, public EntityOwner {
+  class Application : public ApplicationBase, public ModuleGroup {
    public:
     /** The constructor takes the application name as an argument. The name must
      * have a non-zero length and must not contain any spaces or special
@@ -60,7 +60,7 @@ namespace ChimeraTK {
 
     /** Define the connections between process variables. Can be implemented by the application developer. The default
      *  implementation will connect the entire application with the control system (virtual hierarchy). */
-    virtual void defineConnections();
+    void defineConnections() override;
 
     void initialise() override;
 

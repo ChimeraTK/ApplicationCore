@@ -29,7 +29,7 @@ using namespace ChimeraTK;
 
 /*********************************************************************************************************************/
 
-Application::Application(const std::string& name) : ApplicationBase(name), EntityOwner(name, "") {
+Application::Application(const std::string& name) : ApplicationBase(name), ModuleGroup(name) {
   // check if the application name has been set
   if(applicationName == "") {
     shutdown();
