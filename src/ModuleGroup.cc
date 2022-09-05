@@ -13,24 +13,23 @@ namespace ChimeraTK {
   : ModuleImpl(owner, name, description, hierarchyModifier, tags) {
     if(!dynamic_cast<Application*>(owner) && !dynamic_cast<ModuleGroup*>(owner)) {
       throw ChimeraTK::logic_error("ModuleGroups must be owned either by the "
-                                   "Application or other ModuleGroups!");
+                                   "Application, other ModuleGroups or be the Application!");
     }
   }
+  /********************************************************************************************************************/
+
+  ModuleGroup::ModuleGroup(const std::string& name) : ModuleImpl(nullptr, name, "") {}
 
   /********************************************************************************************************************/
 
   ModuleGroup::ModuleGroup(EntityOwner* owner, const std::string& name, const std::string& description,
       bool eliminateHierarchy, const std::unordered_set<std::string>& tags)
-  : ModuleImpl(owner, name, description, eliminateHierarchy, tags) {
-    if(!dynamic_cast<Application*>(owner) && !dynamic_cast<ModuleGroup*>(owner)) {
-      throw ChimeraTK::logic_error("ModuleGroups must be owned either by the "
-                                   "Application or other ModuleGroups!");
-    }
-  }
+  : ModuleGroup(
+        owner, name, description, eliminateHierarchy ? HierarchyModifier::hideThis : HierarchyModifier::none, tags) {}
 
   /********************************************************************************************************************/
 
-  ModuleGroup& ModuleGroup::operator=(ModuleGroup&& other) {
+  ModuleGroup& ModuleGroup::operator=(ModuleGroup&& other) noexcept {
     ModuleImpl::operator=(std::move(other));
     return *this;
   }

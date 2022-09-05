@@ -275,6 +275,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   std::list<EntityOwner*> Module::getInputModulesRecursively(std::list<EntityOwner*> startList) {
+    if(_owner == nullptr) return {};
+
     return _owner->getInputModulesRecursively(startList);
   }
 
