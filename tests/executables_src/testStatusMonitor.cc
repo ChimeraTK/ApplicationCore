@@ -18,9 +18,9 @@ namespace ctk = ChimeraTK;
 
 /* dummy application - for new StatusMonitor interface */
 template<typename T>
-struct TestApplicationNewInterface : public ctk::Application {
-  TestApplicationNewInterface() : Application("testSuite") {}
-  ~TestApplicationNewInterface() override { shutdown(); }
+struct TestApplication : public ctk::Application {
+  TestApplication() : Application("testSuite") {}
+  ~TestApplication() override { shutdown(); }
 
   void defineConnections() override {
     findTag(".*").connectTo(cs); // publish everything to CS
@@ -38,7 +38,7 @@ struct TestApplicationNewInterface : public ctk::Application {
 
 BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   std::cout << "testMaxMonitor" << std::endl;
-  TestApplicationNewInterface<ctk::MaxMonitor<double_t>> app;
+  TestApplication<ctk::MaxMonitor<double_t>> app;
 
   // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
   auto tags = ctk::VariableNetworkNode(app.monitor.status.value).getTags();
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // drop in a disable test.
-  auto disable = test.getScalar<int>("/parameters/disable");
+  auto disable = test.getScalar<ChimeraTK::Boolean>("/parameters/disable");
   disable = 1;
   disable.write();
   test.stepApplication();
@@ -178,7 +178,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   disable = 1;
   disable.write();
   test.stepApplication();
-  BOOST_CHECK_EQUAL(disable, test.readScalar<int>("/MonitorParameters/parameters/disable"));
+  BOOST_CHECK_EQUAL(disable, test.readScalar<ChimeraTK::Boolean>("/MonitorParameters/parameters/disable"));
 }
 
 /*********************************************************************************************************************/
@@ -186,7 +186,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
 BOOST_AUTO_TEST_CASE(testMinMonitor) {
   std::cout << "testMinMonitor" << std::endl;
 
-  TestApplicationNewInterface<ctk::MinMonitor<uint>> app;
+  TestApplication<ctk::MinMonitor<uint>> app;
 
   // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
   auto tags = ctk::VariableNetworkNode(app.monitor.status.value).getTags();
@@ -225,7 +225,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // drop in a disable test.
-  auto disable = test.getScalar<int>("/parameters/disable");
+  auto disable = test.getScalar<ChimeraTK::Boolean>("/parameters/disable");
   disable = 1;
   disable.write();
   test.stepApplication();
@@ -328,14 +328,14 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   disable = 1;
   disable.write();
   test.stepApplication();
-  BOOST_CHECK_EQUAL(disable, test.readScalar<int>("/MonitorParameters/parameters/disable"));
+  BOOST_CHECK_EQUAL(disable, test.readScalar<ChimeraTK::Boolean>("/MonitorParameters/parameters/disable"));
 }
 
 /*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   std::cout << "testRangeMonitor" << std::endl;
-  TestApplicationNewInterface<ctk::RangeMonitor<int>> app;
+  TestApplication<ctk::RangeMonitor<int>> app;
 
   // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
   auto tags = ctk::VariableNetworkNode(app.monitor.status.value).getTags();
@@ -384,7 +384,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // drop in a disable test.
-  auto disable = test.getScalar<int>("/parameters/disable");
+  auto disable = test.getScalar<ChimeraTK::Boolean>("/parameters/disable");
   disable = 1;
   disable.write();
   test.stepApplication();
@@ -553,14 +553,14 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   disable = 1;
   disable.write();
   test.stepApplication();
-  BOOST_CHECK_EQUAL(disable, test.readScalar<int>("/MonitorParameters/parameters/disable"));
+  BOOST_CHECK_EQUAL(disable, test.readScalar<ChimeraTK::Boolean>("/MonitorParameters/parameters/disable"));
 }
 
 /*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testExactMonitor) {
   std::cout << "testExactMonitor" << std::endl;
-  TestApplicationNewInterface<ctk::ExactMonitor<int64_t>> app;
+  TestApplication<ctk::ExactMonitor<int64_t>> app;
 
   // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
   auto tags = ctk::VariableNetworkNode(app.monitor.status.value).getTags();
@@ -587,7 +587,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   BOOST_CHECK_EQUAL(status, static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // drop in a disable test.
-  auto disable = test.getScalar<int>("/parameters/disable");
+  auto disable = test.getScalar<ChimeraTK::Boolean>("/parameters/disable");
   disable = 1;
   disable.write();
   test.stepApplication();
@@ -650,7 +650,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   disable = 1;
   disable.write();
   test.stepApplication();
-  BOOST_CHECK_EQUAL(disable, test.readScalar<int>("/MonitorParameters/parameters/disable"));
+  BOOST_CHECK_EQUAL(disable, test.readScalar<ChimeraTK::Boolean>("/MonitorParameters/parameters/disable"));
 }
 
 /*********************************************************************************************************************/

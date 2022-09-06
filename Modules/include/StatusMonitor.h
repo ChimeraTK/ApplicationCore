@@ -51,7 +51,7 @@ namespace ChimeraTK {
 
    public:
     /** Disable/enable the entire status monitor */
-    ModifyHierarchy<ScalarPushInput<int>> disable;
+    ModifyHierarchy<ScalarPushInput<ChimeraTK::Boolean>> disable;
     /** Result of the monitor */
     ModifyHierarchy<StatusOutput> status;
 
@@ -284,7 +284,7 @@ namespace ChimeraTK {
     ReadAnyGroup group{watch.value, disable.value, warningThreshold.value, faultThreshold.value};
 
     while(true) {
-      if(disable.value != 0) {
+      if(disable.value) {
         setStatus(StatusOutput::Status::OFF);
       }
       else if(watch.value >= faultThreshold.value) {
@@ -326,7 +326,7 @@ namespace ChimeraTK {
     ReadAnyGroup group{watch.value, disable.value, warningThreshold.value, faultThreshold.value};
 
     while(true) {
-      if(disable.value != 0) {
+      if(disable.value) {
         setStatus(StatusOutput::Status::OFF);
       }
       else if(watch.value <= faultThreshold.value) {
@@ -374,7 +374,7 @@ namespace ChimeraTK {
         faultLowerThreshold.value, faultUpperThreshold.value};
 
     while(true) {
-      if(disable.value != 0) {
+      if(disable.value) {
         setStatus(StatusOutput::Status::OFF);
       }
       // Check for fault limits first. Like this they supersede the warning,
@@ -416,7 +416,7 @@ namespace ChimeraTK {
     ReadAnyGroup group{watch.value, disable.value, requiredValue.value};
 
     while(true) {
-      if(disable.value != 0) {
+      if(disable.value) {
         setStatus(StatusOutput::Status::OFF);
       }
       else if(watch.value != requiredValue.value) {
