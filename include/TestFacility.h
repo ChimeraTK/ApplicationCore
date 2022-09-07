@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Application.h"
-#include "TestableModeAccessorDecorator.h"
 
 #include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
 #include <ChimeraTK/OneDRegisterAccessor.h>
@@ -237,17 +236,11 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("Process variable '" + name + "' does not exist.");
     }
 
-    // obtain variable id from pvIdMap and transfer it to idMap (required by the
-    // TestableModeAccessorDecorator)
-    size_t varId = app.pvIdMap[pv->getUniqueId()];
-
     // decorate with TestableModeAccessorDecorator if variable is sender and
-    // receiver is not poll-type, and store it in cache
-    auto& variable = app.getTestableMode().variables[varId];
-    if(pv->isWriteable() && not variable.isPollMode) {
-      auto deco = boost::make_shared<TestableModeAccessorDecorator<T>>(pv, false, true, varId, varId);
-      variable.name = "ControlSystem:" + name;
-      boost::fusion::at_key<T>(accessorMap.table)[name] = deco;
+    // receiver is not poll-type (then no entry in pvIdMapp exists), and store it in cache
+    if(pv->isWriteable() && app.pvIdMap.find(pv->getUniqueId()) != app.pvIdMap.end()) {
+      boost::fusion::at_key<T>(accessorMap.table)[name] = app.getTestableMode().decorate<T>(
+          pv, detail::TestableMode::DecoratorType::WRITE, "ControlSystem: " + name, app.pvIdMap[pv->getUniqueId()]);
     }
     else {
       boost::fusion::at_key<T>(accessorMap.table)[name] = pv;
