@@ -31,15 +31,15 @@ using namespace ChimeraTK;
 
 Application::Application(const std::string& name) : ApplicationBase(name), ModuleGroup(name) {
   // check if the application name has been set
-  if(applicationName == "") {
-    shutdown();
+  if(applicationName.empty()) {
+    Application::shutdown();
     throw ChimeraTK::logic_error("Error: An instance of Application must have its applicationName set.");
   }
   // check if application name contains illegal characters
   std::string legalChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_";
   bool nameContainsIllegalChars = name.find_first_not_of(legalChars) != std::string::npos;
   if(nameContainsIllegalChars) {
-    shutdown();
+    Application::shutdown();
     throw ChimeraTK::logic_error("Error: The application name may only contain "
                                  "alphanumeric characters and underscores.");
   }
@@ -238,7 +238,7 @@ void Application::checkConnections() {
 /*********************************************************************************************************************/
 
 void Application::run() {
-  assert(applicationName != "");
+  assert(not applicationName.empty());
 
   if(testableMode.enabled) {
     if(!testFacilityRunApplicationCalled) {
@@ -347,7 +347,7 @@ void Application::shutdown() {
 /*********************************************************************************************************************/
 
 void Application::generateXML() {
-  assert(applicationName != "");
+  assert(not applicationName.empty());
 
   // define the connections
   defineConnections();
@@ -563,9 +563,8 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
         variable.name = "ControlSystem:" + node.getPublicName();
         return pvarDec;
       }
-      else {
-        variable.isPollMode = true;
-      }
+
+      variable.isPollMode = true;
     }
     else if(node.getDirection().withReturn) {
       // Return channels are always push. The decorator must handle only reads on the return channel, since writes into
@@ -589,7 +588,7 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
   // obtain the meta data
   size_t nElements = node.getNumberOfElements();
   std::string name = node.getName();
-  assert(name != "");
+  assert(not name.empty());
   AccessModeFlags flags = {};
   if(consumer.getType() != NodeType::invalid) {
     if(consumer.getMode() == UpdateMode::push) flags = {AccessMode::wait_for_new_data};
@@ -602,8 +601,10 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
   std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>>
       pvarPair;
-  if(consumer.getType() != NodeType::invalid)
+  if(consumer.getType() != NodeType::invalid) {
     assert(node.getDirection().withReturn == consumer.getDirection().withReturn);
+  }
+
   if(!node.getDirection().withReturn) {
     pvarPair =
         createSynchronizedProcessArray<UserType>(nElements, name, node.getUnit(), node.getDescription(), {}, 3, flags);
@@ -851,7 +852,7 @@ void Application::optimiseConnections() {
   }
 
   // remove networks from the network list
-  for(auto net : deleteNetworks) {
+  for(auto* net : deleteNetworks) {
     networkList.remove(*net);
   }
 }
@@ -876,7 +877,7 @@ void Application::dumpConnections(std::ostream& stream) {                       
 
 /*********************************************************************************************************************/
 
-void Application::dumpConnectionGraph(const std::string& fileName) {
+void Application::dumpConnectionGraph(const std::string& fileName) const {
   std::fstream file{fileName, std::ios_base::out};
 
   VariableNetworkGraphDumpingVisitor visitor{file};
@@ -934,7 +935,7 @@ void Application::markCircularConsumers(VariableNetwork& variableNetwork) {
     // A variable network is a tree-like network of VariableNetworkNodes (one feeder and one or more multiple consumers)
     // A circular network is a list of modules (EntityOwners) which have a circular dependency
     auto circularNetwork = node.scanForCircularDepencency();
-    if(circularNetwork.size() > 0) {
+    if(not circularNetwork.empty()) {
       auto circularNetworkHash = boost::hash_range(circularNetwork.begin(), circularNetwork.end());
       circularDependencyNetworks[circularNetworkHash] = circularNetwork;
       circularNetworkInvalidityCounters[circularNetworkHash] = 0;
@@ -1049,7 +1050,7 @@ void Application::typedMakeConnection(VariableNetwork& network) {
             triggerFanOut = boost::make_shared<TriggerFanOut>(
                 network.getExternalTriggerImpl(), *deviceModuleMap[feeder.getDeviceAlias()], network);
             triggerMap[triggerImplId] = triggerFanOut;
-            internalModuleList.push_back(triggerFanOut);
+            internalModuleList.emplace_back(triggerFanOut);
           }
           fanOut = triggerFanOut->addNetwork(feedingImpl, consumerImplementationPairs);
           network.setFanOut(fanOut);

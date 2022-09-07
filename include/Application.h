@@ -45,7 +45,7 @@ namespace ChimeraTK {
     /** The constructor takes the application name as an argument. The name must
      * have a non-zero length and must not contain any spaces or special
      * characters. Use only alphanumeric characters and underscores. */
-    Application(const std::string& name);
+    explicit Application(const std::string& name);
 
     using ApplicationBase::getName;
 
@@ -79,7 +79,7 @@ namespace ChimeraTK {
 
     /** Create Graphviz dot graph and write to file. The graph will contain the
      * connections made in the initialise() function. @see dumpConnections */
-    void dumpConnectionGraph(const std::string& filename = {"connections-graph.dot"});
+    void dumpConnectionGraph(const std::string& filename = {"connections-graph.dot"}) const;
 
     /** Create Graphviz dot graph representing the connections between the modules, and write to file.*/
     void dumpModuleConnectionGraph(const std::string& filename = {"module-connections-graph.dot"}) const;
