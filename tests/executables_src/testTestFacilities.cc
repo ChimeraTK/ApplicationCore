@@ -10,7 +10,7 @@
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
-#include "TestableModeAccessorDecorator.h"
+#include "TestableMode.h"
 #include "TestFacility.h"
 #include "VariableGroup.h"
 
@@ -273,11 +273,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testNoDecorator, T, test_types) {
 
   // check if we got the decorator for the input
   auto hlinput = app.blockingReadTestModule.someInput.getHighLevelImplElement();
-  BOOST_CHECK(boost::dynamic_pointer_cast<ctk::TestableModeAccessorDecorator<T>>(hlinput) == nullptr);
+  BOOST_CHECK(boost::dynamic_pointer_cast<ctk::detail::TestableMode::AccessorDecorator<T>>(hlinput) == nullptr);
 
   // check that we did not get the decorator for the output
   auto hloutput = app.blockingReadTestModule.someOutput.getHighLevelImplElement();
-  BOOST_CHECK(boost::dynamic_pointer_cast<ctk::TestableModeAccessorDecorator<T>>(hloutput) == nullptr);
+  BOOST_CHECK(boost::dynamic_pointer_cast<ctk::detail::TestableMode::AccessorDecorator<T>>(hloutput) == nullptr);
 }
 
 /*********************************************************************************************************************/

@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "VariableNetworkNode.h"
+
+#include <ChimeraTK/ControlSystemAdapter/BidirectionalProcessArray.h>
 #include <ChimeraTK/TransferElement.h>
 
 #include <boost/shared_ptr.hpp>
@@ -14,24 +17,6 @@
 
 namespace ChimeraTK::detail {
   struct TestableMode {
-    struct VariableDescriptor {
-      /** name of the variable, used to print sensible information. */
-      std::string name;
-
-      /** The Process variable that has been decorated with a TestableModeDecorator */
-      boost::shared_ptr<TransferElement> processVariable;
-
-      /** Whether the update mode is UpdateMode::poll (so we do not use the decorator) */
-      bool isPollMode{false};
-
-      /** Like the global counter but broken out for each variable.
-       * This is not actually used as a semaphore counter but only in case of a
-       * detected stall (see repeatingMutexOwner) to print a list of
-       * variables which still contain unread values
-       */
-      size_t counter{0};
-    };
-
     /** Special exception class which will be thrown if tests with the testable
      * mode are stalled. Normally this exception should never be caught. The only
      * reason for catching it might be a situation where the expected behaviour of
@@ -50,12 +35,6 @@ namespace ChimeraTK::detail {
      * finished executing. This value may only be accessed while holding the
      * testableMode.mutex. */
     size_t counter{0};
-
-    /**
-     * Map of unique IDs to a VariableDescriptor holding information about Variables
-     * that are being tracked as part of testable mode
-     */
-    std::map<size_t, VariableDescriptor> variables;
 
     /** Flag if connections should be made in testable mode (i.e. the
      * TestableModeAccessorDecorator is put around all push-type input accessors
@@ -106,7 +85,83 @@ namespace ChimeraTK::detail {
      */
     void enable();
 
+    enum class DecoratorType { READ, WRITE };
+
+    /** Return a fresh variable ID which can be assigned to a sender/receiver
+     * pair. The ID will always be non-zero. */
+    static size_t getNextVariableId() {
+      static size_t nextId{0};
+      return ++nextId;
+    }
+
+    template<typename T>
+    boost::shared_ptr<NDRegisterAccessor<T>> decorate(boost::shared_ptr<NDRegisterAccessor<T>> other,
+        DecoratorType direction, const std::string& name = {}, size_t varId = 0);
+
+    template<typename T>
+    using AccessorPair = std::pair<boost::shared_ptr<NDRegisterAccessor<T>>, boost::shared_ptr<NDRegisterAccessor<T>>>;
+
+    template<typename T>
+    AccessorPair<T> decorate(
+        AccessorPair<T> other, const VariableNetworkNode& producer, const VariableNetworkNode& consumer);
+
+    /** Decorator of the NDRegisterAccessor which facilitates tests of the
+     * application */
+    template<typename UserType>
+    class AccessorDecorator : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
+     public:
+      AccessorDecorator(detail::TestableMode& testableMode,
+          boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, bool handleRead, bool handleWrite,
+          size_t variableIdRead, size_t variableIdWrite);
+
+      bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
+
+      bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override;
+
+      void doReadTransferSynchronously() override { _target->readTransfer(); }
+
+      /** Release the testableModeLock */
+      void releaseLock();
+
+      void doPreRead(TransferType type) override;
+
+      /** Obtain the testableModeLock if not owned yet, and decrement the counter.
+       */
+      void obtainLockAndDecrementCounter(bool hasNewData);
+
+      /** Obtain the testableModeLock if not owned yet, decrement the counter, and
+       * release the lock again. */
+      void decrementCounter();
+
+      void doPostRead(TransferType type, bool hasNewData) override;
+
+     protected:
+      using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
+      using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
+
+      bool _handleRead, _handleWrite;
+      size_t _variableIdRead, _variableIdWrite;
+      TestableMode& _testableMode;
+
+      bool accountForWriteOperation(const std::function<bool(void)>& writeOperation);
+    };
+
    private:
+    struct VariableDescriptor {
+      /** name of the variable, used to print sensible information. */
+      std::string name;
+
+      /** The Process variable that has been decorated with a TestableModeDecorator */
+      boost::shared_ptr<TransferElement> processVariable;
+
+      /** Like the global counter but broken out for each variable.
+       * This is not actually used as a semaphore counter but only in case of a
+       * detected stall (see repeatingMutexOwner) to print a list of
+       * variables which still contain unread values
+       */
+      size_t counter{0};
+    };
+
     /** Mutex used in testable mode to take control over the application threads.
      * Use only through the lock object obtained through
      * getLockObject().
@@ -118,6 +173,12 @@ namespace ChimeraTK::detail {
      * since there can only be one single instance of Application at a time (see
      * ApplicationBase constructor). */
     static std::timed_mutex mutex;
+
+    /**
+     * Map of unique IDs to a VariableDescriptor holding information about Variables
+     * that are being tracked as part of testable mode
+     */
+    std::map<size_t, VariableDescriptor> variables;
 
     /** Last thread which successfully obtained the lock for the testable mode.
      * This is used to prevent spamming repeating messages if the same thread
@@ -151,4 +212,212 @@ namespace ChimeraTK::detail {
      */
     std::string threadName(const boost::thread::id& threadId = boost::this_thread::get_id());
   };
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /***** Inline implementations for TestableMode **/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  template<typename T>
+  TestableMode::AccessorPair<T> TestableMode::decorate(
+      AccessorPair<T> other, const VariableNetworkNode& producer, const VariableNetworkNode& consumer) {
+    if(not enabled) return other;
+
+    // create variable IDs
+    size_t varId = detail::TestableMode::getNextVariableId();
+    size_t varIdReturn;
+    AccessorPair<T> result;
+
+    if(producer.getDirection().withReturn) varIdReturn = detail::TestableMode::getNextVariableId();
+
+    // decorate the process variable if testable mode is enabled and mode is push-type
+    if(!producer.getDirection().withReturn) {
+      result.first = boost::make_shared<AccessorDecorator<T>>(*this, other.first, false, true, varId, varId);
+      result.second = boost::make_shared<AccessorDecorator<T>>(*this, other.second, true, false, varId, varId);
+    }
+    else {
+      result.first = boost::make_shared<AccessorDecorator<T>>(*this, other.first, true, true, varIdReturn, varId);
+      result.second = boost::make_shared<AccessorDecorator<T>>(*this, other.second, true, true, varId, varIdReturn);
+    }
+
+    // put the decorators into the list
+    auto& variable = variables[varId];
+    variable.name = "Internal:" + producer.getQualifiedName();
+    if(consumer.getType() != NodeType::invalid) {
+      variable.name += "->" + consumer.getQualifiedName();
+    }
+    if(producer.getDirection().withReturn) {
+      auto& returnVariable = variables[varIdReturn];
+      returnVariable.name = variable.name + " (return)";
+    }
+
+    return result;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename T>
+  boost::shared_ptr<NDRegisterAccessor<T>> TestableMode::decorate(
+      boost::shared_ptr<NDRegisterAccessor<T>> other, DecoratorType direction, const std::string& name, size_t varId) {
+    if(not enabled) {
+      return other;
+    }
+
+    if(varId == 0) {
+      varId = detail::TestableMode::getNextVariableId();
+    }
+
+    auto pvarDec = boost::make_shared<AccessorDecorator<T>>(
+        *this, other, direction == DecoratorType::READ, direction == DecoratorType::WRITE, varId, varId);
+    if(not name.empty()) {
+      variables[varId].name = name;
+    }
+
+    return pvarDec;
+  }
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /***** Implementations for TestableMode::AccessorDecorator **/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  TestableMode::AccessorDecorator<UserType>::AccessorDecorator(detail::TestableMode& testableMode,
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, bool handleRead, bool handleWrite,
+      size_t variableIdRead, size_t variableIdWrite)
+  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), _handleRead(handleRead), _handleWrite(handleWrite),
+    _variableIdRead(variableIdRead), _variableIdWrite(variableIdWrite), _testableMode(testableMode) {
+    assert(_variableIdRead != 0);
+    assert(_variableIdWrite != 0);
+
+    // if receiving end, register for testable mode (stall detection)
+    if(this->isReadable() && handleRead) {
+      _testableMode.variables[_variableIdRead].processVariable = accessor;
+      assert(accessor->getAccessModeFlags().has(AccessMode::wait_for_new_data));
+    }
+
+    // if this decorating a bidirectional process variable, set the
+    // valueRejectCallback
+    auto bidir = boost::dynamic_pointer_cast<BidirectionalProcessArray<UserType>>(accessor);
+    if(bidir) {
+      bidir->setValueRejectCallback([this] { decrementCounter(); });
+    }
+    else {
+      assert(!(handleRead && handleWrite));
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  bool TestableMode::AccessorDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
+    if(!_handleWrite) return _target->writeTransfer(versionNumber);
+    return accountForWriteOperation([this, versionNumber]() { return _target->writeTransfer(versionNumber); });
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  bool TestableMode::AccessorDecorator<UserType>::doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
+    if(!_handleWrite) return _target->writeTransferDestructively(versionNumber);
+
+    return accountForWriteOperation(
+        [this, versionNumber]() { return _target->writeTransferDestructively(versionNumber); });
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void TestableMode::AccessorDecorator<UserType>::releaseLock() {
+    if(_testableMode.testLock()) _testableMode.unlock("doReadTransfer " + this->getName());
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void TestableMode::AccessorDecorator<UserType>::doPreRead(TransferType type) {
+    _target->preRead(type);
+
+    // Blocking reads have to release the lock so the data transport can happen
+    if(_handleRead && type == TransferType::read &&
+        TransferElement::_accessModeFlags.has(AccessMode::wait_for_new_data)) {
+      releaseLock();
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void TestableMode::AccessorDecorator<UserType>::obtainLockAndDecrementCounter(bool hasNewData) {
+    if(!_testableMode.testLock()) _testableMode.lock("doReadTransfer " + this->getName());
+    if(!hasNewData) return;
+    auto& variable = _testableMode.variables[_variableIdRead];
+    if(variable.counter > 0) {
+      assert(_testableMode.counter > 0);
+      --_testableMode.counter;
+      --variable.counter;
+      if(_testableMode.enableDebug) {
+        std::cout << "TestableModeAccessorDecorator[name='" << this->getName() << "', id=" << _variableIdRead
+                  << "]: testableMode.counter decreased, now at value " << _testableMode.counter << " / "
+                  << variable.counter << std::endl;
+      }
+    }
+    else {
+      if(_testableMode.enableDebug) {
+        std::cout << "TestableModeAccessorDecorator[name='" << this->getName() << "', id=" << _variableIdRead
+                  << "]: testableMode.counter NOT decreased, was already at value " << _testableMode.counter << " / "
+                  << variable.counter << std::endl;
+        std::cout << variable.name << std::endl;
+      }
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void TestableMode::AccessorDecorator<UserType>::decrementCounter() {
+    obtainLockAndDecrementCounter(true);
+    releaseLock();
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void TestableMode::AccessorDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
+    if(_handleRead) obtainLockAndDecrementCounter(hasNewData);
+    ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPostRead(type, hasNewData);
+  }
+
+  template<typename UserType>
+  bool TestableMode::AccessorDecorator<UserType>::accountForWriteOperation(
+      const std::function<bool(void)>& writeOperation) {
+    bool dataLost = false;
+    if(!_testableMode.testLock()) {
+      // may happen if first write in thread is done before first blocking read
+      _testableMode.lock("write " + this->getName());
+    }
+
+    dataLost = writeOperation();
+
+    if(!dataLost) {
+      ++_testableMode.counter;
+      ++_testableMode.variables[_variableIdWrite].counter;
+      if(_testableMode.enableDebug) {
+        std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
+                  << "]: testableMode.counter increased, now at value " << _testableMode.counter << std::endl;
+      }
+    }
+    else {
+      if(_testableMode.enableDebug) {
+        std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
+                  << "]: testableMode.counter not increased due to lost data" << std::endl;
+      }
+    }
+    return dataLost;
+  }
+
+  /********************************************************************************************************************/
+
 } // namespace ChimeraTK::detail

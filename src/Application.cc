@@ -8,7 +8,6 @@
 #include "DeviceModule.h"
 #include "ExceptionHandlingDecorator.h"
 #include "FeedingFanOut.h"
-#include "TestableModeAccessorDecorator.h"
 #include "ThreadedFanOut.h"
 #include "TriggerFanOut.h"
 #include "VariableNetworkGraphDumpingVisitor.h"
@@ -488,11 +487,8 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   }
 
   // decorate push-type feeders with testable mode decorator, if needed
-  if(testableMode.enabled) {
-    if(mode == UpdateMode::push && direction.dir == VariableDirection::feeding) {
-      auto varId = getNextVariableId();
-      accessor = boost::make_shared<TestableModeAccessorDecorator<UserType>>(accessor, true, false, varId, varId);
-    }
+  if(mode == UpdateMode::push && direction.dir == VariableDirection::feeding) {
+    accessor = testableMode.decorate(accessor, detail::TestableMode::DecoratorType::READ);
   }
 
   return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, node);
@@ -537,15 +533,11 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
       node.getNumberOfElements(), node.getOwner().getUnit(), node.getOwner().getDescription(), {}, 3, flags);
   assert(pvar->getName() != "");
 
-  // create variable ID
-  auto varId = getNextVariableId();
-  pvIdMap[pvar->getUniqueId()] = varId;
 
   // Decorate the process variable if testable mode is enabled and this is the receiving end of the variable (feeding
   // to the network), or a bidirectional consumer. Also don't decorate, if the mode is polling. Instead flag the
   // variable to be polling, so the TestFacility is aware of this.
   if(testableMode.enabled) {
-    auto& variable = testableMode.variables[varId];
     if(node.getDirection().dir == VariableDirection::feeding) {
       // The transfer mode of this process variable is considered to be polling,
       // if only one consumer exists and this consumer is polling. Reason:
@@ -559,19 +551,18 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createPr
       }
 
       if(mode != UpdateMode::poll) {
-        auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvar, true, false, varId, varId);
-        variable.name = "ControlSystem:" + node.getPublicName();
-        return pvarDec;
+        // create variable ID
+        auto varId = detail::TestableMode::getNextVariableId();
+        pvIdMap[pvar->getUniqueId()] = varId;
+        return testableMode.decorate<UserType>(
+            pvar, detail::TestableMode::DecoratorType::READ, "ControlSystem:" + node.getPublicName(), varId);
       }
-
-      variable.isPollMode = true;
     }
     else if(node.getDirection().withReturn) {
       // Return channels are always push. The decorator must handle only reads on the return channel, since writes into
       // the control system do not block the testable mode.
-      auto pvarDec = boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvar, true, false, varId, varId);
-      variable.name = "ControlSystem:" + node.getPublicName();
-      return pvarDec;
+      return testableMode.decorate<UserType>(
+          pvar, detail::TestableMode::DecoratorType::READ, "ControlSystem:" + node.getPublicName());
     }
   }
 
@@ -616,34 +607,8 @@ std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
   assert(pvarPair.first->getName() != "");
   assert(pvarPair.second->getName() != "");
 
-  // create variable IDs
-  size_t varId = getNextVariableId();
-  size_t varIdReturn;
-  if(node.getDirection().withReturn) varIdReturn = getNextVariableId();
-
-  // decorate the process variable if testable mode is enabled and mode is push-type
-  if(testableMode.enabled && flags.has(AccessMode::wait_for_new_data)) {
-    if(!node.getDirection().withReturn) {
-      pvarPair.first =
-          boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.first, false, true, varId, varId);
-      pvarPair.second =
-          boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.second, true, false, varId, varId);
-    }
-    else {
-      pvarPair.first =
-          boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.first, true, true, varIdReturn, varId);
-      pvarPair.second =
-          boost::make_shared<TestableModeAccessorDecorator<UserType>>(pvarPair.second, true, true, varId, varIdReturn);
-    }
-
-    // put the decorators into the list
-    auto& variable = testableMode.variables[varId];
-    variable.name = "Internal:" + node.getQualifiedName();
-    if(consumer.getType() != NodeType::invalid) {
-      variable.name += "->" + consumer.getQualifiedName();
-    }
-    auto& returnVariable = testableMode.variables[varIdReturn];
-    if(node.getDirection().withReturn) returnVariable.name = variable.name + " (return)";
+  if(flags.has(AccessMode::wait_for_new_data)) {
+    pvarPair = testableMode.decorate(pvarPair, node, consumer);
   }
 
   // if debug mode was requested for either node, decorate both accessors
@@ -1171,12 +1136,9 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         auto feedingImpl = feeder.createConstAccessor<UserType>(flags);
 
         if(consumer.getType() == NodeType::Application) {
-          if(testableMode.enabled && consumer.getMode() == UpdateMode::push) {
-            auto varId = getNextVariableId();
-            auto pvarDec =
-                boost::make_shared<TestableModeAccessorDecorator<UserType>>(feedingImpl, true, false, varId, varId);
-            testableMode.variables[varId].name = "Constant";
-            consumer.setAppAccessorImplementation<UserType>(pvarDec);
+          if(consumer.getMode() == UpdateMode::push) {
+            consumer.setAppAccessorImplementation<UserType>(
+                testableMode.decorate(feedingImpl, detail::TestableMode::DecoratorType::READ, "Constant"));
           }
           else {
             consumer.setAppAccessorImplementation<UserType>(feedingImpl);

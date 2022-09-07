@@ -289,13 +289,6 @@ namespace ChimeraTK {
      * variables. This is required for the TestFacility. */
     std::map<size_t, size_t> pvIdMap;
 
-    /** Return a fresh variable ID which can be assigned to a sender/receiver
-     * pair. The ID will always be non-zero. */
-    static size_t getNextVariableId() {
-      static size_t nextId{0};
-      return ++nextId;
-    }
-
     detail::CircularDependencyDetector circularDependencyDetector;
     detail::TestableMode testableMode;
 
