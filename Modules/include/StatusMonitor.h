@@ -13,7 +13,6 @@
  *  - MinMonitor to monitor a value depending upon two MIN thresholds for warning and fault.
  *  - RangeMonitor to monitor a value depending upon two ranges of thresholds for warning and fault.
  *  - ExactMonitor to monitor a value which should be exactly same as required value.
- *  - StateMonitor to monitor On/Off state.
  * Depending upon the value and condition on of the four states are reported.
  *  -  OFF, OK, WARNING, FAULT.
  *
