@@ -37,7 +37,7 @@ For more info see \ref statusmonitordoc
 namespace ChimeraTK {
 
   /*******************************************************************************************************************/
-  /* Definition of MonitorBase ***************************************************************************************/
+  /* Declaration of MonitorBase **************************************************************************************/
   /*******************************************************************************************************************/
   struct MonitorBase : ApplicationModule {
     // make constructors protected not to allow of instantiancion of this object - this is just a base class for other monitors
@@ -60,7 +60,7 @@ namespace ChimeraTK {
   };
 
   /*******************************************************************************************************************/
-  /* Definition of MaxMonitor ****************************************************************************************/
+  /* Declaration of MaxMonitor ***************************************************************************************/
   /*******************************************************************************************************************/
 
   /** Module for status monitoring depending on a maximum threshold value*/
@@ -97,7 +97,7 @@ namespace ChimeraTK {
   };
 
   /*******************************************************************************************************************/
-  /* Definition of MinMonitor ****************************************************************************************/
+  /* Declaration of MinMonitor ***************************************************************************************/
   /*******************************************************************************************************************/
 
   /** Module for status monitoring depending on a minimum threshold value*/
@@ -129,7 +129,7 @@ namespace ChimeraTK {
   };
 
   /*******************************************************************************************************************/
-  /* Definition of RangeMonitor **************************************************************************************/
+  /* Declaration of RangeMonitor *************************************************************************************/
   /*******************************************************************************************************************/
 
   /** Module for status monitoring depending on range of threshold values.
@@ -175,7 +175,7 @@ namespace ChimeraTK {
   };
 
   /*******************************************************************************************************************/
-  /* Definition of ExactMonitor **************************************************************************************/
+  /* Declaration of ExactMonitor *************************************************************************************/
   /*******************************************************************************************************************/
 
   /**
@@ -247,6 +247,7 @@ namespace ChimeraTK {
     disable(this, disablePath, "", "Disable the status monitor", parameterTags),
     status(this, outputPath, "Resulting status", outputTags) {}
 
+  /*******************************************************************************************************************/
   void MonitorBase::setStatus(StatusOutput::Status newStatus) {
     // update only if status has changed, but always in case of initial value
     if(status.value != newStatus || getDataValidity() != lastStatusValidity ||
@@ -267,6 +268,7 @@ namespace ChimeraTK {
   : MaxMonitor(owner, inputPath, outputPath, parameterPath + "/upperWarningThreshold",
         parameterPath + "/upperFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
 
+  /*******************************************************************************************************************/
   template<typename T>
   MaxMonitor<T>::MaxMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& warningThresholdPath, const std::string& faultThresholdPath, const std::string& disablePath,
@@ -277,6 +279,7 @@ namespace ChimeraTK {
     warningThreshold(this, warningThresholdPath, "", "Warning threshold to compare with", parameterTags),
     faultThreshold(this, faultThresholdPath, "", "Fault threshold to compare with", parameterTags) {}
 
+  /*******************************************************************************************************************/
   template<typename T>
   void MaxMonitor<T>::mainLoop() {
     // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
@@ -309,6 +312,7 @@ namespace ChimeraTK {
   : MinMonitor(owner, inputPath, outputPath, parameterPath + "/lowerWarningThreshold",
         parameterPath + "/lowerFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
 
+  /*******************************************************************************************************************/
   template<typename T>
   MinMonitor<T>::MinMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& warningThresholdPath, const std::string& faultThresholdPath, const std::string& disablePath,
@@ -319,6 +323,7 @@ namespace ChimeraTK {
     warningThreshold(this, warningThresholdPath, "", "Warning threshold to compare with", parameterTags),
     faultThreshold(this, faultThresholdPath, "", "Fault threshold to compare with", parameterTags) {}
 
+  /*******************************************************************************************************************/
   template<typename T>
   void MinMonitor<T>::mainLoop() {
     // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
@@ -352,6 +357,7 @@ namespace ChimeraTK {
         parameterPath + "/upperWarningThreshold", parameterPath + "/lowerFaultThreshold",
         parameterPath + "/upperFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
 
+  /*******************************************************************************************************************/
   template<typename T>
   RangeMonitor<T>::RangeMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& warningLowerThresholdPath, const std::string& warningUpperThresholdPath,
@@ -366,6 +372,7 @@ namespace ChimeraTK {
     faultLowerThreshold(this, faultLowerThresholdPath, "", "Lower fault threshold to compare with", parameterTags),
     faultUpperThreshold(this, faultUpperThresholdPath, "", "Upper fault threshold to compare with", parameterTags) {}
 
+  /*******************************************************************************************************************/
   template<typename T>
   void RangeMonitor<T>::mainLoop() {
     // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
@@ -401,6 +408,7 @@ namespace ChimeraTK {
   : ExactMonitor(owner, inputPath, outputPath, parameterPath + "/requiredValue", parameterPath + "/disable",
         description, outputTags, parameterTags) {}
 
+  /*******************************************************************************************************************/
   template<typename T>
   ExactMonitor<T>::ExactMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& requiredValuePath, const std::string& disablePath, const std::string& description,
@@ -409,6 +417,7 @@ namespace ChimeraTK {
     watch(this, inputPath, "", "Value to monitor"),
     requiredValue(this, requiredValuePath, "", "Value to compare with", parameterTags) {}
 
+  /*******************************************************************************************************************/
   template<typename T>
   void ExactMonitor<T>::mainLoop() {
     // If there is a change either in value monitored or in requiredValue, the status is re-evaluated

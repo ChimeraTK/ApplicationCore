@@ -63,8 +63,13 @@ struct ExampleApp : public ctk::Application {
     // the name of the output variable. The monitor automatically connects to the input variable that is in the same
     // hierarchy level. We add output and parameter tags (STATUS and CONFIG, respectively) for easier connetion of the
     // variables.
-    ctk::RangeMonitor<double> temperatureMonitor{this, "TemperatureMonitor", "monitor for the simulated temperature",
-        "temperature", "temperatureStatus", ctk::HierarchyModifier::none, {"STATUS"}, {"CONFIG"}, {}};
+    // ctk::RangeMonitor<double> temperatureMonitor{this, "TemperatureMonitor", "monitor for the simulated temperature",
+    //    "temperature", "temperatureStatus", ctk::HierarchyModifier::none, {"STATUS"}, {"CONFIG"}, {}};
+
+    ctk::RangeMonitor<double> temperatureMonitor{this, "/TemperatureMonitor/temperature",
+        "/TemperatureMonitor/temperatureStatus", "/TemperatureMonitor", "monitor for the simulated temperature",
+        ctk::TAGS{"MON_OUTPUT"}, ctk::TAGS{"MON_PARAMS"}};
+
   } simulationGroup{this, "Simulation", ""};
 
   ctk::ConfigReader config{this, "Config", "demoStatusMonitor_config.xml"};
