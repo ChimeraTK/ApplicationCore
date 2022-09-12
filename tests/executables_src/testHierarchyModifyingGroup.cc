@@ -281,7 +281,7 @@ struct TestApplication_moveAssignment : public ctk::Application {
   void defineConnections() override {}
 
   struct TestModule : ctk::ApplicationModule {
-    TestModule(EntityOwner* owner, const std::string& name, const std::string& description)
+    TestModule(ModuleGroup* owner, const std::string& name, const std::string& description)
     : ApplicationModule(owner, name, description) {
       a = TestGroup(this, "VariableGroupLike", "Use like normal VariableGroup", {"TagA"});
       h = TestGroup(this, "local/very/deep/hierarchy", "Create deep hierarchy locally", {"TagH"});

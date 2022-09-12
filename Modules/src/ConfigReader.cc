@@ -262,7 +262,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  ConfigReader::ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName,
+  ConfigReader::ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
       HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
   : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", hierarchyModifier, tags),
     _fileName(fileName), _moduleTree(std::make_unique<ModuleTree>(this, name + "-ModuleTree", "")) {
@@ -271,7 +271,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  ConfigReader::ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName,
+  ConfigReader::ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
       const std::unordered_set<std::string>& tags)
   : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", HierarchyModifier::none, tags),
     _fileName(fileName), _moduleTree(std::make_unique<ModuleTree>(this, name + "-ModuleTree", "")) {

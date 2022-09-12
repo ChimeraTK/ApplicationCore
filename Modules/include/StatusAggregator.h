@@ -68,7 +68,7 @@ namespace ChimeraTK {
      *  Note: The constructor will search for StatusOutputs to be aggregated. It can only find what has been constructed
      *  already. Make sure all StatusOutputs to be aggregated are constructed before this aggregator.
      */
-    StatusAggregator(EntityOwner* owner, const std::string& outputName, const std::string& description,
+    StatusAggregator(ModuleGroup* owner, const std::string& outputName, const std::string& description,
         PriorityMode mode = PriorityMode::fwok, const std::unordered_set<std::string>& tagsToAggregate = {},
         const std::unordered_set<std::string>& outputTags = {});
 

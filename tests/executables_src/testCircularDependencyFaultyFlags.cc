@@ -37,7 +37,7 @@ struct TestModuleBase : ctk::ApplicationModule {
   ctk::ScalarPushInput<int> circularInput2{this, "circularInput2", "", ""};
   ctk::ScalarOutput<int> circularOutput1{this, "circularOutput1", "", ""};
 
-  TestModuleBase(const std::string& inputName, const std::string& outputName, EntityOwner* owner,
+  TestModuleBase(const std::string& inputName, const std::string& outputName, ctk::ModuleGroup* owner,
       const std::string& name, const std::string& description,
       ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none)
   : ApplicationModule(owner, name, description, hierarchyModifier),

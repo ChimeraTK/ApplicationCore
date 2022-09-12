@@ -13,7 +13,7 @@ namespace ChimeraTK {
 
   /**********************************************************************************************************************/
 
-  ScriptedInitHandler::ScriptedInitHandler(EntityOwner* owner, const std::string& name, const std::string& description,
+  ScriptedInitHandler::ScriptedInitHandler(ModuleGroup* owner, const std::string& name, const std::string& description,
       const std::string& command, DeviceModule& deviceModule, const std::string& outputName,
       unsigned int errorGracePeriod)
   : ApplicationModule(owner, name, description), _command(command), _deviceAlias(deviceModule.getDeviceAliasOrURI()),

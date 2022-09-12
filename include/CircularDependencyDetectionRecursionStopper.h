@@ -25,7 +25,7 @@ namespace ChimeraTK { namespace detail {
    */
   class CircularDependencyDetectionRecursionStopper {
     static size_t _globalScanCounter;
-    size_t _localScanCounter;
+    size_t _localScanCounter{0};
 
    public:
     static void startNewScan();

@@ -62,7 +62,7 @@ class TestTransferGroupDummy : public ChimeraTK::DummyBackend {
 
 template<typename T>
 struct TestModule : public ctk::ApplicationModule {
-  TestModule(EntityOwner* owner, const std::string& name, const std::string& description,
+  TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
       ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string>& tags = {})
   : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}

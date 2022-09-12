@@ -23,11 +23,12 @@ struct TestApplication : Application {
   TestApplication() : Application("myTestApp") {}
   ~TestApplication() { shutdown(); }
 
-  PeriodicTrigger p{this, "SomeTimer", "", 1000, false, {}, "/Config/timerPeriod", "../tickTock"};
+  PeriodicTrigger p{
+      this, "SomeTimer", "", 1000, ChimeraTK::HierarchyModifier::none, {}, "/Config/timerPeriod", "../tickTock"};
   TestModule m{this, "SomeModule", ""};
 };
 
-// This test is checking that the I/O variables are created as indended,
+// This test is checking that the I/O variables are created as intended,
 // and that the functionality in testable mode is working. It does not
 // the real timing (and thus the only and main functionality of the PeriodicTrigger).
 BOOST_AUTO_TEST_CASE(testIterface) {

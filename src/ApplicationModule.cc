@@ -165,8 +165,8 @@ namespace ChimeraTK {
       _recursionStopper.setRecursionDetected();
     }
 
-    // Whether a cirular depencency has been detected or not, we must loop all inputs and add this module to the list so
-    // the calling code sees the second instance and can also detect the circle. The reason why we have to scan all
+    // Whether a circular dependency has been detected or not, we must loop all inputs and add this module to the list
+    // so the calling code sees the second instance and can also detect the circle. The reason why we have to scan all
     // inputs even if a circle is detected is this:
     // * A single input starts the scan by adding it's owning module. At this point not all inputs if that module are in
     // the circular network.
@@ -179,7 +179,7 @@ namespace ChimeraTK {
     std::list<EntityOwner*> returnList{
         startList}; // prepare the return list. Deltas from the inputs will be added to it.
     for(auto& accessor : this->getAccessorListRecursive()) {
-      // not consumun from network -> not an input, just continue
+      // not consumed from network -> not an input, just continue
       if(accessor.getDirection().dir != VariableDirection::consuming) continue;
 
       // find the feeder in the network
@@ -226,7 +226,7 @@ namespace ChimeraTK {
     if(_circularNetworkHash != 0) {
       // In a circular dependency network, internal inputs are ignored.
       // If all external inputs (including the ones from this module) are OK, the
-      // data valitity is set to OK.
+      // data validity is set to OK.
       if(Application::getInstance().circularNetworkInvalidityCounters[_circularNetworkHash] == 0) {
         return DataValidity::ok;
       }

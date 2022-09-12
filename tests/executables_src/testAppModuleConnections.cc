@@ -27,25 +27,25 @@ typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, 
 
 template<typename T>
 struct TestModule : public ctk::ApplicationModule {
-  TestModule(EntityOwner* owner, const std::string& name, const std::string& description,
+  TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
       ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string>& tags = {})
   : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}
 
   ctk::ScalarOutput<T> feedingPush{this, "feedingPush", "MV/m", "Some output scalar"};
-  ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Descrption"};
-  ctk::ScalarPushInput<T> consumingPush2{this, "consumingPush2", "MV/m", "Descrption"};
-  ctk::ScalarPushInput<T> consumingPush3{this, "consumingPush3", "MV/m", "Descrption"};
+  ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Description"};
+  ctk::ScalarPushInput<T> consumingPush2{this, "consumingPush2", "MV/m", "Description"};
+  ctk::ScalarPushInput<T> consumingPush3{this, "consumingPush3", "MV/m", "Description"};
 
-  ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Descrption"};
-  ctk::ScalarPollInput<T> consumingPoll2{this, "consumingPoll2", "MV/m", "Descrption"};
-  ctk::ScalarPollInput<T> consumingPoll3{this, "consumingPoll3", "MV/m", "Descrption"};
+  ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Description"};
+  ctk::ScalarPollInput<T> consumingPoll2{this, "consumingPoll2", "MV/m", "Description"};
+  ctk::ScalarPollInput<T> consumingPoll3{this, "consumingPoll3", "MV/m", "Description"};
 
-  ctk::ArrayPollInput<T> consumingPollArray{this, "consumingPollArray", "m", 10, "Descrption"};
-  ctk::ArrayPushInput<T> consumingPushArray{this, "consumingPushArray", "m", 10, "Descrption"};
+  ctk::ArrayPollInput<T> consumingPollArray{this, "consumingPollArray", "m", 10, "Description"};
+  ctk::ArrayPushInput<T> consumingPushArray{this, "consumingPushArray", "m", 10, "Description"};
 
-  ctk::ArrayOutput<T> feedingArray{this, "feedingArray", "m", 10, "Descrption"};
-  ctk::ArrayOutput<T> feedingPseudoArray{this, "feedingPseudoArray", "m", 1, "Descrption"};
+  ctk::ArrayOutput<T> feedingArray{this, "feedingArray", "m", 10, "Description"};
+  ctk::ArrayOutput<T> feedingPseudoArray{this, "feedingPseudoArray", "m", 1, "Description"};
 
   ctk::ScalarPollInput<T> lateConstrScalarPollInput;
   ctk::ScalarPushInput<T> lateConstrScalarPushInput;
@@ -63,7 +63,7 @@ struct TestModule : public ctk::ApplicationModule {
   boost::barrier mainLoopStarted;
 
   void prepare() override {
-    incrementDataFaultCounter(); // foce all outputs  to invalid
+    incrementDataFaultCounter(); // force all outputs  to invalid
     writeAll();                  // write initial values
     decrementDataFaultCounter(); // validity according to input validity
   }

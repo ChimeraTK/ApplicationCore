@@ -26,19 +26,18 @@ namespace ChimeraTK {
      * @param description The description of the PeriodicTrigger module
      * @param defaultPeriod Trigger period in milliseconds, used when the trigger period input process variable has the
      *        value 0.
-     * @param eliminateHierarchy Flag whether the hierarcy of the PeriodicTrigger shal be visible or not. @todo change
-     *        into HierarchyModifyer flag!
-     * @param tags List of tags to attach to all variables
+     * @param hierarchyModifier various flags whether to
+     * @param tags List of tags to attach to all variables concerning the location in the virtual hierarchy
      * @param periodName Qualified name for the period input process variable
      * @param tickName Qualified names for the tick output process variable
      *
      * For periodName and tickName, you can just give a variable name, a relative or an absolute path.
      */
-    PeriodicTrigger(EntityOwner* owner, const std::string& name, const std::string& description,
-        const uint32_t defaultPeriod = 1000, bool eliminateHierarchy = false,
+    PeriodicTrigger(ModuleGroup* owner, const std::string& name, const std::string& description,
+        const uint32_t defaultPeriod = 1000, HierarchyModifier hierarchyModifier = HierarchyModifier::none,
         const std::unordered_set<std::string>& tags = {}, std::string periodName = "period",
-        std::string tickName = "tick")
-    : ApplicationModule(owner, name, description, eliminateHierarchy, tags),
+        const std::string& tickName = "tick")
+    : ApplicationModule(owner, name, description, hierarchyModifier, tags),
       hierarchyModifiedPeriod(
           this, periodName, "ms", "period in milliseconds. The trigger is sent once per the specified duration."),
       hierarchyModifiedTick(this, tickName, "", "Timer tick. Counts the trigger number starting from 0."),

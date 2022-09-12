@@ -114,11 +114,11 @@ namespace ChimeraTK {
    *  ConfigReader::get() function.
    */
   struct ConfigReader : ApplicationModule {
-    ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName,
+    ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
         HierarchyModifier hierarchyModifier = HierarchyModifier::none,
         const std::unordered_set<std::string>& tags = {});
 
-    ConfigReader(EntityOwner* owner, const std::string& name, const std::string& fileName,
+    ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
         const std::unordered_set<std::string>& tags);
 
     ~ConfigReader() override;

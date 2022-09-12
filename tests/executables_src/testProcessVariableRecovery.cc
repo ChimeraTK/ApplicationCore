@@ -16,8 +16,8 @@
 #include <boost/test/included/unit_test.hpp>
 #include <boost/thread/barrier.hpp>
 
+#include <cstdlib>
 #include <regex>
-#include <stdlib.h>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -29,7 +29,7 @@ static constexpr char deviceCDD[] = "(ExceptionDummy?map=test5.map)";
  * application first sees the exception.
  */
 struct TestModule : public ctk::ApplicationModule {
-  TestModule(EntityOwner* owner, const std::string& name, const std::string& description,
+  TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
       ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string>& tags = {})
   : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}

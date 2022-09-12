@@ -32,7 +32,7 @@ namespace ChimeraTK {
      * @param name The name of the new ApplicationModule
      * @param description A description visible to the control system
      * @param hierarchyModifier Specifies how the hierarchy should be modified
-     * @param tags List of tags to be added to all child variabls (default: empty)
+     * @param tags List of tags to be added to all child variables (default: empty)
      *
      * @exception ChimeraTK::logic_error thrown if owner is of the wrong type or name is illegal.
      */
@@ -47,7 +47,7 @@ namespace ChimeraTK {
     /** Default constructor: Allows late initialisation of modules (e.g. when
      * creating arrays of modules).
      *
-     *  This construtor also has to be here to mitigate a bug in gcc. It is needed
+     *  This constructor also has to be here to mitigate a bug in gcc. It is needed
      * to allow constructor inheritance of modules owning other modules. This
      * constructor will not actually be called then. See this bug report:
      * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
@@ -115,8 +115,8 @@ namespace ChimeraTK {
      */
     size_t _circularNetworkHash{0};
 
-    /** Helper needed to stop the recusion when detecting circular dependency networks.
-     *  Only used in the setp phase.
+    /** Helper needed to stop the recursion when detecting circular dependency networks.
+     *  Only used in the setup phase.
      */
     detail::CircularDependencyDetectionRecursionStopper _recursionStopper;
   };
