@@ -68,6 +68,7 @@ namespace ChimeraTK {
     : HierarchyModifyingGroup(owner, HierarchyModifyingGroup::getPathName(qualifiedName), ""),
       value(this, HierarchyModifyingGroup::getUnqualifiedName(qualifiedName), args...) {}
 
+    ModifyHierarchy() = default;
     ACCESSOR value;
   };
 

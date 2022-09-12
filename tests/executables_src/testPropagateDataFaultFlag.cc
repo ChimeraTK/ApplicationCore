@@ -9,7 +9,6 @@
 #include "ArrayAccessor.h"
 #include "check_timeout.h"
 #include "ControlSystemModule.h"
-#include "ModuleGroup.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
 
