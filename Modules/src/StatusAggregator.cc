@@ -13,7 +13,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  StatusAggregator::StatusAggregator(EntityOwner* owner, const std::string& name, const std::string& description,
+  StatusAggregator::StatusAggregator(ModuleGroup* owner, const std::string& name, const std::string& description,
       PriorityMode mode, const std::unordered_set<std::string>& tagsToAggregate,
       const std::unordered_set<std::string>& outputTags)
   : ApplicationModule(owner, "aggregator", description, HierarchyModifier::hideThis, outputTags), _output(this, name),

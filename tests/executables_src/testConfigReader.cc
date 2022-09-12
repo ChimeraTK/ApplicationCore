@@ -20,7 +20,7 @@ namespace ctk = ChimeraTK;
 /* Module to receive the config values */
 
 struct TestModule : ctk::ApplicationModule {
-  TestModule(EntityOwner* owner, const std::string& name, const std::string& description)
+  TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description)
   : ctk::ApplicationModule(owner, name, description) {
     try {
       theConfigReader = &appConfig();

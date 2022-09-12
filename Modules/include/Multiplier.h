@@ -14,7 +14,7 @@ namespace ChimeraTK {
 
   template<typename InputType, typename OutputType = InputType, size_t NELEMS = 1>
   struct ConstMultiplier : public ApplicationModule {
-    ConstMultiplier(EntityOwner* owner, const std::string& name, const std::string& description, double factor)
+    ConstMultiplier(ModuleGroup* owner, const std::string& name, const std::string& description, double factor)
     : ApplicationModule(owner, name, ""), input(this, "input", "", NELEMS, description),
       output(this, "output", "", NELEMS, description), _factor(factor) {
       setEliminateHierarchy();

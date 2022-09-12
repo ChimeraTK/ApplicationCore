@@ -135,7 +135,7 @@ namespace ChimeraTK {
   /** Module for status monitoring depending on range of threshold values.
    * As long as a monitored value is in the range defined by user it goes
    * to fault or warning state. If the monitored value exceeds the upper limmit
-   * or goes under the lowerthreshold the state reported will be always OK.
+   * or goes under the lower threshold the state reported will be always OK.
    * IMPORTANT: This module does not check for ill logic, so make sure to
    * set the ranges correctly to issue warning or fault.
    */
@@ -200,7 +200,7 @@ namespace ChimeraTK {
      *  All qualified paths can be either relative or absolute to the given owner. See HierarchyModifyingGroup for
      *  more details.
      */
-    ExactMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+    ExactMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& parameterPath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {});
@@ -216,7 +216,7 @@ namespace ChimeraTK {
      *  All qualified paths can be either relative or absolute to the given owner. See HierarchyModifyingGroup for
      *  more details.
      */
-    ExactMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+    ExactMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& requiredValuePath, const std::string& disablePath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {});

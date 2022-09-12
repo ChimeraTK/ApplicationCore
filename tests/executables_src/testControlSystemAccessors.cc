@@ -42,7 +42,7 @@ typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, 
 
 template<typename T>
 struct TestModule : public ctk::ApplicationModule {
-  TestModule(EntityOwner* owner, const std::string& name, const std::string& description,
+  TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
       ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string>& tags = {})
   : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}

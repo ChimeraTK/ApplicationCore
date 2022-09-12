@@ -44,7 +44,7 @@ struct FirstHierarchy : ctk::ModuleGroup {
   } testModule{this, "TestModule", ""};
 
   struct SecondModule : ctk::ApplicationModule {
-    SecondModule(EntityOwner* owner, const std::string& name, const std::string& description)
+    SecondModule(ModuleGroup* owner, const std::string& name, const std::string& description)
     : ctk::ApplicationModule(owner, name, description) {
       for(size_t i = 0; i < 22; ++i) myVec.emplace_back(this, "Var" + std::to_string(i), "Unit", "Foo");
     }
@@ -92,7 +92,7 @@ struct SecondHierarchy : ctk::ModuleGroup {
   } testModule{this, "TestModule", ""};
 
   struct SecondModule : ctk::ApplicationModule {
-    SecondModule(EntityOwner* owner, const std::string& name, const std::string& description)
+    SecondModule(ModuleGroup* owner, const std::string& name, const std::string& description)
     : ctk::ApplicationModule(owner, name, description) {
       for(size_t i = 0; i < 22; ++i) myVec.emplace_back(this, "Var" + std::to_string(i), "Unit", "Foo");
     }

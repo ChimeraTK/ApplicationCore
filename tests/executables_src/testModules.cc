@@ -94,9 +94,10 @@ struct VectorOfModulesApp : public ctk::Application {
 /* An application module with a vector of a variable group*/
 
 struct VectorModule : public ctk::ApplicationModule {
-  VectorModule(ctk::EntityOwner* owner, const std::string& name, const std::string& description, size_t nInstances,
+  VectorModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description, size_t nInstances,
       bool eliminateHierarchy = false, const std::unordered_set<std::string>& tags = {})
-  : ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags) {
+  : ctk::ApplicationModule(owner, name, description,
+        eliminateHierarchy ? ctk::HierarchyModifier::hideThis : ctk::HierarchyModifier::none, tags) {
     for(size_t i = 0; i < nInstances; ++i) {
       std::string groupName = "testGroup_" + std::to_string(i);
       vectorOfSomeGroup.emplace_back(this, groupName, "Description 2");
@@ -221,28 +222,6 @@ BOOST_AUTO_TEST_CASE(test_badHierarchies) {
 
   // ******************************************
   // *** Tests for ApplicationModule
-
-  // check app ApplicationModules cannot be owned by other app modules
-  {
-    OneModuleApp app;
-    try {
-      TestModule willFail(&(app.testModule), "willFail", "");
-      BOOST_FAIL("Exception expected");
-    }
-    catch(ChimeraTK::logic_error&) {
-    }
-  }
-
-  // check app ApplicationModules cannot be owned by variable groups
-  {
-    OneModuleApp app;
-    try {
-      TestModule willFail(&(app.testModule.someGroup), "willFail", "");
-      BOOST_FAIL("Exception expected");
-    }
-    catch(ChimeraTK::logic_error&) {
-    }
-  }
 
   // check app ApplicationModules cannot be owned by nothing
   {

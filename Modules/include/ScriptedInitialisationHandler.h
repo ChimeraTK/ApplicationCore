@@ -35,17 +35,17 @@ namespace ChimeraTK {
   struct ScriptedInitHandler : ApplicationModule {
     /**
      * @brief Constructor
-     * @param owner Argument for the ApplicationModule, ususally "this"
+     * @param owner Argument for the ApplicationModule, usually "this"
      * @param name Irrelevant, will be taken from the device module
      * @param description
-     * @param command The system command which is exected for device initialisation. Must return 0 on success and an
+     * @param command The system command which is executed for device initialisation. Must return 0 on success and an
      * error code if initialisation failed.
      * @param deviceModule The device module on which the initialisation handler is registered.
-     * @param outputName Name of the PV with the output string. Defauls to "initScriptOutput", but can be changed in
+     * @param outputName Name of the PV with the output string. Defaults to "initScriptOutput", but can be changed in
      * case more than one script is needed for the device.
      * @param errorGracePeriod Additional time in seconds before a retry after an error.
      */
-    ScriptedInitHandler(EntityOwner* owner, const std::string& name, const std::string& description,
+    ScriptedInitHandler(ModuleGroup* owner, const std::string& name, const std::string& description,
         const std::string& command, DeviceModule& deviceModule, const std::string& outputName = "initScriptOutput",
         unsigned int errorGracePeriod = 10);
     void mainLoop() override {
