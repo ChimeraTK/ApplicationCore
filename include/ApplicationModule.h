@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CircularDependencyDetectionRecursionStopper.h"
-#include "ModuleImpl.h"
+#include "VariableGroup.h"
 
 #include <boost/thread.hpp>
 
@@ -19,7 +19,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  class ApplicationModule : public ModuleImpl {
+  class ApplicationModule : public VariableGroup {
    public:
     /**
      * Create ApplicationModule and register it with its owner

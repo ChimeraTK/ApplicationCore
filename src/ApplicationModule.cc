@@ -16,7 +16,7 @@ namespace ChimeraTK {
 
   ApplicationModule::ApplicationModule(EntityOwner* owner, const std::string& name, const std::string& description,
       HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
-  : ModuleImpl(owner, name, description, hierarchyModifier, tags) {
+  : VariableGroup(owner, name, description, hierarchyModifier, tags) {
     if(!dynamic_cast<ModuleGroup*>(owner) && !dynamic_cast<Application*>(owner)) {
       throw ChimeraTK::logic_error("ApplicationModules must be owned either by ModuleGroups or the Application!");
     }

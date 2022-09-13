@@ -2,9 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #define BOOST_TEST_MODULE testDeviceExceptionFlagPropagation
 
-#include <boost/test/included/unit_test.hpp>
-using namespace boost::unit_test_framework;
-
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "check_timeout.h"
@@ -16,6 +13,11 @@ using namespace boost::unit_test_framework;
 
 #include <ChimeraTK/DummyRegisterAccessor.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
+
+#define BOOST_NO_EXCEPTIONS 1
+#include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
+using namespace boost::unit_test_framework;
 
 namespace ctk = ChimeraTK;
 
@@ -58,7 +60,7 @@ struct TestApplication : ctk::Application {
       // The receiving end of all accessor implementations should be constructed with faulty (Initial value propagation
       // spec, D.1)
       BOOST_CHECK(readDataValidity == ctk::DataValidity::faulty);
-      vars.set.write(); /* send intial value */
+      vars.set.write(); /* send initial value */
     }
 
     void mainLoop() override {

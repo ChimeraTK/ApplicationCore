@@ -126,7 +126,7 @@ struct VectorModule : public ctk::ApplicationModule {
 };
 
 /*********************************************************************************************************************/
-/* An module group with a vector of a application moduoles */
+/* An module group with a vector of a application modules */
 
 struct VectorModuleGroup : public ctk::ModuleGroup {
   VectorModuleGroup(EntityOwner* owner, const std::string& name, const std::string& description, size_t nInstances,
@@ -148,13 +148,13 @@ struct VectorModuleGroup : public ctk::ModuleGroup {
  * containing a vector of variable groups */
 
 struct VectorOfEverythingApp : public ctk::Application {
-  VectorOfEverythingApp(size_t nInstances) : Application("myApp"), _nInstances(nInstances) {}
-  ~VectorOfEverythingApp() { shutdown(); }
+  explicit VectorOfEverythingApp(size_t nInstances) : Application("myApp"), _nInstances(nInstances) {}
+  ~VectorOfEverythingApp() override { shutdown(); }
 
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
 
-  void defineConnections() {
+  void defineConnections() override {
     for(size_t i = 0; i < _nInstances; ++i) {
       std::string name = "testModule_" + std::to_string(i) + "_instance";
       vectorOfVectorModuleGroup.emplace_back(this, name, "Description", _nInstances);
@@ -171,12 +171,12 @@ struct VectorOfEverythingApp : public ctk::Application {
 
 struct AssignModuleLaterApp : public ctk::Application {
   AssignModuleLaterApp() : Application("myApp") {}
-  ~AssignModuleLaterApp() { shutdown(); }
+  ~AssignModuleLaterApp() override { shutdown(); }
 
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
 
-  void defineConnections() {
+  void defineConnections() override {
     modGroupInstanceToAssignLater = VectorModuleGroup(this, "modGroupInstanceToAssignLater",
         "This instance of VectorModuleGroup was assigned using the operator=()", 42);
     modInstanceToAssignLater = VectorModule(
@@ -237,34 +237,11 @@ BOOST_AUTO_TEST_CASE(test_badHierarchies) {
   // ******************************************
   // *** Tests for VariableGroup
 
-  // check app VariableGroup cannot be owned by Applications
-  {
-    OneModuleApp app;
-    try {
-      SomeGroup willFail(&(app), "willFail", "");
-      BOOST_FAIL("Exception expected");
-    }
-    catch(ChimeraTK::logic_error&) {
-    }
-  }
-
-  // check app VariableGroup cannot be owned by ModuleGroups
-  {
-    VectorOfEverythingApp app(1);
-    app.defineConnections();
-    try {
-      SomeGroup willFail(&(app.vectorOfVectorModuleGroup[0]), "willFail", "");
-      BOOST_FAIL("Exception expected");
-    }
-    catch(ChimeraTK::logic_error&) {
-    }
-  }
-
   // check app VariableGroup cannot be owned by nothing
   {
     OneModuleApp app;
     try {
-      SomeGroup willFail(nullptr, "willFail", "");
+      SomeGroup willFail((ChimeraTK::VariableGroup*)nullptr, "willFail", "");
       BOOST_FAIL("Exception expected");
     }
     catch(ChimeraTK::logic_error&) {
@@ -320,47 +297,67 @@ BOOST_AUTO_TEST_CASE(test_allowedHierarchies) {
   // ******************************************
   // *** Tests for ApplicationModule
   // check ApplicationModules can be owned by Applications
-  {
+  try {
     OneModuleApp app;
     TestModule shouldNotFail(&(app), "shouldNotFail", "");
   }
+  catch(ChimeraTK::logic_error&) {
+    BOOST_CHECK(false);
+  }
 
   // check ApplicationModules can be owned by ModuleGroups
-  {
+  try {
     VectorOfEverythingApp app(1);
     app.defineConnections();
-    TestModule shouldNotFail(&(app.vectorOfVectorModuleGroup[0]), "shouldNotFail", "");
+    auto* v = &(app.vectorOfVectorModuleGroup[0]);
+    BOOST_CHECK(v != nullptr);
+    TestModule shouldNotFail(v, "shouldNotFail", "");
+  }
+  catch(ChimeraTK::logic_error&) {
+    BOOST_CHECK(false);
   }
 
   // ******************************************
   // *** Tests for VariableGroup
 
   // check VariableGroup can be owned by ApplicationModules
-  {
+  try {
     OneModuleApp app;
     SomeGroup shouldNotFail(&(app.testModule), "shouldNotFail", "");
   }
+  catch(ChimeraTK::logic_error&) {
+    BOOST_CHECK(false);
+  }
 
   // check VariableGroup can be owned by VariableGroup
-  {
+  try {
     OneModuleApp app;
     SomeGroup shouldNotFail(&(app.testModule.someGroup), "shouldNotFail", "");
+  }
+  catch(ChimeraTK::logic_error&) {
+    BOOST_CHECK(false);
   }
 
   // ******************************************
   // *** Tests for ModuleGroup
 
   // check ModuleGroup can be owned by Applications
-  {
+  try {
     OneModuleApp app;
     VectorModuleGroup shouldNotFail(&(app), "shouldNotFail", "", 1);
   }
+  catch(ChimeraTK::logic_error&) {
+    BOOST_CHECK(false);
+  }
 
   // check ModuleGroup can be owned by ModuleGroups
-  {
+  try {
     VectorOfEverythingApp app(1);
     app.defineConnections();
     VectorModuleGroup shouldNotFail(&(app.vectorOfVectorModuleGroup[0]), "shouldNotFail", "", 1);
+  }
+  catch(ChimeraTK::logic_error&) {
+    BOOST_CHECK(false);
   }
 }
 

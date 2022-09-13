@@ -13,6 +13,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   class ApplicationModule;
+  class ModuleGroup;
   struct ConfigReader;
 
   /********************************************************************************************************************/
@@ -25,13 +26,9 @@ namespace ChimeraTK {
      *  instance.
      *
      *  Note: VariableGroups may only be owned by ApplicationModules or other VariableGroups. */
-    VariableGroup(EntityOwner* owner, const std::string& name, const std::string& description,
+    VariableGroup(VariableGroup* owner, const std::string& name, const std::string& description,
         HierarchyModifier hierarchyModifier = HierarchyModifier::none,
         const std::unordered_set<std::string>& tags = {});
-
-    /** Deprecated form of the constructor. Use the new signature instead. */
-    [[deprecated]] VariableGroup(EntityOwner* owner, const std::string& name, const std::string& description,
-        bool eliminateHierarchy, const std::unordered_set<std::string>& tags = {});
 
     /** Default constructor: Allows late initialisation of VariableGroups (e.g.
      * when creating arrays of VariableGroups).
@@ -43,15 +40,27 @@ namespace ChimeraTK {
     VariableGroup() = default;
 
     /** Destructor */
-    virtual ~VariableGroup() = default;
+    ~VariableGroup() override = default;
 
     /** Move constructor */
-    VariableGroup(VariableGroup&& other) { operator=(std::move(other)); }
+    VariableGroup(VariableGroup&& other) noexcept { operator=(std::move(other)); }
 
     /** Move assignment */
-    VariableGroup& operator=(VariableGroup&& other);
+    VariableGroup& operator=(VariableGroup&& other) noexcept;
 
     ModuleType getModuleType() const override { return ModuleType::VariableGroup; }
+
+   private:
+    friend class ApplicationModule;
+    /** Constructor: Create ModuleGroup by the given name with the given description and register it with its
+     *  owner. The hierarchy will be modified according to the hierarchyModifier (when VirtualModules are created e.g.
+     *  in findTag()). The specified list of tags will be added to all elements directly or indirectly owned by this
+     *  instance.
+     *
+     *  Note: VariableGroups may only be owned by ApplicationModules or other VariableGroups. */
+    VariableGroup(ModuleGroup* owner, const std::string& name, const std::string& description,
+        HierarchyModifier hierarchyModifier = HierarchyModifier::none,
+        const std::unordered_set<std::string>& tags = {});
   };
 
   /********************************************************************************************************************/

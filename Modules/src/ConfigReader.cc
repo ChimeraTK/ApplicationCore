@@ -67,7 +67,7 @@ namespace ChimeraTK {
    public:
     // Note: This has hideThis as default modifier, because we want the level of
     // the ModuleTree to vanish in its owner.
-    ModuleTree(EntityOwner* owner, std::string name, std::string description,
+    ModuleTree(VariableGroup* owner, std::string name, std::string description,
         HierarchyModifier modifier = HierarchyModifier::hideThis)
     : VariableGroup{owner, name, description, modifier} {}
 

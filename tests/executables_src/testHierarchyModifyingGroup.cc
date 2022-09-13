@@ -254,14 +254,6 @@ struct TestApplication_empty : public ctk::Application {
   } testModuleGroup{this, "TestModuleGroup", "The test module group"};
 };
 
-BOOST_AUTO_TEST_CASE(ownership_exception) {
-  std::cout << "*** ownership_exception" << std::endl;
-  TestApplication_empty app;
-  BOOST_CHECK_THROW(TestGroup tg(&app, "TestGroup", "Cannot be directly owned by Application"), ctk::logic_error);
-  BOOST_CHECK_THROW(
-      TestGroup tg(&app.testModuleGroup, "TestGroup", "Cannot be directly owned by ModuleGroup"), ctk::logic_error);
-}
-
 /*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(bad_path_exception) {
