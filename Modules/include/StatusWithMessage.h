@@ -16,11 +16,11 @@ namespace ChimeraTK {
 
   /**
    *  A VariableGroup for error status and message reporting.
-   *  Convenience methods ensure that status and message are updated consistenly.
+   *  Convenience methods ensure that status and message are updated consistently.
    */
   struct StatusWithMessage : HierarchyModifyingGroup {
-    StatusWithMessage(EntityOwner* owner, std::string qualifiedStatusVariableName, const std::string& description = "",
-        const std::unordered_set<std::string>& tags = {})
+    StatusWithMessage(VariableGroup* owner, std::string qualifiedStatusVariableName,
+        const std::string& description = "", const std::unordered_set<std::string>& tags = {})
     : HierarchyModifyingGroup(
           owner, HierarchyModifyingGroup::getPathName(qualifiedStatusVariableName), description, tags),
       _status(this, HierarchyModifyingGroup::getUnqualifiedName(qualifiedStatusVariableName), description),
@@ -54,7 +54,7 @@ namespace ChimeraTK {
     ScalarPushInput<std::string> _message; // left uninitialized, if no message source provided
 
     /// Construct StatusWithMessageInput which reads only status, not message
-    StatusWithMessageInput(Module* owner, std::string name, const std::string& description,
+    StatusWithMessageInput(ApplicationModule* owner, std::string name, const std::string& description,
         HierarchyModifier hierarchyModifier = HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
     : VariableGroup(owner, name, "", hierarchyModifier, tags), _status(this, name, description) {
       hasMessageSource = false;

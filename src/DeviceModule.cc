@@ -59,8 +59,8 @@ namespace ChimeraTK {
 
   DeviceModule::DeviceModule(Application* application, const std::string& _deviceAliasOrURI,
       std::function<void(DeviceModule*)> initialisationHandler)
-  : Module(nullptr, "<Device:" + _deviceAliasOrURI + ">", ""), deviceAliasOrURI(_deviceAliasOrURI),
-    registerNamePrefix(""), owner(application) {
+  : ApplicationModule(application, "<Device:" + _deviceAliasOrURI + ">", ""), deviceAliasOrURI(_deviceAliasOrURI),
+    registerNamePrefix(""), owner{application} {
     application->registerDeviceModule(this);
     if(initialisationHandler) {
       initialisationHandlers.push_back(initialisationHandler);
@@ -80,7 +80,6 @@ namespace ChimeraTK {
     assert(!moduleThread.joinable());
     assert(other.isHoldingInitialValueLatch);
     if(owner) owner->unregisterDeviceModule(this);
-    Module::operator=(std::move(other));
     device = std::move(other.device);
     deviceAliasOrURI = std::move(other.deviceAliasOrURI);
     registerNamePrefix = std::move(other.registerNamePrefix);
@@ -88,6 +87,7 @@ namespace ChimeraTK {
     owner = other.owner;
     proxies = std::move(other.proxies);
     deviceHasError = other.deviceHasError;
+    ApplicationModule::operator=(std::move(other));
     for(auto& proxy : proxies) proxy.second._myowner = this;
     owner->registerDeviceModule(this);
     return *this;

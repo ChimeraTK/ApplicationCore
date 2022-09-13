@@ -43,10 +43,11 @@ namespace ChimeraTK {
       module->accept(*this);
     }
 
+    /*
     // create nodes for all DeviceModules
     for(const auto& pair : t.deviceModuleMap) {
       pair.second->accept(*this);
-    }
+    } */
 
     // collect edges (one edge per pair of connected modules)
     for(const auto& network : t.networkList) {

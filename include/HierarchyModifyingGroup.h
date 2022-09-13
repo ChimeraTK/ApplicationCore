@@ -21,7 +21,7 @@ namespace ChimeraTK {
    *  VariableGroup.
    */
   struct HierarchyModifyingGroup : VariableGroup {
-    HierarchyModifyingGroup(EntityOwner* owner, std::string qualifiedName, const std::string& description,
+    HierarchyModifyingGroup(VariableGroup* owner, std::string qualifiedName, const std::string& description,
         const std::unordered_set<std::string>& tags = {});
 
     HierarchyModifyingGroup() {}
@@ -57,14 +57,14 @@ namespace ChimeraTK {
   /**
    *  Convenience version of the HierarchyModifyingGroup with exactly one variable inside. The constructor takes the
    *  qualified name of the variable and splits it internally into the path name (for the HierarchyModifyingGroup) and
-   *  the unqialified variable name.
+   *  the unqualified variable name.
    *
    *  The template argument must be one of the Scalar*Input, ScalarOutput classes resp. their Array counterparts.
    */
   template<typename ACCESSOR>
   struct ModifyHierarchy : HierarchyModifyingGroup {
     template<typename... Types>
-    ModifyHierarchy(Module* owner, const std::string& qualifiedName, Types... args)
+    ModifyHierarchy(ApplicationModule* owner, const std::string& qualifiedName, Types... args)
     : HierarchyModifyingGroup(owner, HierarchyModifyingGroup::getPathName(qualifiedName), ""),
       value(this, HierarchyModifyingGroup::getUnqualifiedName(qualifiedName), args...) {}
 

@@ -97,11 +97,6 @@ void Application::initialise() {
     module->defineConnections();
   }
 
-  // call defineConnections() for all device modules
-  for(auto& devModule : deviceModuleMap) {
-    devModule.second->defineConnections();
-  }
-
   // find and handle constant nodes
   findConstantNodes();
 
@@ -261,9 +256,6 @@ void Application::run() {
   for(auto& module : getSubmoduleListRecursive()) {
     module->prepare();
   }
-  for(auto& deviceModule : deviceModuleMap) {
-    deviceModule.second->prepare();
-  }
 
   // Switch life-cycle state to run
   lifeCycleState = LifeCycleState::run;
@@ -271,10 +263,6 @@ void Application::run() {
   // start the necessary threads for the FanOuts etc.
   for(auto& internalModule : internalModuleList) {
     internalModule->activate();
-  }
-
-  for(auto& deviceModule : deviceModuleMap) {
-    deviceModule.second->run();
   }
 
   // start the threads for the modules
@@ -299,9 +287,7 @@ void Application::run() {
     for(auto& internalModule : internalModuleList) {
       waitForTestableMode(internalModule.get());
     }
-    for(auto& deviceModule : deviceModuleMap) {
-      waitForTestableMode(deviceModule.second);
-    }
+
     for(auto& module : getSubmoduleListRecursive()) {
       waitForTestableMode(module);
     }
@@ -335,10 +321,6 @@ void Application::shutdown() {
     module->terminate();
   }
 
-  for(auto& deviceModule : deviceModuleMap) {
-    deviceModule.second->terminate();
-  }
-
   circularDependencyDetector.terminate();
 
   ApplicationBase::shutdown();
@@ -352,11 +334,6 @@ void Application::generateXML() {
   defineConnections();
   for(auto& module : getSubmoduleListRecursive()) {
     module->defineConnections();
-  }
-
-  // create connections for exception handling
-  for(auto& devModule : deviceModuleMap) {
-    devModule.second->defineConnections();
   }
 
   // find and handle constant nodes

@@ -42,7 +42,7 @@ namespace ChimeraTK {
   struct MonitorBase : ApplicationModule {
     // make constructors protected not to allow of instantiancion of this object - this is just a base class for other monitors
    protected:
-    MonitorBase(EntityOwner* owner, const std::string& description, const std::string& outputPath,
+    MonitorBase(ModuleGroup* owner, const std::string& description, const std::string& outputPath,
         const std::string& disablePath, const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {});
 
@@ -66,12 +66,12 @@ namespace ChimeraTK {
   /** Module for status monitoring depending on a maximum threshold value*/
   template<typename T>
   struct MaxMonitor : MonitorBase {
-    MaxMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+    MaxMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& parameterPath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {});
 
-    MaxMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+    MaxMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& warningThresholdPath, const std::string& faultThresholdPath, const std::string& disablePath,
         const std::string& description, const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {});
@@ -103,12 +103,12 @@ namespace ChimeraTK {
   /** Module for status monitoring depending on a minimum threshold value*/
   template<typename T>
   struct MinMonitor : MonitorBase {
-    MinMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+    MinMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& parameterPath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {});
 
-    MinMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+    MinMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& warningThresholdPath, const std::string& faultThresholdPath, const std::string& disablePath,
         const std::string& description, const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {});
@@ -141,12 +141,12 @@ namespace ChimeraTK {
    */
   template<typename T>
   struct RangeMonitor : MonitorBase {
-    RangeMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+    RangeMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& parameterPath, const std::string& description,
         const std::unordered_set<std::string>& outputTags = {},
         const std::unordered_set<std::string>& parameterTags = {});
 
-    RangeMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+    RangeMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& warningLowerThresholdPath, const std::string& warningUpperThresholdPath,
         const std::string& faultLowerThresholdPath, const std::string& faultUpperThresholdPath,
         const std::string& disablePath, const std::string& description,
@@ -241,7 +241,7 @@ namespace ChimeraTK {
   /* Implementation of MaxMonitor ************************************************************************************/
   /*******************************************************************************************************************/
   template<typename T>
-  MaxMonitor<T>::MaxMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+  MaxMonitor<T>::MaxMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& parameterPath, const std::string& description,
       const std::unordered_set<std::string>& outputTags, const std::unordered_set<std::string>& parameterTags)
   : MaxMonitor(owner, inputPath, outputPath, parameterPath + "/upperWarningThreshold",
@@ -249,7 +249,7 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
   template<typename T>
-  MaxMonitor<T>::MaxMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+  MaxMonitor<T>::MaxMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& warningThresholdPath, const std::string& faultThresholdPath, const std::string& disablePath,
       const std::string& description, const std::unordered_set<std::string>& outputTags,
       const std::unordered_set<std::string>& parameterTags)
@@ -285,7 +285,7 @@ namespace ChimeraTK {
   /* Implementation of MinMonitor ************************************************************************************/
   /*******************************************************************************************************************/
   template<typename T>
-  MinMonitor<T>::MinMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+  MinMonitor<T>::MinMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& parameterPath, const std::string& description,
       const std::unordered_set<std::string>& outputTags, const std::unordered_set<std::string>& parameterTags)
   : MinMonitor(owner, inputPath, outputPath, parameterPath + "/lowerWarningThreshold",
@@ -293,7 +293,7 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
   template<typename T>
-  MinMonitor<T>::MinMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+  MinMonitor<T>::MinMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& warningThresholdPath, const std::string& faultThresholdPath, const std::string& disablePath,
       const std::string& description, const std::unordered_set<std::string>& outputTags,
       const std::unordered_set<std::string>& parameterTags)
@@ -329,7 +329,7 @@ namespace ChimeraTK {
   /* Implementation of RangeMonitor **********************************************************************************/
   /*******************************************************************************************************************/
   template<typename T>
-  RangeMonitor<T>::RangeMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+  RangeMonitor<T>::RangeMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& parameterPath, const std::string& description,
       const std::unordered_set<std::string>& outputTags, const std::unordered_set<std::string>& parameterTags)
   : RangeMonitor(owner, inputPath, outputPath, parameterPath + "/lowerWarningThreshold",
@@ -338,7 +338,7 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
   template<typename T>
-  RangeMonitor<T>::RangeMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+  RangeMonitor<T>::RangeMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& warningLowerThresholdPath, const std::string& warningUpperThresholdPath,
       const std::string& faultLowerThresholdPath, const std::string& faultUpperThresholdPath,
       const std::string& disablePath, const std::string& description, const std::unordered_set<std::string>& outputTags,
@@ -381,7 +381,7 @@ namespace ChimeraTK {
   /* Implementation of ExactMonitor **********************************************************************************/
   /*******************************************************************************************************************/
   template<typename T>
-  ExactMonitor<T>::ExactMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+  ExactMonitor<T>::ExactMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& parameterPath, const std::string& description,
       const std::unordered_set<std::string>& outputTags, const std::unordered_set<std::string>& parameterTags)
   : ExactMonitor(owner, inputPath, outputPath, parameterPath + "/requiredValue", parameterPath + "/disable",
@@ -389,7 +389,7 @@ namespace ChimeraTK {
 
   /*******************************************************************************************************************/
   template<typename T>
-  ExactMonitor<T>::ExactMonitor(EntityOwner* owner, const std::string& inputPath, const std::string& outputPath,
+  ExactMonitor<T>::ExactMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& requiredValuePath, const std::string& disablePath, const std::string& description,
       const std::unordered_set<std::string>& outputTags, const std::unordered_set<std::string>& parameterTags)
   : MonitorBase(owner, description, outputPath, disablePath, outputTags, parameterTags),

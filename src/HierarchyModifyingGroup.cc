@@ -9,7 +9,7 @@
 
 namespace ChimeraTK {
 
-  HierarchyModifyingGroup::HierarchyModifyingGroup(EntityOwner* owner, std::string qualifiedName,
+  HierarchyModifyingGroup::HierarchyModifyingGroup(VariableGroup* owner, std::string qualifiedName,
       const std::string& description, const std::unordered_set<std::string>& tags)
   : VariableGroup(owner, "temporaryName", description, HierarchyModifier::none, tags) {
     // qualifiedName must not be empty

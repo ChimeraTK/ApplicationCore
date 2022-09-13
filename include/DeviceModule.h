@@ -68,7 +68,7 @@ namespace ChimeraTK {
 
   /** Implements access to a ChimeraTK::Device.
    */
-  class DeviceModule : public Module {
+  class DeviceModule : public ApplicationModule {
    public:
     /**
      *  Create (non-connecting) DeviceModule
@@ -86,7 +86,7 @@ namespace ChimeraTK {
         std::function<void(DeviceModule*)> initialisationHandler = nullptr);
 
     /** Destructor */
-    virtual ~DeviceModule();
+    ~DeviceModule() override;
 
     /** Move operation with the move constructor */
     DeviceModule(DeviceModule&& other) { operator=(std::move(other)); }
@@ -124,6 +124,8 @@ namespace ChimeraTK {
     void run() override;
 
     void terminate() override;
+
+    void mainLoop() override{};
 
     VersionNumber getCurrentVersionNumber() const override { return currentVersionNumber; }
 
@@ -315,16 +317,16 @@ namespace ChimeraTK {
      *  pathInDevice specifies a module in the device register hierarchy which should be used and connected to the
      *  control system (optional, default is "/" which connects the entire device).
      *
-     *  Note about typical usage: A DeviceModule constructed with this constructer is often owned by the ModuleGroup
+     *  Note about typical usage: A DeviceModule constructed with this constructor is often owned by the ModuleGroup
      *  which is using this device. The device should be a logical name mapped device so the variable hierarchy of the
      *  ModuleGroup and the Device can be matched. The logical device may be subdivided into several parts, e.g. if
      *  different parts of the device are used by independent ModuleGroups, or if different triggers are required. This
      *  is possible by use of the pathInDevice prefix. To avoid the creation of multiple DeviceBackends for the same
      *  device (which may not even be possible for some transport protocols) make sure that the device CDD is identical
-     *  for all instances (the alias name does not matter, so multiple DMAP file entires pointing to the same device
+     *  for all instances (the alias name does not matter, so multiple DMAP file entries pointing to the same device
      *  are possible if needed).
      *
-     *  Keep in mind that mulitple DeviceModules will perform independent and asynchronous recovery procedures after
+     *  Keep in mind that multiple DeviceModules will perform independent and asynchronous recovery procedures after
      *  an exception, even when pointing to the same device.
      */
     ConnectingDeviceModule(EntityOwner* owner, const std::string& deviceAliasOrCDD, const std::string& triggerPath = {},
