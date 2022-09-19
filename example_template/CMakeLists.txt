@@ -1,7 +1,7 @@
 # CMakeLists.txt template for an ApplicationCore-based server
 #
 #
-project(ChimeraTK-ApplicationCore-TemplateServer)
+project(TemplateServer)
 cmake_minimum_required(VERSION 3.5.1)
 
 # Use the project template to get the settings required for an application core project

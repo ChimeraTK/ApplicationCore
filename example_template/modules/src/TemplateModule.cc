@@ -4,5 +4,14 @@
 #include "TemplateModule.h"
 
 void TemplateModule::mainLoop() {
-  std::cout << "  Processing TemplateModule::mainLoop()" << std::endl;
+  /*
+   * Here a main infinite loop for the Module should be defined.
+   * It is commented out on purpose in this TemplateModule.
+   *
+   */
+  /*
+  while(true) {
+
+  }
+  */
 }

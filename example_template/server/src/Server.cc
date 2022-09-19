@@ -5,17 +5,17 @@
 
 #include "version.h"
 
-void Server::defineConnections() {
-  ctk::setDMapFilePath("devices.dmap");
+Server::Server(std::string appName)
+: ctk::Application(appName), config{this, "Configuration", getName() + "-Config.xml"}, device{this,
+                                                                                           "MappedDummyDevice"},
+  templateModule{this, "TemplateModule", "This is a template module, adapt as needed!"} {
+  std::cout << "*** Construction of " << appName << " in version " << AppVersion::major << "." << AppVersion::minor
+            << "." << AppVersion::patch << " starts. ***" << std::endl;
+  ctk::setDMapFilePath(getName() + ".dmap");
+  std::cout << "*** Construction of " << appName << " in version " << AppVersion::major << "." << AppVersion::minor
+            << "." << AppVersion::patch << " done. ***" << std::endl;
+}
 
-  std::cout << "****************************************************************" << std::endl;
-  std::cout << "*** Template server version " << AppVersion::major << "." << AppVersion::minor << "."
-            << AppVersion::patch << std::endl;
-
-  dev.connectTo(cs /*, timer.tick*/);
-  config.connectTo(cs);
-
-  dumpConnectionGraph();
-  dumpGraph();
-  dumpModuleGraph("module-graph.dot");
+Server::~Server() {
+  shutdown();
 }

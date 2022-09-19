@@ -23,15 +23,13 @@ namespace ctk = ChimeraTK;
  * (either provided by a Device or a ChimeraTK::PeriodicTrigger).
  */
 struct Server : public ctk::Application {
-  Server() : ctk::Application("ApplicationCore_TemplateServer") {}
-  ~Server() override { shutdown(); }
+  Server(std::string appName = "TemplateServer");
+  ~Server() override;
 
-  ctk::ConfigReader config{this, "Configuration", getName() + "_base_config.xml"};
-
-  ctk::ControlSystemModule cs;
-  ctk::DeviceModule dev{this, "MappedDummyDevice"};
-
-  TemplateModule templateModule{this, "TemplateModule", "This is a template module, adapt as needed!"};
-
-  void defineConnections() override;
+  ctk::ConfigReader config;
+  ctk::ConnectingDeviceModule device;
+  TemplateModule templateModule;
 };
+
+
+
