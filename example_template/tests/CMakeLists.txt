@@ -1,6 +1,7 @@
 # CMakeLists.txt for test modules
 cmake_minimum_required(VERSION 3.5.1)
 
+message("\nProcess now CMakeLists.txt in ${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Add BOOST dependencies
 find_package(Boost COMPONENTS thread system unit_test_framework REQUIRED)
