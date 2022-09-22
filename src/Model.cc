@@ -3,8 +3,12 @@
 
 #include "Model.h"
 
+#include "ApplicationModule.h"
+#include "DeviceManager.h"
 #include "DeviceModule.h"
 #include "ModuleGroup.h"
+#include "Utilities.h"
+#include "VariableGroup.h"
 
 namespace ChimeraTK::Model {
 
@@ -55,7 +59,7 @@ namespace ChimeraTK::Model {
 
   /********************************************************************************************************************/
 
-  DeviceModuleProxy RootProxy::add(ConnectingDeviceModule& module) {
+  DeviceModuleProxy RootProxy::add(DeviceModule& module) {
     return _d->impl->add(_d->vertex, module);
   }
 
@@ -113,7 +117,7 @@ namespace ChimeraTK::Model {
 
   /********************************************************************************************************************/
 
-  DeviceModuleProxy ModuleGroupProxy::add(ConnectingDeviceModule& module) {
+  DeviceModuleProxy ModuleGroupProxy::add(DeviceModule& module) {
     return _d->impl->add(_d->vertex, module);
   }
 
@@ -356,8 +360,8 @@ namespace ChimeraTK::Model {
 
   /********************************************************************************************************************/
 
-  DeviceModuleProxy Impl::add(Vertex owner, ConnectingDeviceModule& module) {
-    return generic_add<DeviceModuleProxy, ConnectingDeviceModule, VertexProperties::DeviceModuleProperties,
+  DeviceModuleProxy Impl::add(Vertex owner, DeviceModule& module) {
+    return generic_add<DeviceModuleProxy, DeviceModule, VertexProperties::DeviceModuleProperties,
         VertexProperties::Type::deviceModule>(owner, module);
   }
 
@@ -372,18 +376,18 @@ namespace ChimeraTK::Model {
 
     // set vertex type and type-dependent properties
     graph[newVertex].type = TYPE;
-    if constexpr(!std::is_same<MODULE, ConnectingDeviceModule>::value) {
+    if constexpr(!std::is_same<MODULE, DeviceModule>::value) {
       graph[newVertex].p.emplace<PROPS>(PROPS{module.getName(), module});
     }
     else {
-      auto alias = module.getDeviceModule().getDeviceAliasOrURI();
+      auto alias = module.getDeviceManager().getDeviceAliasOrURI();
       auto triggerPath = module.getTriggerPath();
 
       ProcessVariableProxy trigger; // initially invalid, stays like that if triggerPath.empty()
 
       if(!triggerPath.empty()) {
-        auto dir = parentDirectory.addDirectoryRecursive(HierarchyModifyingGroup::getPathName(triggerPath));
-        trigger = dir.addVariable(HierarchyModifyingGroup::getUnqualifiedName(triggerPath));
+        auto dir = parentDirectory.addDirectoryRecursive(Utilities::getPathName(triggerPath));
+        trigger = dir.addVariable(Utilities::getUnqualifiedName(triggerPath));
       }
 
       graph[newVertex].p.emplace<PROPS>(PROPS{alias, trigger, module});
@@ -395,7 +399,7 @@ namespace ChimeraTK::Model {
 
     // obtain/create directory corresponding to the fully qualified path of the module
     DirectoryProxy directory;
-    if constexpr(!std::is_same<MODULE, ConnectingDeviceModule>::value) {
+    if constexpr(!std::is_same<MODULE, DeviceModule>::value) {
       directory = addDirectoryRecursive(parentDirectory._d->vertex, module.getName());
     }
     else {

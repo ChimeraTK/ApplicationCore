@@ -57,9 +57,10 @@ namespace ChimeraTK {
 
    private:
     friend class Application;
+    friend class DeviceModule;
 
-    /// Constructor used by Application bypassing model registration
-    explicit ModuleGroup(const std::string& name);
+    /// Constructor used by Application and DeviceModule bypassing model registration
+    explicit ModuleGroup(ModuleGroup* owner, const std::string& name);
 
     /// Application model proxy representing this module
     Model::ModuleGroupProxy _model;

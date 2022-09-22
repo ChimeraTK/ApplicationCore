@@ -189,11 +189,13 @@ namespace ChimeraTK {
       stream() << "    tooltip=\"" << boost::core::demangle(typeid(t).name()) << "\";\n";
     }
     else if(t.getModuleType() == EntityOwner::ModuleType::Device) {
-      const auto& tc = dynamic_cast<const DeviceModule&>(t);
+      /*
+      const auto& tc = dynamic_cast<const DeviceManager&>(t);
       stream() << "Device_" + tc.getDeviceAliasOrURI() << "[\n";
       stream() << "    fillcolor=\"#00ff00\";\n";
       stream() << "    tooltip=\"\";\n";
       _deviceList.push_back("Device_" + tc.getDeviceAliasOrURI());
+*/
     }
     else {
       return; // ignore

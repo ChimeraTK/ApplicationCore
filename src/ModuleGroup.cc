@@ -41,7 +41,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  ModuleGroup::ModuleGroup(const std::string& name) : ModuleImpl(nullptr, name, "") {}
+  ModuleGroup::ModuleGroup(ModuleGroup* owner, const std::string& name) : ModuleImpl(owner, name, "") {}
 
   /********************************************************************************************************************/
 

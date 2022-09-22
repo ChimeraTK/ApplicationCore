@@ -33,21 +33,22 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void StatusAggregator::populateStatusInput() {
-    scanAndPopulateFromHierarchyLevel(*getOwner(), ".");
+    throw ChimeraTK::logic_error("THIS FUNCTION NEEDS TO BE REWRITTEN TO USE THE MODEL.");
+    /*    scanAndPopulateFromHierarchyLevel(*getOwner(), ".");
 
-    // Special treatment for DeviceModules, because they are formally not owned by the Application: If we are
-    // aggregating all tags at the top-level of the Application, include the status outputs of all DeviceModules.
-    if(getOwner() == &Application::getInstance() && _tagsToAggregate.empty()) {
-      for(auto& p : Application::getInstance().deviceModuleMap) {
-        scanAndPopulateFromHierarchyLevel(p.second->deviceError, ".");
-      }
-    }
+        // Special treatment for DeviceModules, because they are formally not owned by the Application: If we are
+        // aggregating all tags at the top-level of the Application, include the status outputs of all DeviceModules.
+        if(getOwner() == &Application::getInstance() && _tagsToAggregate.empty()) {
+          for(auto& p : Application::getInstance().deviceModuleMap) {
+            scanAndPopulateFromHierarchyLevel(p.second->deviceError, ".");
+          }
+        }
 
-    // Check if no inputs are present (nothing found to aggregate)
-    if(_inputs.empty()) {
-      throw ChimeraTK::logic_error("StatusAggregator " + VariableNetworkNode(_output._status).getQualifiedName() +
-          " has not found anything to aggregate.");
-    }
+        // Check if no inputs are present (nothing found to aggregate)
+        if(_inputs.empty()) {
+          throw ChimeraTK::logic_error("StatusAggregator " + VariableNetworkNode(_output._status).getQualifiedName() +
+              " has not found anything to aggregate.");
+        }*/
   }
 
   /********************************************************************************************************************/

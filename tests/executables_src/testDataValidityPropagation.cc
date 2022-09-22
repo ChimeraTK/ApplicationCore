@@ -120,11 +120,12 @@ struct TestApplication1 : ctk::Application {
   ModuleT mod{this, "m1", ""};
   ctk::ControlSystemModule cs;
 
+  const std::string dummyCdd{"(ExceptionDummy?map=testDataValidityPropagation.map)"};
+
   TriggerModule m2{this, "m2", ""};
-  ctk::ConnectingDeviceModule dev{
-      this, "(ExceptionDummy?map=testDataValidityPropagation.map)", "/m2/o1", &initialiseDev};
+  ctk::ConnectingDeviceModule dev{this, dummyCdd, "/m2/o1", &initialiseDev};
   std::atomic_bool deviceError = false;
-  static void initialiseDev(ChimeraTK::DeviceModule*) {
+  static void initialiseDev(ChimeraTK::DeviceManager*) {
     bool err = ((TestApplication1&)Application::getInstance()).deviceError;
     if(err) {
       throw ChimeraTK::runtime_error("device is not ready.");
@@ -164,12 +165,13 @@ BOOST_AUTO_TEST_CASE(testDataValidity_exceptionDummy) {
   ctk::TestFacility test{app};
   // app.dumpConnections();
 
+  ChimeraTK::Device dev(TestApplication3::ExceptionDummyCDD);
+
   auto devI1 = test.getScalar<int>("/dev/i1");
   auto devI2 = test.getScalar<int>("/dev/i2");
   test.runApplication();
   // it seems that the exceptionDummy is created only when app starts.
-  auto exceptionDummy =
-      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(app.device1.getDeviceModule().device.getBackend());
+  auto exceptionDummy = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(dev.getBackend());
   assert(exceptionDummy);
   exceptionDummy->setValidity("/dev/i1", ctk::DataValidity::faulty);
 
@@ -502,8 +504,10 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_4_3) {
   auto result1 = test.getScalar<int>("/dev/i1");
   auto result2 = test.getScalar<int>("/dev/i3");
 
+  ctk::Device dev(app.dummyCdd);
+
   test.runApplication();
-  auto exceptionDummy = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(app.dev.getDeviceModule().device.getBackend());
+  auto exceptionDummy = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(dev.getBackend());
   assert(exceptionDummy);
   exceptionDummy->setValidity("/dev/i1", ctk::DataValidity::faulty);
 

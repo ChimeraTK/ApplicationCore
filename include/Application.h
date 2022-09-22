@@ -25,7 +25,7 @@ namespace ChimeraTK {
   class VariableNetwork;
   class TriggerFanOut;
   class TestFacility;
-  class DeviceModule;
+  class DeviceManager;
   class ApplicationModule;
 
   template<typename UserType>
@@ -58,10 +58,6 @@ namespace ChimeraTK {
      *  valid after destroying the Application and must be destroyed as well (or
      * at least no longer used). */
     void shutdown() override;
-
-    /** Define the connections between process variables. Can be implemented by the application developer. The default
-     *  implementation will connect the entire application with the control system (virtual hierarchy). */
-    void defineConnections() override;
 
     void initialise() override;
 
@@ -143,8 +139,7 @@ namespace ChimeraTK {
     template<typename UserType>
     static VariableNetworkNode makeConstant(UserType value, size_t length = 1, bool makeFeeder = true);
 
-    void registerDeviceModule(DeviceModule* deviceModule);
-    void unregisterDeviceModule(DeviceModule* deviceModule);
+    boost::shared_ptr<DeviceManager> getDeviceManager(const std::string& aliasOrCDD);
 
     LifeCycleState getLifeCycleState() const { return lifeCycleState; }
 
@@ -157,7 +152,6 @@ namespace ChimeraTK {
     friend class VariableNetworkGraphDumpingVisitor;
     friend class VariableNetworkModuleGraphDumpingVisitor;
     friend class XMLGeneratorVisitor;
-    friend class ConnectingDeviceModule;
     friend struct StatusAggregator;
     friend struct detail::TestableMode;
 
@@ -269,12 +263,8 @@ namespace ChimeraTK {
     /** Instance of VariableNetwork to indicate an invalid network */
     VariableNetwork invalidNetwork;
 
-    /** Map of DeviceBackends used by this application. The map key is the alias
-     * name from the DMAP file */
-    std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>> deviceMap;
-
-    /** Map of DeviceModules. The alias name is the key.*/
-    std::map<std::string, DeviceModule*> deviceModuleMap;
+    /** Map of DeviceManagers. The alias name resp. CDD is the key.*/
+    std::map<std::string, boost::shared_ptr<DeviceManager>> _deviceManagerMap;
 
     /** Flag which is set by the TestFacility in runApplication() at the beginning. This is used to make sure
      *  runApplication() is called by the TestFacility and not manually. */

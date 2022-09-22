@@ -461,23 +461,16 @@ BOOST_AUTO_TEST_CASE(testAdjacentOut) {
       else if constexpr(ChimeraTK::Model::isDirectory(proxy)) {
         // Root owns several directories
         const auto& name = proxy.getName();
-        // NOTE: "**ConnectingDeviceModule**" and "<Device:Dummy0>" will go away once the ConnectingDeviceModule and
-        // the DeviceModule have been merged!!!
-        BOOST_CHECK(name == "Deeper" || name == "MyModule" || name == "somepath" || name == "Devices" ||
-            name == "**ConnectingDeviceModule**" || name == "<Device:Dummy0>");
+        BOOST_CHECK(name == "Deeper" || name == "MyModule" || name == "somepath" || name == "Devices");
       }
       else if constexpr(ChimeraTK::Model::isModuleGroup(proxy)) {
         // Root owns the ModuleGroup
         const auto& name = proxy.getName();
-        // NOTE: "**ConnectingDeviceModule**" will go away once the ConnectingDeviceModule and the DeviceModule have
-        // been merged!!!
-        BOOST_CHECK(name == "Deeper/hierarchies" || name == "**ConnectingDeviceModule**");
+        BOOST_CHECK(name == "Deeper/hierarchies");
       }
       else if constexpr(ChimeraTK::Model::isApplicationModule(proxy)) {
         const auto& name = proxy.getName();
-        // NOTE: "<Device:Dummy0>" will go away once the ConnectingDeviceModule and the DeviceModule have
-        // been merged!!!
-        BOOST_CHECK(name == "MyModule" || name == "<Device:Dummy0>");
+        BOOST_CHECK(name == "MyModule" || name == "/Devices/Dummy0");
       }
       else if constexpr(ChimeraTK::Model::isRoot(proxy)) {
         // Root is its own neighbouring directory
@@ -489,7 +482,7 @@ BOOST_AUTO_TEST_CASE(testAdjacentOut) {
 
     app.getModel().visit(checker, ChimeraTK::Model::adjacentOutSearch);
 
-    BOOST_TEST(foundElements == 12);
+    BOOST_TEST(foundElements == 9);
   }
 
   // Check on MyModule application module
@@ -876,9 +869,7 @@ BOOST_AUTO_TEST_CASE(testKeepModuleGroups) {
     auto checker = [&](auto proxy) {
       ++foundElements;
       if constexpr(ChimeraTK::Model::isModuleGroup(proxy)) {
-        // NOTE: "**ConnectingDeviceModule**" will go away once the ConnectingDeviceModule and the DeviceModule have
-        // been merged!!!
-        BOOST_CHECK(proxy.getName() == "Deeper/hierarchies" || proxy.getName() == "**ConnectingDeviceModule**");
+        BOOST_CHECK(proxy.getName() == "Deeper/hierarchies");
       }
       else {
         BOOST_FAIL("Wrong vertex type found");
@@ -887,7 +878,7 @@ BOOST_AUTO_TEST_CASE(testKeepModuleGroups) {
 
     app.getModel().visit(checker, ChimeraTK::Model::keepModuleGroups, ChimeraTK::Model::adjacentSearch);
 
-    BOOST_TEST(foundElements == 2);
+    BOOST_TEST(foundElements == 1);
   }
 
   // Run check on the application module "."
@@ -1275,9 +1266,7 @@ BOOST_AUTO_TEST_CASE(testOrSetVertexFilter) {
   auto checker = [&](auto proxy) {
     ++foundElements;
     if constexpr(ChimeraTK::Model::isModuleGroup(proxy)) {
-      // NOTE: "**ConnectingDeviceModule**" will go away once the ConnectingDeviceModule and the DeviceModule have
-      // been merged!!!
-      BOOST_CHECK(proxy.getName() == "Deeper/hierarchies" || proxy.getName() == "**ConnectingDeviceModule**");
+      BOOST_CHECK(proxy.getName() == "Deeper/hierarchies");
     }
     else if constexpr(ChimeraTK::Model::isDeviceModule(proxy)) {
       BOOST_CHECK(proxy.getAliasOrCdd() == "Dummy0");
@@ -1290,7 +1279,7 @@ BOOST_AUTO_TEST_CASE(testOrSetVertexFilter) {
   app.getModel().visit(checker, ChimeraTK::Model::keepModuleGroups || ChimeraTK::Model::keepDeviceModules,
       ChimeraTK::Model::adjacentSearch);
 
-  BOOST_TEST(foundElements == 4); // DeviceModule is found twice (ownership + neighbourhood)
+  BOOST_TEST(foundElements == 3); // the DeviceModule is found twice (ownership + neighbourhood)
 }
 
 /*********************************************************************************************************************/
@@ -1403,11 +1392,8 @@ BOOST_AUTO_TEST_CASE(testOrSetEdgeFilter) {
       BOOST_CHECK(proxy.getAliasOrCdd() == "Dummy0");
     }
     else if constexpr(ChimeraTK::Model::isDirectory(proxy)) {
-      // NOTE: "**ConnectingDeviceModule**" will go away once the ConnectingDeviceModule and the DeviceModule have
-      // been merged!!!
-      BOOST_CHECK(proxy.getName() == "Deeper" || proxy.getName() == "MyModule" ||
-          proxy.getName() == "**ConnectingDeviceModule**" || proxy.getName() == "somepath" ||
-          proxy.getName() == "Devices" || proxy.getName() == "<Device:Dummy0>");
+      BOOST_CHECK(proxy.getName() == "Deeper" || proxy.getName() == "MyModule" || proxy.getName() == "somepath" ||
+          proxy.getName() == "Devices");
     }
     else if constexpr(ChimeraTK::Model::isRoot(proxy)) {
     }
@@ -1419,7 +1405,7 @@ BOOST_AUTO_TEST_CASE(testOrSetEdgeFilter) {
   app.getModel().visit(checker, ChimeraTK::Model::keepNeighbourhood || ChimeraTK::Model::keepParenthood,
       ChimeraTK::Model::adjacentSearch);
 
-  BOOST_TEST(foundElements == 9); // ROOT is found twice: incoming and outgoing neighbourhood to itself
+  BOOST_TEST(foundElements == 7); // ROOT is found twice: incoming and outgoing neighbourhood to itself
 }
 
 // Note: AndSet for edge filters does not really make any sense, since each edge can have only one single type!
@@ -1437,9 +1423,7 @@ BOOST_AUTO_TEST_CASE(testOwnedModuleGroups) {
     auto checker = [&](auto proxy) {
       ++foundElements;
       if constexpr(ChimeraTK::Model::isModuleGroup(proxy)) {
-        // NOTE: "**ConnectingDeviceModule**" will go away once the ConnectingDeviceModule and the DeviceModule have
-        // been merged!!!
-        BOOST_CHECK(proxy.getName() == "Deeper/hierarchies" || proxy.getName() == "**ConnectingDeviceModule**");
+        BOOST_CHECK(proxy.getName() == "Deeper/hierarchies");
       }
       else {
         BOOST_FAIL("Wrong vertex type found");
@@ -1448,7 +1432,7 @@ BOOST_AUTO_TEST_CASE(testOwnedModuleGroups) {
 
     app.getModel().visit(checker, ChimeraTK::Model::ownedModuleGroups);
 
-    BOOST_TEST(foundElements == 2);
+    BOOST_TEST(foundElements == 1);
   }
 }
 
@@ -1535,11 +1519,8 @@ BOOST_AUTO_TEST_CASE(testChildDirectories) {
     auto checker = [&](auto proxy) {
       ++foundElements;
       if constexpr(ChimeraTK::Model::isDirectory(proxy)) {
-        // NOTE: "**ConnectingDeviceModule**" will go away once the ConnectingDeviceModule and the DeviceModule have
-        // been merged!!!
-        BOOST_CHECK(proxy.getName() == "Deeper" || proxy.getName() == "MyModule" ||
-            proxy.getName() == "**ConnectingDeviceModule**" || proxy.getName() == "somepath" ||
-            proxy.getName() == "Devices" || proxy.getName() == "<Device:Dummy0>");
+        BOOST_CHECK(proxy.getName() == "Deeper" || proxy.getName() == "MyModule" || proxy.getName() == "somepath" ||
+            proxy.getName() == "Devices");
       }
       else {
         BOOST_FAIL("Wrong vertex type found");
@@ -1548,7 +1529,7 @@ BOOST_AUTO_TEST_CASE(testChildDirectories) {
 
     app.getModel().visit(checker, ChimeraTK::Model::childDirectories);
 
-    BOOST_TEST(foundElements == 6);
+    BOOST_TEST(foundElements == 4);
   }
 }
 

@@ -474,11 +474,12 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
   threadedFanoutInput = 20;
   threadedFanoutInput.write();
   // write to register: m1.i1 linked with the consumingFanout.
-  auto consumingFanoutSource = app.device1.device.getScalarRegisterAccessor<int>("/m1/i1/DUMMY_WRITEABLE");
+  auto consumingFanoutSource =
+      ctk::Device(app.ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i1/DUMMY_WRITEABLE");
   consumingFanoutSource = 10;
   consumingFanoutSource.write();
 
-  auto pollRegister = app.device2.device.getScalarRegisterAccessor<int>("/m1/i2/DUMMY_WRITEABLE");
+  auto pollRegister = ctk::Device(app.ExceptionDummyCDD2).getScalarRegisterAccessor<int>("/m1/i2/DUMMY_WRITEABLE");
   pollRegister = 5;
   pollRegister.write();
 
@@ -522,7 +523,7 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
 BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
   std::cout << "testInvalidTrigger" << std::endl;
 
-  auto deviceRegister = app.device1.device.getScalarRegisterAccessor<int>("/m1/i3/DUMMY_WRITEABLE");
+  auto deviceRegister = ctk::Device(app.ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i3/DUMMY_WRITEABLE");
   deviceRegister = 20;
   deviceRegister.write();
 
@@ -627,8 +628,9 @@ BOOST_FIXTURE_TEST_CASE(testDeviceReadFailure, Fixture_noTestableMode) {
   std::cout << "testDeviceReadFailure" << std::endl;
   waitForDevices();
 
-  auto consumingFanoutSource = app.device1.device.getScalarRegisterAccessor<int>("/m1/i1/DUMMY_WRITEABLE");
-  auto pollRegister = app.device2.device.getScalarRegisterAccessor<int>("/m1/i2/DUMMY_WRITEABLE");
+  auto consumingFanoutSource =
+      ctk::Device(app.ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i1/DUMMY_WRITEABLE");
+  auto pollRegister = ctk::Device(app.ExceptionDummyCDD2).getScalarRegisterAccessor<int>("/m1/i2/DUMMY_WRITEABLE");
 
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
   auto result = test.getScalar<int>("m1/Module1_result");
@@ -703,7 +705,7 @@ BOOST_FIXTURE_TEST_CASE(testReadDeviceWithTrigger, Fixture_noTestableMode) {
   // trigger works as expected
   trigger = 1;
 
-  auto deviceRegister = app.device1.device.getScalarRegisterAccessor<int>("/m1/i3/DUMMY_WRITEABLE");
+  auto deviceRegister = ctk::Device(app.ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i3/DUMMY_WRITEABLE");
   deviceRegister = 30;
   deviceRegister.write();
 
@@ -755,13 +757,15 @@ BOOST_FIXTURE_TEST_CASE(testConsumingFanout, Fixture_noTestableMode) {
   fromConsumingFanout.read(); // initial value, don't care for this test
   result.read();              // initial value, don't care for this test
 
-  auto pollRegisterSource = app.device2.device.getScalarRegisterAccessor<int>("/m1/i2.DUMMY_WRITEABLE");
+  auto pollRegisterSource =
+      ctk::Device(app.ExceptionDummyCDD2).getScalarRegisterAccessor<int>("/m1/i2.DUMMY_WRITEABLE");
   pollRegisterSource = 100;
   pollRegisterSource.write();
 
   threadedFanoutInput = 10;
 
-  auto consumingFanoutSource = app.device1.device.getScalarRegisterAccessor<int>("/m1/i1.DUMMY_WRITEABLE");
+  auto consumingFanoutSource =
+      ctk::Device(app.ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i1.DUMMY_WRITEABLE");
   consumingFanoutSource = 1;
   consumingFanoutSource.write();
 

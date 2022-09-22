@@ -8,6 +8,7 @@
 #include "check_timeout.h"
 #include "ControlSystemModule.h"
 #include "DeviceModule.h"
+#include "ScalarAccessor.h"
 #include "TestFacility.h"
 
 #include <ChimeraTK/Device.h>

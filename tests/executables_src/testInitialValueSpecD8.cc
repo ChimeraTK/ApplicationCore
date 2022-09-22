@@ -57,10 +57,10 @@ struct PushDummyApplication : ChimeraTK::Application {
   InputModule<ctk::ScalarPushInput<int>> inputModule{this, "PushModule", ""};
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
-  void defineConnections() override {
+  /*void defineConnections() override {
     auto push_register = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
     push_register >> inputModule.input;
-  }
+  }*/
 };
 
 template<class APPLICATION_TYPE>
@@ -246,12 +246,12 @@ struct PushD9DummyApplication : ChimeraTK::Application {
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
-  void defineConnections() override {
+  /*void defineConnections() override {
     auto push_input1 = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
     auto push_input2 = device("REG2/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
     push_input1 >> pushModuleD9_1.reg1.pushInput;
     push_input2 >> pushModuleD9_2.reg1.pushInput;
-  }
+  }*/
 };
 
 struct D9InitialValueEceptionDummy {
@@ -327,13 +327,13 @@ struct TriggerFanOutD9DummyApplication : ChimeraTK::Application {
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
-  void defineConnections() override {
-    auto pollInput1 = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::poll);
-    auto pollInput2 = device("REG2/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::poll);
-    auto trigger = triggerModule["TRIG1"]("PUSH_OUT");
-    pollInput1[trigger] >> pushModuleD9_1.reg1.pushInput;
-    pollInput2[trigger] >> pushModuleD9_2.reg1.pushInput;
-  }
+  /*  void defineConnections() override {
+      auto pollInput1 = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::poll);
+      auto pollInput2 = device("REG2/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::poll);
+      auto trigger = triggerModule["TRIG1"]("PUSH_OUT");
+      pollInput1[trigger] >> pushModuleD9_1.reg1.pushInput;
+      pollInput2[trigger] >> pushModuleD9_2.reg1.pushInput;
+    }*/
 };
 
 struct TriggerFanOutInitialValueEceptionDummy {
@@ -409,10 +409,10 @@ struct ConstantD10DummyApplication : ChimeraTK::Application {
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
-  void defineConnections() override {
+  /*void defineConnections() override {
     ctk::VariableNetworkNode::makeConstant<int>(true, 24) >> constantModule.reg1.constant;
     constantModule.reg1.constant >> device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
-  }
+  }*/
 };
 
 struct ConstantD10InitialValueEceptionDummy {
@@ -476,10 +476,10 @@ struct TestDummyApplication : ChimeraTK::Application {
   TestModule testModule{this, "TestModule", ""};
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
-  void defineConnections() override {
+  /*void defineConnections() override {
     auto push_input = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
     push_input >> testModule.reg1.pushInput;
-  }
+  }*/
 };
 
 struct TestInitialValueEceptionDummy {
@@ -659,13 +659,15 @@ struct Test6_a1_DummyApplication : ChimeraTK::Application {
   WriterModule writerModule{this, "WriterModule", ""};
   ReaderModule readerModule{this, "ReaderModule", ""};
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
+
+  /*
   ChimeraTK::ControlSystemModule csModule{};
 
   void defineConnections() override {
     csModule("REG1") >> device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
     csModule("REG1") >> readerModule.reg1.pushInput;
     // dumpConnections();
-  }
+  }*/
 };
 
 struct Test6_a1_InitialValueEceptionDummy {
@@ -712,6 +714,7 @@ struct Test6_a2_DummyApplication : ChimeraTK::Application {
   TriggerModule triggerModule{this, "ReaderModule", ""};
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
   ChimeraTK::DeviceModule device2{this, ExceptionDummyCDD2};
+  /*
   ChimeraTK::ControlSystemModule csModule{};
 
   void defineConnections() override {
@@ -720,7 +723,7 @@ struct Test6_a2_DummyApplication : ChimeraTK::Application {
     pollInput1[trigger] >> device("REG2");
     pollInput1[trigger] >> readerModule.reg2.pushInput;
     // dumpConnections();
-  }
+  }*/
 };
 
 struct Test6_a2_InitialValueEceptionDummy {
@@ -777,13 +780,14 @@ struct Test6_a3_DummyApplication : ChimeraTK::Application {
   ReaderModule readerModule{this, "ReaderModule", ""};
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
   ChimeraTK::DeviceModule device2{this, ExceptionDummyCDD2};
-  ChimeraTK::ControlSystemModule csModule{};
+  /*
+   * ChimeraTK::ControlSystemModule csModule{};
 
   void defineConnections() override {
     device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> device("REG2");
     device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> readerModule.reg2.pushInput;
     // dumpConnections();
-  }
+  }*/
 };
 
 struct Test6_a3_InitialValueEceptionDummy {
@@ -835,7 +839,7 @@ struct Test6_a4_DummyApplication : ChimeraTK::Application {
   ReaderModule readerModule{this, "ReaderModule", ""};
   WriterModule writerModule{this, "WriterModule", ""};
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
-  ChimeraTK::ControlSystemModule csModule{};
+  // ChimeraTK::ControlSystemModule csModule{};
 
   void defineConnections() override {
     writerModule.output1 >> readerModule.reg2.pushInput;
@@ -895,12 +899,14 @@ struct Test6_b_DummyApplication : ChimeraTK::Application {
 
   PollModule pollModule{this, "PollModule", ""};
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
-  ChimeraTK::ControlSystemModule csModule{};
+
+  /*
+   * ChimeraTK::ControlSystemModule csModule{};
 
   void defineConnections() override {
     device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::poll) >> pollModule.reg1.pollInput;
     // dumpConnections();
-  }
+  }*/
 };
 
 struct Test6_b_InitialValueEceptionDummy {
@@ -949,10 +955,10 @@ struct Test6_c_DummyApplication : ChimeraTK::Application {
   ReaderModule readerModule{this, "ReaderModule", ""};
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
-  void defineConnections() override {
+  /*void defineConnections() override {
     device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> readerModule.reg2.pushInput;
     // dumpConnections();
-  }
+  }*/
 };
 
 struct Test6_c_InitialValueEceptionDummy {

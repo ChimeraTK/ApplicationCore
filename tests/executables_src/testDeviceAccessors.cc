@@ -71,7 +71,6 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
 
-  using Application::deviceMap;       // expose the device map for the tests
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
   using Application::networkList;     // expose network list to check merging
@@ -476,7 +475,6 @@ struct TestApplication2 : public ctk::Application {
   TestApplication2() : Application("testSuite") {}
   ~TestApplication2() { shutdown(); }
 
-  using Application::deviceMap;       // expose the device map for the tests
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
   using Application::networkList;     // expose network list to check merging
@@ -649,7 +647,7 @@ struct TestApplication3 : public ctk::Application {
   Deeper2<T> deeper{this, "Deeper", ""};
 
   std::atomic<size_t> initHandlerCallCount{0};
-  ctk::ConnectingDeviceModule dev{this, "Dummy0", "", [this](ctk::DeviceModule*) { initHandlerCallCount++; }};
+  ctk::DeviceModule dev{this, "Dummy0", "", [this](ctk::DeviceManager*) { initHandlerCallCount++; }};
 };
 
 /*********************************************************************************************************************/
@@ -789,8 +787,6 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleMove) {
   // ConnectingDeviceModule
   {
     TestApplication4 app;
-    ctk::ControlSystemModule cs;
-    app.findTag(".*").connectTo(cs);
     ctk::ConnectingDeviceModule dev{&app, "Dummy1"};
     ctk::ConnectingDeviceModule dev2{&app, "Dummy0"};
     dev = std::move(dev2);               // test move-assign

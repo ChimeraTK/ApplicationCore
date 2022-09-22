@@ -27,11 +27,10 @@ struct TestApp : public Application {
       "/MyModule/actuator"}; // pick one of the writable variables to AC knows that data type for the trigger
 
   // default name for the output variable (initScriptOutput)
-  ScriptedInitHandler initHandler1{
-      this, "InitHander1", "description", "./deviceInitScript1.bash", dev1.getDeviceModule()};
+  ScriptedInitHandler initHandler1{this, "InitHander1", "description", "./deviceInitScript1.bash", dev1};
   // change the name of the output variable in case a second script is needed. Shorten the error grace time to 1 second
-  ScriptedInitHandler initHandler2{this, "InitHander2", "description", "./deviceInitScript2.bash",
-      dev1.getDeviceModule(), "secondInitScriptOutput", 1};
+  ScriptedInitHandler initHandler2{
+      this, "InitHander2", "description", "./deviceInitScript2.bash", dev1, "secondInitScriptOutput", 1};
 };
 
 struct Fixture {
