@@ -106,9 +106,9 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
     boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
 
-    app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
-    app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
-    app.name.name.tick >> app.module.vars.tick;
+    //    app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
+    //    app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
+    //    app.name.name.tick >> app.module.vars.tick;
 
     ctk::TestFacility test(app, false);
 
@@ -137,9 +137,9 @@ BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
   boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
 
-  app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
-  app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
-  app.trigger.tick >> app.module.vars.tick;
+  //  app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
+  //  app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
+  //  app.trigger.tick >> app.module.vars.tick;
 
   ctk::TestFacility test(app, true);
   test.runApplication();
@@ -173,10 +173,10 @@ BOOST_AUTO_TEST_CASE(testDirectConnectWrite) {
   boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
 
-  app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
-  app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
+  //  app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
+  //  app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
   app.module.readMode = 3;
-  app.trigger.tick >> app.module.vars.tick;
+  //  app.trigger.tick >> app.module.vars.tick;
 
   ctk::TestFacility test(app, true);
   test.runApplication();

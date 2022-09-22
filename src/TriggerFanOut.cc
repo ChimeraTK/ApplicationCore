@@ -3,12 +3,14 @@
 
 #include "TriggerFanOut.h"
 
+#include "DeviceManager.h"
+
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
   TriggerFanOut::TriggerFanOut(const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl,
-      DeviceModule& deviceModule, VariableNetwork& network)
+      DeviceManager& deviceModule, VariableNetwork& network)
   : externalTrigger(externalTriggerImpl), _deviceModule(deviceModule), _network(network) {}
 
   /********************************************************************************************************************/

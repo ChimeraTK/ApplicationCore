@@ -145,8 +145,8 @@ namespace ChimeraTK {
     static_assert(std::is_base_of<InversionOfControlAccessor<Derived>, Derived>::value,
         "InversionOfControlAccessor<> must be used in a curiously recurring template pattern!");
 
-    auto path = HierarchyModifyingGroup::getPathName(name);
-    auto unqualName = HierarchyModifyingGroup::getUnqualifiedName(name);
+    auto path = Utilities::getPathName(name);
+    auto unqualName = Utilities::getUnqualifiedName(name);
 
     /// @todo FIXME eliminate dynamic_cast and the "lambda trick" by changing owner pointer type
     auto addToOnwer = [&](auto& owner_casted) {
@@ -158,8 +158,8 @@ namespace ChimeraTK {
       auto neighbourDir = model.visit(
           Model::returnDirectory, Model::getNeighbourDirectory, Model::returnFirstHit(Model::DirectoryProxy{}));
 
-      auto dir = neighbourDir.addDirectoryRecursive(ChimeraTK::HierarchyModifyingGroup::getPathName(name));
-      auto var = dir.addVariable(ChimeraTK::HierarchyModifyingGroup::getUnqualifiedName(name));
+      auto dir = neighbourDir.addDirectoryRecursive(Utilities::getPathName(name));
+      auto var = dir.addVariable(Utilities::getUnqualifiedName(name));
 
       node.setModel(var);
 

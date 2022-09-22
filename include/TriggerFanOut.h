@@ -21,7 +21,7 @@ namespace ChimeraTK {
    * and distributes each of them to any number of slaves. */
   class TriggerFanOut : public InternalModule {
    public:
-    TriggerFanOut(const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl, DeviceModule& deviceModule,
+    TriggerFanOut(const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl, DeviceManager& deviceModule,
         VariableNetwork& network);
 
     ~TriggerFanOut();
@@ -60,7 +60,7 @@ namespace ChimeraTK {
     boost::thread _thread;
 
     /** The DeviceModule of the feeder. Required for exception handling */
-    DeviceModule& _deviceModule;
+    DeviceManager& _deviceModule;
 
     /** Reference to VariableNetwork which is being realised by this FanOut. **/
     VariableNetwork& _network;

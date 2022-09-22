@@ -20,7 +20,7 @@ namespace ChimeraTK {
   class ApplicationModule;
   class VariableGroup;
   class VariableNetworkNode;
-  class ConnectingDeviceModule;
+  class DeviceModule;
 
   template<typename T>
   class InversionOfControlAccessor;
@@ -199,7 +199,7 @@ namespace ChimeraTK::Model {
 
     ModuleGroupProxy add(ModuleGroup& module);
     ApplicationModuleProxy add(ApplicationModule& module);
-    DeviceModuleProxy add(ConnectingDeviceModule& module);
+    DeviceModuleProxy add(DeviceModule& module);
 
     DirectoryProxy addDirectory(const std::string& name);
     ProcessVariableProxy addVariable(const std::string& name);
@@ -248,7 +248,7 @@ namespace ChimeraTK::Model {
 
     ModuleGroupProxy add(ModuleGroup& module);
     ApplicationModuleProxy add(ApplicationModule& module);
-    DeviceModuleProxy add(ConnectingDeviceModule& module);
+    DeviceModuleProxy add(DeviceModule& module);
   };
 
   /********************************************************************************************************************/
@@ -417,7 +417,7 @@ namespace ChimeraTK::Model {
     struct DeviceModuleProperties {
       std::string aliasOrCdd;
       ProcessVariableProxy trigger;
-      ConnectingDeviceModule& module;
+      DeviceModule& module;
     };
     struct ProcessVariableProperties {
       std::string name;
@@ -1211,7 +1211,7 @@ namespace ChimeraTK::Model {
     ModuleGroupProxy add(Model::Vertex owner, ModuleGroup& module);
     ApplicationModuleProxy add(Model::Vertex owner, ApplicationModule& module);
     VariableGroupProxy add(Model::Vertex owner, VariableGroup& module);
-    DeviceModuleProxy add(Model::Vertex owner, ConnectingDeviceModule& module);
+    DeviceModuleProxy add(Model::Vertex owner, DeviceModule& module);
 
     // common implementation to add any object (ModuleGroup, ApplicationModule, VariableGroup or DeviceModule)
     template<typename PROXY, typename MODULE, typename PROPS, Model::VertexProperties::Type TYPE>

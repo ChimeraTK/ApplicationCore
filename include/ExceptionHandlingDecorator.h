@@ -40,7 +40,7 @@ namespace ChimeraTK {
     using ChimeraTK::TransferElement::_dataValidity;
     using ChimeraTK::TransferElement::_activeException;
 
-    DeviceModule* _deviceModule;
+    boost::weak_ptr<DeviceManager> _deviceManager;
 
     bool previousReadFailed{true};
 

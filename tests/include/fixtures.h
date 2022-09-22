@@ -82,12 +82,12 @@ struct DummyApplication : ChimeraTK::Application {
     findTag("DEVICE").excludeTag("DEV").excludeTag("DEV3").flatten().connectTo(device2);
     findTag("DEVICE").excludeTag("DEV").excludeTag("DEV2").flatten().connectTo(device3);
 
-    device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> pushModule.reg1.pushInput;
-    device2("REG1")[device3("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push)] >>
-        pushModule2.reg1.pushInput;
-    device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> pushModule3.reg1.pushInput >>
-        cs("dev2_reg1_push_read");
-    findTag("DEVICE").excludeTag("DEV").connectTo(cs["Device2"]);
+    /*    device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> pushModule.reg1.pushInput;
+        device2("REG1")[device3("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push)] >>
+            pushModule2.reg1.pushInput;
+        device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> pushModule3.reg1.pushInput >>
+            cs("dev2_reg1_push_read");
+        findTag("DEVICE").excludeTag("DEV").connectTo(cs["Device2"]);*/
     // dumpConnections();
   }
 };
@@ -110,16 +110,16 @@ struct fixture_with_poll_and_push_input {
     deviceBackend2->throwExceptionOpen = breakSecondDeviceAtStart;
 
     if constexpr(addInitHandlers) {
-      auto initHandler1 = [this](ChimeraTK::DeviceModule* dm) {
-        if(dm == &application.device) {
+      auto initHandler1 = [this](ChimeraTK::DeviceManager* dm) {
+        if(dm == &application.device.getDeviceManager()) {
           initHandler1Called = true;
           if(initHandler1Throws) {
             throw ChimeraTK::runtime_error("Init handler 1 throws by request");
           }
         }
       };
-      auto initHandler2 = [this](ChimeraTK::DeviceModule* dm) {
-        if(dm == &application.device) {
+      auto initHandler2 = [this](ChimeraTK::DeviceManager* dm) {
+        if(dm == &application.device.getDeviceManager()) {
           initHandler2Called = true;
           if(initHandler2Throws) {
             throw ChimeraTK::runtime_error("Init handler 2 throws by request");

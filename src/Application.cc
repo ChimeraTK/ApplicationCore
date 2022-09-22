@@ -5,11 +5,13 @@
 #include "CircularDependencyDetector.h"
 #include "ConsumingFanOut.h"
 #include "DebugPrintAccessorDecorator.h"
+#include "DeviceManager.h"
 #include "DeviceModule.h"
 #include "ExceptionHandlingDecorator.h"
 #include "FeedingFanOut.h"
 #include "ThreadedFanOut.h"
 #include "TriggerFanOut.h"
+#include "Utilities.h"
 #include "VariableNetworkGraphDumpingVisitor.h"
 #include "VariableNetworkModuleGraphDumpingVisitor.h"
 #include "VariableNetworkNode.h"
@@ -28,7 +30,7 @@ using namespace ChimeraTK;
 
 /*********************************************************************************************************************/
 
-Application::Application(const std::string& name) : ApplicationBase(name), ModuleGroup(name) {
+Application::Application(const std::string& name) : ApplicationBase(name), ModuleGroup(nullptr, name) {
   // Create the model and its root.
   Application::_model = Model::RootProxy(*this);
 
@@ -41,20 +43,11 @@ Application::Application(const std::string& name) : ApplicationBase(name), Modul
     throw ChimeraTK::logic_error("Error: An instance of Application must have its applicationName set.");
   }
   // check if application name contains illegal characters
-  std::string legalChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_";
-  bool nameContainsIllegalChars = name.find_first_not_of(legalChars) != std::string::npos;
-  if(nameContainsIllegalChars) {
+  if(!Utilities::checkName(name, false)) {
     Application::shutdown();
-    throw ChimeraTK::logic_error("Error: The application name may only contain "
-                                 "alphanumeric characters and underscores.");
+    throw ChimeraTK::logic_error(
+        "Error: The application name may only contain alphanumeric characters and underscores.");
   }
-}
-
-/*********************************************************************************************************************/
-
-void Application::defineConnections() {
-  ControlSystemModule cs;
-  findTag(".*").connectTo(cs);
 }
 
 /*********************************************************************************************************************/
@@ -450,10 +443,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   auto mode = node.getMode();
   auto nElements = node.getNumberOfElements();
 
-  // Device opens in DeviceModule
-  if(deviceMap.count(deviceAlias) == 0) {
-    deviceMap[deviceAlias] = ChimeraTK::BackendFactory::getInstance().createBackend(deviceAlias);
-  }
+  auto dev = _deviceManagerMap.at(deviceAlias)->getDevice().getBackend();
 
   // use wait_for_new_data mode if push update mode was requested
   // Feeding to the network means reading from a device to feed it into the network.
@@ -461,7 +451,7 @@ boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> Application::createDe
   if(mode == UpdateMode::push && direction.dir == VariableDirection::feeding) flags = {AccessMode::wait_for_new_data};
 
   // obtain the register accessor from the device
-  auto accessor = deviceMap[deviceAlias]->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
+  auto accessor = dev->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
 
   // Receiving accessors should be faulty after construction,
   // see data validity propagation spec 2.6.1
@@ -991,11 +981,11 @@ void Application::typedMakeConnection(VariableNetwork& network) {
           void* triggerImplId = network.getExternalTriggerImpl().get();
           auto triggerFanOut = triggerMap[triggerImplId];
           if(!triggerFanOut) {
-            assert(deviceModuleMap.find(feeder.getDeviceAlias()) != deviceModuleMap.end());
+            assert(_deviceManagerMap.find(feeder.getDeviceAlias()) != _deviceManagerMap.end());
 
             // create the trigger fan out and store it in the map and the internalModuleList
             triggerFanOut = boost::make_shared<TriggerFanOut>(
-                network.getExternalTriggerImpl(), *deviceModuleMap[feeder.getDeviceAlias()], network);
+                network.getExternalTriggerImpl(), *_deviceManagerMap[feeder.getDeviceAlias()], network);
             triggerMap[triggerImplId] = triggerFanOut;
             internalModuleList.emplace_back(triggerFanOut);
           }
@@ -1134,16 +1124,13 @@ void Application::typedMakeConnection(VariableNetwork& network) {
         else if(consumer.getType() == NodeType::Device) {
           // we register the required accessor as a recovery accessor. This is just a bare RegisterAccessor without any
           // decorations directly from the backend.
-          if(deviceMap.count(consumer.getDeviceAlias()) == 0) {
-            deviceMap[consumer.getDeviceAlias()] =
-                ChimeraTK::BackendFactory::getInstance().createBackend(consumer.getDeviceAlias());
-          }
-          auto impl = deviceMap[consumer.getDeviceAlias()]->getRegisterAccessor<UserType>(
-              consumer.getRegisterName(), consumer.getNumberOfElements(), 0, {});
+          auto dev = _deviceManagerMap.at(consumer.getDeviceAlias())->getDevice().getBackend();
+          auto impl =
+              dev->getRegisterAccessor<UserType>(consumer.getRegisterName(), consumer.getNumberOfElements(), 0, {});
           impl->accessChannel(0) = feedingImpl->accessChannel(0);
 
-          assert(deviceModuleMap.find(consumer.getDeviceAlias()) != deviceModuleMap.end());
-          DeviceModule* devmod = deviceModuleMap[consumer.getDeviceAlias()];
+          assert(_deviceManagerMap.find(consumer.getDeviceAlias()) != _deviceManagerMap.end());
+          auto devmod = _deviceManagerMap[consumer.getDeviceAlias()];
 
           // The accessor implementation already has its data in the user buffer. We now just have to add a valid
           // version number and have a recovery accessors (RecoveryHelper to be exact) which we can register at the
@@ -1254,12 +1241,13 @@ Application& Application::getInstance() {
 
 /*********************************************************************************************************************/
 
-void Application::registerDeviceModule(DeviceModule* deviceModule) {
-  deviceModuleMap[deviceModule->deviceAliasOrURI] = deviceModule;
+boost::shared_ptr<DeviceManager> Application::getDeviceManager(const std::string& aliasOrCDD) {
+  auto& dmm = Application::getInstance()._deviceManagerMap;
+  if(dmm.find(aliasOrCDD) == dmm.end()) {
+    // Add initialisation handler below, since we also need to add it if the DeviceModule already exists
+    dmm[aliasOrCDD] = boost::make_shared<DeviceManager>(&Application::getInstance(), aliasOrCDD);
+  }
+  return dmm.at(aliasOrCDD);
 }
 
 /*********************************************************************************************************************/
-
-void Application::unregisterDeviceModule(DeviceModule* deviceModule) {
-  deviceModuleMap.erase(deviceModule->deviceAliasOrURI);
-}

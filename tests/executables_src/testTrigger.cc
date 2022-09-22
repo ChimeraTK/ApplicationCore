@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerDevToApp, T, test_types) {
 /*********************************************************************************************************************/
 /* test trigger by app variable when connecting a polled device register to
  * control system variable */
-
+#if 0
 BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerDevToCS, T, test_types) {
   std::cout << "***************************************************************"
                "******************************************************"
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerByCSFanOut, T, test_types) {
   BOOST_CHECK(myCSVar->readNonBlocking() == false);
   BOOST_CHECK(theTriggerCopied->readNonBlocking() == false);
 }
-
+#endif
 /*********************************************************************************************************************/
 /* test that multiple variables triggered by the same source are put into the
  * same TransferGroup */

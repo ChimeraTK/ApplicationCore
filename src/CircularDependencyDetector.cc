@@ -5,7 +5,7 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "DeviceModule.h"
+#include "DeviceManager.h"
 #include "VariableNetwork.h"
 
 /*********************************************************************************************************************/
@@ -181,10 +181,10 @@ namespace ChimeraTK::detail {
             if(_devicesWeHaveWarnedAbout.find(deviceName) == _devicesWeHaveWarnedAbout.end()) {
               _devicesWeHaveWarnedAbout.insert(deviceName);
               std::cout << "Note: Still waiting for device " << deviceName << " to come up";
-              auto* dm = Application::getInstance().deviceModuleMap[deviceName];
-              std::unique_lock dmLock(dm->errorMutex);
-              if(dm->deviceHasError) {
-                std::cout << " (" << std::string(dm->deviceError._message) << ")";
+              auto dm = Application::getInstance()._deviceManagerMap[deviceName];
+              std::unique_lock dmLock(dm->_errorMutex);
+              if(dm->_deviceHasError) {
+                std::cout << " (" << std::string(dm->_deviceError._message) << ")";
               }
               std::cout << "..." << std::endl;
             }

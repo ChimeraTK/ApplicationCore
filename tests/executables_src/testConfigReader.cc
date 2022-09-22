@@ -16,6 +16,8 @@ using namespace boost::unit_test_framework;
 
 namespace ctk = ChimeraTK;
 
+std::string cdd{"(dummy?map=configReaderDevice.map)"};
+
 /*********************************************************************************************************************/
 /* Module to receive the config values */
 
@@ -195,7 +197,7 @@ struct TestApplicationWithDevice : public ctk::Application {
   }
 
   ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
-  ctk::DeviceModule device{this, "(dummy?map=configReaderDevice.map)"};
+  ctk::DeviceModule device{this, cdd};
 };
 
 /*********************************************************************************************************************/
@@ -291,10 +293,13 @@ BOOST_AUTO_TEST_CASE(testDirectWriteToDevice) {
   TestApplicationWithDevice app;
   ctk::TestFacility test(app);
   test.runApplication();
-  auto var32u = app.device.device.getScalarRegisterAccessor<uint32_t>("var32u");
-  auto var16 = app.device.device.getScalarRegisterAccessor<int16_t>("var16");
-  auto module1var16 = app.device.device.getScalarRegisterAccessor<int16_t>("module1/var16");
-  auto intArray = app.device.device.getOneDRegisterAccessor<int32_t>("intArray");
+
+  ctk::Device device(cdd);
+
+  auto var32u = device.getScalarRegisterAccessor<uint32_t>("var32u");
+  auto var16 = device.getScalarRegisterAccessor<int16_t>("var16");
+  auto module1var16 = device.getScalarRegisterAccessor<int16_t>("module1/var16");
+  auto intArray = device.getOneDRegisterAccessor<int32_t>("intArray");
   var32u.read();
   var16.read();
   module1var16.read();
