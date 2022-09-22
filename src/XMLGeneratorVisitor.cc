@@ -30,6 +30,7 @@ namespace ChimeraTK {
 
   void XMLGeneratorVisitor::dispatch(const Application& app) {
     _rootElement->set_attribute("name", app.getName());
+#if 0
     for(auto& network : app.networkList) {
       network.check();
 
@@ -40,6 +41,7 @@ namespace ChimeraTK {
         consumer.accept(*this);
       }
     }
+#endif
   }
 
   /********************************************************************************************************************/

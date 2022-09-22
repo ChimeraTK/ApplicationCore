@@ -70,11 +70,6 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
 
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
-  using Application::networkList;     // expose network list to check merging
-                                      // networks
-
   TestModule<T> testModule{this, "testModule", "The test module"};
   ctk::DeviceModule dev{this, "Dummy0"};
 
@@ -162,7 +157,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromDevice, T, test_types) {
   TestApplication<T> app;
 
   // We intentionally use an r/w register here to use it as an input only. Just to test the case
-  // (might only be written in initialication and only read in the server itself)
+  // (might only be written in initialisation and only read in the server itself)
   // app.dev("/MyModule/actuator") >> app.testModule.consumingPoll;
   ctk::TestFacility test{app};
   ChimeraTK::Device dev;
@@ -174,7 +169,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromDevice, T, test_types) {
 
   test.runApplication();
 
-  // single theaded test only, since read() does not block in this case
+  // single threaded test only, since read() does not block in this case
   BOOST_CHECK(app.testModule.consumingPoll == 1);
   regacc = 42;
   regacc.write();
@@ -219,7 +214,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumingFanOut, T, test_types) {
 
   test.runApplication();
 
-  // single theaded test only, since read() does not block in this case
+  // single threaded test only, since read() does not block in this case
   BOOST_CHECK(app.testModule.consumingPoll == 1);
   BOOST_CHECK(app.testModule.consumingPush2 == 1);
   regacc = 42;
@@ -286,68 +281,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumingFanOut, T, test_types) {
   BOOST_CHECK(app.testModule.consumingPush2 == 120);
   BOOST_CHECK(app.testModule.consumingPush.readNonBlocking() == false);
   BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == false);
-}
-
-/*********************************************************************************************************************/
-/* test merged networks (optimisation done in
- * Application::optimiseConnections()) */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testMergedNetworks, T, test_types) {
-  std::cout << "testMergedNetworks" << std::endl;
-
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
-
-  TestApplication<T> app;
-
-  // we abuse "feedingToDevice" as trigger here...
-  // app.dev("/MyModule/actuator")[app.testModule.feedingToDevice] >> app.testModule.consumingPush;
-  // app.dev("/MyModule/actuator")[app.testModule.feedingToDevice] >> app.testModule.consumingPush2;
-
-  // check that we have two separate networks for both connections
-  size_t nDeviceFeeders = 0;
-  for(auto& net : app.networkList) {
-    if(net.getFeedingNode().getType() == ctk::NodeType::Device) nDeviceFeeders++;
-  }
-  BOOST_CHECK_EQUAL(nDeviceFeeders, 2);
-
-  // the optimisation to test takes place here
-  ctk::TestFacility test{app};
-
-  // check we are left with just one network fed by the device
-  nDeviceFeeders = 0;
-  for(auto& net : app.networkList) {
-    if(net.getFeedingNode().getType() == ctk::NodeType::Device) nDeviceFeeders++;
-  }
-  BOOST_CHECK_EQUAL(nDeviceFeeders, 1);
-
-  ChimeraTK::Device dev;
-  dev.open("Dummy0");
-  auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
-  regacc = 1;
-  regacc.write();
-
-  // run the application to see if everything still behaves as expected
-  test.runApplication();
-
-  // single theaded test only, since read() does not block in this case
-  regacc = 42;
-  regacc.write();
-  BOOST_CHECK(app.testModule.consumingPush == 1);
-  BOOST_CHECK(app.testModule.consumingPush2 == 1);
-  app.testModule.feedingToDevice.write();
-  app.testModule.consumingPush.read();
-  app.testModule.consumingPush2.read();
-  BOOST_CHECK(app.testModule.consumingPush == 42);
-  BOOST_CHECK(app.testModule.consumingPush2 == 42);
-  regacc = 120;
-  regacc.write();
-  BOOST_CHECK(app.testModule.consumingPush == 42);
-  BOOST_CHECK(app.testModule.consumingPush2 == 42);
-  app.testModule.feedingToDevice.write();
-  app.testModule.consumingPush.read();
-  app.testModule.consumingPush2.read();
-  BOOST_CHECK(app.testModule.consumingPush == 120);
-  BOOST_CHECK(app.testModule.consumingPush2 == 120);
 }
 
 /*********************************************************************************************************************/
@@ -472,11 +405,6 @@ template<typename T>
 struct TestApplication2 : public ctk::Application {
   TestApplication2() : Application("testSuite") {}
   ~TestApplication2() { shutdown(); }
-
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
-  using Application::networkList;     // expose network list to check merging
-                                      // networks
 
   TestModule2<T> testModule{this, "MyModule", "The test module"};
   Deeper<T> deeper{this, "Deeper", ""};
@@ -750,7 +678,6 @@ struct TestApplication4 : public ctk::Application {
 
   TestModule2<int> m{this, "MyModule", ""};
   Deeper<int> deeper{this, "Deeper", ""};
-
 };
 
 /*********************************************************************************************************************/

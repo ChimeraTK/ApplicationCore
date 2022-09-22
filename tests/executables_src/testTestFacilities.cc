@@ -183,9 +183,6 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testApplication") {}
   ~TestApplication() { shutdown(); }
 
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
-
   ctk::DeviceModule dev{this, dummySdm};
   BlockingReadTestModule<T> blockingReadTestModule{this, "blockingReadTestModule", "Module for testing blocking read"};
   ReadAnyTestModule<T> readAnyTestModule{this, "readAnyTestModule", "Module for testing readAny()"};
@@ -209,7 +206,6 @@ struct PollingTestApplication : public ctk::Application {
 struct AnotherPollTestApplication : public ctk::Application {
   AnotherPollTestApplication() : Application("AnotherTestApplication") {}
   ~AnotherPollTestApplication() { shutdown(); }
-
 
   ctk::DeviceModule dev{this, dummySdm};
 

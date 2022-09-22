@@ -152,7 +152,6 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("TestApplication") {}
   ~TestApplication() { shutdown(); }
 
-
   ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
   TestModule testModule{this, "TestModule", "The test module"};
 };
@@ -163,7 +162,6 @@ struct TestApplication : public ctk::Application {
 struct TestApplicationTwoConfigs : public ctk::Application {
   TestApplicationTwoConfigs() : Application("TestApplicationTwoConfigs") {}
   ~TestApplicationTwoConfigs() { shutdown(); }
-
 
   ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
   ctk::ConfigReader config2{this, "config2", "validConfig.xml"};
@@ -176,7 +174,6 @@ struct TestApplicationTwoConfigs : public ctk::Application {
 struct TestApplicationNoConfigs : public ctk::Application {
   TestApplicationNoConfigs() : Application("TestApplicationTwoConfigs") {}
   ~TestApplicationNoConfigs() { shutdown(); }
-
 
   TestModule testModule{this, "TestModule", "The test module"};
 };

@@ -44,12 +44,14 @@ namespace ChimeraTK {
       stream() << _prefix << "    # " << ++count << ":";
       consumer.accept(*this);
     }
+#if 0
     if(t.hasFeedingNode()) {
       if(t.getFeedingNode().hasExternalTrigger()) {
         stream() << _prefix << "  external trigger node: ";
         t.getFeedingNode().getExternalTrigger().accept(*this);
       }
     }
+#endif
     stream() << _prefix << "}" << std::endl;
   }
 

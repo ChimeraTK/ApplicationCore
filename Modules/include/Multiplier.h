@@ -77,29 +77,29 @@ namespace ChimeraTK {
       output.replace(ArrayOutput<OutputType>(this, "factor", "", NELEMS, description));
     }
 
-      ArrayPushInput<InputType> input;
-      ScalarPushInput<double> factor;
-      ArrayOutput<OutputType> output;
+    ArrayPushInput<InputType> input;
+    ScalarPushInput<double> factor;
+    ArrayOutput<OutputType> output;
 
-      void mainLoop() override {
-        ReadAnyGroup group{input, factor};
-        while(true) {
-          // scale value (with rounding, if integral type)
-          if constexpr(!std::numeric_limits<OutputType>::is_integer) {
-            for(size_t i = 0; i < NELEMS; ++i) output[i] = input[i] * factor;
-          }
-          else {
-            for(size_t i = 0; i < NELEMS; ++i) output[i] = std::round(input[i] * factor);
-          }
-
-          // write scaled value
-          output.write();
-
-          // wait for new input value (at the end, since we want to process the
-          // initial values first)
-          group.readAny();
+    void mainLoop() override {
+      ReadAnyGroup group{input, factor};
+      while(true) {
+        // scale value (with rounding, if integral type)
+        if constexpr(!std::numeric_limits<OutputType>::is_integer) {
+          for(size_t i = 0; i < NELEMS; ++i) output[i] = input[i] * factor;
         }
+        else {
+          for(size_t i = 0; i < NELEMS; ++i) output[i] = std::round(input[i] * factor);
+        }
+
+        // write scaled value
+        output.write();
+
+        // wait for new input value (at the end, since we want to process the
+        // initial values first)
+        group.readAny();
       }
+    }
   };
 
   template<typename InputType, typename OutputType = InputType, size_t NELEMS = 1>

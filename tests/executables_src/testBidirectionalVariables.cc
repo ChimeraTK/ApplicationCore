@@ -24,17 +24,17 @@ namespace ctk = ChimeraTK;
 
 /*********************************************************************************************************************/
 
-/* Module which converts the input data from inches to centimeters - and the
+/* Module which converts the input data from inches to centimetres - and the
  * other way round for the return channel. In case of the return channel, the
  * data is rounded downwards to integer inches and sent again forward. */
 struct ModuleA : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
   ctk::ScalarPushInputWB<int> var1{this, "var1", "inches", "A length, for some reason rounded to integer"};
-  ctk::ScalarOutputPushRB<double> var2{this, "var2", "centimeters", "Same length converted to centimeters"};
+  ctk::ScalarOutputPushRB<double> var2{this, "var2", "centimetres", "Same length converted to centimetres"};
 
   void prepare() override {
-    incrementDataFaultCounter(); // foce all outputs  to invalid
+    incrementDataFaultCounter(); // force all outputs  to invalid
     writeAll();                  // write initial values
     decrementDataFaultCounter(); // validity according to input validity
   }
@@ -59,12 +59,12 @@ struct ModuleA : public ctk::ApplicationModule {
 struct ModuleB : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
-  ctk::ScalarPushInputWB<double> var2{this, "var2", "centimeters", "Some length, confined to a configuratble range"};
-  ctk::ScalarPushInput<double> max{this, "max", "centimeters", "Maximum length"};
-  ctk::ScalarOutput<double> var3{this, "var3", "centimeters", "The limited length"};
+  ctk::ScalarPushInputWB<double> var2{this, "var2", "centimetres", "Some length, confined to a configurable range"};
+  ctk::ScalarPushInput<double> max{this, "max", "centimetres", "Maximum length"};
+  ctk::ScalarOutput<double> var3{this, "var3", "centimetres", "The limited length"};
 
   void prepare() override {
-    incrementDataFaultCounter(); // foce all outputs  to invalid
+    incrementDataFaultCounter(); // force all outputs  to invalid
     writeAll();                  // write initial values
     decrementDataFaultCounter(); // validity according to input validity
   }
@@ -92,10 +92,8 @@ struct ModuleB : public ctk::ApplicationModule {
 
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
-  ~TestApplication() { shutdown(); }
+  ~TestApplication() override { shutdown(); }
 
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
   ModuleA a;
   ModuleB b;
 };
@@ -138,8 +136,9 @@ BOOST_AUTO_TEST_CASE(testDirectAppToCSConnections) {
   std::cout << "*** testDirectAppToCSConnections" << std::endl;
 
   TestApplication app;
-  app.b = {&app, "b", ""};
-  // app.b.connectTo(app.cs);
+  app.getTestableMode().enableDebug = true;
+  app.debugMakeConnections();
+  app.b = {&app, ".", ""};
 
   ctk::TestFacility test(app);
   test.runApplication();
@@ -285,7 +284,7 @@ BOOST_AUTO_TEST_CASE(testRealisticExample) {
     var1 = 50;
     var1.write();
     test.stepApplication();
-    var1.readLatest(); // emtpy the queues
+    var1.readLatest(); // empty the queues
     var1_copied.readLatest();
     var2.readLatest();
     var3.readLatest();

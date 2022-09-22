@@ -9,9 +9,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  TriggerFanOut::TriggerFanOut(const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl,
-      DeviceManager& deviceModule, VariableNetwork& network)
-  : externalTrigger(externalTriggerImpl), _deviceModule(deviceModule), _network(network) {}
+  TriggerFanOut::TriggerFanOut(
+      const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl, DeviceManager& deviceModule)
+  : externalTrigger(externalTriggerImpl), _deviceModule(deviceModule) {}
 
   /********************************************************************************************************************/
 

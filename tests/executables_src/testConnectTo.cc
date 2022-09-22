@@ -120,8 +120,6 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
 
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
   void defineConnections() {}         // the setup is done in the tests
 
   FirstHierarchy first{this, "first", "The test module"};

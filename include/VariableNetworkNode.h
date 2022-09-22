@@ -14,7 +14,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <assert.h>
+#include <cassert>
 #include <iostream>
 
 namespace ChimeraTK {
@@ -62,7 +62,7 @@ namespace ChimeraTK {
      * another network. The additional dummy argument is only there to
      * discriminate the signature from the copy constructor and will be ignored.
      */
-    VariableNetworkNode(VariableNetworkNode& nodeToTrigger, int);
+    // VariableNetworkNode(VariableNetworkNode& nodeToTrigger, int);
 
     /** Constructor to wrap a VariableNetworkNode_data pointer */
     VariableNetworkNode(boost::shared_ptr<VariableNetworkNode_data> pdata);
@@ -108,22 +108,6 @@ namespace ChimeraTK {
     /** Connect two nodes */
     VariableNetworkNode operator>>(VariableNetworkNode other);
 
-    /** Add a trigger TO BE REMOVED!!! */
-    VariableNetworkNode operator[](VariableNetworkNode trigger);
-
-    /** Add a trigger */
-    void addExternalTrigger(VariableNetworkNode trigger);
-
-    /** Check for presence of an external trigger */
-    bool hasExternalTrigger() const;
-
-    /** Return the external trigger node. if no external trigger is present, an
-     * assertion will be raised. */
-    VariableNetworkNode getExternalTrigger();
-
-    /** Removes an external trigger */
-    void removeExternalTrigger();
-
     /** Print node information to std::cout */
     void dump(std::ostream& stream = std::cout) const;
 
@@ -139,13 +123,15 @@ namespace ChimeraTK {
     /** Returns true if a circular dependency has been detected and the node is a consumer. */
     bool isCircularInput() const;
 
-    /** Scan the networks and set the isCircularInput() flags if circular depencencies are detected.
+    /** Scan the networks and set the isCircularInput() flags if circular dependencies are detected.
      *  Must only be called on consuming nodes.
      */
     std::list<EntityOwner*> scanForCircularDepencency();
 
     /** Get the unique ID of the circular network. It is 0 if the node is not part of a circular network.*/
     size_t getCircularNetworkHash() const;
+
+    [[nodiscard]] bool isValid() const { return pdata && getType() != NodeType::invalid; }
 
     /** Getter for the properties */
     NodeType getType() const;

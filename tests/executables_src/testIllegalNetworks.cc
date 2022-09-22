@@ -13,7 +13,10 @@
 #include <ChimeraTK/BackendFactory.h>
 
 #include <boost/mpl/list.hpp>
+
+#define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -51,11 +54,8 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
 
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
-
   TestModule<T> testModule{this, "testModule", "The test module"};
-  ctk::DeviceModule dev{this, "Dummy0"};
+  ctk::DeviceModule dev{this, "Dummy0", "/Some/deviceTrigger"};
 };
 
 /*********************************************************************************************************************/

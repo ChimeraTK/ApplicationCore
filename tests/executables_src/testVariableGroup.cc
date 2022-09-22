@@ -66,9 +66,7 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
 
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
-  void defineConnections() {}         // the setup is done in the tests
+  void defineConnections() {} // the setup is done in the tests
 
   TestModule testModule{this, "testModule", "The test module"};
 };

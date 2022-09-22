@@ -67,7 +67,6 @@ struct TestApp : public Application {
     }
 
   } b{this, ".", ""}; // name it "HiddenB" here and it works
-
 };
 
 BOOST_AUTO_TEST_CASE(testBIsHidden) {

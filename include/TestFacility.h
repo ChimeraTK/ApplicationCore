@@ -238,9 +238,9 @@ namespace ChimeraTK {
 
     // decorate with TestableModeAccessorDecorator if variable is sender and
     // receiver is not poll-type (then no entry in pvIdMapp exists), and store it in cache
-    if(pv->isWriteable() && app.pvIdMap.find(pv->getUniqueId()) != app.pvIdMap.end()) {
+    if(auto it = app.pvIdMap.find(pv->getUniqueId()); pv->isWriteable() && it != app.pvIdMap.end()) {
       boost::fusion::at_key<T>(accessorMap.table)[name] = app.getTestableMode().decorate<T>(
-          pv, detail::TestableMode::DecoratorType::WRITE, "ControlSystem: " + name, app.pvIdMap[pv->getUniqueId()]);
+          pv, detail::TestableMode::DecoratorType::WRITE, "ControlSystem: " + name, it->second);
     }
     else {
       boost::fusion::at_key<T>(accessorMap.table)[name] = pv;
