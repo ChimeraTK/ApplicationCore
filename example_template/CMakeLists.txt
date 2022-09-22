@@ -70,7 +70,7 @@ find_package(Boost COMPONENTS thread system unit_test_framework REQUIRED)
 
 # Create the executables for automated unit testing (new modular tests).
 # add one test executable per source file
-aux_source_directory(${CMAKE_SOURCE_DIR}/tests testExecutables)
+aux_source_directory(${CMAKE_SOURCE_DIR}/tests/executables_src testExecutables)
 foreach( testExecutableSrcFile ${testExecutables})
     #NAME_WE means the base name without path and (longest) extension
     get_filename_component(excutableName ${testExecutableSrcFile} NAME_WE)
