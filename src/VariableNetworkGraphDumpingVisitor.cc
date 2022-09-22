@@ -53,6 +53,7 @@ namespace ChimeraTK {
         feederNode.accept(*this);
       }
 
+#if 0
       if(feederNode.hasExternalTrigger()) {
         auto triggerNode = feederNode.getExternalTrigger();
         trigger = detail::encodeDotNodeName(detail::nodeName(triggerNode));
@@ -66,6 +67,7 @@ namespace ChimeraTK {
           popStream();
         }
       }
+#endif
     }
 
     for(auto& consumerNode : network.getConsumingNodes()) {
@@ -127,9 +129,11 @@ namespace ChimeraTK {
                 "fontname=\"monospace\"];\n"
              << "  \n";
 
+#if 0
     for(auto& network : t.networkList) {
       network.accept(*this);
     }
+#endif
 
     for(auto& mapElem : _triggerMap) {
       stream() << mapElem.second;

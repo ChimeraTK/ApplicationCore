@@ -104,9 +104,9 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetwork::addNodeToTrigger(VariableNetworkNode& nodeToTrigger) {
-    VariableNetworkNode node(nodeToTrigger, 0);
-    node.setOwner(this);
-    nodeList.push_back(node);
+    // VariableNetworkNode node(nodeToTrigger, 0);
+    // node.setOwner(this);
+    // nodeList.push_back(node);
   }
 
   /*********************************************************************************************************************/
@@ -115,6 +115,7 @@ namespace ChimeraTK {
     if(!hasFeedingNode()) return TriggerType::none;
     const auto& feeder = getFeedingNode();
     // network has an external trigger
+#if 0
     if(feeder.hasExternalTrigger()) {
       if(feeder.getMode() == UpdateMode::push) {
         std::stringstream msg;
@@ -129,6 +130,7 @@ namespace ChimeraTK {
       }
       return TriggerType::external;
     }
+#endif
     // network is fed by a pushing node
     if(feeder.getMode() == UpdateMode::push) {
       return TriggerType::feeder;

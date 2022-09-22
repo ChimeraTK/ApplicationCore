@@ -77,7 +77,7 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
-
+#if 0
   VariableNetworkNode::VariableNetworkNode(VariableNetworkNode& nodeToTrigger, int)
   : pdata(boost::make_shared<VariableNetworkNode_data>()) {
     pdata->type = NodeType::TriggerReceiver;
@@ -86,7 +86,7 @@ namespace ChimeraTK {
     pdata->nodeToTrigger = nodeToTrigger;
     pdata->name = "trigger:" + nodeToTrigger.getName();
   }
-
+#endif
   /*********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(boost::shared_ptr<VariableNetworkNode_data> _pdata) : pdata(_pdata) {}
@@ -186,68 +186,8 @@ namespace ChimeraTK {
         }
       }
     }
-    Application::getInstance().connect(*this, other);
+    // Application::getInstance().connect(*this, other);
     return *this;
-  }
-
-  /*********************************************************************************************************************/
-
-  VariableNetworkNode VariableNetworkNode::operator[](VariableNetworkNode trigger) {
-    // check if node already has a trigger
-    if(pdata->externalTrigger.getType() != NodeType::invalid) {
-      throw ChimeraTK::logic_error("Only one external trigger per variable network is allowed.");
-    }
-
-    // force direction of the node we are operating on to be feeding
-    if(pdata->direction.dir == VariableDirection::invalid) pdata->direction = {VariableDirection::feeding, false};
-    assert(pdata->direction.dir == VariableDirection::feeding);
-
-    // set direction of the triggering node to be feeding, if not yet defined
-    if(trigger.pdata->direction.dir == VariableDirection::invalid)
-      trigger.pdata->direction = {VariableDirection::feeding, false};
-
-    // check if already existing in map
-    if(pdata->nodeWithTrigger.count(trigger) > 0) {
-      return pdata->nodeWithTrigger[trigger];
-    }
-
-    // create copy of the node
-    pdata->nodeWithTrigger[trigger].pdata = boost::make_shared<VariableNetworkNode_data>(*pdata);
-
-    // add ourselves as a trigger receiver to the other network
-    if(!trigger.hasOwner()) {
-      Application::getInstance().createNetwork().addNode(trigger);
-    }
-    trigger.getOwner().addNodeToTrigger(pdata->nodeWithTrigger[trigger]);
-
-    // set flag and store pointer to other network
-    pdata->nodeWithTrigger[trigger].pdata->externalTrigger = trigger;
-
-    // return the new node
-    return pdata->nodeWithTrigger[trigger];
-  }
-
-  /*********************************************************************************************************************/
-
-  void VariableNetworkNode::addExternalTrigger(VariableNetworkNode trigger) {
-    // check if node already has a trigger
-    if(pdata->externalTrigger.getType() != NodeType::invalid) {
-      throw ChimeraTK::logic_error("Only one external trigger per variable network is allowed.");
-    }
-
-    // check direction
-    if(pdata->direction.dir != VariableDirection::feeding) {
-      throw ChimeraTK::logic_error("Only feeding variables can get a trigger.");
-    }
-
-    // add ourselves as a trigger receiver to the other network
-    if(!trigger.hasOwner()) {
-      Application::getInstance().createNetwork().addNode(trigger);
-    }
-    trigger.getOwner().addNodeToTrigger(*this);
-
-    // add trigger
-    pdata->externalTrigger = trigger;
   }
 
   /*********************************************************************************************************************/
@@ -263,27 +203,6 @@ namespace ChimeraTK {
     assert(pdata->type == NodeType::ControlSystem);
     assert(pdata->direction.dir == VariableDirection::feeding);
     pdata->direction = newDirection;
-  }
-
-  /*********************************************************************************************************************/
-
-  bool VariableNetworkNode::hasExternalTrigger() const {
-    return pdata->externalTrigger.getType() != NodeType::invalid;
-  }
-
-  /*********************************************************************************************************************/
-
-  VariableNetworkNode VariableNetworkNode::getExternalTrigger() {
-    assert(pdata->externalTrigger.getType() != NodeType::invalid);
-    return pdata->externalTrigger;
-  }
-
-  /*********************************************************************************************************************/
-
-  void VariableNetworkNode::removeExternalTrigger() {
-    assert(hasExternalTrigger());
-    pdata->externalTrigger.getOwner().removeNodeToTrigger(*this);
-    pdata->externalTrigger = {nullptr};
   }
 
   /*********************************************************************************************************************/

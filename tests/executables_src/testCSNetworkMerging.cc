@@ -20,8 +20,6 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
 
-  using Application::makeConnections;
-
   void defineConnections() override {}
 
   ctk::ControlSystemModule cs1;

@@ -44,9 +44,6 @@ struct TestApplication : public ctk::Application {
   }
   ~TestApplication() { shutdown(); }
 
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
-
   ctk::DeviceModule dev{this, "Dummy0"};
 };
 
@@ -56,9 +53,6 @@ struct TestApplication : public ctk::Application {
 struct TestApplicationConnectTo : ctk::Application {
   TestApplicationConnectTo() : Application("testSuite") {}
   ~TestApplicationConnectTo();
-
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
 
   ctk::PeriodicTrigger trigger{this, "trigger", ""};
 

@@ -114,7 +114,6 @@ struct TestApplication1 : ctk::Application {
   TestApplication1() : Application("testSuite") {}
   ~TestApplication1() { shutdown(); }
 
-
   ModuleT mod{this, "m1", ""};
 
   const std::string dummyCdd{"(ExceptionDummy?map=testDataValidityPropagation.map)"};

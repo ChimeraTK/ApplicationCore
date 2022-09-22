@@ -19,7 +19,7 @@ namespace ChimeraTK {
   template<typename UserType>
   class ThreadedFanOut : public FanOut<UserType>, public InternalModule {
    public:
-    ThreadedFanOut(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl, VariableNetwork& network,
+    ThreadedFanOut(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl,
         ConsumerImplementationPairs<UserType> const& consumerImplementationPairs);
 
     ~ThreadedFanOut();
@@ -39,7 +39,7 @@ namespace ChimeraTK {
     boost::thread _thread;
 
     /** Reference to VariableNetwork which is being realised by this FanOut. **/
-    VariableNetwork& _network;
+    // VariableNetwork& _network;
   };
 
   /********************************************************************************************************************/
@@ -49,7 +49,7 @@ namespace ChimeraTK {
   class ThreadedFanOutWithReturn : public ThreadedFanOut<UserType> {
    public:
     ThreadedFanOutWithReturn(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl,
-        VariableNetwork& network, ConsumerImplementationPairs<UserType> const& consumerImplementationPairs);
+        ConsumerImplementationPairs<UserType> const& consumerImplementationPairs);
 
     void setReturnChannelSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> returnChannelSlave);
 
@@ -64,7 +64,7 @@ namespace ChimeraTK {
 
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _returnChannelSlave;
 
-    using ThreadedFanOut<UserType>::_network;
+    // using ThreadedFanOut<UserType>::_network;
     using ThreadedFanOut<UserType>::readInitialValues;
     using EntityOwner::testableModeReached;
   };
@@ -74,8 +74,8 @@ namespace ChimeraTK {
 
   template<typename UserType>
   ThreadedFanOut<UserType>::ThreadedFanOut(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl,
-      VariableNetwork& network, ConsumerImplementationPairs<UserType> const& consumerImplementationPairs)
-  : FanOut<UserType>(feedingImpl), _network(network) {
+      ConsumerImplementationPairs<UserType> const& consumerImplementationPairs)
+  : FanOut<UserType>(feedingImpl) /*, _network(network)*/ {
     assert(feedingImpl->getAccessModeFlags().has(AccessMode::wait_for_new_data));
     for(auto el : consumerImplementationPairs) {
       FanOut<UserType>::addSlave(el.first, el.second);
@@ -157,9 +157,9 @@ namespace ChimeraTK {
 
   template<typename UserType>
   ThreadedFanOutWithReturn<UserType>::ThreadedFanOutWithReturn(
-      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl, VariableNetwork& network,
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl,
       ConsumerImplementationPairs<UserType> const& consumerImplementationPairs)
-  : ThreadedFanOut<UserType>(feedingImpl, network, consumerImplementationPairs) {
+  : ThreadedFanOut<UserType>(feedingImpl, consumerImplementationPairs) {
     for(auto el : consumerImplementationPairs) {
       // TODO Calling a virtual in the constructor seems odd,
       //      but works because we want this version's implementation

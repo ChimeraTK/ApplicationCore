@@ -104,9 +104,6 @@ struct TestApplication : public ctk::Application {
   }
   ~TestApplication() { shutdown(); }
 
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
-
   TestModule<T> testModule{this, "testModule", "The test module"};
   ctk::DeviceModule dev{this, "Dummy0"};
   ctk::DeviceModule dev2{this, dummySdm};

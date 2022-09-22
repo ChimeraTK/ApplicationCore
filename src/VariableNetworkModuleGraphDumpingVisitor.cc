@@ -24,6 +24,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void VariableNetworkModuleGraphDumpingVisitor::dispatch(const Application& t) {
+
     stream() << "digraph application {\n"
              << "  label=\"<" << boost::core::demangle(typeid(t).name()) << ">" << t.getName() << "\";\n"
              << "  tooltip=\"\";\n"
@@ -49,10 +50,12 @@ namespace ChimeraTK {
       pair.second->accept(*this);
     } */
 
+#if 0
     // collect edges (one edge per pair of connected modules)
     for(const auto& network : t.networkList) {
       network.accept(*this);
     }
+#endif
 
     // Correct directions of the edges: to get useful graphs, graphviz must be able to rank the modules properly
     // The Devices should have the first rank. (The ControlSystem is not represented by a node in the graph...)

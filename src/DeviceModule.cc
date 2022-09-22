@@ -48,15 +48,6 @@ namespace ChimeraTK {
         continue;
       }
 
-      // add trigger to feeding nodes, if necessary
-      if(node.getDirection().dir == VariableDirection::feeding && node.getMode() != UpdateMode::push &&
-          !node.hasExternalTrigger()) {
-        if(triggerPath.empty()) {
-          throw ChimeraTK::logic_error("DeviceModule '" + deviceAliasOrCDD + "': Feeding poll-typed register '" +
-              node.getRegisterName() + "' needs trigger but none provided.");
-        }
-      }
-
       // obtain register name relative to pathInDevice
       assert(boost::starts_with(node.getRegisterName(), pathInDevice));
       auto cut = pathInDevice.size();

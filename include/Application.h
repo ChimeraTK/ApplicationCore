@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CircularDependencyDetector.h"
+#include "ConnectionMaker.h"
 #include "Flags.h"
 #include "InternalModule.h"
 #include "Model.h"
@@ -134,11 +135,6 @@ namespace ChimeraTK {
 
     static size_t getAndResetDataLossCounter();
 
-    /** Convenience function for creating constants. See
-     * VariableNetworkNode::makeConstant() for details. */
-    template<typename UserType>
-    static VariableNetworkNode makeConstant(UserType value, size_t length = 1, bool makeFeeder = true);
-
     boost::shared_ptr<DeviceManager> getDeviceManager(const std::string& aliasOrCDD);
 
     LifeCycleState getLifeCycleState() const { return lifeCycleState; }
@@ -154,6 +150,7 @@ namespace ChimeraTK {
     friend class XMLGeneratorVisitor;
     friend struct StatusAggregator;
     friend struct detail::TestableMode;
+    friend class ConnectionMaker;
 
     template<typename UserType>
     friend class Accessor;
@@ -161,80 +158,9 @@ namespace ChimeraTK {
     template<typename UserType>
     friend class ExceptionHandlingDecorator;
 
-    /**
-     *  Find PVs which should be constant. The names of these PVs start with "@CONST@" followed by the value. If such
-     *  a name is found, a feeding constant variable is created.
-     */
-    void findConstantNodes();
-
-    /** Finalise connections, i.e. decide still-undecided details mostly for
-     * Device and ControlSystem variables */
-    void finaliseNetworks();
-
-    /** Check if all connections are valid. Internally called in initialise(). */
-    void checkConnections();
-
-    /** Register the connections to constants for previously unconnected nodes. */
-    void processUnconnectedNodes();
-
-    /** Make the connections between accessors as requested in the initialise()
-     * function. */
-    void makeConnections();
-
-    /** Apply optimisations to the VariableNetworks, e.g. by merging networks
-     * sharing the same feeder. */
-    void optimiseConnections();
-
-    /** Make the connections for a single network */
-    void makeConnectionsForNetwork(VariableNetwork& network);
-
     /** Scan for circular dependencies and mark all affected consuming nodes.
      *  This can only be done after all connections have been established. */
     void markCircularConsumers(VariableNetwork& variableNetwork);
-
-    /** UserType-dependent part of makeConnectionsForNetwork() */
-    template<typename UserType>
-    void typedMakeConnection(VariableNetwork& network);
-
-    /** Helper function to set consumer implementations in typedMakeConnection() */
-    template<typename UserType>
-    std::list<std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>, VariableNetworkNode>>
-        setConsumerImplementations(VariableNetworkNode const& feeder, std::list<VariableNetworkNode> consumers);
-
-    /** Functor class to call typedMakeConnection() with the right template
-     * argument. */
-    struct TypedMakeConnectionCaller {
-      TypedMakeConnectionCaller(Application& owner, VariableNetwork& network);
-
-      template<typename PAIR>
-      void operator()(PAIR&) const;
-
-      Application& _owner;
-      VariableNetwork& _network;
-      mutable bool done{false};
-    };
-
-    /** Register a connection between two VariableNetworkNode */
-    VariableNetwork& connect(VariableNetworkNode a, VariableNetworkNode b);
-
-    /** Perform the actual connection of an accessor to a device register */
-    template<typename UserType>
-    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> createDeviceVariable(VariableNetworkNode const& node);
-
-    /** Create a process variable with the PVManager, which is exported to the
-       control system adapter. nElements will be the array size of the created
-       variable. */
-    template<typename UserType>
-    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> createProcessVariable(VariableNetworkNode const& node);
-
-    /** Create a local process variable which is not exported. The first element
-     * in the returned pair will be the sender, the second the receiver. If two
-     * nodes are passed, the first node should be the sender and the second the
-     * receiver. */
-    template<typename UserType>
-    std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
-        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>>
-        createApplicationVariable(VariableNetworkNode const& node, VariableNetworkNode const& consumer = {});
 
     /** The model of the application */
     Model::RootProxy _model;
@@ -242,26 +168,9 @@ namespace ChimeraTK {
     /** List of InternalModules */
     std::list<boost::shared_ptr<InternalModule>> internalModuleList;
 
-    /** List of variable networks */
-    std::list<VariableNetwork> networkList;
-
-    /** List of constant variable nodes */
-    std::list<VariableNetworkNode> constantList;
-
     /** Map of trigger consumers to their corresponding TriggerFanOuts. Note: the
      * key is the ID (address) of the externalTiggerImpl. */
     std::map<const void*, boost::shared_ptr<TriggerFanOut>> triggerMap;
-
-    /** Map of control system type VariableNetworkNodes handed out by ControlSystemModules. This is used to hand out
-     *  the same node again if the same variable is requested another time, to ensure the connections are registered in
-     *  the same network. */
-    std::map<std::string, VariableNetworkNode> controlSystemVariables;
-
-    /** Create a new, empty network */
-    VariableNetwork& createNetwork();
-
-    /** Instance of VariableNetwork to indicate an invalid network */
-    VariableNetwork invalidNetwork;
 
     /** Map of DeviceManagers. The alias name resp. CDD is the key.*/
     std::map<std::string, boost::shared_ptr<DeviceManager>> _deviceManagerMap;
@@ -318,8 +227,6 @@ namespace ChimeraTK {
 
     friend class TestFacility; // needs access to testableMode variables
 
-    friend class ControlSystemModule; // needs access to controlSystemVariables
-
     template<typename UserType>
     friend class DebugPrintAccessorDecorator; // needs access to the idMap
     template<typename UserType>
@@ -356,14 +263,5 @@ namespace ChimeraTK {
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
   };
-
-  /*********************************************************************************************************************/
-
-  template<typename UserType>
-  VariableNetworkNode Application::makeConstant(UserType value, size_t length, bool makeFeeder) {
-    return VariableNetworkNode::makeConstant(makeFeeder, value, length);
-  }
-
-  /*********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

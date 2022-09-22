@@ -25,8 +25,6 @@ struct TestApp : public ctk::Application {
   TestApp(const std::string& name) : ctk::Application(name) {}
   ~TestApp() { shutdown(); }
 
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
   /*void defineConnections() {
     multiplierD.output >> csmod("myVarD");
     csmod["mySubModule"]("myVarSIn") >> pipe.input;
@@ -37,7 +35,6 @@ struct TestApp : public ctk::Application {
   ctk::ConstMultiplier<double> multiplierD{this, "multiplierD", "Some module", 42};
   ctk::ScalarPipe<std::string> pipe{this, "pipe", "unit", "Some pipe module"};
   ctk::ConstMultiplier<uint16_t, uint16_t, 120> multiplierU16{this, "multiplierU16", "Some other module", 42};
-  // ctk::ControlSystemModule csmod;
 };
 
 /*********************************************************************************************************************/

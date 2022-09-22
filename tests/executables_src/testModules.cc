@@ -61,9 +61,7 @@ struct OneModuleApp : public ctk::Application {
   OneModuleApp() : Application("myApp") {}
   ~OneModuleApp() { shutdown(); }
 
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
-  void defineConnections() {}         // the setup is done in the tests
+  void defineConnections() {} // the setup is done in the tests
 
   TestModule testModule{this, "testModule", "Module to test"};
 };
@@ -74,9 +72,6 @@ struct OneModuleApp : public ctk::Application {
 struct VectorOfModulesApp : public ctk::Application {
   VectorOfModulesApp(size_t nInstances) : Application("myApp"), _nInstances(nInstances) {}
   ~VectorOfModulesApp() { shutdown(); }
-
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
 
   void defineConnections() {
     for(size_t i = 0; i < _nInstances; ++i) {
@@ -149,9 +144,6 @@ struct VectorOfEverythingApp : public ctk::Application {
   explicit VectorOfEverythingApp(size_t nInstances) : Application("myApp"), _nInstances(nInstances) {}
   ~VectorOfEverythingApp() override { shutdown(); }
 
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
-
   /*void defineConnections() override {
     for(size_t i = 0; i < _nInstances; ++i) {
       std::string name = "testModule_" + std::to_string(i) + "_instance";
@@ -170,9 +162,6 @@ struct VectorOfEverythingApp : public ctk::Application {
 struct AssignModuleLaterApp : public ctk::Application {
   AssignModuleLaterApp() : Application("myApp") {}
   ~AssignModuleLaterApp() override { shutdown(); }
-
-  using Application::makeConnections; // we call makeConnections() manually in
-                                      // the tests to catch exceptions etc.
 
   /*void defineConnections() override {
     modGroupInstanceToAssignLater = VectorModuleGroup(this, "modGroupInstanceToAssignLater",
@@ -1152,7 +1141,6 @@ BOOST_AUTO_TEST_CASE(test_assignmentOperator) {
 
   BOOST_CHECK(app.getSubmoduleList().size() == 0);
   BOOST_CHECK_EQUAL(app.modGroupInstanceToAssignLater.getSubmoduleList().size(), 0);
-
 
   BOOST_CHECK(app.modGroupInstanceToAssignLater.getName() == "modGroupInstanceToAssignLater");
   BOOST_CHECK(app.modGroupInstanceToAssignLater.getDescription() ==

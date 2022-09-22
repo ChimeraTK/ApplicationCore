@@ -6,10 +6,13 @@
 #include "Model.h"
 #include "ModuleGroup.h"
 #include "ScalarAccessor.h"
+#include "TestFacility.h"
 #include "VariableGroup.h"
 
 #define BOOST_TEST_MODULE testApplicationPVModel
+#define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -30,7 +33,7 @@ struct MyModule : ctk::ApplicationModule {
 
   struct PointlessVariableGroup : ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
-    ctk::ScalarPollInput<float> readBack{this, "../readBack", "unit", "Some input scalar"};
+    ctk::ScalarPollInput<int> readBack{this, "../readBack", "unit", "Some input scalar"};
   } pointlessVariableGroup{this, "pointlessVariableGroup", ""};
 
   void mainLoop() override {}
@@ -45,7 +48,7 @@ struct TestModule : ctk::ApplicationModule {
 
   struct Need : ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
-    ctk::ScalarPollInput<float> tests{this, "tests", "unit", "Some poll input", {"B"}};
+    ctk::ScalarPollInput<int> tests{this, "tests", "unit", "Some poll input", {"B"}};
   } need{this, "need", ""};
 
   void mainLoop() override {}

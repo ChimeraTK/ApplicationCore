@@ -16,7 +16,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  /** Base class for ApplicationModule, DeviceModule and ControlSystemModule, to
+  /** Base class for ApplicationModule and DeviceModule, to
    * have a common interface for these module types. */
   class Module : public EntityOwner {
    public:

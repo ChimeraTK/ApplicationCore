@@ -29,7 +29,6 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() override { shutdown(); }
 
-
   struct TestModule : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
