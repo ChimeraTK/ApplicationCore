@@ -8,7 +8,8 @@ namespace ctk = ChimeraTK;
 
 struct TemplateModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
-  ~TemplateModule() {}
-
+  /*
+   * Add input/output definition
+   * */
   void mainLoop() override;
 };
