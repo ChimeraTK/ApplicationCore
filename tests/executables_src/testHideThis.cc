@@ -46,7 +46,7 @@ struct TestApp : public Application {
       }
     }
 
-  } a{this, "A", "", HierarchyModifier::hideThis};
+  } a{this, ".", ""};
 
   // This part was broken: Tried to hide itself like A, but failed. Result was B/B/input and B/output
   // Now is fixed
@@ -70,7 +70,7 @@ struct TestApp : public Application {
       }
     }
 
-  } b{this, "B", "", HierarchyModifier::hideThis}; // name it "HiddenB" here and it works
+  } b{this, ".", ""}; // name it "HiddenB" here and it works
 
   void defineConnections() override { findTag(".*").connectTo(cs); }
 };

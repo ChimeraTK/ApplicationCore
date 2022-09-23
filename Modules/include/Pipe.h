@@ -6,9 +6,6 @@
 #include "ArrayAccessor.h"
 #include "ScalarAccessor.h"
 
-#include <cmath>
-#include <limits>
-
 namespace ChimeraTK {
 
   /**
@@ -20,7 +17,7 @@ namespace ChimeraTK {
   struct ScalarPipe : public ApplicationModule {
     ScalarPipe(ModuleGroup* owner, const std::string& name, const std::string& unit, const std::string& description,
         const std::unordered_set<std::string>& tagsInput = {}, const std::unordered_set<std::string>& tagsOutput = {})
-    : ApplicationModule(owner, name, "", HierarchyModifier::hideThis) {
+    : ApplicationModule(owner, ".", "") {
       input.replace(ScalarPushInput<Type>(this, name, unit, description, tagsInput));
       output.replace(ScalarOutput<Type>(this, name, unit, description, tagsOutput));
     }
@@ -28,17 +25,17 @@ namespace ChimeraTK {
     ScalarPipe(ModuleGroup* owner, const std::string& inputName, const std::string& outputName, const std::string& unit,
         const std::string& description, const std::unordered_set<std::string>& tagsInput = {},
         const std::unordered_set<std::string>& tagsOutput = {})
-    : ApplicationModule(owner, inputName, "", HierarchyModifier::hideThis) {
+    : ApplicationModule(owner, ".", "") {
       input.replace(ScalarPushInput<Type>(this, inputName, unit, description, tagsInput));
       output.replace(ScalarOutput<Type>(this, outputName, unit, description, tagsOutput));
     }
 
-    ScalarPipe() {}
+    ScalarPipe() = default;
 
     ScalarPushInput<Type> input;
     ScalarOutput<Type> output;
 
-    void mainLoop() {
+    void mainLoop() override {
       while(true) {
         output = static_cast<Type>(input);
         output.write();
@@ -57,7 +54,7 @@ namespace ChimeraTK {
     ArrayPipe(ModuleGroup* owner, const std::string& name, const std::string& unit, size_t nElements,
         const std::string& description, const std::unordered_set<std::string>& tagsInput = {},
         const std::unordered_set<std::string>& tagsOutput = {})
-    : ApplicationModule(owner, name, description, HierarchyModifier::hideThis) {
+    : ApplicationModule(owner, ".", description) {
       input.replace(ArrayPushInput<Type>(this, name, unit, nElements, description, tagsInput));
       output.replace(ArrayOutput<Type>(this, name, unit, nElements, description, tagsOutput));
     }
@@ -65,17 +62,17 @@ namespace ChimeraTK {
     ArrayPipe(ModuleGroup* owner, const std::string& inputName, const std::string& outputName, const std::string& unit,
         size_t nElements, const std::string& description, const std::unordered_set<std::string>& tagsInput = {},
         const std::unordered_set<std::string>& tagsOutput = {})
-    : ApplicationModule(owner, inputName, description, HierarchyModifier::hideThis) {
+    : ApplicationModule(owner, ".", description) {
       input.replace(ArrayPushInput<Type>(this, inputName, unit, nElements, description, tagsInput));
       output.replace(ArrayOutput<Type>(this, outputName, unit, nElements, description, tagsOutput));
     }
 
-    ArrayPipe() {}
+    ArrayPipe() = default;
 
     ArrayPushInput<Type> input;
     ArrayOutput<Type> output;
 
-    void mainLoop() {
+    void mainLoop() override {
       std::vector<Type> temp(input.getNElements());
       while(true) {
         input.swap(temp);

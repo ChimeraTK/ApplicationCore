@@ -123,7 +123,7 @@ struct TestApplication1 : ctk::Application {
   const std::string dummyCdd{"(ExceptionDummy?map=testDataValidityPropagation.map)"};
 
   TriggerModule m2{this, "m2", ""};
-  ctk::ConnectingDeviceModule dev{this, dummyCdd, "/m2/o1", &initialiseDev};
+  ctk::DeviceModule dev{this, dummyCdd, "/m2/o1", &initialiseDev};
   std::atomic_bool deviceError = false;
   static void initialiseDev(ChimeraTK::DeviceManager*) {
     bool err = ((TestApplication1&)Application::getInstance()).deviceError;
@@ -143,7 +143,7 @@ struct TestApplication3 : ctk::Application {
   TriggerModule m2{this, "m2", ""};
 
   ctk::ControlSystemModule cs;
-  ctk::ConnectingDeviceModule device1{this, ExceptionDummyCDD, "/m2/o1"};
+  ctk::DeviceModule device1{this, ExceptionDummyCDD, "/m2/o1"};
 
   // ctk::DeviceModule device1{this, ExceptionDummyCDD};
   //   void defineConnections() override {

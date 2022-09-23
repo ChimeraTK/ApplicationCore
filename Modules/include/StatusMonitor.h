@@ -30,7 +30,6 @@ For more info see \ref statusmonitordoc
  * conditions reports four different states.
  */
 #include "ApplicationModule.h"
-#include "HierarchyModifyingGroup.h"
 #include "ScalarAccessor.h"
 #include "StatusAccessor.h"
 
@@ -50,9 +49,9 @@ namespace ChimeraTK {
 
    public:
     /** Disable/enable the entire status monitor */
-    ModifyHierarchy<ScalarPushInput<ChimeraTK::Boolean>> disable;
+    ScalarPushInput<ChimeraTK::Boolean> disable;
     /** Result of the monitor */
-    ModifyHierarchy<StatusOutput> status;
+    StatusOutput status;
 
    protected:
     DataValidity lastStatusValidity = DataValidity::ok;
@@ -79,13 +78,13 @@ namespace ChimeraTK {
     MaxMonitor() = default;
 
     /** Variable to monitor */
-    ModifyHierarchy<ScalarPushInput<T>> watch;
+    ScalarPushInput<T> watch;
 
     /** WARNING state to be reported if threshold is reached or exceeded*/
-    ModifyHierarchy<ScalarPushInput<T>> warningThreshold;
+    ScalarPushInput<T> warningThreshold;
 
     /** FAULT state to be reported if threshold is reached or exceeded*/
-    ModifyHierarchy<ScalarPushInput<T>> faultThreshold;
+    ScalarPushInput<T> faultThreshold;
 
     /** Disable the monitor. The status will always be OFF. You don't have to connect this input.
      *  When there is no feeder, ApplicationCore will connect it to a constant feeder with value 0, hence the monitor is
@@ -116,13 +115,13 @@ namespace ChimeraTK {
     MinMonitor() = default;
 
     /** Variable to monitor */
-    ModifyHierarchy<ScalarPushInput<T>> watch;
+    ScalarPushInput<T> watch;
 
     /** WARNING state to be reported if threshold is reached or exceeded*/
-    ModifyHierarchy<ScalarPushInput<T>> warningThreshold;
+    ScalarPushInput<T> warningThreshold;
 
     /** FAULT state to be reported if threshold is reached or exceeded*/
-    ModifyHierarchy<ScalarPushInput<T>> faultThreshold;
+    ScalarPushInput<T> faultThreshold;
 
     /** This is where state evaluation is done */
     void mainLoop();
@@ -156,19 +155,19 @@ namespace ChimeraTK {
     RangeMonitor() = default;
 
     /** Variable to monitor */
-    ModifyHierarchy<ScalarPushInput<T>> watch;
+    ScalarPushInput<T> watch;
 
     /** WARNING state to be reported if value is in between the upper and
      * lower threshold including the start and end of thresholds.
      */
-    ModifyHierarchy<ScalarPushInput<T>> warningLowerThreshold;
-    ModifyHierarchy<ScalarPushInput<T>> warningUpperThreshold;
+    ScalarPushInput<T> warningLowerThreshold;
+    ScalarPushInput<T> warningUpperThreshold;
 
     /** FAULT state to be reported if value is in between the upper and
      * lower threshold including the start and end of thresholds.
      */
-    ModifyHierarchy<ScalarPushInput<T>> faultLowerThreshold;
-    ModifyHierarchy<ScalarPushInput<T>> faultUpperThreshold;
+    ScalarPushInput<T> faultLowerThreshold;
+    ScalarPushInput<T> faultUpperThreshold;
 
     /** This is where state evaluation is done */
     void mainLoop();
@@ -197,8 +196,7 @@ namespace ChimeraTK {
      *  outputPath: qualified path of the status output variable
      *  parameterPath: qualified path of the VariableGroup holding the parameter variables requiredValue and disable
      *
-     *  All qualified paths can be either relative or absolute to the given owner. See HierarchyModifyingGroup for
-     *  more details.
+     *  All qualified paths can be either relative or absolute to the given owner.
      */
     ExactMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& parameterPath, const std::string& description,
@@ -213,8 +211,7 @@ namespace ChimeraTK {
      *  requiredValuePath: qualified path of the parameter variable requiredValue
      *  disablePath: qualified path of the parameter variable disable
      *
-     *  All qualified paths can be either relative or absolute to the given owner. See HierarchyModifyingGroup for
-     *  more details.
+     *  All qualified paths can be either relative or absolute to the given owner.
      */
     ExactMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
         const std::string& requiredValuePath, const std::string& disablePath, const std::string& description,
@@ -224,10 +221,10 @@ namespace ChimeraTK {
     ExactMonitor() = default;
 
     /** Variable to monitor */
-    ModifyHierarchy<ScalarPushInput<T>> watch;
+    ScalarPushInput<T> watch;
 
     /** The required value to compare with */
-    ModifyHierarchy<ScalarPushInput<T>> requiredValue;
+    ScalarPushInput<T> requiredValue;
 
     /** This is where state evaluation is done */
     void mainLoop();
@@ -262,16 +259,16 @@ namespace ChimeraTK {
   template<typename T>
   void MaxMonitor<T>::mainLoop() {
     // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
-    ReadAnyGroup group{watch.value, disable.value, warningThreshold.value, faultThreshold.value};
+    ReadAnyGroup group{watch, disable, warningThreshold, faultThreshold};
 
     while(true) {
-      if(disable.value) {
+      if(disable) {
         setStatus(StatusOutput::Status::OFF);
       }
-      else if(watch.value >= faultThreshold.value) {
+      else if(watch >= faultThreshold) {
         setStatus(StatusOutput::Status::FAULT);
       }
-      else if(watch.value >= warningThreshold.value) {
+      else if(watch >= warningThreshold) {
         setStatus(StatusOutput::Status::WARNING);
       }
       else {
@@ -306,16 +303,16 @@ namespace ChimeraTK {
   template<typename T>
   void MinMonitor<T>::mainLoop() {
     // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
-    ReadAnyGroup group{watch.value, disable.value, warningThreshold.value, faultThreshold.value};
+    ReadAnyGroup group{watch, disable, warningThreshold, faultThreshold};
 
     while(true) {
-      if(disable.value) {
+      if(disable) {
         setStatus(StatusOutput::Status::OFF);
       }
-      else if(watch.value <= faultThreshold.value) {
+      else if(watch <= faultThreshold) {
         setStatus(StatusOutput::Status::FAULT);
       }
-      else if(watch.value <= warningThreshold.value) {
+      else if(watch <= warningThreshold) {
         setStatus(StatusOutput::Status::WARNING);
       }
       else {
@@ -355,19 +352,19 @@ namespace ChimeraTK {
   template<typename T>
   void RangeMonitor<T>::mainLoop() {
     // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
-    ReadAnyGroup group{watch.value, disable.value, warningLowerThreshold.value, warningUpperThreshold.value,
-        faultLowerThreshold.value, faultUpperThreshold.value};
+    ReadAnyGroup group{
+        watch, disable, warningLowerThreshold, warningUpperThreshold, faultLowerThreshold, faultUpperThreshold};
 
     while(true) {
-      if(disable.value) {
+      if(disable) {
         setStatus(StatusOutput::Status::OFF);
       }
       // Check for fault limits first. Like this they supersede the warning,
       // even if they are stricter then the warning limits (mis-configuration)
-      else if(watch.value <= faultLowerThreshold.value || watch.value >= faultUpperThreshold.value) {
+      else if(watch <= faultLowerThreshold || watch >= faultUpperThreshold) {
         setStatus(StatusOutput::Status::FAULT);
       }
-      else if(watch.value <= warningLowerThreshold.value || watch.value >= warningUpperThreshold.value) {
+      else if(watch <= warningLowerThreshold || watch >= warningUpperThreshold) {
         setStatus(StatusOutput::Status::WARNING);
       }
       else {
@@ -400,13 +397,13 @@ namespace ChimeraTK {
   template<typename T>
   void ExactMonitor<T>::mainLoop() {
     // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
-    ReadAnyGroup group{watch.value, disable.value, requiredValue.value};
+    ReadAnyGroup group{watch, disable, requiredValue};
 
     while(true) {
-      if(disable.value) {
+      if(disable) {
         setStatus(StatusOutput::Status::OFF);
       }
-      else if(watch.value != requiredValue.value) {
+      else if(watch != requiredValue) {
         setStatus(StatusOutput::Status::FAULT);
       }
       else {

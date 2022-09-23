@@ -4,7 +4,6 @@
 
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
-#include "HierarchyModifyingGroup.h"
 #include "ScalarAccessor.h"
 
 #include <cmath>
@@ -15,7 +14,7 @@ namespace ChimeraTK {
   template<typename InputType, typename OutputType = InputType, size_t NELEMS = 1>
   struct ConstMultiplier : public ApplicationModule {
     ConstMultiplier(ModuleGroup* owner, const std::string& name, const std::string& description, double factor)
-    : ApplicationModule(owner, name, "", HierarchyModifier::hideThis), input(this, "input", "", NELEMS, description),
+    : ApplicationModule(owner, name, ""), input(this, "input", "", NELEMS, description),
       output(this, "output", "", NELEMS, description), _factor(factor) {}
 
     ArrayPushInput<InputType> input;
@@ -23,7 +22,7 @@ namespace ChimeraTK {
 
     double _factor;
 
-    void mainLoop() {
+    void mainLoop() override {
       while(true) {
         // scale value (with rounding, if integral type)
         if(!std::numeric_limits<OutputType>::is_integer) {
@@ -47,90 +46,67 @@ namespace ChimeraTK {
   struct Multiplier : public ApplicationModule {
     using ApplicationModule::ApplicationModule;
 
-    Multiplier(EntityOwner* owner, const std::string& inputPath, const std::string& inputUnit,
+    Multiplier(ModuleGroup* owner, const std::string& name, const std::string& factorName, const std::string& unitInput,
+        const std::string& unitOutput, const std::string& description,
+        const std::unordered_set<std::string>& tagsInput = {}, const std::unordered_set<std::string>& tagsOutput = {},
+        const std::unordered_set<std::string>& tagsFactor = {})
+    : ApplicationModule(owner, ".", "") {
+      input.replace(ArrayPushInput<InputType>(input, name, unitInput, NELEMS, description, tagsInput));
+      factor.replace(ScalarPushInput<double>(
+          input, factorName, "(" + unitOutput + ")/(" + unitInput + ")", description, tagsFactor));
+      output.replace(ArrayOutput<OutputType>(input, name, unitOutput, NELEMS, description, tagsOutput));
+    }
+    [[deprecated]] Multiplier(ModuleGroup* owner, const std::string& inputPath, const std::string& inputUnit,
         const std::string& factorPath, const std::string& outputPath, const std::string& outputUnit,
         const std::string& description, HierarchyModifier hierarchyModifier = HierarchyModifier::hideThis,
         const std::unordered_set<std::string>& inputTags = {}, const std::unordered_set<std::string>& factorTags = {},
         const std::unordered_set<std::string>& outputTags = {})
-    : ApplicationModule(owner, "Multiplier", "", hierarchyModifier), ig{this,
-                                                                         HierarchyModifyingGroup::getPathName(
-                                                                             inputPath),
-                                                                         ""},
-      fg{this, HierarchyModifyingGroup::getPathName(factorPath), ""}, og{this,
-                                                                          HierarchyModifyingGroup::getPathName(
-                                                                              outputPath),
-                                                                          ""} {
+    : ApplicationModule(owner, "Multiplier", "") {
+      applyHierarchyModifierToName(hierarchyModifier);
       std::string factorUnit = "(" + outputUnit + ")/(" + inputUnit + ")";
-      ig.input.replace(ArrayPushInput<InputType>(
-          &ig, HierarchyModifyingGroup::getUnqualifiedName(inputPath), inputUnit, NELEMS, description, inputTags));
-      fg.factor.replace(ScalarPushInput<InputType>(
-          &fg, HierarchyModifyingGroup::getUnqualifiedName(factorPath), factorUnit, description, factorTags));
-      og.output.replace(ArrayOutput<InputType>(
-          &og, HierarchyModifyingGroup::getUnqualifiedName(outputPath), outputUnit, NELEMS, description, outputTags));
-    }
-
-    Multiplier(EntityOwner* owner, const std::string& name, const std::string& factorName, const std::string& unitInput,
-        const std::string& unitOutput, const std::string& description,
-        const std::unordered_set<std::string>& tagsInput = {}, const std::unordered_set<std::string>& tagsOutput = {},
-        const std::unordered_set<std::string>& tagsFactor = {})
-    : ApplicationModule(owner, name, "", HierarchyModifier::hideThis), ig{this, ".", ""}, fg{this, ".", ""}, og{this,
-                                                                                                                 ".",
-                                                                                                                 ""} {
-      ig.input.replace(ArrayPushInput<InputType>(&ig, name, unitInput, NELEMS, description, tagsInput));
-      fg.factor.replace(ScalarPushInput<double>(
-          &fg, factorName, "(" + unitOutput + ")/(" + unitInput + ")", description, tagsFactor));
-      og.output.replace(ArrayOutput<OutputType>(&og, name, unitOutput, NELEMS, description, tagsOutput));
+      input.replace(ArrayPushInput<InputType>(this, inputPath, inputUnit, NELEMS, description, inputTags));
+      factor.replace(ScalarPushInput<InputType>(this, factorPath, factorUnit, description, factorTags));
+      output.replace(ArrayOutput<InputType>(this, outputPath, outputUnit, NELEMS, description, outputTags));
     }
 
     /** Note: This constructor is deprectated! */
     [[deprecated]] Multiplier(EntityOwner* owner, const std::string& name, const std::string& description)
-    : ApplicationModule(owner, name, "", HierarchyModifier::hideThis), ig{this, ".", ""}, fg{this, ".", ""}, og{this,
-                                                                                                                 ".",
-                                                                                                                 ""} {
-      ig.input.replace(ArrayPushInput<InputType>(&ig, "input", "", NELEMS, description));
-      fg.factor.replace(ScalarPushInput<double>(&fg, "factor", "", description));
-      og.output.replace(ArrayOutput<OutputType>(&og, "factor", "", NELEMS, description));
+    : ApplicationModule(owner, name, "", HierarchyModifier::hideThis) {
+      input.replace(ArrayPushInput<InputType>(this, "input", "", NELEMS, description));
+      factor.replace(ScalarPushInput<double>(this, "factor", "", description));
+      output.replace(ArrayOutput<OutputType>(this, "factor", "", NELEMS, description));
     }
 
-    struct : HierarchyModifyingGroup {
-      using HierarchyModifyingGroup::HierarchyModifyingGroup;
       ArrayPushInput<InputType> input;
-    } ig;
-    struct : HierarchyModifyingGroup {
-      using HierarchyModifyingGroup::HierarchyModifyingGroup;
       ScalarPushInput<double> factor;
-    } fg;
-    struct : HierarchyModifyingGroup {
-      using HierarchyModifyingGroup::HierarchyModifyingGroup;
       ArrayOutput<OutputType> output;
-    } og;
 
-    void mainLoop() {
-      ReadAnyGroup group{ig.input, fg.factor};
-      while(true) {
-        // scale value (with rounding, if integral type)
-        if(!std::numeric_limits<OutputType>::is_integer) {
-          for(size_t i = 0; i < NELEMS; ++i) og.output[i] = ig.input[i] * fg.factor;
+      void mainLoop() override {
+        ReadAnyGroup group{input, factor};
+        while(true) {
+          // scale value (with rounding, if integral type)
+          if constexpr(!std::numeric_limits<OutputType>::is_integer) {
+            for(size_t i = 0; i < NELEMS; ++i) output[i] = input[i] * factor;
+          }
+          else {
+            for(size_t i = 0; i < NELEMS; ++i) output[i] = std::round(input[i] * factor);
+          }
+
+          // write scaled value
+          output.write();
+
+          // wait for new input value (at the end, since we want to process the
+          // initial values first)
+          group.readAny();
         }
-        else {
-          for(size_t i = 0; i < NELEMS; ++i) og.output[i] = std::round(ig.input[i] * fg.factor);
-        }
-
-        // write scaled value
-        og.output.write();
-
-        // wait for new input value (at the end, since we want to process the
-        // initial values first)
-        group.readAny();
       }
-    }
   };
 
   template<typename InputType, typename OutputType = InputType, size_t NELEMS = 1>
   struct Divider : public ApplicationModule {
     using ApplicationModule::ApplicationModule;
-    Divider(EntityOwner* owner, const std::string& name, const std::string& description)
-    : ApplicationModule(owner, name, "", HierarchyModifier::hideThis), input(this, "input", "", NELEMS, description),
+    Divider(ModuleGroup* owner, const std::string& name, const std::string& description)
+    : ApplicationModule(owner, name, ""), input(this, "input", "", NELEMS, description),
       divider(this, "divider", "", "Divider to scale the input value with"),
       output(this, "output", "", NELEMS, description) {}
 
@@ -138,7 +114,7 @@ namespace ChimeraTK {
     ScalarPushInput<double> divider;
     ArrayOutput<OutputType> output;
 
-    void mainLoop() {
+    void mainLoop() override {
       ReadAnyGroup group{input, divider};
       while(true) {
         // scale value (with rounding, if integral type)

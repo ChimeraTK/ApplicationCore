@@ -43,9 +43,8 @@ typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, 
 template<typename T>
 struct TestModule : public ctk::ApplicationModule {
   TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
-      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string>& tags = {})
-  : ApplicationModule(owner, name, description, hierarchyModifier, tags) {}
+  : ApplicationModule(owner, name, description, tags) {}
 
   ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Description"};
 
@@ -616,13 +615,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo2, T, test_types) {
 }
 
 /*********************************************************************************************************************/
-/* Application for tests of ConnectingDeviceModule */
+/* Application for tests of DeviceModule */
 
 template<typename T>
 struct Deeper2 : ctk::ModuleGroup {
   using ctk::ModuleGroup::ModuleGroup;
 
-  ctk::ConnectingDeviceModule dev{this, "Dummy1", "/Deeper/hierarchies/trigger", nullptr, "/MyModule"};
+  ctk::DeviceModule dev{this, "Dummy1", "/Deeper/hierarchies/trigger", nullptr, "/MyModule"};
 
   struct Hierarchies : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -652,28 +651,26 @@ struct TestApplication3 : public ctk::Application {
 
 /*********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testConnectingDeviceModuleExceptions) {
-  std::cout << "testConnectingDeviceModuleExceptions" << std::endl;
+BOOST_AUTO_TEST_CASE(testDeviceModuleExceptions) {
+  std::cout << "testDeviceModuleExceptions" << std::endl;
 
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
   TestApplication3<int> app;
 
   // non-absolute trigger path
   BOOST_CHECK_THROW(
-      ctk::ConnectingDeviceModule(&app.deeper, "Dummy0", "unqualifiedName", nullptr, "/MyModule"), ctk::logic_error);
+      ctk::DeviceModule(&app.deeper, "Dummy0", "unqualifiedName", nullptr, "/MyModule"), ctk::logic_error);
+  BOOST_CHECK_THROW(ctk::DeviceModule(&app.deeper, "Dummy0", "relative/name", nullptr, "/MyModule"), ctk::logic_error);
   BOOST_CHECK_THROW(
-      ctk::ConnectingDeviceModule(&app.deeper, "Dummy0", "relative/name", nullptr, "/MyModule"), ctk::logic_error);
+      ctk::DeviceModule(&app.deeper, "Dummy0", "./also/relative", nullptr, "/MyModule"), ctk::logic_error);
   BOOST_CHECK_THROW(
-      ctk::ConnectingDeviceModule(&app.deeper, "Dummy0", "./also/relative", nullptr, "/MyModule"), ctk::logic_error);
-  BOOST_CHECK_THROW(
-      ctk::ConnectingDeviceModule(&app.deeper, "Dummy0", "../another/relative/name", nullptr, "/MyModule"),
-      ctk::logic_error);
+      ctk::DeviceModule(&app.deeper, "Dummy0", "../another/relative/name", nullptr, "/MyModule"), ctk::logic_error);
 }
 
 /*********************************************************************************************************************/
 
-BOOST_AUTO_TEST_CASE(testConnectingDeviceModule) {
-  std::cout << "testConnectingDeviceModule" << std::endl;
+BOOST_AUTO_TEST_CASE(testDeviceModule) {
+  std::cout << "testDeviceModule" << std::endl;
 
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
   TestApplication3<int> app;
@@ -729,7 +726,7 @@ BOOST_AUTO_TEST_CASE(testConnectingDeviceModule) {
   also.read();
   BOOST_CHECK_EQUAL(also, 12);
 
-  // test the second ConnectingDeviceModule with the trigger
+  // test the second DeviceModule with the trigger
   ctk::Device dev2;
   dev2.open("Dummy1");
   auto readback2 = dev2.getScalarRegisterAccessor<int>("/MyModule/readBack/DUMMY_WRITEABLE");
@@ -751,8 +748,7 @@ struct TestApplication4 : public ctk::Application {
   TestApplication4() : Application("testSuite") {}
   ~TestApplication4() override { shutdown(); }
 
-  std::vector<ctk::DeviceModule> devs;
-  std::vector<ctk::ConnectingDeviceModule> cdevs;
+  std::vector<ctk::DeviceModule> cdevs;
 
   TestModule2<int> m{this, "MyModule", ""};
   Deeper<int> deeper{this, "Deeper", ""};
@@ -764,42 +760,20 @@ struct TestApplication4 : public ctk::Application {
 
 BOOST_AUTO_TEST_CASE(testDeviceModuleMove) {
   std::cout << "testDeviceModuleMove" << std::endl;
-#if 0
-  // ordinary DeviceModule
-  {
-    TestApplication4 app;
-    ctk::DeviceModule dev{&app, "Dummy1"};
-    ctk::DeviceModule dev2{&app, "Dummy0"};
-    dev = std::move(dev2);              // test move-assign
-    app.devs.push_back(std::move(dev)); // test move-construct
-    app.devs.back()["MyModule"].connectTo(app.m);
-    ctk::TestFacility test{app};
-    test.runApplication();
-    ctk::Device dummy0("Dummy0");
-    auto readBack = dummy0.getScalarRegisterAccessor<int>("MyModule/readBack/DUMMY_WRITEABLE");
-    readBack = 432;
-    readBack.write();
-    app.m.readback.read();
-    BOOST_CHECK_EQUAL(app.m.readback, 432);
-  }
-#endif
 
-  // ConnectingDeviceModule
-  {
-    TestApplication4 app;
-    ctk::ConnectingDeviceModule dev{&app, "Dummy1"};
-    ctk::ConnectingDeviceModule dev2{&app, "Dummy0"};
-    dev = std::move(dev2);               // test move-assign
-    app.cdevs.push_back(std::move(dev)); // test move-construct
-    ctk::TestFacility test{app};
-    app.dumpConnections();
-    test.runApplication();
-    ctk::Device dummy0("Dummy0");
-    auto readBack = dummy0.getScalarRegisterAccessor<int>("MyModule/readBack/DUMMY_WRITEABLE");
-    readBack = 432;
-    readBack.write();
-    app.m.readback.read();
-    BOOST_CHECK_EQUAL(app.m.readback, 432);
-  }
+  TestApplication4 app;
+  ctk::DeviceModule dev{&app, "Dummy1"};
+  ctk::DeviceModule dev2{&app, "Dummy0"};
+  dev = std::move(dev2);               // test move-assign
+  app.cdevs.push_back(std::move(dev)); // test move-construct
+  ctk::TestFacility test{app};
+  app.dumpConnections();
+  test.runApplication();
+  ctk::Device dummy0("Dummy0");
+  auto readBack = dummy0.getScalarRegisterAccessor<int>("MyModule/readBack/DUMMY_WRITEABLE");
+  readBack = 432;
+  readBack.write();
+  app.m.readback.read();
+  BOOST_CHECK_EQUAL(app.m.readback, 432);
 }
 /*********************************************************************************************************************/

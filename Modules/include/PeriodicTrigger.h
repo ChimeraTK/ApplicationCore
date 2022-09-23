@@ -26,7 +26,6 @@ namespace ChimeraTK {
      * @param description The description of the PeriodicTrigger module
      * @param defaultPeriod Trigger period in milliseconds, used when the trigger period input process variable has the
      *        value 0.
-     * @param hierarchyModifier various flags whether to
      * @param tags List of tags to attach to all variables concerning the location in the virtual hierarchy
      * @param periodName Qualified name for the period input process variable
      * @param tickName Qualified names for the tick output process variable
@@ -34,26 +33,19 @@ namespace ChimeraTK {
      * For periodName and tickName, you can just give a variable name, a relative or an absolute path.
      */
     PeriodicTrigger(ModuleGroup* owner, const std::string& name, const std::string& description,
-        const uint32_t defaultPeriod = 1000, HierarchyModifier hierarchyModifier = HierarchyModifier::none,
-        const std::unordered_set<std::string>& tags = {}, std::string periodName = "period",
+        const uint32_t defaultPeriod = 1000, const std::unordered_set<std::string>& tags = {},
+        const std::string& periodName = "period", const std::string& tickName = "tick")
+    : ApplicationModule(owner, name, description, tags),
+      period(this, periodName, "ms", "period in milliseconds. The trigger is sent once per the specified duration."),
+      tick(this, tickName, "", "Timer tick. Counts the trigger number starting from 0."),
+      defaultPeriod_(defaultPeriod) {}
+
+    [[deprecated]] PeriodicTrigger(ModuleGroup* owner, const std::string& name, const std::string& description,
+        const uint32_t defaultPeriod, HierarchyModifier hierarchyModifier,
+        const std::unordered_set<std::string>& tags = {}, const std::string& periodName = "period",
         const std::string& tickName = "tick")
-    : ApplicationModule(owner, name, description, hierarchyModifier, tags),
-      hierarchyModifiedPeriod(
-          this, periodName, "ms", "period in milliseconds. The trigger is sent once per the specified duration."),
-      hierarchyModifiedTick(this, tickName, "", "Timer tick. Counts the trigger number starting from 0."),
-      period(hierarchyModifiedPeriod.value), tick(hierarchyModifiedTick.value), defaultPeriod_(defaultPeriod) {}
-
-    /** Move constructor */
-    PeriodicTrigger(PeriodicTrigger&& other)
-    : ApplicationModule(std::move(other)), hierarchyModifiedPeriod(std::move(other.hierarchyModifiedPeriod)),
-      hierarchyModifiedTick(std::move(other.hierarchyModifiedTick)), period(hierarchyModifiedPeriod.value),
-      tick(hierarchyModifiedTick.value), defaultPeriod_(other.defaultPeriod_) {}
-
-    /** Move assignment */
-    PeriodicTrigger& operator=(PeriodicTrigger&& rhs) {
-      this->~PeriodicTrigger();
-      new(this) PeriodicTrigger(std::move(rhs));
-      return *this;
+    : PeriodicTrigger(owner, name, description, defaultPeriod, tags, periodName, tickName) {
+      applyHierarchyModifierToName(hierarchyModifier);
     }
 
     // The references period and tick allow to directly access the input and output.
@@ -62,10 +54,8 @@ namespace ChimeraTK {
     // 2. Keep the code API compatible with the previous version which did not have the ModifyHierarchy but directly
     //    had a ScalarOutput named tick. Some older code which does not connect via the CS name yet but uses direct
     //    connection might break otherwise.
-    ModifyHierarchy<ScalarPollInput<uint32_t>> hierarchyModifiedPeriod;
-    ModifyHierarchy<ScalarOutput<uint64_t>> hierarchyModifiedTick;
-    ScalarPollInput<uint32_t>& period;
-    ScalarOutput<uint64_t>& tick;
+    ScalarPollInput<uint32_t> period;
+    ScalarOutput<uint64_t> tick;
 
     void prepare() override {
       setCurrentVersionNumber({});

@@ -115,11 +115,10 @@ namespace ChimeraTK {
    */
   struct ConfigReader : ApplicationModule {
     ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
-        HierarchyModifier hierarchyModifier = HierarchyModifier::none,
         const std::unordered_set<std::string>& tags = {});
 
-    ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
-        const std::unordered_set<std::string>& tags);
+    [[deprecated]] ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
+        HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags = {});
 
     ~ConfigReader() override;
     void mainLoop() override {}

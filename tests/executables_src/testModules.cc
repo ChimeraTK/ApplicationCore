@@ -95,15 +95,14 @@ struct VectorOfModulesApp : public ctk::Application {
 
 struct VectorModule : public ctk::ApplicationModule {
   VectorModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description, size_t nInstances,
-      bool eliminateHierarchy = false, const std::unordered_set<std::string>& tags = {})
-  : ctk::ApplicationModule(owner, name, description,
-        eliminateHierarchy ? ctk::HierarchyModifier::hideThis : ctk::HierarchyModifier::none, tags) {
+      const std::unordered_set<std::string>& tags = {})
+  : ctk::ApplicationModule(owner, name, description, tags) {
     for(size_t i = 0; i < nInstances; ++i) {
       std::string groupName = "testGroup_" + std::to_string(i);
       vectorOfSomeGroup.emplace_back(this, groupName, "Description 2");
     }
   }
-  VectorModule() {}
+  VectorModule() = default;
 
   ctk::ScalarPushInput<int> someInput{this, "nameOfSomeInput", "cm", "This is just some input for testing", {"A", "B"}};
   ctk::ArrayOutput<double> someOutput{this, "someOutput", "V", 1, "Description", {"A", "C"}};
@@ -115,7 +114,7 @@ struct VectorModule : public ctk::ApplicationModule {
     ctk::ScalarPushInput<uint8_t> foo{this, "foo", "counts", "Some counter", {"D"}};
   } anotherGroup{this, "anotherName", "Description of my other group"};
 
-  void mainLoop() {
+  void mainLoop() override {
     while(true) {
       someInput.read();
       int val = someInput;
@@ -130,8 +129,8 @@ struct VectorModule : public ctk::ApplicationModule {
 
 struct VectorModuleGroup : public ctk::ModuleGroup {
   VectorModuleGroup(ModuleGroup* owner, const std::string& name, const std::string& description, size_t nInstances,
-      ctk::HierarchyModifier modifier = ctk::HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
-  : ctk::ModuleGroup(owner, name, description, modifier, tags) {
+      const std::unordered_set<std::string>& tags = {})
+  : ctk::ModuleGroup(owner, name, description, tags) {
     for(size_t i = 0; i < nInstances; ++i) {
       std::string vovModuleName = "test_" + std::to_string(i);
       vectorOfVectorModule.emplace_back(this, vovModuleName, "Description 3", nInstances);

@@ -28,9 +28,8 @@ typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, 
 template<typename T>
 struct TestModule : public ctk::ApplicationModule {
   TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
-      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string>& tags = {})
-  : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}
+  : ApplicationModule(owner, name, description, tags), mainLoopStarted(2) {}
 
   ctk::ScalarOutput<T> feedingPush{this, "feedingPush", "MV/m", "Some output scalar"};
   ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Description"};

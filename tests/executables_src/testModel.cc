@@ -69,7 +69,7 @@ struct TestApplication : ctk::Application {
 
   TestModuleGroup deeperHierarchies{this, "Deeper/hierarchies", "The test module group", {"A"}};
   MyModule myModule{this, "MyModule", "ApplicationModule directly owned by app"};
-  ctk::ConnectingDeviceModule dev{this, "Dummy0", "/somepath/dummyTrigger"}; // test2.map
+  ctk::DeviceModule dev{this, "Dummy0", "/somepath/dummyTrigger"}; // test2.map
 };
 
 /*********************************************************************************************************************/
@@ -193,9 +193,9 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleProxy) {
 BOOST_AUTO_TEST_CASE(testProcessVariableProxy) {
   TestApplication app;
 
-  ChimeraTK::Model::ProcessVariableProxy proxy = app.myModule.actuator.getModel();
-  BOOST_TEST(proxy.getName() == "actuator");
-  auto nodes = proxy.getNodes();
+  ChimeraTK::Model::ProcessVariableProxy pv = app.myModule.actuator.getModel();
+  BOOST_TEST(pv.getName() == "actuator");
+  auto nodes = pv.getNodes();
   BOOST_TEST(nodes.size() == 2);
   BOOST_CHECK(nodes[0].getType() == ChimeraTK::NodeType::Device || nodes[1].getType() == ChimeraTK::NodeType::Device);
   BOOST_CHECK(
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(testProcessVariableProxy) {
       BOOST_FAIL("Wrong vertex type found");
     }
   };
-  bool found = proxy.visitByPath("../readBack", checker);
+  bool found = pv.visitByPath("../readBack", checker);
   BOOST_TEST(found == true);
 }
 
@@ -219,11 +219,11 @@ BOOST_AUTO_TEST_CASE(testDirectoryProxy) {
   TestApplication app;
 
   // get the directory. this relies on some other features...
-  auto proxy = app.myModule.getModel().visit(ChimeraTK::Model::returnDirectory, ChimeraTK::Model::getNeighbourDirectory,
+  auto dir = app.myModule.getModel().visit(ChimeraTK::Model::returnDirectory, ChimeraTK::Model::getNeighbourDirectory,
       ChimeraTK::Model::returnFirstHit(ChimeraTK::Model::DirectoryProxy{}));
-  assert(proxy.isValid());
+  assert(dir.isValid());
 
-  BOOST_TEST(proxy.getName() == "MyModule");
+  BOOST_TEST(dir.getName() == "MyModule");
 
   auto checker = [](auto proxy) {
     if constexpr(isVariable(proxy)) {
@@ -233,7 +233,7 @@ BOOST_AUTO_TEST_CASE(testDirectoryProxy) {
       BOOST_FAIL("Wrong vertex type found");
     }
   };
-  bool found = proxy.visitByPath("./readBack", checker);
+  bool found = dir.visitByPath("./readBack", checker);
   BOOST_TEST(found == true);
 }
 

@@ -39,10 +39,10 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   TestApplication<ctk::MaxMonitor<double_t>> app;
 
   // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
-  auto tags = ctk::VariableNetworkNode(app.monitor.status.value).getTags();
+  auto tags = ctk::VariableNetworkNode(app.monitor.status).getTags();
   BOOST_CHECK(tags.find(ctk::StatusOutput::tagStatusOutput) != tags.end());
 
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
   test.runApplication();
   // app.cs.dump();
 
@@ -170,10 +170,10 @@ BOOST_AUTO_TEST_CASE(testMaxMonitor) {
   BOOST_CHECK(status == static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // check that the tags are applied correctly
-  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("upperFaultThreshold") == app.monitor.faultThreshold.value);
-  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("upperWarningThreshold") == app.monitor.warningThreshold.value);
-  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("disable") == app.monitor.disable.value);
-  BOOST_CHECK(app.findTag("MON_OUTPUT")["output"]("path") == app.monitor.status.value);
+  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("upperFaultThreshold") == app.monitor.faultThreshold);
+  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("upperWarningThreshold") == app.monitor.warningThreshold);
+  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("disable") == app.monitor.disable);
+  BOOST_CHECK(app.findTag("MON_OUTPUT")["output"]("path") == app.monitor.status);
 }
 
 /*********************************************************************************************************************/
@@ -184,10 +184,10 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   TestApplication<ctk::MinMonitor<uint>> app;
 
   // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
-  auto tags = ctk::VariableNetworkNode(app.monitor.status.value).getTags();
+  auto tags = ctk::VariableNetworkNode(app.monitor.status).getTags();
   BOOST_CHECK(tags.find(ctk::StatusOutput::tagStatusOutput) != tags.end());
 
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
   test.runApplication();
   // app.dumpConnections();
 
@@ -317,10 +317,10 @@ BOOST_AUTO_TEST_CASE(testMinMonitor) {
   BOOST_CHECK(status == static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // check that the tags are applied correctly
-  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("lowerFaultThreshold") == app.monitor.faultThreshold.value);
-  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("lowerWarningThreshold") == app.monitor.warningThreshold.value);
-  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("disable") == app.monitor.disable.value);
-  BOOST_CHECK(app.findTag("MON_OUTPUT")["output"]("path") == app.monitor.status.value);
+  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("lowerFaultThreshold") == app.monitor.faultThreshold);
+  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("lowerWarningThreshold") == app.monitor.warningThreshold);
+  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("disable") == app.monitor.disable);
+  BOOST_CHECK(app.findTag("MON_OUTPUT")["output"]("path") == app.monitor.status);
 }
 
 /*********************************************************************************************************************/
@@ -330,10 +330,10 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   TestApplication<ctk::RangeMonitor<int>> app;
 
   // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
-  auto tags = ctk::VariableNetworkNode(app.monitor.status.value).getTags();
+  auto tags = ctk::VariableNetworkNode(app.monitor.status).getTags();
   BOOST_CHECK(tags.find(ctk::StatusOutput::tagStatusOutput) != tags.end());
 
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
   test.runApplication();
   // app.dumpConnections();
 
@@ -537,14 +537,12 @@ BOOST_AUTO_TEST_CASE(testRangeMonitor) {
   BOOST_CHECK(status == static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
 
   // check that the tags are applied correctly
-  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("lowerFaultThreshold") == app.monitor.faultLowerThreshold.value);
-  BOOST_CHECK(
-      app.findTag("MON_PARAMS")["parameters"]("lowerWarningThreshold") == app.monitor.warningLowerThreshold.value);
-  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("upperFaultThreshold") == app.monitor.faultUpperThreshold.value);
-  BOOST_CHECK(
-      app.findTag("MON_PARAMS")["parameters"]("upperWarningThreshold") == app.monitor.warningUpperThreshold.value);
-  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("disable") == app.monitor.disable.value);
-  BOOST_CHECK(app.findTag("MON_OUTPUT")["output"]("path") == app.monitor.status.value);
+  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("lowerFaultThreshold") == app.monitor.faultLowerThreshold);
+  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("lowerWarningThreshold") == app.monitor.warningLowerThreshold);
+  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("upperFaultThreshold") == app.monitor.faultUpperThreshold);
+  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("upperWarningThreshold") == app.monitor.warningUpperThreshold);
+  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("disable") == app.monitor.disable);
+  BOOST_CHECK(app.findTag("MON_OUTPUT")["output"]("path") == app.monitor.status);
 }
 
 /*********************************************************************************************************************/
@@ -554,10 +552,10 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   TestApplication<ctk::ExactMonitor<int64_t>> app;
 
   // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
-  auto tags = ctk::VariableNetworkNode(app.monitor.status.value).getTags();
+  auto tags = ctk::VariableNetworkNode(app.monitor.status).getTags();
   BOOST_CHECK(tags.find(ctk::StatusOutput::tagStatusOutput) != tags.end());
 
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
   test.runApplication();
   // app.dumpConnections();
 
@@ -636,9 +634,9 @@ BOOST_AUTO_TEST_CASE(testExactMonitor) {
   BOOST_CHECK(status == static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
 
   // check that the tags are applied correctly
-  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("requiredValue") == app.monitor.requiredValue.value);
-  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("disable") == app.monitor.disable.value);
-  BOOST_CHECK(app.findTag("MON_OUTPUT")["output"]("path") == app.monitor.status.value);
+  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("requiredValue") == app.monitor.requiredValue);
+  BOOST_CHECK(app.findTag("MON_PARAMS")["parameters"]("disable") == app.monitor.disable);
+  BOOST_CHECK(app.findTag("MON_OUTPUT")["output"]("path") == app.monitor.status);
 }
 
 /*********************************************************************************************************************/
@@ -650,7 +648,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitorInitialValuePropagation) {
 
   {
     TestApplication<ctk::MaxMonitor<float_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<float_t>("/parameters/upperFaultThreshold", 60.0);
     test.setScalarDefault<float_t>("/parameters/upperWarningThreshold", 50.0);
     test.setScalarDefault<float_t>("/input/path", 45.0);
@@ -662,7 +660,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitorInitialValuePropagation) {
   }
   {
     TestApplication<ctk::MaxMonitor<float_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<float_t>("/parameters/upperFaultThreshold", 60.0);
     test.setScalarDefault<float_t>("/parameters/upperWarningThreshold", 50.0);
     test.setScalarDefault<float_t>("/input/path", 55.0);
@@ -674,7 +672,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitorInitialValuePropagation) {
   }
   {
     TestApplication<ctk::MaxMonitor<float_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<float_t>("/parameters/upperFaultThreshold", 60.0);
     test.setScalarDefault<float_t>("/parameters/upperWarningThreshold", 50.0);
     test.setScalarDefault<float_t>("/input/path", 55.0);
@@ -686,7 +684,7 @@ BOOST_AUTO_TEST_CASE(testMaxMonitorInitialValuePropagation) {
   }
   {
     TestApplication<ctk::MaxMonitor<double_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<double_t>("/parameters/upperFaultThreshold", 60.0);
     test.setScalarDefault<double_t>("/parameters/upperWarningThreshold", 50.0);
     test.setScalarDefault<double_t>("/input/path", 65.0);
@@ -705,7 +703,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitorInitialValuePropagation) {
 
   {
     TestApplication<ctk::MinMonitor<double_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<double_t>("/parameters/lowerFaultThreshold", 50.0);
     test.setScalarDefault<double_t>("/parameters/lowerWarningThreshold", 60.0);
     test.setScalarDefault<double_t>("/input/path", 65.0);
@@ -717,7 +715,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitorInitialValuePropagation) {
   }
   {
     TestApplication<ctk::MinMonitor<float_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<float_t>("/parameters/lowerFaultThreshold", 50.0);
     test.setScalarDefault<float_t>("/parameters/lowerWarningThreshold", 60.0);
     test.setScalarDefault<float_t>("/input/path", 55.0);
@@ -729,7 +727,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitorInitialValuePropagation) {
   }
   {
     TestApplication<ctk::MinMonitor<float_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<float_t>("/parameters/lowerFaultThreshold", 50.0);
     test.setScalarDefault<float_t>("/parameters/lowerWarningThreshold", 60.0);
     test.setScalarDefault<float_t>("/input/path", 55.0);
@@ -741,7 +739,7 @@ BOOST_AUTO_TEST_CASE(testMinMonitorInitialValuePropagation) {
   }
   {
     TestApplication<ctk::MinMonitor<int32_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<int32_t>("/parameters/lowerFaultThreshold", 50);
     test.setScalarDefault<int32_t>("/parameters/lowerWarningThreshold", 60);
     test.setScalarDefault<int32_t>("/input/path", 45);
@@ -760,7 +758,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitorInitialValuePropagation) {
   // each {} defines new application and test facility
   {
     TestApplication<ctk::RangeMonitor<double_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<double_t>("/parameters/upperFaultThreshold", 80.0);
     test.setScalarDefault<double_t>("/parameters/upperWarningThreshold", 70.0);
     test.setScalarDefault<double_t>("/parameters/lowerWarningThreshold", 60.0);
@@ -774,7 +772,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitorInitialValuePropagation) {
   }
   {
     TestApplication<ctk::RangeMonitor<float_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<float_t>("/parameters/upperFaultThreshold", 80.0);
     test.setScalarDefault<float_t>("/parameters/upperWarningThreshold", 70.0);
     test.setScalarDefault<float_t>("/parameters/lowerWarningThreshold", 60.0);
@@ -788,7 +786,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitorInitialValuePropagation) {
   }
   {
     TestApplication<ctk::RangeMonitor<float_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<float_t>("/parameters/upperFaultThreshold", 80.0);
     test.setScalarDefault<float_t>("/parameters/upperWarningThreshold", 70.0);
     test.setScalarDefault<float_t>("/parameters/lowerWarningThreshold", 60.0);
@@ -802,7 +800,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitorInitialValuePropagation) {
   }
   {
     TestApplication<ctk::RangeMonitor<float_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<float_t>("/parameters/upperFaultThreshold", 80.0);
     test.setScalarDefault<float_t>("/parameters/upperWarningThreshold", 70.0);
     test.setScalarDefault<float_t>("/parameters/lowerWarningThreshold", 60.0);
@@ -816,7 +814,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitorInitialValuePropagation) {
   }
   {
     TestApplication<ctk::RangeMonitor<int32_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<int32_t>("/parameters/upperFaultThreshold", 80);
     test.setScalarDefault<int32_t>("/parameters/upperWarningThreshold", 70);
     test.setScalarDefault<int32_t>("/parameters/lowerWarningThreshold", 60);
@@ -830,7 +828,7 @@ BOOST_AUTO_TEST_CASE(testRangeMonitorInitialValuePropagation) {
   }
   {
     TestApplication<ctk::RangeMonitor<int32_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<int32_t>("/parameters/upperFaultThreshold", 80);
     test.setScalarDefault<int32_t>("/parameters/upperWarningThreshold", 70);
     test.setScalarDefault<int32_t>("/parameters/lowerWarningThreshold", 60);
@@ -851,7 +849,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitorInitialValuePropagation) {
 
   {
     TestApplication<ctk::ExactMonitor<double_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<double_t>("/parameters/requiredValue", 60.0);
     test.setScalarDefault<double_t>("/input/path", 60.0);
     test.setScalarDefault<ChimeraTK::Boolean>("/parameters/disable", false);
@@ -862,7 +860,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitorInitialValuePropagation) {
   }
   {
     TestApplication<ctk::ExactMonitor<float_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<float_t>("/parameters/requiredValue", 60.0);
     test.setScalarDefault<float_t>("/input/path", 55.0);
     test.setScalarDefault<ChimeraTK::Boolean>("/parameters/disable", true);
@@ -873,7 +871,7 @@ BOOST_AUTO_TEST_CASE(testExactMonitorInitialValuePropagation) {
   }
   {
     TestApplication<ctk::ExactMonitor<int32_t>> app;
-    ctk::TestFacility test;
+    ctk::TestFacility test(app);
     test.setScalarDefault<int32_t>("/parameters/requiredValue", 60);
     test.setScalarDefault<int32_t>("/input/path", 45);
     test.setScalarDefault<ChimeraTK::Boolean>("/parameters/disable", false);
@@ -896,7 +894,7 @@ BOOST_AUTO_TEST_CASE(testMonitorDataValidityPropagation) {
   std::cout << "testMonitorDataValidityPropagation" << std::endl;
 
   TestApplication<ctk::MaxMonitor<double_t>> app;
-  ctk::TestFacility test;
+  ctk::TestFacility test(app);
 
   test.runApplication();
 

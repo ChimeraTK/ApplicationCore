@@ -24,8 +24,8 @@ namespace ChimeraTK {
 
   void ScriptedInitHandler::doInit() {
     std::string output;
-    _scriptOutput.value = "";
-    _scriptOutput.value.write();
+    _scriptOutput = "";
+    _scriptOutput.write();
 
     try {
       bp::ipstream out;
@@ -37,15 +37,15 @@ namespace ChimeraTK {
       // you want to know what has already been printed.
       while(initScript.running() && std::getline(out, line)) {
         output += line + "\n";
-        _scriptOutput.value = output;
-        _scriptOutput.value.write();
+        _scriptOutput = output;
+        _scriptOutput.write();
       }
       initScript.wait();
 
       if(initScript.exit_code() != 0) {
         output += "!!! " + _deviceAlias + " initialisation FAILED!";
-        _scriptOutput.value = output;
-        _scriptOutput.value.write();
+        _scriptOutput = output;
+        _scriptOutput.write();
         if(!_lastFailed) {
           std::cerr << output << std::endl;
         }
@@ -55,8 +55,8 @@ namespace ChimeraTK {
       }
       else {
         output += _deviceAlias + " initialisation SUCCESS!";
-        _scriptOutput.value = output;
-        _scriptOutput.value.write();
+        _scriptOutput = output;
+        _scriptOutput.write();
         std::cerr << output << std::endl;
         _lastFailed = false;
       }

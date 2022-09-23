@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #define BOOST_TEST_MODULE testExceptionHandling
 #include "Application.h"
-#include "check_timeout.h"
-#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "ScriptedInitialisationHandler.h"
 #include "TestFacility.h"
@@ -23,7 +21,7 @@ struct TestApp : public Application {
   using Application::Application;
   ~TestApp() { shutdown(); }
 
-  ConnectingDeviceModule dev1{this, "Dummy0",
+  DeviceModule dev1{this, "Dummy0",
       "/MyModule/actuator"}; // pick one of the writable variables to AC knows that data type for the trigger
 
   // default name for the output variable (initScriptOutput)

@@ -7,6 +7,7 @@
 #include "ModuleGroup.h"
 #include "StatusAccessor.h"
 #include "StatusWithMessage.h"
+#include "VoidAccessor.h"
 
 #include <list>
 #include <string>
@@ -112,9 +113,8 @@ namespace ChimeraTK {
     /// in a warning Status.
     int getPriority(StatusOutput::Status status) const;
 
-    /// Allow runtime debugging (FIXME: use Void instead!)
-    ModifyHierarchy<ScalarPushInput<int>> debug{
-        this, "/Debug/statusAggregators", "", "Print debug info for all status aggregators once."};
+    /// Allow runtime debugging
+    VoidInput debug{this, "/Debug/statusAggregators", "", "Print debug info for all status aggregators once."};
   };
 
   /********************************************************************************************************************/

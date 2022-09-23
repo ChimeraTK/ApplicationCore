@@ -2,10 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "StatusAggregator.h"
 
-#include "ConfigReader.h"
-#include "ControlSystemModule.h"
-#include "DeviceModule.h"
-
 #include <list>
 #include <regex>
 
@@ -16,8 +12,8 @@ namespace ChimeraTK {
   StatusAggregator::StatusAggregator(ModuleGroup* owner, const std::string& name, const std::string& description,
       PriorityMode mode, const std::unordered_set<std::string>& tagsToAggregate,
       const std::unordered_set<std::string>& outputTags)
-  : ApplicationModule(owner, "aggregator", description, HierarchyModifier::hideThis, outputTags), _output(this, name),
-    _mode(mode), _tagsToAggregate(tagsToAggregate) {
+  : ApplicationModule(owner, ".", description, outputTags), _output(this, name), _mode(mode),
+    _tagsToAggregate(tagsToAggregate) {
     // check maximum size of tagsToAggregate
     if(tagsToAggregate.size() > 1) {
       throw ChimeraTK::logic_error("StatusAggregator: List of tagsToAggregate must contain at most one tag.");
@@ -233,7 +229,7 @@ namespace ChimeraTK {
       }
 
       // handle request for debug info
-      if(change == debug.value.getId()) {
+      if(change == debug.getId()) {
         static std::mutex debugMutex; // all aggregators trigger at the same time => lock for clean output
         std::unique_lock<std::mutex> lk(debugMutex);
 
