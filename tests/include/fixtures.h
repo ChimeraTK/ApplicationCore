@@ -60,16 +60,16 @@ struct DummyApplication : ChimeraTK::Application {
   constexpr static const char* ExceptionDummyCDD3 = "(ExceptionDummy:3?map=test.map)";
 
   DummyApplication() : Application("DummyApplication") {}
-  ~DummyApplication() { shutdown(); }
+  ~DummyApplication() override { shutdown(); }
 
-  PushModule pushModule{this, "pushModule", "", ChimeraTK::HierarchyModifier::none, {"DEV"}};
-  PollModule pollModule{this, "pollModule", "", ChimeraTK::HierarchyModifier::none, {"DEV"}};
-  OutputModule outputModule{this, "outputModule", "", ChimeraTK::HierarchyModifier::none, {"DEV"}};
-  PushModule pushModule2{this, "pushModule2", "With TriggerFanOut", ChimeraTK::HierarchyModifier::none, {"DEV2"}};
-  PushModule pushModule3{this, "pushModule3", "With ThreadedFanOut", ChimeraTK::HierarchyModifier::none, {"DEV2"}};
-  PollModule pollModule2{this, "pollModule2", "", ChimeraTK::HierarchyModifier::none, {"DEV2"}};
-  OutputModule outputModule2{this, "outputModule2", "", ChimeraTK::HierarchyModifier::none, {"DEV2"}};
-  PollModule pollModule3{this, "pollModule3", "", ChimeraTK::HierarchyModifier::none, {"DEV3"}};
+  PushModule pushModule{this, "pushModule", "", ChimeraTK::TAGS{"DEV"}};
+  PollModule pollModule{this, "pollModule", "", ChimeraTK::TAGS{"DEV"}};
+  OutputModule outputModule{this, "outputModule", "", ChimeraTK::TAGS{"DEV"}};
+  PushModule pushModule2{this, "pushModule2", "With TriggerFanOut", ChimeraTK::TAGS{"DEV2"}};
+  PushModule pushModule3{this, "pushModule3", "With ThreadedFanOut", ChimeraTK::TAGS{"DEV2"}};
+  PollModule pollModule2{this, "pollModule2", "", ChimeraTK::TAGS{"DEV2"}};
+  OutputModule outputModule2{this, "outputModule2", "", ChimeraTK::TAGS{"DEV2"}};
+  PollModule pollModule3{this, "pollModule3", "", ChimeraTK::TAGS{"DEV3"}};
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
   ChimeraTK::DeviceModule device2{this, ExceptionDummyCDD2};

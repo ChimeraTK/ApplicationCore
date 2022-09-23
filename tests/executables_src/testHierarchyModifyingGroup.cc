@@ -8,7 +8,6 @@
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ControlSystemModule.h"
-#include "HierarchyModifyingGroup.h"
 #include "ModuleGroup.h"
 #include "ScalarAccessor.h"
 #include "VariableGroup.h"
@@ -23,14 +22,14 @@ namespace ctk = ChimeraTK;
 
 /*********************************************************************************************************************/
 
-struct TestGroup : public ctk::HierarchyModifyingGroup {
-  using ctk::HierarchyModifyingGroup::HierarchyModifyingGroup;
+struct TestGroup : public ctk::VariableGroup {
+  using ctk::VariableGroup::VariableGroup;
   ctk::ScalarPushInput<int> myVar{this, "myVar", "MV/m", "Descrption"};
 };
 
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
-  ~TestApplication() { shutdown(); }
+  ~TestApplication() override { shutdown(); }
 
   ctk::ControlSystemModule cs;
 
@@ -54,7 +53,7 @@ struct TestApplication : public ctk::Application {
     struct ExtraHierarchy : public ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
       TestGroup l{this, "../../twoUp", "Two levels up"};
-    } extraHierarchy{this, "ExtraHierarchy", "Extra depth", ctk::HierarchyModifier::none, {"TagL"}};
+    } extraHierarchy{this, "ExtraHierarchy", "Extra depth", {"TagL"}};
 
     TestGroup m{this, "hierarchy/with/../dots/../../anywhere/./also/./single/./dots/..", "Dots everywhere", {"TagM"}};
     TestGroup n{this, ".", "This is like hideThis", {"TagN"}};
@@ -70,8 +69,7 @@ struct TestApplication : public ctk::Application {
         "Use like normal VariableGroup with MoveToRoot, and place inside a hidden to-level module", {"TagP"}};
     void mainLoop() override {}
   };
-  TestModuleHidden testModuleHidden{
-      this, "TestModuleHidden", "The hidden test module", ctk::HierarchyModifier::hideThis};
+  TestModuleHidden testModuleHidden{this, ".", "The hidden test module"};
 };
 
 /*********************************************************************************************************************/

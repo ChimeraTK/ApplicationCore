@@ -51,7 +51,7 @@ struct TestApplication : ctk::Application {
       ctk::ScalarPushInput<uint64_t> tick{this, "tick", "", ""};
       ctk::ScalarPollInput<int> read{this, "readBack", "", ""};
       ctk::ScalarOutput<int> set{this, "actuator", "", ""};
-    } vars{this, "vars", "", ctk::HierarchyModifier::hideThis};
+    } vars{this, ".", ""};
 
     std::atomic<ctk::DataValidity> readDataValidity;
 

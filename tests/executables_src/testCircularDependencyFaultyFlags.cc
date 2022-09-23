@@ -11,7 +11,6 @@
 
 #include "ApplicationModule.h"
 #include "DeviceModule.h"
-#include "HierarchyModifyingGroup.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
 #include "VariableGroup.h"
@@ -38,11 +37,9 @@ struct TestModuleBase : ctk::ApplicationModule {
   ctk::ScalarOutput<int> circularOutput1{this, "circularOutput1", "", ""};
 
   TestModuleBase(const std::string& inputName, const std::string& outputName, ctk::ModuleGroup* owner,
-      const std::string& name, const std::string& description,
-      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none)
-  : ApplicationModule(owner, name, description, hierarchyModifier),
-    inputGroup(this, inputName, "", ctk::HierarchyModifier::oneLevelUp),
-    outputGroup(this, outputName, "", ctk::HierarchyModifier::oneLevelUp) {}
+      const std::string& name, const std::string& description)
+  : ApplicationModule(owner, name, description), inputGroup(this, "../" + inputName, ""),
+    outputGroup(this, "../" + outputName, "") {}
 
   void mainLoop() override {
     while(true) {
@@ -129,21 +126,21 @@ struct ModuleC : TestModuleBase {
 /// Involve the DeviceModule. Here are some variables from a test device.
 struct ModuleD : TestModuleBase {
   using TestModuleBase::TestModuleBase;
-  ctk::ModifyHierarchy<ctk::ScalarPollInput<int>> i1{this, "/m1/i1", "", ""};
-  ctk::ModifyHierarchy<ctk::ScalarPollInput<int>> i3{this, "/m1/i3", "", ""};
-  ctk::ModifyHierarchy<ctk::ScalarOutput<int>> o1{this, "/m1/o1", "", ""};
+  ctk::ScalarPollInput<int> i1{this, "/m1/i1", "", ""};
+  ctk::ScalarPollInput<int> i3{this, "/m1/i3", "", ""};
+  ctk::ScalarOutput<int> o1{this, "/m1/o1", "", ""};
 };
 
 struct TestApplication1 : ctk::Application {
   TestApplication1() : Application("testSuite") {}
-  ~TestApplication1() { shutdown(); }
+  ~TestApplication1() override { shutdown(); }
 
   ModuleA A{"D", "B", this, "A", ""}; // reads like: This is A, gets input from D and writes to B
   TestModuleBase B{"A", "C", this, "B", ""};
   ModuleC C{"B", "D", this, "C", ""};
   ModuleD D{"C", "A", this, "D", ""};
 
-  ctk::ConnectingDeviceModule device{this, "(dummy?map=testDataValidity1.map)"};
+  ctk::DeviceModule device{this, "(dummy?map=testDataValidity1.map)"};
 };
 
 template<typename APP_TYPE>
@@ -230,9 +227,9 @@ BOOST_AUTO_TEST_CASE(TestCircularInputDetection) {
   BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.circularOutput1).isCircularInput() == false);
   BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.outputGroup.circularOutput2).isCircularInput() == false);
   // although there are inputs from and outputs to the same device this is not part of the circular network
-  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.i1.value).isCircularInput() == false);
-  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.i3.value).isCircularInput() == false);
-  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.o1.value).isCircularInput() == false);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.i1).isCircularInput() == false);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.i3).isCircularInput() == false);
+  BOOST_CHECK(static_cast<ctk::VariableNetworkNode>(app.D.o1).isCircularInput() == false);
 }
 
 /** \anchor dataValidity_test_OneInvalidVariable
@@ -486,7 +483,7 @@ struct AA : TestModuleBase2 {
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromAA{this, "fromAA", "", ""};
-  } outputGroup{this, "BB", "", ctk::HierarchyModifier::oneLevelUp};
+  } outputGroup{this, "../BB", ""};
 
   void prepare() override { writeAll(); } // break circular waiting for initial values
   void mainLoop() override {}
@@ -500,12 +497,12 @@ struct BB : TestModuleBase2 {
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromBB{this, "fromBB", "", ""};
-  } outputGroup{this, "CC", "", ctk::HierarchyModifier::oneLevelUp};
+  } outputGroup{this, "../CC", ""};
 
   struct OutputGroup2 : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromBB{this, "fromBB", "", ""};
-  } outputGroup2{this, "EE", "", ctk::HierarchyModifier::oneLevelUp};
+  } outputGroup2{this, "../EE", ""};
 };
 
 struct EE : TestModuleBase2 {
@@ -516,7 +513,7 @@ struct EE : TestModuleBase2 {
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromEE{this, "fromEE", "", ""};
-  } outputGroup{this, "AA", "", ctk::HierarchyModifier::oneLevelUp};
+  } outputGroup{this, "../AA", ""};
 };
 
 struct CC : TestModuleBase2 {
@@ -527,12 +524,12 @@ struct CC : TestModuleBase2 {
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromCC{this, "fromCC", "", ""};
-  } outputGroup{this, "DD", "", ctk::HierarchyModifier::oneLevelUp};
+  } outputGroup{this, "../DD", ""};
 
   struct OutputGroup2 : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromCC{this, "fromCC", "", ""};
-  } outputGroup2{this, "FF", "", ctk::HierarchyModifier::oneLevelUp};
+  } outputGroup2{this, "../FF", ""};
 };
 
 struct DD : TestModuleBase2 {
@@ -544,7 +541,7 @@ struct DD : TestModuleBase2 {
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromDD{this, "fromDD", "", ""};
-  } outputGroup{this, "AA", "", ctk::HierarchyModifier::oneLevelUp};
+  } outputGroup{this, "../AA", ""};
 };
 
 struct FF : TestModuleBase2 {
@@ -555,7 +552,7 @@ struct FF : TestModuleBase2 {
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromFF{this, "fromFF", "", ""};
-  } outputGroup{this, "DD", "", ctk::HierarchyModifier::oneLevelUp};
+  } outputGroup{this, "../DD", ""};
 };
 
 struct GG : TestModuleBase2 {
@@ -566,7 +563,7 @@ struct GG : TestModuleBase2 {
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromGG{this, "fromGG", "", ""};
-  } outputGroup{this, "HH", "", ctk::HierarchyModifier::oneLevelUp};
+  } outputGroup{this, "../HH", ""};
 
   void prepare() override { writeAll(); } // break circular waiting for initial values
   void mainLoop() override {}
@@ -580,7 +577,7 @@ struct HH : TestModuleBase2 {
   struct /*OutputGroup*/ : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<int> fromHH{this, "fromHH", "", ""};
-  } outputGroup{this, "GG", "", ctk::HierarchyModifier::oneLevelUp};
+  } outputGroup{this, "../GG", ""};
 };
 
 struct TestApplication2 : ctk::Application {

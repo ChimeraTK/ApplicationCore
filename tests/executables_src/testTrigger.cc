@@ -63,9 +63,8 @@ class TestTransferGroupDummy : public ChimeraTK::DummyBackend {
 template<typename T>
 struct TestModule : public ctk::ApplicationModule {
   TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
-      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string>& tags = {})
-  : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}
+  : ApplicationModule(owner, name, description, tags), mainLoopStarted(2) {}
 
   ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Description"};
   ctk::ScalarPushInput<T> consumingPush2{this, "consumingPush2", "MV/m", "Description"};

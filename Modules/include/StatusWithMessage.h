@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "HierarchyModifyingGroup.h"
 #include "ScalarAccessor.h"
 #include "StatusAccessor.h"
 #include "VariableGroup.h"
@@ -18,14 +17,12 @@ namespace ChimeraTK {
    *  A VariableGroup for error status and message reporting.
    *  Convenience methods ensure that status and message are updated consistently.
    */
-  struct StatusWithMessage : HierarchyModifyingGroup {
+  struct StatusWithMessage : VariableGroup {
     StatusWithMessage(VariableGroup* owner, std::string qualifiedStatusVariableName,
         const std::string& description = "", const std::unordered_set<std::string>& tags = {})
-    : HierarchyModifyingGroup(
-          owner, HierarchyModifyingGroup::getPathName(qualifiedStatusVariableName), description, tags),
-      _status(this, HierarchyModifyingGroup::getUnqualifiedName(qualifiedStatusVariableName), description),
-      _message(this, HierarchyModifyingGroup::getUnqualifiedName(qualifiedStatusVariableName) + "_message", "",
-          "status message") {}
+    : VariableGroup(owner, Utilities::getPathName(qualifiedStatusVariableName), description, tags),
+      _status(this, Utilities::getUnqualifiedName(qualifiedStatusVariableName), description),
+      _message(this, Utilities::getUnqualifiedName(qualifiedStatusVariableName) + "_message", "", "status message") {}
     StatusWithMessage() {}
 
     /// to be use only for status != OK
@@ -55,11 +52,20 @@ namespace ChimeraTK {
 
     /// Construct StatusWithMessageInput which reads only status, not message
     StatusWithMessageInput(ApplicationModule* owner, std::string name, const std::string& description,
-        HierarchyModifier hierarchyModifier = HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
-    : VariableGroup(owner, name, "", hierarchyModifier, tags), _status(this, name, description) {
+        const std::unordered_set<std::string>& tags = {})
+    : VariableGroup(owner, name, "", tags), _status(this, name, description) {
       hasMessageSource = false;
       _statusNameLong = description;
     }
+
+    [[deprecated]] StatusWithMessageInput(ApplicationModule* owner, std::string name, const std::string& description,
+        HierarchyModifier hierarchyModifier = HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
+    : VariableGroup(owner, name, "", tags), _status(this, name, description) {
+      applyHierarchyModifierToName(hierarchyModifier);
+      hasMessageSource = false;
+      _statusNameLong = description;
+    }
+
     /// read associated status message from given (fully qualified) msgInputName.
     ///  If not given, it is selected automatically by the naming convention
     void setMessageSource(std::string msgInputName = "") {

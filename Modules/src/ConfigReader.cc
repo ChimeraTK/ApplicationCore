@@ -67,16 +67,15 @@ namespace ChimeraTK {
    public:
     // Note: This has hideThis as default modifier, because we want the level of
     // the ModuleTree to vanish in its owner.
-    ModuleTree(VariableGroup* owner, std::string name, std::string description,
-        HierarchyModifier modifier = HierarchyModifier::hideThis)
-    : VariableGroup{owner, name, description, modifier} {}
+    ModuleTree(VariableGroup* owner, std::string name, std::string description)
+    : VariableGroup{owner, name, description} {}
 
     ChimeraTK::Module* lookup(std::string flattened_module_name);
 
    private:
     void addChildNode(std::string name) {
       if(_children.find(name) == _children.end()) {
-        _children[name] = std::make_unique<ModuleTree>(this, name, "", HierarchyModifier::none);
+        _children[name] = std::make_unique<ModuleTree>(this, name, "");
       }
     }
 
@@ -264,8 +263,9 @@ namespace ChimeraTK {
 
   ConfigReader::ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
       HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
-  : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", hierarchyModifier, tags),
-    _fileName(fileName), _moduleTree(std::make_unique<ModuleTree>(this, name + "-ModuleTree", "")) {
+  : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", tags), _fileName(fileName),
+    _moduleTree(std::make_unique<ModuleTree>(this, ".", "")) {
+    applyHierarchyModifierToName(hierarchyModifier);
     construct(fileName);
   }
 
@@ -273,8 +273,8 @@ namespace ChimeraTK {
 
   ConfigReader::ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
       const std::unordered_set<std::string>& tags)
-  : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", HierarchyModifier::none, tags),
-    _fileName(fileName), _moduleTree(std::make_unique<ModuleTree>(this, name + "-ModuleTree", "")) {
+  : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", tags), _fileName(fileName),
+    _moduleTree(std::make_unique<ModuleTree>(this, ".", "")) {
     construct(fileName);
   }
 

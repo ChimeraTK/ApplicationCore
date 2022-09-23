@@ -30,14 +30,17 @@ namespace ChimeraTK {
 
   ModuleGroup::ModuleGroup(EntityOwner* owner, const std::string& name, const std::string& description,
       HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
-  : ModuleGroup(dynamic_cast<ModuleGroup*>(owner), name, description, hierarchyModifier, tags) {}
+  : ModuleGroup(dynamic_cast<ModuleGroup*>(owner), name, description, tags) {
+    applyHierarchyModifierToName(hierarchyModifier);
+  }
 
   /********************************************************************************************************************/
 
   ModuleGroup::ModuleGroup(EntityOwner* owner, const std::string& name, const std::string& description,
       bool eliminateHierarchy, const std::unordered_set<std::string>& tags)
-  : ModuleGroup(dynamic_cast<ModuleGroup*>(owner), name, description,
-        eliminateHierarchy ? HierarchyModifier::hideThis : HierarchyModifier::none, tags) {}
+  : ModuleGroup(dynamic_cast<ModuleGroup*>(owner), name, description, tags) {
+    applyHierarchyModifierToName(eliminateHierarchy ? HierarchyModifier::hideThis : HierarchyModifier::none);
+  }
 
   /********************************************************************************************************************/
 

@@ -29,17 +29,17 @@ struct TestApplication : ctk::Application {
   TestApplication() : Application("testApp") {}
   ~TestApplication() override { shutdown(); }
 
-  StatusGenerator s{this, "s", "Status", ctk::HierarchyModifier::hideThis};
+  StatusGenerator s{this, ".", "Status"};
 
   struct OuterGroup : ctk::ModuleGroup {
     using ctk::ModuleGroup::ModuleGroup;
 
-    StatusGenerator s1{this, "s1", "Status 1", ctk::HierarchyModifier::hideThis};
-    StatusGenerator s2{this, "s2", "Status 2", ctk::HierarchyModifier::hideThis};
+    StatusGenerator s1{this, ".", "Status 1"};
+    StatusGenerator s2{this, ".", "Status 2"};
 
     struct InnerGroup : ctk::ModuleGroup {
       using ctk::ModuleGroup::ModuleGroup;
-      StatusGenerator s{this, "s", "Status", ctk::HierarchyModifier::hideThis};
+      StatusGenerator s{this, ".", "Status"};
       StatusGenerator deep{this, "deep", "Status"};
     };
     InnerGroup innerGroup1{this, "InnerGroup1", ""};
@@ -107,8 +107,8 @@ struct TestPrioApplication : ctk::Application {
   TestPrioApplication() : Application("testApp") {}
   ~TestPrioApplication() override { shutdown(); }
 
-  StatusGenerator s1{this, "s1", "Status 1", ctk::HierarchyModifier::hideThis};
-  StatusGenerator s2{this, "s2", "Status 2", ctk::HierarchyModifier::hideThis};
+  StatusGenerator s1{this, ".", "Status 1"};
+  StatusGenerator s2{this, ".", "Status 2"};
 
   ctk::StatusAggregator aggregator;
 };
@@ -213,13 +213,13 @@ struct TestApplication2Levels : ctk::Application {
   TestApplication2Levels() : Application("testApp") {}
   ~TestApplication2Levels() override { shutdown(); }
 
-  StatusGenerator s{this, "s", "Status", ctk::HierarchyModifier::hideThis};
+  StatusGenerator s{this, ".", "Status"};
 
   struct OuterGroup : ctk::ModuleGroup {
     using ctk::ModuleGroup::ModuleGroup;
 
-    StatusGenerator s1{this, "s1", "Status 1", ctk::HierarchyModifier::hideThis};
-    StatusGenerator s2{this, "s2", "Status 2", ctk::HierarchyModifier::hideThis};
+    StatusGenerator s1{this, ".", "Status 1"};
+    StatusGenerator s2{this, ".", "Status 2"};
 
     ctk::StatusAggregator extraAggregator{
         this, "/Aggregated/extraStatus", "aggregated status description", ctk::StatusAggregator::PriorityMode::ofwk};
@@ -293,8 +293,8 @@ struct TestApplicationTags : ctk::Application {
   struct OuterGroup : ctk::ModuleGroup {
     using ctk::ModuleGroup::ModuleGroup;
 
-    StatusGenerator sA{this, "sA", "Status 1", ctk::HierarchyModifier::hideThis, {"A"}};
-    StatusGenerator sAB{this, "sAB", "Status 2", ctk::HierarchyModifier::hideThis, {"A", "B"}};
+    StatusGenerator sA{this, ".", "Status 1", ctk::TAGS{"A"}};
+    StatusGenerator sAB{this, ".", "Status 2", {"A", "B"}};
 
     ctk::StatusAggregator aggregateA{
         this, "aggregateA", "aggregated status description", ctk::StatusAggregator::PriorityMode::fwko, {"A"}};

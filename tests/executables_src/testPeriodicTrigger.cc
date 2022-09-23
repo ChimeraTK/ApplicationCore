@@ -23,8 +23,7 @@ struct TestApplication : Application {
   TestApplication() : Application("myTestApp") {}
   ~TestApplication() { shutdown(); }
 
-  PeriodicTrigger p{
-      this, "SomeTimer", "", 1000, ChimeraTK::HierarchyModifier::none, {}, "/Config/timerPeriod", "../tickTock"};
+  PeriodicTrigger p{this, "SomeTimer", "", 1000, {}, "/Config/timerPeriod", "../tickTock"};
   TestModule m{this, "SomeModule", ""};
 };
 

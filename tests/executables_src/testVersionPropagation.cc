@@ -4,12 +4,7 @@
 
 #include "ApplicationModule.h"
 #include "check_timeout.h"
-#include "ControlSystemModule.h"
-#include "DeviceModule.h"
 #include "fixtures.h"
-#include "Flags.h"
-#include "TestFacility.h"
-#include "VariableGroup.h"
 
 #include <ChimeraTK/ExceptionDummyBackend.h>
 #include <ChimeraTK/RegisterPath.h>

@@ -13,6 +13,10 @@ namespace ChimeraTK {
    *  Deprecated class for backwards compatibility ownly. Use VariableGroup instead!
    */
   struct HierarchyModifyingGroup : VariableGroup {
+    [[deprecated]] HierarchyModifyingGroup(VariableGroup* owner, const std::string& name,
+        const std::string& description, const std::unordered_set<std::string>& tags = {})
+    : VariableGroup(owner, name, description, tags) {}
+
     using VariableGroup::VariableGroup;
 
     [[deprecated]] static std::string getUnqualifiedName(const std::string& qualifiedName);

@@ -377,8 +377,8 @@ struct Module2 : ctk::ApplicationModule {
   struct : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarPushInput<int> result{this, "Module1_result", "", "", {"CS"}};
-  } m1VarsFromCS{this, "m1", "", ctk::HierarchyModifier::oneLevelUp}; // "m1" being in there
-                                                                      // not good for a general case
+  } m1VarsFromCS{this, "../m1", ""}; // "m1" being in there
+                                     // not good for a general case
   ctk::ScalarOutput<int> result{this, "Module2_result", "", "", {"CS"}};
 
   void mainLoop() override {

@@ -22,9 +22,8 @@ namespace ctk = ChimeraTK;
 
 struct TestModule : public ctk::ApplicationModule {
   TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
-      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string>& tags = {})
-  : ApplicationModule(owner, name, description, hierarchyModifier, tags), mainLoopStarted(2) {}
+  : ApplicationModule(owner, name, description, tags), mainLoopStarted(2) {}
 
   struct MixedGroup : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
