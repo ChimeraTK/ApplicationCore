@@ -56,7 +56,7 @@ namespace ChimeraTK {
   ApplicationModule& ApplicationModule::operator=(ApplicationModule&& other) {
     assert(!moduleThread.joinable()); // if the thread is already running,
                                       // moving is no longer allowed!
-    ModuleImpl::operator=(std::move(other));
+    VariableGroup::operator=(std::move(other));
     return *this;
   }
 

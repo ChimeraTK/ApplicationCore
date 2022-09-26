@@ -45,7 +45,7 @@ struct PollDummyApplication : ChimeraTK::Application {
   InputModule<ctk::ScalarPollInput<int>> inputModule{this, "PollModule", ""};
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
-  void defineConnections() override { inputModule.connectTo(device); }
+  // void defineConnections() override { inputModule.connectTo(device); }
 };
 
 // for the push type we need different connection code
@@ -136,7 +136,7 @@ struct ProcessArryDummyApplication : ChimeraTK::Application {
 
   InputModule<INPUT_TYPE> inputModule{this, "PollModule", ""};
   ScalarOutputModule scalarOutputModule{this, "ScalarOutputModule", ""};
-  void defineConnections() override { scalarOutputModule.connectTo(inputModule); }
+  // void defineConnections() override { scalarOutputModule.connectTo(inputModule); }
 };
 
 typedef boost::mpl::list<ctk::ScalarPollInput<int>, ctk::ScalarPushInput<int>> TestInputTypes;
@@ -181,7 +181,7 @@ struct ConstantTestApplication : ChimeraTK::Application {
 
   InputModule<INPUT_TYPE> inputModule{this, "constantPollModule", ""};
 
-  void defineConnections() override {}
+  // void defineConnections() override {}
 };
 
 /**
@@ -608,10 +608,10 @@ struct Test7DummyApplication : ChimeraTK::Application {
   ReaderModule readerModule{this, "ReaderModule", ""};
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 
-  void defineConnections() override {
-    writerModule.output1 >> readerModule.reg1.pushInput;
-    writerModule.output2 >> readerModule.reg2.pushInput;
-  }
+  /*  void defineConnections() override {
+      writerModule.output1 >> readerModule.reg1.pushInput;
+      writerModule.output2 >> readerModule.reg2.pushInput;
+    }*/
 };
 
 /**
@@ -839,12 +839,11 @@ struct Test6_a4_DummyApplication : ChimeraTK::Application {
   ReaderModule readerModule{this, "ReaderModule", ""};
   WriterModule writerModule{this, "WriterModule", ""};
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
-  // ChimeraTK::ControlSystemModule csModule{};
 
-  void defineConnections() override {
+  /*void defineConnections() override {
     writerModule.output1 >> readerModule.reg2.pushInput;
     // dumpConnections();
-  }
+  }*/
 };
 
 struct Test6_a4_InitialValueEceptionDummy {

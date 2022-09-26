@@ -6,7 +6,6 @@
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
 #include "check_timeout.h"
-#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
@@ -64,8 +63,6 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
 
-  void defineConnections() {} // the setup is done in the tests
-  ctk::ControlSystemModule cs;
   ctk::DeviceModule dev{this, deviceCDD};
   TestModule module{this, "TEST", "The test module"};
 };
@@ -80,12 +77,11 @@ struct ReadOnlyTestApplication : public ctk::Application {
   ReadOnlyTestApplication() : Application("ReadOnlytestApp") {}
   ~ReadOnlyTestApplication() { shutdown(); }
 
-  void defineConnections() {
-    dev["TEST"]("FROM_DEV_SCALAR2") >> module("FROM_DEV_SCALAR2");
-    findTag("CS").connectTo(cs);
-  }
+  /*  void defineConnections() {
+      dev["TEST"]("FROM_DEV_SCALAR2") >> module("FROM_DEV_SCALAR2");
+      findTag("CS").connectTo(cs);
+    }*/
 
-  ctk::ControlSystemModule cs;
   ctk::DeviceModule dev{this, deviceCDD};
 
   struct TestModule : public ctk::ApplicationModule {
@@ -143,16 +139,16 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   std::cout << "testProcessVariableRecovery" << std::endl;
   TestApplication app;
 
-  app.findTag(".*").connectTo(app.cs); // creates /TEST/TO_DEV_SCALAR1 and /TEST/TO/DEV/ARRAY1
-  // devices are not automatically connected (yet)
-  app.dev.connectTo(app.cs,
-      app.cs("deviceTrigger", typeid(int),
-          1)); // In TEST it connects to TO_DEV_SCALAR1 and TO_DEV_ARRAY1, and creates TO_DEV_SCALAR2, FROM_DEV1,
-               // FROM_DEV2, TO_DEV_AREA2, FROM_DEV_AREA1 and FROM_DEV_AREA2
+  /*  app.findTag(".*").connectTo(app.cs); // creates /TEST/TO_DEV_SCALAR1 and /TEST/TO/DEV/ARRAY1
+    // devices are not automatically connected (yet)
+    app.dev.connectTo(app.cs,
+        app.cs("deviceTrigger", typeid(int),
+            1)); // In TEST it connects to TO_DEV_SCALAR1 and TO_DEV_ARRAY1, and creates TO_DEV_SCALAR2, FROM_DEV1,
+                 // FROM_DEV2, TO_DEV_AREA2, FROM_DEV_AREA1 and FROM_DEV_AREA2
 
-  // make a constant and connect to the device
-  auto constante = ctk::VariableNetworkNode::makeConstant(1, 44252, 1);
-  constante >> app.dev["CONSTANT"]("VAR32");
+    // make a constant and connect to the device
+    auto constante = ctk::VariableNetworkNode::makeConstant(1, 44252, 1);
+    constante >> app.dev["CONSTANT"]("VAR32");*/
 
   ctk::TestFacility test{app, false};
   // Write initial values manually since we do not use the testable mode.

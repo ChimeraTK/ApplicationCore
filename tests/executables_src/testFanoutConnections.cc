@@ -4,7 +4,6 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
@@ -43,7 +42,7 @@ struct TestApplication1 : ctk::Application {
   TestApplication1(bool connectDeviceFirst) : Application("testApp"), _connectDeviceFirst(connectDeviceFirst) {}
   ~TestApplication1() { shutdown(); }
 
-  void defineConnections() {
+  /*void defineConnections() {
     if(_connectDeviceFirst) {
       device.connectTo(cs, cs("deviceTrigger", typeid(int), 1));
       findTag(".*").connectTo(cs);
@@ -52,13 +51,12 @@ struct TestApplication1 : ctk::Application {
       findTag(".*").connectTo(cs);
       device.connectTo(cs, cs("deviceTrigger", typeid(int), 1));
     }
-  }
+  }*/
   constexpr static char const* dummyCDD1 = "(dummy?map=testDataValidity1.map)";
 
   TestModule1 m1{this, "m1", ""};
   ctk::DeviceModule device{this, dummyCDD1};
 
-  ctk::ControlSystemModule cs;
   bool _connectDeviceFirst;
 };
 

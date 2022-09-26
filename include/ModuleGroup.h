@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Model.h"
-#include "ModuleImpl.h"
+#include "Module.h"
 
 #include <boost/thread.hpp>
 
@@ -13,7 +13,7 @@ namespace ChimeraTK {
 
   class Application;
 
-  class ModuleGroup : public ModuleImpl {
+  class ModuleGroup : public Module {
    public:
     /**
      *  Constructor: Create ModuleGroup by the given name with the given description and register it with its

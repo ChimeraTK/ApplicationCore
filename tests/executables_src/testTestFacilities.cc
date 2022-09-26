@@ -7,7 +7,6 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestableMode.h"
@@ -186,9 +185,7 @@ struct TestApplication : public ctk::Application {
 
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
-  void defineConnections() {}         // setup is done in the tests
 
-  ctk::ControlSystemModule cs;
   ctk::DeviceModule dev{this, dummySdm};
   BlockingReadTestModule<T> blockingReadTestModule{this, "blockingReadTestModule", "Module for testing blocking read"};
   ReadAnyTestModule<T> readAnyTestModule{this, "readAnyTestModule", "Module for testing readAny()"};
@@ -202,9 +199,6 @@ struct PollingTestApplication : public ctk::Application {
   PollingTestApplication() : Application("testApplication") {}
   ~PollingTestApplication() { shutdown(); }
 
-  void defineConnections() {} // setup is done in the tests
-
-  ctk::ControlSystemModule cs;
   ctk::DeviceModule dev{this, dummySdm};
   PollingReadModule<T> pollingReadModule{this, "pollingReadModule", "Module for testing poll-type transfers"};
 };
@@ -216,9 +210,7 @@ struct AnotherPollTestApplication : public ctk::Application {
   AnotherPollTestApplication() : Application("AnotherTestApplication") {}
   ~AnotherPollTestApplication() { shutdown(); }
 
-  void defineConnections() {} // setup is done in the tests
 
-  ctk::ControlSystemModule cs;
   ctk::DeviceModule dev{this, dummySdm};
 
   struct Module : ctk::ApplicationModule {
@@ -265,8 +257,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testNoDecorator, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.blockingReadTestModule.connectTo(app.cs["blocking"]);
-  app.readAnyTestModule.connectTo(app.cs["readAny"]);
+  //  app.blockingReadTestModule.connectTo(app.cs["blocking"]);
+  //  app.readAnyTestModule.connectTo(app.cs["readAny"]);
 
   app.initialise();
   app.run();
@@ -291,9 +283,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testBlockingRead, T, test_types) {
 
   TestApplication<T> app;
 
-  app.cs("input") >> app.blockingReadTestModule.someInput;
-  app.blockingReadTestModule.someOutput >> app.cs("output");
-  app.readAnyTestModule.connectTo(app.cs["readAny"]); // avoid runtime warning
+  //  app.cs("input") >> app.blockingReadTestModule.someInput;
+  //  app.blockingReadTestModule.someOutput >> app.cs("output");
+  //  app.readAnyTestModule.connectTo(app.cs["readAny"]); // avoid runtime warning
 
   ctk::TestFacility test{app};
   auto pvInput = test.getScalar<T>("input");
@@ -325,10 +317,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testReadAny, T, test_types) {
 
   TestApplication<T> app;
 
-  app.readAnyTestModule.inputs.connectTo(app.cs["input"]);
-  app.readAnyTestModule.value >> app.cs("value");
-  app.readAnyTestModule.index >> app.cs("index");
-  app.blockingReadTestModule.connectTo(app.cs["blocking"]); // avoid runtime warning
+  // app.readAnyTestModule.inputs.connectTo(app.cs["input"]);
+  // app.readAnyTestModule.value >> app.cs("value");
+  // app.readAnyTestModule.index >> app.cs("index");
+  // app.blockingReadTestModule.connectTo(app.cs["blocking"]); // avoid runtime warning
 
   ctk::TestFacility test{app};
   auto value = test.getScalar<T>("value");
@@ -468,10 +460,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testChainedModules, T, test_types) {
   TestApplication<T> app;
 
   // put everything we got into one chain
-  app.readAnyTestModule.inputs.connectTo(app.cs["input"]);
-  app.readAnyTestModule.value >> app.blockingReadTestModule.someInput;
-  app.blockingReadTestModule.someOutput >> app.cs("value");
-  app.readAnyTestModule.index >> app.cs("index");
+  // app.readAnyTestModule.inputs.connectTo(app.cs["input"]);
+  // app.readAnyTestModule.value >> app.blockingReadTestModule.someInput;
+  // app.blockingReadTestModule.someOutput >> app.cs("value");
+  // app.readAnyTestModule.index >> app.cs("index");
 
   ctk::TestFacility test{app};
   auto value = test.getScalar<T>("value");
@@ -562,10 +554,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithFanOut, T, test_types) {
   TestApplication<T> app;
 
   // distribute a value to multiple inputs
-  app.readAnyTestModule.inputs.connectTo(app.cs["input"]);
-  app.readAnyTestModule.value >> app.blockingReadTestModule.someInput;
-  app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
-  app.readAnyTestModule.index >> app.cs("index");
+  // app.readAnyTestModule.inputs.connectTo(app.cs["input"]);
+  // app.readAnyTestModule.value >> app.blockingReadTestModule.someInput;
+  // app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
+  // app.readAnyTestModule.index >> app.cs("index");
 
   ctk::TestFacility test{app};
   auto valueFromBlocking = test.getScalar<T>("valueFromBlocking");
@@ -655,14 +647,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTrigger, T, test_types) {
 
   TestApplication<T> app;
   // distribute a value to multiple inputs
-  auto triggernode = app.cs("trigger", typeid(int), 1);
-  app.cs("v1") >> app.readAnyTestModule.inputs.v1;
-  app.dev("REG2")[triggernode] >> app.readAnyTestModule.inputs.v2;
-  app.cs("v3") >> app.readAnyTestModule.inputs.v3;
-  app.cs("v4") >> app.readAnyTestModule.inputs.v4;
-  app.readAnyTestModule.value >> app.blockingReadTestModule.someInput;
-  app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
-  app.readAnyTestModule.index >> app.cs("index");
+  // auto triggernode = app.cs("trigger", typeid(int), 1);
+  // app.cs("v1") >> app.readAnyTestModule.inputs.v1;
+  // app.dev("REG2")[triggernode] >> app.readAnyTestModule.inputs.v2;
+  // app.cs("v3") >> app.readAnyTestModule.inputs.v3;
+  // app.cs("v4") >> app.readAnyTestModule.inputs.v4;
+  // app.readAnyTestModule.value >> app.blockingReadTestModule.someInput;
+  // app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
+  // app.readAnyTestModule.index >> app.cs("index");
 
   ctk::TestFacility test{app};
   ctk::Device dev;
@@ -739,15 +731,15 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testWithTriggerFanOut, T, test_types) {
 
   TestApplication<T> app;
   // distribute a value to multiple inputs
-  auto triggernode = app.cs("trigger", typeid(int), 1);
-  app.dev("REG1")[triggernode] >> app.readAnyTestModule.inputs.v1;
-  app.cs("v2") >> app.readAnyTestModule.inputs.v2;
-  app.cs("v3") >> app.readAnyTestModule.inputs.v3;
-  app.cs("v4") >> app.readAnyTestModule.inputs.v4;
-  app.dev("REG3")[triggernode] >> app.blockingReadTestModule.someInput;
-  app.readAnyTestModule.value >> app.cs("valueFromAny");
-  app.readAnyTestModule.index >> app.cs("index");
-  app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
+  // auto triggernode = app.cs("trigger", typeid(int), 1);
+  // app.dev("REG1")[triggernode] >> app.readAnyTestModule.inputs.v1;
+  // app.cs("v2") >> app.readAnyTestModule.inputs.v2;
+  // app.cs("v3") >> app.readAnyTestModule.inputs.v3;
+  // app.cs("v4") >> app.readAnyTestModule.inputs.v4;
+  // app.dev("REG3")[triggernode] >> app.blockingReadTestModule.someInput;
+  // app.readAnyTestModule.value >> app.cs("valueFromAny");
+  // app.readAnyTestModule.index >> app.cs("index");
+  // app.blockingReadTestModule.someOutput >> app.cs("valueFromBlocking");
 
   ctk::TestFacility test{app};
   ctk::Device dev;
@@ -848,9 +840,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConvenienceRead, T, test_types) {
 
   TestApplication<T> app;
 
-  app.cs("input") >> app.blockingReadTestModule.someInput;
-  app.blockingReadTestModule.someOutput >> app.cs("output");
-  app.readAnyTestModule.connectTo(app.cs["readAny"]); // avoid runtime warning
+  // app.cs("input") >> app.blockingReadTestModule.someInput;
+  // app.blockingReadTestModule.someOutput >> app.cs("output");
+  // app.readAnyTestModule.connectTo(app.cs["readAny"]); // avoid runtime warning
 
   ctk::TestFacility test{app};
   test.runApplication();
@@ -885,14 +877,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
   {
     TestApplication<T> app;
 
-    ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.blockingReadTestModule.someInput;
-    ctk::VariableNetworkNode::makeConstant<T>(true, 22) >> app.readAnyTestModule.inputs.v1;
-    ctk::VariableNetworkNode::makeConstant<T>(true, 23) >> app.readAnyTestModule.inputs.v2;
-    ctk::VariableNetworkNode::makeConstant<T>(true, 24) >> app.readAnyTestModule.inputs.v3;
-    app.blockingReadTestModule.someOutput >> app.cs("blockingOutput");
-    app.cs("v4") >> app.readAnyTestModule.inputs.v4;
-    app.readAnyTestModule.value >> app.cs("value");
-    app.readAnyTestModule.index >> app.cs("index");
+    // ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.blockingReadTestModule.someInput;
+    // ctk::VariableNetworkNode::makeConstant<T>(true, 22) >> app.readAnyTestModule.inputs.v1;
+    // ctk::VariableNetworkNode::makeConstant<T>(true, 23) >> app.readAnyTestModule.inputs.v2;
+    // ctk::VariableNetworkNode::makeConstant<T>(true, 24) >> app.readAnyTestModule.inputs.v3;
+    // app.blockingReadTestModule.someOutput >> app.cs("blockingOutput");
+    // app.cs("v4") >> app.readAnyTestModule.inputs.v4;
+    // app.readAnyTestModule.value >> app.cs("value");
+    // app.readAnyTestModule.index >> app.cs("index");
 
     ctk::TestFacility test{app};
     test.runApplication();
@@ -916,9 +908,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
   {
     PollingTestApplication<T> app;
 
-    ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.pollingReadModule.push2;
-    ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.pollingReadModule.poll;
-    app.pollingReadModule.connectTo(app.cs);
+    // ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.pollingReadModule.push2;
+    // ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.pollingReadModule.poll;
+    // app.pollingReadModule.connectTo(app.cs);
 
     ctk::TestFacility test{app};
     test.runApplication();
@@ -955,7 +947,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testPolling, T, test_types) {
   std::cout << "==> testPolling<" << typeid(T).name() << ">" << std::endl;
 
   PollingTestApplication<T> app;
-  app.pollingReadModule.connectTo(app.cs);
+  // app.pollingReadModule.connectTo(app.cs);
 
   ctk::TestFacility test{app};
   test.runApplication();
@@ -1042,8 +1034,8 @@ BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
   // ---------------------
   {
     AnotherPollTestApplication app;
-    app.m1.out1 >> app.m2.poll1 >> app.m2.poll2;
-    app.m1.out2 >> app.m2.push1; // we need something which is pushed, otherwise the TestFacility won't run anything
+    // app.m1.out1 >> app.m2.poll1 >> app.m2.poll2;
+    // app.m1.out2 >> app.m2.push1; // we need something which is pushed, otherwise the TestFacility won't run anything
 
     std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
     std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
@@ -1086,7 +1078,7 @@ BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
   // -----------------------
   {
     AnotherPollTestApplication app;
-    app.dev("REG1") >> app.m1.poll1 >> app.m2.push1;
+    // app.dev("REG1") >> app.m1.poll1 >> app.m2.push1;
 
     std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
     std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
@@ -1119,8 +1111,8 @@ BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
   // ----------------------
   {
     AnotherPollTestApplication app;
-    app.cs("var") >> app.m1.poll1 >> app.m1.poll2;
-    app.m2.out2 >> app.m1.push1; // we need something which is pushed, otherwise the TestFacility won't run anything
+    // app.cs("var") >> app.m1.poll1 >> app.m1.poll2;
+    // app.m2.out2 >> app.m1.push1; // we need something which is pushed, otherwise the TestFacility won't run anything
 
     std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
     std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
@@ -1175,10 +1167,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDevice, T, test_types) {
   std::cout << "==> testDevice<" << typeid(T).name() << ">" << std::endl;
 
   PollingTestApplication<T> app;
-  app.dev("REG1") >> app.pollingReadModule.poll;
-  app.cs("push") >> app.pollingReadModule.push;
-  app.cs("push2") >> app.pollingReadModule.push2;
-  app.pollingReadModule.valuePoll >> app.cs("valuePoll");
+  // app.dev("REG1") >> app.pollingReadModule.poll;
+  // app.cs("push") >> app.pollingReadModule.push;
+  // app.cs("push2") >> app.pollingReadModule.push2;
+  // app.pollingReadModule.valuePoll >> app.cs("valuePoll");
 
   ctk::TestFacility test(app);
   auto push = test.getScalar<T>("push");
@@ -1225,7 +1217,7 @@ BOOST_AUTO_TEST_CASE(testInitialValues) {
   std::cout << "==> testInitialValues" << std::endl;
 
   AnotherPollTestApplication app;
-  app.findTag(".*").connectTo(app.cs);
+  // app.findTag(".*").connectTo(app.cs);
 
   std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
   std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);

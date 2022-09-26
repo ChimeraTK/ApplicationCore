@@ -6,7 +6,6 @@
 #define BOOST_TEST_MODULE testApplication
 
 #include "Application.h"
-#include "ControlSystemModule.h"
 #include "Multiplier.h"
 #include "Pipe.h"
 #include "TestFacility.h"
@@ -30,17 +29,16 @@ struct TestApp : public ctk::Application {
   TestApp(const std::string& name) : ctk::Application(name) {}
   ~TestApp() { shutdown(); }
 
-  void defineConnections() {
-    csmod["Multiplier"]("input") >> multiplierD.input;
-    multiplierD.output >> csmod["Multiplier"]("tap");
-    multiplierD.output >> pipe.input;
-    pipe.output >> csmod["mySubModule"]("output");
-    pipe.output >> csmod["mySubModule"]("output_copy");
-  }
+  /*  void defineConnections() {
+      csmod["Multiplier"]("input") >> multiplierD.input;
+      multiplierD.output >> csmod["Multiplier"]("tap");
+      multiplierD.output >> pipe.input;
+      pipe.output >> csmod["mySubModule"]("output");
+      pipe.output >> csmod["mySubModule"]("output_copy");
+    } */
 
   ctk::ConstMultiplier<double> multiplierD{this, "multiplierD", "Some module", 42};
   ctk::ScalarPipe<double> pipe{this, "pipe", "unit", "Some pipe module"};
-  ctk::ControlSystemModule csmod;
 };
 
 /*********************************************************************************************************************/

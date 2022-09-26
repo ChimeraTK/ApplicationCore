@@ -12,7 +12,7 @@ namespace ChimeraTK {
 
   VariableGroup::VariableGroup(VariableGroup* owner, const std::string& name, const std::string& description,
       const std::unordered_set<std::string>& tags)
-  : ModuleImpl(owner, name, description, tags) {
+  : Module(owner, name, description, tags) {
     if(owner == nullptr) {
       throw ChimeraTK::logic_error("VariableGroups: owner cannot be nullptr!");
     }
@@ -31,7 +31,7 @@ namespace ChimeraTK {
 
   VariableGroup::VariableGroup(ModuleGroup* owner, const std::string& name, const std::string& description,
       const std::unordered_set<std::string>& tags)
-  : ModuleImpl(owner, name, description, tags) {
+  : Module(owner, name, description, tags) {
     // Not registering with model - this constructor will only be used in the special case of Application owning an
     // ApplicationModule
   }
@@ -39,7 +39,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   VariableGroup& VariableGroup::operator=(VariableGroup&& other) noexcept {
-    ModuleImpl::operator=(std::move(other));
+    Module::operator=(std::move(other));
     return *this;
   }
 

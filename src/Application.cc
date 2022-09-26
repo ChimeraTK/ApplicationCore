@@ -90,12 +90,6 @@ void Application::initialise() {
     throw ChimeraTK::logic_error("Application::initialise() was already called before.");
   }
 
-  // call the user-defined defineConnections() function which describes the structure of the application
-  defineConnections();
-  for(auto& module : getSubmoduleListRecursive()) {
-    module->defineConnections();
-  }
-
   // find and handle constant nodes
   findConstantNodes();
 
@@ -328,12 +322,6 @@ void Application::shutdown() {
 
 void Application::generateXML() {
   assert(not applicationName.empty());
-
-  // define the connections
-  defineConnections();
-  for(auto& module : getSubmoduleListRecursive()) {
-    module->defineConnections();
-  }
 
   // find and handle constant nodes
   findConstantNodes();

@@ -5,7 +5,6 @@
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "check_timeout.h"
-#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
@@ -74,22 +73,22 @@ struct DummyApplication : ChimeraTK::Application {
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
   ChimeraTK::DeviceModule device2{this, ExceptionDummyCDD2};
   ChimeraTK::DeviceModule device3{this, ExceptionDummyCDD3};
+  /*
+    ChimeraTK::ControlSystemModule cs;
 
-  ChimeraTK::ControlSystemModule cs;
+    void defineConnections() override {
+      findTag("DEVICE").excludeTag("DEV2").excludeTag("DEV3").flatten().connectTo(device);
+      findTag("DEVICE").excludeTag("DEV").excludeTag("DEV3").flatten().connectTo(device2);
+      findTag("DEVICE").excludeTag("DEV").excludeTag("DEV2").flatten().connectTo(device3);
 
-  void defineConnections() override {
-    findTag("DEVICE").excludeTag("DEV2").excludeTag("DEV3").flatten().connectTo(device);
-    findTag("DEVICE").excludeTag("DEV").excludeTag("DEV3").flatten().connectTo(device2);
-    findTag("DEVICE").excludeTag("DEV").excludeTag("DEV2").flatten().connectTo(device3);
-
-    /*    device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> pushModule.reg1.pushInput;
-        device2("REG1")[device3("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push)] >>
-            pushModule2.reg1.pushInput;
-        device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> pushModule3.reg1.pushInput >>
-            cs("dev2_reg1_push_read");
-        findTag("DEVICE").excludeTag("DEV").connectTo(cs["Device2"]);*/
-    // dumpConnections();
-  }
+         device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> pushModule.reg1.pushInput;
+          device2("REG1")[device3("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push)] >>
+              pushModule2.reg1.pushInput;
+          device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> pushModule3.reg1.pushInput >>
+              cs("dev2_reg1_push_read");
+          findTag("DEVICE").excludeTag("DEV").connectTo(cs["Device2"]);
+       dumpConnections();
+    }*/
 };
 
 /**********************************************************************************************************************/

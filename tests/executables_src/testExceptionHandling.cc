@@ -5,7 +5,6 @@
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "check_timeout.h"
-#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "fixtures.h"
 #include "ScalarAccessor.h"

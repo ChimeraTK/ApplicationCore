@@ -7,11 +7,9 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "ControlSystemModule.h"
 #include "ModuleGroup.h"
 #include "ScalarAccessor.h"
 #include "VariableGroup.h"
-#include "VirtualModule.h"
 
 #include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
@@ -31,9 +29,6 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() override { shutdown(); }
 
-  ctk::ControlSystemModule cs;
-
-  void defineConnections() override { findTag(".*").connectTo(cs); }
 
   struct TestModule : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -77,9 +72,10 @@ struct TestApplication : public ctk::Application {
  * and each tag/test case has exactly one variable. */
 struct TestHelper {
   template<typename APP>
-  TestHelper(APP& app, const std::string tag) : root(app.findTag(tag)) {
-    current = &root;
-    root.dump();
+  TestHelper(APP& app, const std::string tag) /*: root(app.findTag(tag))*/ {
+    throw;
+    /*current = &root;
+    root.dump();*/
   }
 
   TestHelper submodule(const std::string& name) {
@@ -87,7 +83,7 @@ struct TestHelper {
     BOOST_CHECK(current->getAccessorList().size() == 0);
     auto child = current->getSubmoduleList().front();
     BOOST_CHECK(child->getName() == name);
-    return TestHelper(root, child);
+    // return TestHelper(root, child);
   }
 
   void accessor(ctk::VariableNetworkNode node) {
@@ -97,9 +93,9 @@ struct TestHelper {
   }
 
  protected:
-  TestHelper(ctk::VirtualModule& _root, ctk::Module* _current) : root(_root), current(_current) {}
+  TestHelper(ctk::VirtualModule& _root, ctk::Module* _current) : /* root(_root),*/ current(_current) {}
 
-  ctk::VirtualModule root;
+  // ctk::VirtualModule root;
   ctk::Module* current{nullptr};
 };
 
@@ -240,7 +236,6 @@ BOOST_AUTO_TEST_CASE(MoveToRootFromHidden) {
 struct TestApplication_empty : public ctk::Application {
   TestApplication_empty() : Application("testSuite") {}
   ~TestApplication_empty() { shutdown(); }
-  void defineConnections() override {}
 
   struct TestModule : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -268,7 +263,6 @@ BOOST_AUTO_TEST_CASE(bad_path_exception) {
 struct TestApplication_moveAssignment : public ctk::Application {
   TestApplication_moveAssignment() : Application("testSuite") {}
   ~TestApplication_moveAssignment() { shutdown(); }
-  void defineConnections() override {}
 
   struct TestModule : ctk::ApplicationModule {
     TestModule(ModuleGroup* owner, const std::string& name, const std::string& description)
@@ -301,7 +295,7 @@ BOOST_AUTO_TEST_CASE(move_assignment) {
 struct TestApplication_moveConstruct : public ctk::Application {
   TestApplication_moveConstruct() : Application("testSuite") {}
   ~TestApplication_moveConstruct() { shutdown(); }
-  void defineConnections() override { testModule = TestModule(this, "TestModule", "The test module"); }
+  // void defineConnections() override { testModule = TestModule(this, "TestModule", "The test module"); }
 
   struct TestModule : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -315,7 +309,6 @@ struct TestApplication_moveConstruct : public ctk::Application {
 BOOST_AUTO_TEST_CASE(move_construct) {
   std::cout << "*** move_construct" << std::endl;
   TestApplication_moveConstruct app;
-  app.defineConnections();
   TestHelper(app, "TagA").submodule("TestModule").submodule("VariableGroupLike").accessor(app.testModule.a.myVar);
   TestHelper(app, "TagH")
       .submodule("TestModule")

@@ -7,19 +7,15 @@ using namespace boost::unit_test_framework;
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "ControlSystemModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
 #include "VariableGroup.h"
-#include "VirtualModule.h"
 
 using namespace ChimeraTK;
 
 struct TestApp : public Application {
   TestApp() : Application("test") {}
   ~TestApp() override { shutdown(); }
-
-  ControlSystemModule cs;
 
   // hides itself, and then produces A and B as sub-grops. Works.
   struct A : public ApplicationModule {
@@ -72,7 +68,6 @@ struct TestApp : public Application {
 
   } b{this, ".", ""}; // name it "HiddenB" here and it works
 
-  void defineConnections() override { findTag(".*").connectTo(cs); }
 };
 
 BOOST_AUTO_TEST_CASE(testBIsHidden) {
@@ -81,7 +76,6 @@ BOOST_AUTO_TEST_CASE(testBIsHidden) {
   testFacility.runApplication();
 
   t.dumpConnections();
-  t.cs.dump();
 
   testFacility.writeScalar<int>("/A/input", 5);
   testFacility.stepApplication();
