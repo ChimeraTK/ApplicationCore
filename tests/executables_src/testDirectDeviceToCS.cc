@@ -4,7 +4,6 @@
 
 #include "Application.h"
 #include "check_timeout.h"
-#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "PeriodicTrigger.h"
 #include "TestFacility.h"
@@ -47,9 +46,6 @@ struct TestApplication : public ctk::Application {
 
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
-  void defineConnections() {}         // the setup is done in the tests
-
-  ctk::ControlSystemModule cs;
 
   ctk::DeviceModule dev{this, "Dummy0"};
 };
@@ -63,12 +59,10 @@ struct TestApplicationConnectTo : ctk::Application {
 
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
-  void defineConnections() {}
 
   ctk::PeriodicTrigger trigger{this, "trigger", ""};
 
   ctk::DeviceModule dev{this, "(dummy?map=test3.map)"};
-  ctk::ControlSystemModule cs;
 };
 TestApplicationConnectTo::~TestApplicationConnectTo() {
   shutdown();
@@ -133,7 +127,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDirectCStoDev, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.cs("myFeeder", typeid(T), 1) >> app.dev("/MyModule/actuator");
+  // app.cs("myFeeder", typeid(T), 1) >> app.dev("/MyModule/actuator");
   app.initialise();
   app.run();
 
@@ -165,7 +159,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDirectCStoDevFanOut, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.cs("myFeeder", typeid(T), 1) >> app.dev("/MyModule/actuator") >> app.dev("/Deeper/hierarchies/also");
+  // app.cs("myFeeder", typeid(T), 1) >> app.dev("/MyModule/actuator") >> app.dev("/Deeper/hierarchies/also");
   app.initialise();
   app.run();
 
@@ -198,7 +192,7 @@ BOOST_AUTO_TEST_CASE(testConnectTo) {
   dev.open("(dummy?map=test3.map)");
 
   TestApplicationConnectTo app;
-  app.dev.connectTo(app.cs, app.trigger.tick);
+  // app.dev.connectTo(app.cs, app.trigger.tick);
 
   ctk::TestFacility test{app};
   auto devActuator = dev.getScalarRegisterAccessor<int32_t>("/MyModule/actuator");
@@ -251,8 +245,8 @@ BOOST_AUTO_TEST_CASE(testConnectToSubHierarchies) {
   dev.open("(dummy?map=test3.map)");
 
   TestApplicationConnectTo app;
-  app.dev["Deep"]["Hierarchies"].connectTo(app.cs, app.trigger.tick);
-  app.dev["Integers"].connectTo(app.cs["Ints"], app.trigger.tick);
+  // app.dev["Deep"]["Hierarchies"].connectTo(app.cs, app.trigger.tick);
+  // app.dev["Integers"].connectTo(app.cs["Ints"], app.trigger.tick);
 
   ctk::TestFacility test{app};
   auto devint32 = dev.getScalarRegisterAccessor<int32_t>("/Integers/signed32");

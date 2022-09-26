@@ -78,10 +78,10 @@ namespace ChimeraTK {
     StatusAggregator& operator=(StatusAggregator&& other) = default;
 
     void mainLoop() override;
-
-    void findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag, bool eliminateAllHierarchies,
-        bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const override;
-
+    /*
+        void findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag, bool
+       eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const override;
+    */
    protected:
     /// Recursivly search for StatusMonitors and other StatusAggregators
     void populateStatusInput();

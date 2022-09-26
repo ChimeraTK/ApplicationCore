@@ -5,7 +5,6 @@
 #define BOOST_TEST_MODULE testVirtualHierarchy
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "ControlSystemModule.h"
 #include "ModuleGroup.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"

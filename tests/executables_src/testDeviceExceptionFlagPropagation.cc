@@ -5,7 +5,6 @@
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "check_timeout.h"
-#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "PeriodicTrigger.h"
 #include "TestFacility.h"
@@ -95,7 +94,6 @@ struct TestApplication : ctk::Application {
   ctk::PeriodicTrigger trigger{this, "trigger", ""};
 
   ctk::DeviceModule dev{this, ExceptionDummyCDD1};
-  ctk::ControlSystemModule cs;
 };
 
 BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {

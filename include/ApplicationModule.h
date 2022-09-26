@@ -25,9 +25,7 @@ namespace ChimeraTK {
     /**
      * Create ApplicationModule and register it with its owner
      *
-     * The hierarchy will be modified according to the hierarchyModifier (when VirtualModules are created e.g.
-     * in findTag()). The specified list of tags will be added to all elements directly or indirectly owned by this
-     * instance.
+     * The specified list of tags will be added to all elements directly or indirectly owned by this instance.
      *
      * @param owner The owner to register the ApplicationMoule with (ModuleGroup or Application)
      * @param name The name of the new ApplicationModule

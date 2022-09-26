@@ -6,7 +6,6 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 
@@ -71,10 +70,8 @@ struct TestApplication : public ctk::Application {
 
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
-  void defineConnections() {}         // the setup is done in the tests
 
   TestModule<T> testModule{this, "TestModule", "The test module"};
-  ctk::ControlSystemModule cs;
 
   ctk::DeviceModule dev{this, "Dummy0"};
 };
@@ -88,7 +85,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToCS, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.testModule.feeder >> app.cs("myFeeder");
+  // app.testModule.feeder >> app.cs("myFeeder");
   app.initialise();
   app.run();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
@@ -122,7 +119,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromCS, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.cs("myConsumer") >> app.testModule.consumer;
+  // app.cs("myConsumer") >> app.testModule.consumer;
   app.initialise();
 
   auto myConsumer = pvManagers.first->getProcessArray<T>("/myConsumer");
@@ -158,10 +155,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMultiplePublications, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.testModule.feeder >> app.cs("myFeeder0");
-  app.testModule.feeder >> app.cs("myFeeder1");
-  app.testModule.feeder >> app.cs("myFeeder2");
-  app.testModule.feeder >> app.cs("myFeeder3");
+  // app.testModule.feeder >> app.cs("myFeeder0");
+  // app.testModule.feeder >> app.cs("myFeeder1");
+  // app.testModule.feeder >> app.cs("myFeeder2");
+  // app.testModule.feeder >> app.cs("myFeeder3");
   app.initialise();
   app.run();                             // make the connections and start the FanOut threads
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
@@ -257,10 +254,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMultipleRePublications, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.cs("myConsumer") >> app.testModule.consumer;
-  app.testModule.consumer >> app.cs("myConsumer_copy1");
-  app.testModule.consumer >> app.cs("myConsumer_copy2");
-  app.testModule.consumer >> app.cs("myConsumer_copy3");
+  // app.cs("myConsumer") >> app.testModule.consumer;
+  // app.testModule.consumer >> app.cs("myConsumer_copy1");
+  // app.testModule.consumer >> app.cs("myConsumer_copy2");
+  // app.testModule.consumer >> app.cs("myConsumer_copy3");
 
   app.initialise();
 
@@ -366,7 +363,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDirectCStoCS, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.cs("mySender", typeid(T), 1) >> app.cs("myReceiver");
+  // app.cs("mySender", typeid(T), 1) >> app.cs("myReceiver");
   app.initialise();
   app.run();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered

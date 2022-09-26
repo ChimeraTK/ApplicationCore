@@ -53,7 +53,6 @@ struct TestApplication : public ctk::Application {
 
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
-  void defineConnections() {}         // the setup is done in the tests
 
   TestModule<T> testModule{this, "testModule", "The test module"};
   ctk::DeviceModule dev{this, "Dummy0"};
@@ -67,7 +66,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPollPushAccessors, T, test_types) {
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
   TestApplication<T> app;
 
-  app.dev("/MyModule/Variable") >> app.testModule.consumingPush;
+  // app.dev("/MyModule/Variable") >> app.testModule.consumingPush;
   try {
     app.initialise();
     BOOST_ERROR("Exception expected.");
@@ -83,7 +82,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPollPushAccessors, T, test_types) {
 BOOST_AUTO_TEST_CASE_TEMPLATE(testNoFeeder, T, test_types) {
   TestApplication<T> app;
 
-  app.testModule.consumingPush2 >> app.testModule.consumingPush;
+  // app.testModule.consumingPush2 >> app.testModule.consumingPush;
   try {
     app.initialise();
     BOOST_ERROR("Exception expected.");
@@ -100,7 +99,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoFeeders, T, test_types) {
   TestApplication<T> app;
 
   try {
-    app.testModule.feedingPush >> app.testModule.feedingPush2;
+    // app.testModule.feedingPush >> app.testModule.feedingPush2;
     BOOST_ERROR("Exception expected.");
   }
   catch(ChimeraTK::logic_error& e) {
@@ -116,7 +115,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTooManyPollingConsumers, T, test_types) {
 
   TestApplication<T> app;
 
-  app.dev("/MyModule/Variable") >> app.testModule.consumingPoll >> app.testModule.consumingPoll2;
+  // app.dev("/MyModule/Variable") >> app.testModule.consumingPoll >> app.testModule.consumingPoll2;
   try {
     app.initialise();
     BOOST_ERROR("Exception expected.");
@@ -135,7 +134,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDifferentNrElements, T, test_types) {
   TestApplication<T> app;
 
   try {
-    app.testModule.feedingArray >> app.testModule.consumingPoll;
+    // app.testModule.feedingArray >> app.testModule.consumingPoll;
     BOOST_ERROR("Exception expected.");
   }
   catch(ChimeraTK::logic_error& e) {
@@ -150,7 +149,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantTrigger, T, test_types) {
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication<T> app;
-  app.dev("/MyModule/Variable")[ctk::VariableNetworkNode::makeConstant<int>(true)] >> app.testModule.consumingPush;
+  // app.dev("/MyModule/Variable")[ctk::VariableNetworkNode::makeConstant<int>(true)] >> app.testModule.consumingPush;
   try {
     app.initialise();
     BOOST_ERROR("Exception expected.");

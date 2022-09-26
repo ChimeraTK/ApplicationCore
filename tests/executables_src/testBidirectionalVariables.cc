@@ -7,7 +7,6 @@
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "check_timeout.h"
-#include "ControlSystemModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
 
@@ -97,8 +96,6 @@ struct TestApplication : public ctk::Application {
 
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
-  void defineConnections() {}         // the setup is done in the tests
-  ctk::ControlSystemModule cs;
   ModuleA a;
   ModuleB b;
 };
@@ -132,9 +129,6 @@ struct InitTestApplication : public ctk::Application {
   InitTestApplication() : Application("testSuite") {}
   ~InitTestApplication() { shutdown(); }
 
-  void defineConnections() { findTag(".*").connectTo(cs); }
-
-  ctk::ControlSystemModule cs;
   ModuleC c{this, "ModuleC", ""};
 };
 
@@ -145,7 +139,7 @@ BOOST_AUTO_TEST_CASE(testDirectAppToCSConnections) {
 
   TestApplication app;
   app.b = {&app, "b", ""};
-  app.b.connectTo(app.cs);
+  // app.b.connectTo(app.cs);
 
   ctk::TestFacility test(app);
   test.runApplication();
@@ -201,9 +195,9 @@ BOOST_AUTO_TEST_CASE(testRealisticExample) {
 
   // the connections will result in a FeedingFanOut for var2, as it is connected
   // to the control system as well
-  app.a.connectTo(app.cs);
-  app.b.connectTo(app.cs);
-  app.a.var1 >> app.cs("var1_copied"); // add a ThreadedFanOut with return channel as well...
+  // app.a.connectTo(app.cs);
+  // app.b.connectTo(app.cs);
+  // app.a.var1 >> app.cs("var1_copied"); // add a ThreadedFanOut with return channel as well...
   ctk::TestFacility test(app);
   auto var1 = test.getScalar<int>("var1");
   auto var1_copied = test.getScalar<int>("var1_copied");
@@ -373,7 +367,7 @@ struct TestApplication2 : ctk::Application {
   TestApplication2() : Application("testSuite") {}
   ~TestApplication2() override { shutdown(); }
 
-  void defineConnections() override { lower.connectTo(upper); }
+  // void defineConnections() override { lower.connectTo(upper); }
 
   template<typename ACCESSOR>
   struct Module : public ctk::ApplicationModule {

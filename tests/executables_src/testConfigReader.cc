@@ -152,7 +152,6 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("TestApplication") {}
   ~TestApplication() { shutdown(); }
 
-  void defineConnections() {} // the setup is done in the tests
 
   ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
   TestModule testModule{this, "TestModule", "The test module"};
@@ -165,7 +164,6 @@ struct TestApplicationTwoConfigs : public ctk::Application {
   TestApplicationTwoConfigs() : Application("TestApplicationTwoConfigs") {}
   ~TestApplicationTwoConfigs() { shutdown(); }
 
-  void defineConnections() {}
 
   ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
   ctk::ConfigReader config2{this, "config2", "validConfig.xml"};
@@ -179,7 +177,6 @@ struct TestApplicationNoConfigs : public ctk::Application {
   TestApplicationNoConfigs() : Application("TestApplicationTwoConfigs") {}
   ~TestApplicationNoConfigs() { shutdown(); }
 
-  void defineConnections() {}
 
   TestModule testModule{this, "TestModule", "The test module"};
 };
@@ -190,11 +187,6 @@ struct TestApplicationNoConfigs : public ctk::Application {
 struct TestApplicationWithDevice : public ctk::Application {
   TestApplicationWithDevice() : Application("TestApplicationWithDevice") {}
   ~TestApplicationWithDevice() { shutdown(); }
-
-  void defineConnections() {
-    device.connectTo(config);
-    dumpConnections();
-  }
 
   ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
   ctk::DeviceModule device{this, cdd};
@@ -248,7 +240,7 @@ BOOST_AUTO_TEST_CASE(testConfigReader) {
   for(size_t i = 0; i < 8; ++i) BOOST_CHECK_EQUAL(arrayValueString[i], "Hallo" + std::to_string(i + 1));
 
   // app.config.virtualise().dump();
-  app.config.connectTo(app.testModule);
+  // app.config.connectTo(app.testModule);
 
   app.initialise();
   app.run();

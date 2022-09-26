@@ -4,8 +4,8 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
+#include "ConfigReader.h"
 #include "DeviceModule.h"
-#include "VirtualModule.h"
 
 namespace ChimeraTK {
 
@@ -147,30 +147,6 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  const Module& Module::submodule(std::string_view moduleName) const {
-    // strip leading slash if present
-    while(moduleName[0] == '/') moduleName.remove_prefix(1);
-    // an empty string or a "/" refers to the module itself
-    if(moduleName.size() == 0) return *this;
-    // search for first slash
-    size_t slash = moduleName.find_first_of("/");
-    // no slash found: call subscript operator
-    if(slash == std::string::npos) return (*this)[std::string(moduleName)];
-    // slash found: split module name at slash
-    auto upperModuleName = moduleName.substr(0, slash);
-    auto remainingModuleNames = moduleName.substr(slash + 1);
-    return (*this)[std::string(upperModuleName)].submodule(remainingModuleNames);
-  }
-
-  /*********************************************************************************************************************/
-
-  Module& Module::submodule(std::string_view moduleName) {
-    // According to Scott Meyers "Effective C++", the const cast is fine here
-    return const_cast<Module&>(static_cast<const Module&>(*this).submodule(moduleName));
-  }
-
-  /*********************************************************************************************************************/
-
   Module* Module::findApplicationModule() {
     if(getModuleType() == ModuleType::ApplicationModule) {
       auto* ret = dynamic_cast<ApplicationModule*>(this);
@@ -217,6 +193,27 @@ namespace ChimeraTK {
     return _owner->getInputModulesRecursively(startList);
   }
 
+  /*********************************************************************************************************************/
+
+  ConfigReader& Module::appConfig() {
+    size_t nConfigReaders = 0;
+    ConfigReader* instance = nullptr;
+    for(auto* mod : Application::getInstance().getSubmoduleListRecursive()) {
+      if(!dynamic_cast<ConfigReader*>(mod)) continue;
+      ++nConfigReaders;
+      instance = dynamic_cast<ConfigReader*>(mod);
+    }
+    if(nConfigReaders != 1) {
+      std::string message = "ApplicationModule::appConfig() called but " + std::to_string(nConfigReaders) +
+          " instances of ChimeraTK::ConfigReader have been found.";
+      // Printing the message as well; there is a situation when running under Boost::Test where this
+      // is caught by Boost and causes a weird destructor message from AppBase.cc instead with no means of
+      // finding out the actual error
+      std::cerr << message << std::endl;
+      throw ChimeraTK::logic_error(message);
+    }
+    return *instance;
+  }
   /*********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

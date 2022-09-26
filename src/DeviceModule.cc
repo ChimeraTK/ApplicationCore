@@ -8,6 +8,7 @@
 #include "Utilities.h"
 
 #include <ChimeraTK/DeviceBackend.h>
+#include <ChimeraTK/Utilities.h>
 
 namespace ChimeraTK {
 
@@ -109,6 +110,12 @@ namespace ChimeraTK {
 
   void DeviceModule::reportException(std::string errMsg) {
     _dm.lock()->reportException(std::move(errMsg));
+  }
+
+  /*********************************************************************************************************************/
+
+  SetDMapFilePath::SetDMapFilePath(const std::string& dmapFilePath) {
+    ChimeraTK::setDMapFilePath(dmapFilePath);
   }
 
   /*********************************************************************************************************************/

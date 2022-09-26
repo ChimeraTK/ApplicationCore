@@ -398,7 +398,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testAutoConstants, T, test_types) {
 
   TestApplication<T> app;
   T theValue = 42;
-  app.testModule.consumingPush.setMetaData(ctk::EntityOwner::constant(theValue), "", "");
+  // app.testModule.consumingPush.setMetaData(ctk::EntityOwner::constant(theValue), "", "");
   app.initialise();
   app.run();
 

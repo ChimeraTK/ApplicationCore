@@ -74,7 +74,6 @@ struct TestApplication : public ctk::Application {
                                       // the tests to catch exceptions etc.
   using Application::networkList;     // expose network list to check merging
                                       // networks
-  void defineConnections() {}         // the setup is done in the tests
 
   TestModule<T> testModule{this, "testModule", "The test module"};
   ctk::DeviceModule dev{this, "Dummy0"};
@@ -92,7 +91,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDevice, T, test_types) {
 
   TestApplication<T> app;
 
-  app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
+  // app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
 
   ctk::TestFacility test{app};
   test.runApplication();
@@ -123,7 +122,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDeviceFanOut, T, test_types) {
 
   TestApplication<T> app;
 
-  app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator") >> app.dev["Deeper"]["hierarchies"]("also");
+  // app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator") >> app.dev["Deeper"]["hierarchies"]("also");
   ctk::TestFacility test{app};
   test.runApplication();
   ChimeraTK::Device dev;
@@ -164,7 +163,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromDevice, T, test_types) {
 
   // We intentionally use an r/w register here to use it as an input only. Just to test the case
   // (might only be written in initialication and only read in the server itself)
-  app.dev("/MyModule/actuator") >> app.testModule.consumingPoll;
+  // app.dev("/MyModule/actuator") >> app.testModule.consumingPoll;
   ctk::TestFacility test{app};
   ChimeraTK::Device dev;
   dev.open("Dummy0");
@@ -208,8 +207,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumingFanOut, T, test_types) {
 
   TestApplication<T> app;
 
-  app.dev("/MyModule/actuator") >> app.testModule.consumingPoll >> app.testModule.consumingPush >>
-      app.testModule.consumingPush2;
+  // app.dev("/MyModule/actuator") >> app.testModule.consumingPoll >> app.testModule.consumingPush >>
+  //     app.testModule.consumingPush2;
   ctk::TestFacility test{app};
   ChimeraTK::Device dev;
   dev.open("Dummy0");
@@ -301,8 +300,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMergedNetworks, T, test_types) {
   TestApplication<T> app;
 
   // we abuse "feedingToDevice" as trigger here...
-  app.dev("/MyModule/actuator")[app.testModule.feedingToDevice] >> app.testModule.consumingPush;
-  app.dev("/MyModule/actuator")[app.testModule.feedingToDevice] >> app.testModule.consumingPush2;
+  // app.dev("/MyModule/actuator")[app.testModule.feedingToDevice] >> app.testModule.consumingPush;
+  // app.dev("/MyModule/actuator")[app.testModule.feedingToDevice] >> app.testModule.consumingPush2;
 
   // check that we have two separate networks for both connections
   size_t nDeviceFeeders = 0;
@@ -361,7 +360,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantToDevice, T, test_types) {
 
   TestApplication<T> app;
 
-  ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.dev("/MyModule/actuator");
+  // ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.dev("/MyModule/actuator");
   ctk::TestFacility test{app};
   test.runApplication();
 
@@ -381,8 +380,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantToDeviceFanOut, T, test_types) {
 
   TestApplication<T> app;
 
-  ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.dev("/MyModule/actuator") >>
-      app.dev("/Deeper/hierarchies/also");
+  // ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.dev("/MyModule/actuator") >>
+  //     app.dev("/Deeper/hierarchies/also");
   ctk::TestFacility test{app};
   test.runApplication();
 
@@ -403,7 +402,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDeviceModuleSubscriptOp, T, test_types) {
 
   TestApplication<T> app;
 
-  app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
+  // app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
   ctk::TestFacility test{app};
   ChimeraTK::Device dev;
   dev.open("Dummy0");
@@ -433,11 +432,11 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleVirtuallise) {
 
   TestApplication<int> app;
 
-  app.testModule.feedingToDevice >> app.dev.virtualise()["MyModule"]("actuator");
+  // app.testModule.feedingToDevice >> app.dev.virtualise()["MyModule"]("actuator");
 
   ctk::TestFacility test{app};
 
-  BOOST_CHECK(&(app.dev.virtualise()) == &(app.dev));
+  // BOOST_CHECK(&(app.dev.virtualise()) == &(app.dev));
 }
 
 /*********************************************************************************************************************/
@@ -478,7 +477,6 @@ struct TestApplication2 : public ctk::Application {
                                       // the tests to catch exceptions etc.
   using Application::networkList;     // expose network list to check merging
                                       // networks
-  void defineConnections() {}         // the setup is done in the tests
 
   TestModule2<T> testModule{this, "MyModule", "The test module"};
   Deeper<T> deeper{this, "Deeper", ""};
@@ -493,9 +491,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo, T, test_types) {
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication2<int> app;
-  app.testModule.connectTo(app.dev["MyModule"]);
-  app.deeper.hierarchies.need.connectTo(app.dev["Deeper"]["hierarchies"]["need"]);
-  app.deeper.hierarchies.findTag("ALSO").connectTo(app.dev["Deeper"]["hierarchies"]);
+  // app.testModule.connectTo(app.dev["MyModule"]);
+  // app.deeper.hierarchies.need.connectTo(app.dev["Deeper"]["hierarchies"]["need"]);
+  // app.deeper.hierarchies.findTag("ALSO").connectTo(app.dev["Deeper"]["hierarchies"]);
 
   ctk::TestFacility test{app};
   test.runApplication();
@@ -753,7 +751,6 @@ struct TestApplication4 : public ctk::Application {
   TestModule2<int> m{this, "MyModule", ""};
   Deeper<int> deeper{this, "Deeper", ""};
 
-  void defineConnections() override {}
 };
 
 /*********************************************************************************************************************/

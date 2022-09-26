@@ -8,7 +8,6 @@
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
 #include "check_timeout.h"
-#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
@@ -62,23 +61,21 @@ struct TestApplication1 : ctk::Application {
   TestApplication1() : Application("testSuite") {}
   ~TestApplication1() { shutdown(); }
 
-  void defineConnections() { t1.connectTo(cs); }
+  //  void defineConnections() { t1.connectTo(cs); }
 
   TestModule1 t1{this, "t1", ""};
-  ctk::ControlSystemModule cs;
 };
 
 struct TestApplication2 : ctk::Application {
   TestApplication2() : Application("testSuite") {}
   ~TestApplication2() { shutdown(); }
 
-  void defineConnections() {
-    t1.connectTo(cs["A"]);
-    t1.connectTo(cs["B"]);
-  }
+  /*  void defineConnections() {
+      t1.connectTo(cs["A"]);
+      t1.connectTo(cs["B"]);
+    }*/
 
   TestModule1 t1{this, "t1", ""};
-  ctk::ControlSystemModule cs;
 };
 
 /*********************************************************************************************************************/
@@ -423,17 +420,16 @@ struct TestApplication3 : ctk::Application {
   Module1 m1{this, "m1", ""};
   Module2 m2{this, "m2", ""};
 
-  ctk::ControlSystemModule cs;
   ctk::DeviceModule device1{this, ExceptionDummyCDD1};
   ctk::DeviceModule device2{this, ExceptionDummyCDD2};
 
-  void defineConnections() override {
-    device1["m1"]("i1") >> m1("i1");
-    findTag("CS").connectTo(cs);
-    findTag("DEVICE1").connectTo(device1);
-    findTag("DEVICE2").connectTo(device2);
-    device1["m1"]("i3")[cs("trigger", typeid(int), 1)] >> cs("i3", typeid(int), 1);
-  }
+  /*  void defineConnections() override {
+      device1["m1"]("i1") >> m1("i1");
+      findTag("CS").connectTo(cs);
+      findTag("DEVICE1").connectTo(device1);
+      findTag("DEVICE2").connectTo(device2);
+      device1["m1"]("i3")[cs("trigger", typeid(int), 1)] >> cs("i3", typeid(int), 1);
+    }*/
 };
 
 /*********************************************************************************************************************/
@@ -978,13 +974,12 @@ struct TestApplication4 : ctk::Application {
 
   Module3 module{this, "module", ""};
 
-  ctk::ControlSystemModule cs;
   ctk::DeviceModule device2{this, ExceptionDummyCDD2};
 
-  void defineConnections() override {
-    findTag("CS").connectTo(cs);
-    findTag("DEVICE2").flatten().connectTo(device2["m1"]);
-  }
+  /*  void defineConnections() override {
+      findTag("CS").connectTo(cs);
+      findTag("DEVICE2").flatten().connectTo(device2["m1"]);
+    }*/
 };
 
 /*********************************************************************************************************************/

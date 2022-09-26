@@ -8,7 +8,6 @@
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "check_timeout.h"
-#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
@@ -107,12 +106,10 @@ struct TestApplication : public ctk::Application {
 
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
-  void defineConnections() {}         // the setup is done in the tests
 
   TestModule<T> testModule{this, "testModule", "The test module"};
   ctk::DeviceModule dev{this, "Dummy0"};
   ctk::DeviceModule dev2{this, dummySdm};
-  ctk::ControlSystemModule cs;
 };
 
 /*********************************************************************************************************************/
@@ -131,9 +128,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerDevToApp, T, test_types) {
   auto pvManagers = ctk::createPVManager();
   app.setPVManager(pvManagers.second);
 
-  app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
+  // app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
 
-  app.dev["MyModule"]("readBack")[app.testModule.theTrigger] >> app.testModule.consumingPush;
+  // app.dev["MyModule"]("readBack")[app.testModule.theTrigger] >> app.testModule.consumingPush;
   app.initialise();
 
   app.run();
@@ -375,9 +372,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTriggerTransferGroup, T, test_types) {
       ChimeraTK::BackendFactory::getInstance().createBackend(dummySdm));
   BOOST_CHECK(backend != NULL);
 
-  app.dev2("/REG1")[app.testModule.theTrigger] >> app.testModule.consumingPush;
+  /*app.dev2("/REG1")[app.testModule.theTrigger] >> app.testModule.consumingPush;
   app.dev2("/REG2")[app.testModule.theTrigger] >> app.testModule.consumingPush2;
-  app.dev2("/REG3")[app.testModule.theTrigger] >> app.testModule.consumingPush3;
+  app.dev2("/REG3")[app.testModule.theTrigger] >> app.testModule.consumingPush3;*/
   app.initialise();
   app.run();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered

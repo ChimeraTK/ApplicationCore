@@ -6,7 +6,6 @@
 
 //#include <boost/mpl/list.hpp>
 #include "Application.h"
-#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 
 #include <boost/test/included/unit_test.hpp>
@@ -53,7 +52,6 @@ struct TestApplication : public ctk::Application {
   ~TestApplication() { shutdown(); }
 
   void defineConnections() {} // the setup is done in the tests
-  ctk::ControlSystemModule cs;
   ctk::DeviceModule dev{this, deviceCDD, "", &initialiseReg1};
 };
 
@@ -67,7 +65,7 @@ BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   var2 = 0;
   var3 = 0;
 
-  app.dev.connectTo(app.cs);
+  // app.dev.connectTo(app.cs);
   ctk::TestFacility test{app};
   test.runApplication();
   // app.dumpConnections();
@@ -117,7 +115,7 @@ BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
 
   app.dev.addInitialisationHandler(&initialiseReg2);
   app.dev.addInitialisationHandler(&initialiseReg3);
-  app.dev.connectTo(app.cs);
+  // app.dev.connectTo(app.cs);
   ctk::TestFacility test{app};
   test.runApplication();
   // app.dumpConnections();
@@ -170,7 +168,7 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
 
   app.dev.addInitialisationHandler(&initialiseReg2);
   app.dev.addInitialisationHandler(&initialiseReg3);
-  app.dev.connectTo(app.cs);
+  // app.dev.connectTo(app.cs);
   ctk::TestFacility test(app, false); // test facility without testable mode
   ctk::Device dummy;
   dummy.open(deviceCDD);

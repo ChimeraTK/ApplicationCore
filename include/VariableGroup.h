@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Model.h"
-#include "ModuleImpl.h"
+#include "Module.h"
 
 #include <boost/thread.hpp>
 
@@ -19,7 +19,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  class VariableGroup : public ModuleImpl {
+  class VariableGroup : public Module {
    public:
     /**
      * Constructor: Create VariableGroup register it with its owner.

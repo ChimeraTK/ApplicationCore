@@ -80,28 +80,6 @@ namespace ChimeraTK {
      * submodules */
     std::list<Module*> getSubmoduleListRecursive() const;
 
-    /** Check whether a submodule exists by the given name (not taking into
-     * account eliminated hierarchies etc.) */
-    bool hasSubmodule(const std::string& name) const;
-
-    /** Get a submodule by the given name (not taking into account eliminated
-     * hierarchies etc.) */
-    Module* getSubmodule(const std::string& name) const;
-
-    /** Return a VirtualModule containing the part of the tree structure matching
-     * the given tag. The resulting VirtualModule might have virtual sub-modules,
-     * if this EntityOwner contains sub-EntityOwners with entities matching the
-     * tag. "tag" is interpreted as a regular expression (see std::regex_match).
-     */
-    VirtualModule findTag(const std::string& tag) const;
-
-    /** Return a VirtualModule containing the part of the tree structure not
-     * matching the given tag. This is the negation of findTag(), this function
-     * will keep those variables which findTag() would remove from the tree.
-     * Again, "tag" is interpreted as a regular expression (see std::regex_match).
-     */
-    VirtualModule excludeTag(const std::string& tag) const;
-
     /** Called inside the constructor of Accessor: adds the accessor to the list
      */
     void registerAccessor(VariableNetworkNode accessor);
@@ -125,12 +103,6 @@ namespace ChimeraTK {
      * into any subgroups. See VariableNetworkNode::addTag() for additional
      * information about tags. */
     void addTag(const std::string& tag);
-
-    /** Create a VirtualModule which contains all variables of this EntityOwner in
-     * a flat hierarchy. It will recurse
-     *  through all sub-modules and add all found variables directly to the
-     * VirtualModule. */
-    VirtualModule flatten();
 
     void accept(Visitor<EntityOwner>& visitor) const { visitor.dispatch(*this); }
 
@@ -199,14 +171,7 @@ namespace ChimeraTK {
     template<typename T>
     static std::string constant(T value);
 
-    /** Add the part of the tree structure matching the given tag to a
-     * VirtualModule. Users normally will use findTag() instead. "tag" is
-     * interpreted as a regular expression (see std::regex_match). */
-    virtual void findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag,
-        bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const;
-
     /** Check whether this module has declared that it reached the testable mode. */
-
     bool hasReachedTestableMode();
 
    protected:
@@ -235,13 +200,6 @@ namespace ChimeraTK {
      *  has been properly unified with the normal Module class. */
     std::atomic<bool> testableModeReached{false};
   };
-
-  /********************************************************************************************************************/
-
-  template<typename T>
-  std::string EntityOwner::constant(T value) {
-    return "@CONST@" + userTypeToUserType<std::string>(value);
-  }
 
   /********************************************************************************************************************/
 

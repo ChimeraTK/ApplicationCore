@@ -5,7 +5,6 @@
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "check_timeout.h"
-#include "ControlSystemModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
@@ -115,10 +114,8 @@ struct TestApplication1 : ctk::Application {
   TestApplication1() : Application("testSuite") {}
   ~TestApplication1() { shutdown(); }
 
-  void defineConnections() { findTag(".*").connectTo(cs); }
 
   ModuleT mod{this, "m1", ""};
-  ctk::ControlSystemModule cs;
 
   const std::string dummyCdd{"(ExceptionDummy?map=testDataValidityPropagation.map)"};
 
@@ -142,7 +139,6 @@ struct TestApplication3 : ctk::Application {
 
   TriggerModule m2{this, "m2", ""};
 
-  ctk::ControlSystemModule cs;
   ctk::DeviceModule device1{this, ExceptionDummyCDD, "/m2/o1"};
 
   // ctk::DeviceModule device1{this, ExceptionDummyCDD};
@@ -251,14 +247,13 @@ struct TestApplication16 : ctk::Application {
   TestApplication16() : Application("testSuite") {}
   ~TestApplication16() { shutdown(); }
 
-  void defineConnections() {
+  /*void defineConnections() {
     mod1("o1") >> mod2("i1");
     findTag(".*").connectTo(cs);
-  }
+  }*/
 
   TestModule1 mod1{this, "m1", ""};
   TestModule1 mod2{this, "m2", ""};
-  ctk::ControlSystemModule cs;
 };
 
 /**

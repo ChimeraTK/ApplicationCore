@@ -6,7 +6,6 @@ using namespace boost::unit_test_framework;
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "ControlSystemModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
 
@@ -37,10 +36,10 @@ struct TestApp : public ctk::Application {
   TestApp() : Application("TestApp") {}
   ~TestApp() override { shutdown(); }
 
-  ctk::ControlSystemModule cs;
+  // ctk::ControlSystemModule cs;
   MyModule myModule{this, "MyModule", ""};
 
-  void defineConnections() override { myModule.connectTo(cs); }
+  // void defineConnections() override { myModule.connectTo(cs); }
 };
 
 /**********************************************************************************************************************/

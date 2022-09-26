@@ -6,7 +6,6 @@
 #define BOOST_TEST_MODULE testApplication
 
 #include "Application.h"
-#include "ControlSystemModule.h"
 #include "Multiplier.h"
 #include "Pipe.h"
 #include <libxml++/libxml++.h>
@@ -28,17 +27,17 @@ struct TestApp : public ctk::Application {
 
   using Application::makeConnections; // we call makeConnections() manually in
                                       // the tests to catch exceptions etc.
-  void defineConnections() {
+  /*void defineConnections() {
     multiplierD.output >> csmod("myVarD");
     csmod["mySubModule"]("myVarSIn") >> pipe.input;
     pipe.output >> csmod["mySubModule"]("myVarSOut");
     csmod("myVarU16") >> multiplierU16.input;
-  }
+  }*/
 
   ctk::ConstMultiplier<double> multiplierD{this, "multiplierD", "Some module", 42};
   ctk::ScalarPipe<std::string> pipe{this, "pipe", "unit", "Some pipe module"};
   ctk::ConstMultiplier<uint16_t, uint16_t, 120> multiplierU16{this, "multiplierU16", "Some other module", 42};
-  ctk::ControlSystemModule csmod;
+  // ctk::ControlSystemModule csmod;
 };
 
 /*********************************************************************************************************************/

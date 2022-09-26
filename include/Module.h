@@ -3,7 +3,6 @@
 #pragma once
 
 #include "EntityOwner.h"
-#include "VariableNetworkNode.h"
 
 #include <ChimeraTK/ReadAnyGroup.h>
 #include <ChimeraTK/TransferElement.h>
@@ -13,6 +12,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   class ApplicationModule;
+  struct ConfigReader;
 
   /********************************************************************************************************************/
 
@@ -81,43 +81,6 @@ namespace ChimeraTK {
      *  includeReturnChannels determines whether return channels of *InputWB accessors are included in the write. */
     void writeAllDestructively(bool includeReturnChannels = false);
 
-    /** Function call operator: Return VariableNetworkNode of the given variable
-     * name */
-    virtual VariableNetworkNode operator()(const std::string& variableName) const = 0;
-
-    /** Subscript operator: Return sub-module of the given name. Hierarchies will
-     * already be eliminated, if requested. Thus the returned reference will not
-     * point to any user-defined object but to a VirtualModule containing the
-     * variable structure. */
-    virtual Module& operator[](const std::string& moduleName) const = 0;
-
-    /** Convenience function which works similar as the subscript operator []. In contrast to the operator, this
-     *  function allows to specify directly the name of a sub-submodule on a deeper hierarchy level. The call to
-     *  submodule("livingroom/temperature") is equivalent to ["livingroom"]["temperature"]. */
-    const Module& submodule(std::string_view moduleName) const;
-    Module& submodule(std::string_view moduleName);
-
-    /** Return the virtual version of this module and its sub-modules, i.e.
-     * eliminate hierarchies where requested and apply other dynamic model
-     * changes. */
-    virtual const Module& virtualise() const = 0;
-    virtual void defineConnections(){};
-
-    /**
-     * Connect the entire module into another module. All variables inside this
-     * module and all submodules are connected to the target module. All variables
-     * and submodules must have an equally named and typed counterpart in the
-     * target module (or the target module allows creation of such entities, as in
-     * case of a ControlSystemModule). The target module may contain additional
-     * variables or submodules, which are ignored.
-     *
-     * If an optional trigger node is specified, this trigger node is applied to
-     * all poll-type output variables of the target module, which are being
-     * connected during this operation, if the corresponding variable in this
-     * module is push-type.
-     */
-    virtual void connectTo(const Module& target, VariableNetworkNode trigger = {}) const = 0;
-
     std::string getQualifiedName() const override;
 
     virtual std::string getVirtualQualifiedName() const = 0;
@@ -159,6 +122,14 @@ namespace ChimeraTK {
      *  common base class).
      */
     Module* findApplicationModule();
+
+    /** Obtain the ConfigReader instance of the application. If no or multiple ConfigReader instances are found, a
+     *  ChimeraTK::logic_error is thrown.
+     *  Note: This function is expensive. It should be called only during the constructor of the ApplicationModule and
+     *  the obtained configuration values should be stored for later use in member variables.
+     *  Beware that the ConfigReader instance can obly be found if it has been constructed before calling this function.
+     *  Hence, the Application should have the ConfigReader as its first member. */
+    static ConfigReader& appConfig();
 
    protected:
     /** Owner of this instance */

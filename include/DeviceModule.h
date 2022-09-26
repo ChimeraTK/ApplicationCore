@@ -84,7 +84,7 @@ namespace ChimeraTK {
    */
   class SetDMapFilePath {
    public:
-    explicit SetDMapFilePath(const std::string& dmapFilePath) { ChimeraTK::setDMapFilePath(dmapFilePath); }
+    explicit SetDMapFilePath(const std::string& dmapFilePath);
   };
 
   /*********************************************************************************************************************/
