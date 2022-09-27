@@ -7,19 +7,21 @@
 namespace ctk = ChimeraTK;
 
 struct ExampleApp : public ctk::Application {
-  ExampleApp() : Application("exampleApp3") {}
+  ExampleApp() : Application("exampleApp3") { debugMakeConnections(); }
   ~ExampleApp() { shutdown(); }
+
+  ctk::SetDMapFilePath dmapPath{"example2.dmap"};
 
   ctk::PeriodicTrigger timer{this, "Timer", "Periodic timer for the controller", 1000};
 
-  ctk::DeviceModule dev{this, "oven"};
-  ctk::ControlSystemModule cs;
-
-  void defineConnections();
+  // ctk::DeviceModule dev{this, "oven"};
+  ctk::DeviceModule dev{this, "oven", "/Timer/tick"};
+  // ctk::ControlSystemModule cs;
+  // void defineConnections();
 };
 static ExampleApp theExampleApp;
 
-void ExampleApp::defineConnections() {
-  ChimeraTK::setDMapFilePath("example2.dmap");
-  dev.connectTo(cs, timer.tick);
-}
+// void ExampleApp::defineConnections() {
+//   ChimeraTK::setDMapFilePath("example2.dmap");
+//   dev.connectTo(cs, timer.tick);
+// }

@@ -25,11 +25,8 @@ namespace ctk = ChimeraTK;
 struct Server : public ctk::Application {
   Server(std::string appName = "TemplateServer");
   ~Server() override;
-
+  ctk::SetDMapFilePath dmapPath;
   ctk::ConfigReader config;
-  ctk::ConnectingDeviceModule device;
+  ctk::DeviceModule device;
   TemplateModule templateModule;
 };
-
-
-
