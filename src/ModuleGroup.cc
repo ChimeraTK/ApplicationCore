@@ -49,6 +49,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   ModuleGroup& ModuleGroup::operator=(ModuleGroup&& other) noexcept {
+    _model = std::move(other._model);
+    other._model = {};
+    if(_model.isValid()) _model.informMove(*this);
     Module::operator=(std::move(other));
     return *this;
   }

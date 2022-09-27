@@ -32,28 +32,28 @@ namespace ChimeraTK {
      * to allow constructor inheritance of modules owning other modules. This
      * constructor will not actually be called then. See this bug report:
      * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-    Module() : EntityOwner(), _owner{nullptr} {}
+    Module() : _owner{nullptr} {}
 
     /** Destructor */
-    virtual ~Module();
+    ~Module() override;
 
     /** Move constructor */
-    Module(Module&& other) { operator=(std::move(other)); }
+    Module(Module&& other) noexcept { operator=(std::move(other)); }
 
     /** Move assignment operator */
-    Module& operator=(Module&& other);
+    Module& operator=(Module&& other) noexcept;
 
     /** Prepare the execution of the module. This function is called before any module is started (including internal
      *  modules like FanOuts) and before the initial values of the variables are pushed into the queues. Reading and
      *  writing variables at this point may result in undefined behaviour. */
-    virtual void prepare(){};
+    virtual void prepare() {}
 
     /** Execute the module. */
     virtual void run();
 
     /** Terminate the module. Must/will be called before destruction, if run() was
      * called previously. */
-    virtual void terminate(){};
+    virtual void terminate() {}
 
     /** Create a ChimeraTK::ReadAnyGroup for all readable variables in this
      * Module. */

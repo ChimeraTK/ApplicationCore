@@ -153,7 +153,7 @@ namespace ChimeraTK {
 
     // We have the testable mode lock. The device has not been initialised yet, but from now on the
     // testableMode.deviceInitialisationCounter will take care or it
-    testableModeReached = true;
+    _testableModeReached = true;
 
     // flag whether the devices was opened+initialised for the first time
     bool firstSuccess = true;

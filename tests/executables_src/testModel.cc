@@ -371,7 +371,7 @@ BOOST_AUTO_TEST_CASE(testPredicatesWithProperties) {
   BOOST_TEST(isDirectory(dmp) == false);
   BOOST_TEST(hasName(dmp) == false);
 
-  ChimeraTK::Model::VertexProperties::ProcessVariableProperties pvp{"xxx", {}};
+  ChimeraTK::Model::VertexProperties::ProcessVariableProperties pvp{"xxx", {}, {}};
   BOOST_TEST(isRoot(pvp) == false);
   BOOST_TEST(isModuleGroup(pvp) == false);
   BOOST_TEST(isApplicationModule(pvp) == false);

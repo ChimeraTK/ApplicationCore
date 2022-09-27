@@ -53,23 +53,17 @@ namespace ChimeraTK {
     [[deprecated]] ApplicationModule(EntityOwner* owner, const std::string& name, const std::string& description,
         bool eliminateHierarchy, const std::unordered_set<std::string>& tags = {});
 
-    /** Default constructor: Allows late initialisation of modules (e.g. when
-     * creating arrays of modules).
-     *
-     *  This constructor also has to be here to mitigate a bug in gcc. It is needed
-     * to allow constructor inheritance of modules owning other modules. This
-     * constructor will not actually be called then. See this bug report:
-     * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-    ApplicationModule() {}
+    /** Default constructor: Allows late initialisation of modules (e.g. when creating arrays of modules). */
+    ApplicationModule() = default;
 
     /** Move operation with the move constructor */
-    ApplicationModule(ApplicationModule&& other) { operator=(std::move(other)); }
+    ApplicationModule(ApplicationModule&& other) noexcept { operator=(std::move(other)); }
 
     /** Move assignment */
-    ApplicationModule& operator=(ApplicationModule&& other);
+    ApplicationModule& operator=(ApplicationModule&& other) noexcept;
 
     /** Destructor */
-    virtual ~ApplicationModule();
+    ~ApplicationModule() override;
 
     /** To be implemented by the user: function called in a separate thread
      * executing the main loop of the module */

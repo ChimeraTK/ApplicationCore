@@ -23,7 +23,8 @@ namespace ChimeraTK {
 
     if(owner->getModel().isValid()) {
       _model = owner->getModel().add(*this);
-      VariableGroup::_model = Model::VariableGroupProxy(_model);
+      VariableGroup::_model = {};
+      // Model::VariableGroupProxy(_model);
     }
   }
 
@@ -53,9 +54,11 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  ApplicationModule& ApplicationModule::operator=(ApplicationModule&& other) {
-    assert(!moduleThread.joinable()); // if the thread is already running,
-                                      // moving is no longer allowed!
+  ApplicationModule& ApplicationModule::operator=(ApplicationModule&& other) noexcept {
+    assert(!moduleThread.joinable()); // if the thread is already running, moving is no longer allowed!
+    _model = std::move(other._model);
+    other._model = {};
+    if(_model.isValid()) _model.informMove(*this);
     VariableGroup::operator=(std::move(other));
     return *this;
   }
@@ -145,7 +148,7 @@ namespace ChimeraTK {
     }
 
     // We are holding the testable mode lock, so we are sure the mechanism will work now.
-    testableModeReached = true;
+    _testableModeReached = true;
 
     // enter the main loop
     mainLoop();

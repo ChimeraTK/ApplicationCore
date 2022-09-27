@@ -128,6 +128,18 @@ namespace ChimeraTK::Model {
   }
 
   /********************************************************************************************************************/
+
+  void ModuleGroupProxy::informMove(ModuleGroup& module) {
+    // Updating the reference works only through the constructor, hence we have to get all other data members and
+    // construct a new one in the std::variant.
+
+    auto currentProps = std::get<VertexProperties::ModuleGroupProperties>(_d->impl->graph[_d->vertex].p);
+
+    _d->impl->graph[_d->vertex].p.emplace<VertexProperties::ModuleGroupProperties>(
+        VertexProperties::ModuleGroupProperties{std::move(currentProps.name), module});
+  }
+
+  /********************************************************************************************************************/
   /********************************************************************************************************************/
   /**  ApplicationModuleProxy */
   /********************************************************************************************************************/
@@ -162,8 +174,20 @@ namespace ChimeraTK::Model {
   }
 
   /********************************************************************************************************************/
+
+  void ApplicationModuleProxy::informMove(ApplicationModule& module) {
     assert(_d->impl->graph[_d->vertex].type == VertexProperties::Type::applicationModule);
 
+    // Updating the reference works only through the constructor, hence we have to get all other data members and
+    // construct a new one in the std::variant.
+
+    auto currentProps = std::get<VertexProperties::ApplicationModuleProperties>(_d->impl->graph[_d->vertex].p);
+
+    _d->impl->graph[_d->vertex].p.emplace<VertexProperties::ApplicationModuleProperties>(
+        VertexProperties::ApplicationModuleProperties{std::move(currentProps.name), module});
+  }
+
+  /********************************************************************************************************************/
   /********************************************************************************************************************/
   /**  VariableGroupProxy */
   /********************************************************************************************************************/
@@ -213,8 +237,20 @@ namespace ChimeraTK::Model {
   }
 
   /********************************************************************************************************************/
+
+  void VariableGroupProxy::informMove(VariableGroup& group) {
     assert(_d->impl->graph[_d->vertex].type == VertexProperties::Type::variableGroup);
 
+    // Updating the reference works only through the constructor, hence we have to get all other data members and
+    // construct a new one in the std::variant.
+
+    auto currentProps = std::get<VertexProperties::VariableGroupProperties>(_d->impl->graph[_d->vertex].p);
+
+    _d->impl->graph[_d->vertex].p.emplace<VertexProperties::VariableGroupProperties>(
+        VertexProperties::VariableGroupProperties{std::move(currentProps.name), group});
+  }
+
+  /********************************************************************************************************************/
   /********************************************************************************************************************/
   /**  DeviceModuleProxy */
   /********************************************************************************************************************/
@@ -234,6 +270,19 @@ namespace ChimeraTK::Model {
 
   void DeviceModuleProxy::addVariable(const ProcessVariableProxy& variable, const VariableNetworkNode& node) {
     return _d->impl->addVariableNode(*this, variable, node);
+  }
+
+  /********************************************************************************************************************/
+
+  void DeviceModuleProxy::informMove(DeviceModule& module) {
+    // Updating the reference works only through the constructor, hence we have to get all other data members and
+    // construct a new one in the std::variant.
+
+    auto currentProps = std::get<VertexProperties::DeviceModuleProperties>(_d->impl->graph[_d->vertex].p);
+
+    _d->impl->graph[_d->vertex].p.emplace<VertexProperties::DeviceModuleProperties>(
+        VertexProperties::DeviceModuleProperties{
+            std::move(currentProps.aliasOrCdd), std::move(currentProps.trigger), module});
   }
 
   /********************************************************************************************************************/
@@ -476,7 +525,7 @@ namespace ChimeraTK::Model {
 
     // set vertex type and type-dependent properties
     graph[newVertex].type = VertexProperties::Type::processVariable;
-    VertexProperties::ProcessVariableProperties props{name, {}};
+    VertexProperties::ProcessVariableProperties props{name, {}, {}};
     graph[newVertex].p.emplace<VertexProperties::ProcessVariableProperties>(props);
 
     // connect the vertex with a parenthood edge

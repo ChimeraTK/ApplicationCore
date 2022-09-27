@@ -249,6 +249,11 @@ namespace ChimeraTK::Model {
     ModuleGroupProxy add(ModuleGroup& module);
     ApplicationModuleProxy add(ApplicationModule& module);
     DeviceModuleProxy add(DeviceModule& module);
+
+   private:
+    /// Update ModuleGroup reference after move operation
+    void informMove(ModuleGroup& group);
+    friend class ChimeraTK::ModuleGroup;
   };
 
   /********************************************************************************************************************/
@@ -270,6 +275,11 @@ namespace ChimeraTK::Model {
      * Convert into a proxy for the VariableGroup part/aspect of the ApplicationModule
      */
     explicit operator Model::VariableGroupProxy();
+
+   private:
+    /// Update ApplicationModule reference after move operation
+    void informMove(ApplicationModule& module);
+    friend class ChimeraTK::ApplicationModule;
   };
 
   /********************************************************************************************************************/
@@ -289,6 +299,11 @@ namespace ChimeraTK::Model {
 
     VariableGroupProxy add(VariableGroup& module);
     void addVariable(const ProcessVariableProxy& variable, const VariableNetworkNode& node);
+
+   private:
+    /// Update VariableGroup reference after move operation
+    void informMove(VariableGroup& group);
+    friend class ChimeraTK::VariableGroup;
   };
 
   /********************************************************************************************************************/
@@ -305,6 +320,11 @@ namespace ChimeraTK::Model {
     [[nodiscard]] ProcessVariableProxy getTrigger() const;
 
     void addVariable(const ProcessVariableProxy& variable, const VariableNetworkNode& node);
+
+   private:
+    /// Update DeviceModule reference after move operation
+    void informMove(DeviceModule& group);
+    friend class ChimeraTK::DeviceModule;
   };
 
   /********************************************************************************************************************/

@@ -46,9 +46,11 @@ namespace ChimeraTK {
 
     /** Move constructor */
     VariableGroup(VariableGroup&& other) noexcept { operator=(std::move(other)); }
+    VariableGroup(const VariableGroup& other) noexcept = delete;
 
     /** Move assignment */
     VariableGroup& operator=(VariableGroup&& other) noexcept;
+    VariableGroup& operator=(const VariableGroup& other) noexcept = delete;
 
     ModuleType getModuleType() const override { return ModuleType::VariableGroup; }
 

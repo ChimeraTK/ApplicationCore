@@ -66,7 +66,7 @@ namespace ChimeraTK {
 
     // using ThreadedFanOut<UserType>::_network;
     using ThreadedFanOut<UserType>::readInitialValues;
-    using EntityOwner::testableModeReached;
+    using EntityOwner::_testableModeReached;
   };
 
   /********************************************************************************************************************/
@@ -116,7 +116,7 @@ namespace ChimeraTK {
   void ThreadedFanOut<UserType>::run() {
     Application::registerThread("ThFO" + FanOut<UserType>::impl->getName());
     Application::getInstance().getTestableMode().lock("start");
-    testableModeReached = true;
+    _testableModeReached = true;
 
     ChimeraTK::VersionNumber version{nullptr};
     version = readInitialValues();
@@ -195,7 +195,7 @@ namespace ChimeraTK {
   void ThreadedFanOutWithReturn<UserType>::run() {
     Application::registerThread("ThFO" + FanOut<UserType>::impl->getName());
     Application::getInstance().getTestableMode().lock("start");
-    testableModeReached = true;
+    _testableModeReached = true;
 
     TransferElementID var;
     ChimeraTK::VersionNumber version{nullptr};

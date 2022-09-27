@@ -3,7 +3,7 @@
 
 #include "VariableGroup.h"
 
-#include "Application.h"
+#include "ApplicationModule.h"
 #include "ModuleGroup.h"
 
 namespace ChimeraTK {
@@ -16,7 +16,12 @@ namespace ChimeraTK {
     if(owner == nullptr) {
       throw ChimeraTK::logic_error("VariableGroups: owner cannot be nullptr!");
     }
-    if(owner->getModel().isValid()) _model = owner->getModel().add(*this);
+    if(owner->getModel().isValid()) {
+      _model = owner->getModel().add(*this);
+    }
+    else if(dynamic_cast<ApplicationModule*>(owner) && dynamic_cast<ApplicationModule*>(owner)->getModel().isValid()) {
+      _model = dynamic_cast<ApplicationModule*>(owner)->getModel().add(*this);
+    }
   }
 
   /********************************************************************************************************************/
@@ -39,6 +44,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   VariableGroup& VariableGroup::operator=(VariableGroup&& other) noexcept {
+    _model = std::move(other._model);
+    other._model = {};
+    if(_model.isValid()) _model.informMove(*this);
     Module::operator=(std::move(other));
     return *this;
   }

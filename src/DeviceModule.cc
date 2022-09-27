@@ -69,6 +69,16 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  DeviceModule& DeviceModule::operator=(DeviceModule&& other) noexcept {
+    _model = std::move(other._model);
+    other._model = {};
+    if(_model.isValid()) _model.informMove(*this);
+    ModuleGroup::operator=(std::move(other));
+    return *this;
+  }
+
+  /*********************************************************************************************************************/
+
   DeviceManager& DeviceModule::getDeviceManager() {
     return *_dm.lock();
   }

@@ -46,6 +46,12 @@ namespace ChimeraTK {
 
     using ModuleGroup::ModuleGroup;
 
+    /** Move operation with the move constructor */
+    DeviceModule(DeviceModule&& other) noexcept { operator=(std::move(other)); }
+
+    /** Move assignment */
+    DeviceModule& operator=(DeviceModule&& other) noexcept;
+
     /**
      *  Return the corresponding DeviceManager
      */

@@ -23,17 +23,19 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  Module& Module::operator=(Module&& other) {
-    EntityOwner::operator=(std::move(other));
+  Module& Module::operator=(Module&& other) noexcept {
+    if(_owner != nullptr) _owner->unregisterModule(this);
+    if(other._owner != nullptr) other._owner->unregisterModule(&other);
     _owner = other._owner;
+    other._owner = nullptr;
+    EntityOwner::operator=(std::move(other));
     if(_owner != nullptr) _owner->registerModule(this, false);
-    // note: the other module unregisters itself in its destructor - which will be called next after any move operation
     return *this;
   }
   /*********************************************************************************************************************/
 
   void Module::run() {
-    testableModeReached = true; // Modules which don't implement run() have now reached testable mode
+    _testableModeReached = true; // Modules which don't implement run() have now reached testable mode
   }
 
   /*********************************************************************************************************************/
