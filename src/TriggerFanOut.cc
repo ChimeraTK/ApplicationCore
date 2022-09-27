@@ -78,7 +78,7 @@ namespace ChimeraTK {
   void TriggerFanOut::run() {
     Application::registerThread("TrFO" + externalTrigger->getName());
     Application::getInstance().getTestableMode().lock("start");
-    testableModeReached = true;
+    _testableModeReached = true;
 
     ChimeraTK::VersionNumber version = Application::getInstance().getStartVersion();
 

@@ -34,21 +34,20 @@ namespace ChimeraTK {
    public:
     /** Constructor: Create EntityOwner by the given name with the given description. The specified list of
      *  tags will be added to all elements directly or indirectly owned by this instance. */
-    EntityOwner(
-        const std::string& name, const std::string& description, const std::unordered_set<std::string>& tags = {});
+    EntityOwner(std::string name, std::string description, std::unordered_set<std::string> tags = {});
 
     /** Default constructor just for late initialisation */
     EntityOwner();
 
     /** Virtual destructor to make the type polymorphic */
-    virtual ~EntityOwner();
+    virtual ~EntityOwner() = default;
 
     /** Move constructor */
-    EntityOwner(EntityOwner&& other) { operator=(std::move(other)); }
+    EntityOwner(EntityOwner&& other) noexcept { operator=(std::move(other)); }
     EntityOwner(const EntityOwner& other) = delete;
 
     /** Move assignment operator */
-    EntityOwner& operator=(EntityOwner&& other);
+    EntityOwner& operator=(EntityOwner&& other) noexcept;
     EntityOwner& operator=(const EntityOwner& other) = delete;
 
     /** Get the name of the module instance */
@@ -67,10 +66,10 @@ namespace ChimeraTK {
 
     /** Obtain the list of accessors/variables directly associated with this
      * instance */
-    virtual std::list<VariableNetworkNode> getAccessorList() const { return accessorList; }
+    virtual std::list<VariableNetworkNode> getAccessorList() const { return _accessorList; }
 
     /** Obtain the list of submodules associated with this instance */
-    virtual std::list<Module*> getSubmoduleList() const { return moduleList; }
+    virtual std::list<Module*> getSubmoduleList() const { return _moduleList; }
 
     /** Obtain the list of accessors/variables associated with this instance and
      * any submodules */
@@ -86,7 +85,7 @@ namespace ChimeraTK {
 
     /** Called inside the destructor of Accessor: removes the accessor from the
      * list */
-    void unregisterAccessor(VariableNetworkNode accessor) { accessorList.remove(accessor); }
+    void unregisterAccessor(const VariableNetworkNode& accessor) { _accessorList.remove(accessor); }
 
     /** Register another module as a sub-module. Will be called automatically by
      * all modules in their constructors. If addTags is set to false, the tags of
@@ -185,10 +184,10 @@ namespace ChimeraTK {
     std::string _description;
 
     /** List of accessors owned by this instance */
-    std::list<VariableNetworkNode> accessorList;
+    std::list<VariableNetworkNode> _accessorList;
 
     /** List of modules owned by this instance */
-    std::list<Module*> moduleList;
+    std::list<Module*> _moduleList;
 
     /** List of tags to be added to all accessors and modules inside this module
      */
@@ -198,7 +197,7 @@ namespace ChimeraTK {
      *  the testable mode lock is acquired.
      *  @todo This should be moved to a more proper place in the hierarchy (e.g. ModuleImpl) after InternalModule class
      *  has been properly unified with the normal Module class. */
-    std::atomic<bool> testableModeReached{false};
+    std::atomic<bool> _testableModeReached{false};
   };
 
   /********************************************************************************************************************/
