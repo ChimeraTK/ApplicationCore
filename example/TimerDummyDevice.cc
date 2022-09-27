@@ -1,12 +1,15 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include <ChimeraTK/BackendFactory.h>
+#include <ChimeraTK/BackendRegisterCatalogue.h>
 #include <ChimeraTK/DeviceAccessVersion.h>
 #include <ChimeraTK/DeviceBackendImpl.h>
+#include <ChimeraTK/LNMBackendRegisterInfo.h>
 #include <ChimeraTK/NDRegisterAccessor.h>
 
 template<typename UserType>
 class TimerDummyRegisterAccessor;
+namespace ctk = ChimeraTK;
 
 class TimerDummy : public ChimeraTK::DeviceBackendImpl {
  public:
@@ -31,6 +34,11 @@ class TimerDummy : public ChimeraTK::DeviceBackendImpl {
   void setException() override {}
 
   std::string readDeviceInfo() override { return std::string("Dummy timing device "); }
+
+  // return just an empty Catalogue for interface compability
+  ctk::RegisterCatalogue getRegisterCatalogue() const override {
+    return ctk::RegisterCatalogue(std::make_unique<ctk::BackendRegisterCatalogue<ctk::LNMBackendRegisterInfo>>());
+  }
 
   /** Class to register the backend type with the factory. */
   class BackendRegisterer {

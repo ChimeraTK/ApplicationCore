@@ -28,7 +28,7 @@ struct Automation : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
   ctk::ScalarPollInput<double> opSp{this, "operatorSetpoint", "degC", "...", {"CS"}};
   ctk::ScalarOutput<double> actSp{this, "temperatureSetpoint", "degC", "...", {"Controller"}};
-  ctk::ScalarPushInput<uint64_t> trigger{this, "trigger", "", "..."};
+  ctk::ScalarPushInput<uint64_t> trigger{this, "/Timer/tick", "", "..."};
 
   void mainLoop() {
     const double maxStep = 0.1;
@@ -41,23 +41,34 @@ struct Automation : public ctk::ApplicationModule {
 };
 
 struct ExampleApp : public ctk::Application {
-  ExampleApp() : Application("exampleApp2a") {}
+  ExampleApp() : Application("exampleApp2a") {
+    if(config.get<int>("enableAutomation")) {
+      automation = Automation(this, "Automation", "Slow setpoint ramping algorithm");
+      // automation.findTag("Controller").connectTo(controller);
+      // timer.tick >> automation.trigger;
+    }
+  }
   ~ExampleApp() { shutdown(); }
+
+  ctk::SetDMapFilePath dmapPath{"example2.dmap"};
 
   ctk::ConfigReader config{this, "config", "demoApp2a.xml"};
 
   Controller controller{this, "Controller", "The Controller"};
-  Automation automation;
 
   ctk::PeriodicTrigger timer{this, "Timer", "Periodic timer for the controller", 1000};
 
-  ctk::DeviceModule oven{this, "oven"};
-  ctk::ControlSystemModule cs;
+  // ctk::DeviceModule oven{this, "oven"};
+  ctk::DeviceModule oven{this, "oven", "/Timer/tick"};
 
-  void defineConnections();
+  Automation automation;
+
+  // ctk::ControlSystemModule cs;
+  // void defineConnections();
 };
 static ExampleApp theExampleApp;
 
+/*
 void ExampleApp::defineConnections() {
   ChimeraTK::setDMapFilePath("example2.dmap");
 
@@ -71,3 +82,4 @@ void ExampleApp::defineConnections() {
   controller.findTag("DEV").connectTo(oven["heater"], timer.tick);
   findTag("CS").connectTo(cs);
 }
+*/

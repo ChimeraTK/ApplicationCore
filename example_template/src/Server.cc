@@ -6,12 +6,12 @@
 #include "version.h"
 
 Server::Server(std::string appName)
-: ctk::Application(appName), config{this, "Configuration", getName() + "-Config.xml"}, device{this,
-                                                                                           "MappedDummyDevice"},
+: ctk::Application(appName),
+  dmapPath(appName + ".dmap"), config{this, "Configuration", getName() + "-Config.xml"}, device{this,
+                                                                                             "MappedDummyDevice"},
   templateModule{this, "TemplateModule", "This is a template module, adapt as needed!"} {
   std::cout << "*** Construction of " << appName << " in version " << AppVersion::major << "." << AppVersion::minor
             << "." << AppVersion::patch << " starts. ***" << std::endl;
-  ctk::setDMapFilePath(getName() + ".dmap");
   std::cout << "*** Construction of " << appName << " in version " << AppVersion::major << "." << AppVersion::minor
             << "." << AppVersion::patch << " done. ***" << std::endl;
 }
