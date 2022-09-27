@@ -24,7 +24,6 @@ namespace ChimeraTK {
                         public InversionOfControlAccessor<ArrayAccessor<UserType>> {
    public:
     using InversionOfControlAccessor<ArrayAccessor<UserType>>::operator VariableNetworkNode;
-    using InversionOfControlAccessor<ArrayAccessor<UserType>>::operator>>;
     void replace(const ChimeraTK::NDRegisterAccessorAbstractor<UserType>& newAccessor) = delete;
     using InversionOfControlAccessor<ArrayAccessor<UserType>>::replace;
     ArrayAccessor<UserType>& operator=(ArrayAccessor<UserType>& other) = delete;

@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include "VariableNetworkNodeDumpingVisitor.h"
-#include "Visitor.h"
+#if 0
 
-#include <map>
+#  include "VariableNetworkNodeDumpingVisitor.h"
+#  include "Visitor.h"
+
+#  include <map>
 
 namespace ChimeraTK {
 
@@ -44,3 +46,5 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
 } // namespace ChimeraTK
+
+#endif

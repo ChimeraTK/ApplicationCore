@@ -197,14 +197,14 @@ namespace ChimeraTK {
       if(accessor.getDirection().dir != VariableDirection::consuming) continue;
 
       // find the feeder in the network
-      auto feeder = accessor.getOwner().getFeedingNode();
-      auto feedingModule = feeder.getOwningModule();
-      // CS module and DeviceModule nodes don't have an owning module set. As they stop the recursion anyway we just continue.
-      if(!feedingModule) {
+      auto proxy = accessor.getModel().visit(Model::returnApplicationModule, Model::keepApplicationModules,
+          Model::keepPvAccess, Model::adjacentInSearch, Model::returnFirstHit(Model::ApplicationModuleProxy{}));
+      if(!proxy.isValid()) {
         continue;
       }
+      auto& feedingModule = proxy.getApplicationModule();
 
-      auto thisInputsRecursiveModuleList = feedingModule->getInputModulesRecursively(startList);
+      auto thisInputsRecursiveModuleList = feedingModule.getInputModulesRecursively(startList);
       // only add the modules that were added by the recursive search to the output list
       assert(startList.size() <= thisInputsRecursiveModuleList.size());
       auto copyStartIter = thisInputsRecursiveModuleList.begin();

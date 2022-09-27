@@ -86,14 +86,14 @@ namespace ChimeraTK {
       // so we save the original one as description for indication in a message
       _inputs.emplace_back(this, node.getName(), node.getQualifiedName(), HierarchyModifier::hideThis,
           std::unordered_set<std::string>{tagInternalVars});
-      node >> _inputs.back()._status;
-      // look for matching status message output node
+      // node >> _inputs.back()._status;
+      //  look for matching status message output node
       auto result = nodesByName.find(node.getName() + "_message");
       if(result != nodesByName.end()) {
         // tell the StatusWithMessageInput that it should consider the message source, and connect it
         auto statusMsgNode = result->second;
         _inputs.back().setMessageSource();
-        statusMsgNode >> _inputs.back()._message;
+        // statusMsgNode >> _inputs.back()._message;
       }
     }
 
@@ -126,10 +126,10 @@ namespace ChimeraTK {
         auto statusNode = VariableNetworkNode(aggregator->_output._status);
         _inputs.emplace_back(this, statusNode.getName(), "", HierarchyModifier::hideThis,
             std::unordered_set<std::string>{tagInternalVars});
-        statusNode >> _inputs.back()._status;
+        // statusNode >> _inputs.back()._status;
         auto msgNode = VariableNetworkNode(aggregator->_output._message);
         _inputs.back().setMessageSource();
-        msgNode >> _inputs.back()._message;
+        // msgNode >> _inputs.back()._message;
         return;
       }
     }

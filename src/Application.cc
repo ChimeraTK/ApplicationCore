@@ -225,25 +225,26 @@ void Application::dumpConnections(std::ostream& stream) {                       
 } // LCOV_EXCL_LINE
 
 /*********************************************************************************************************************/
-
+/*
 void Application::dumpConnectionGraph(const std::string& fileName) const {
   std::fstream file{fileName, std::ios_base::out};
 
   VariableNetworkGraphDumpingVisitor visitor{file};
   visitor.dispatch(*this);
 }
-
+*/
 /*********************************************************************************************************************/
-
+/*
 void Application::dumpModuleConnectionGraph(const std::string& fileName) const {
   std::fstream file{fileName, std::ios_base::out};
 
   VariableNetworkModuleGraphDumpingVisitor visitor{file};
   visitor.dispatch(*this);
 }
-
+*/
 /*********************************************************************************************************************/
 
+/*
 void Application::markCircularConsumers(VariableNetwork& variableNetwork) {
   for(auto& node : variableNetwork.getConsumingNodes()) {
     // A variable network is a tree-like network of VariableNetworkNodes (one feeder and one or more multiple consumers)
@@ -256,6 +257,7 @@ void Application::markCircularConsumers(VariableNetwork& variableNetwork) {
     }
   }
 }
+*/
 
 /*********************************************************************************************************************/
 

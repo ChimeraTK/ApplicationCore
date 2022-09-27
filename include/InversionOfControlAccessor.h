@@ -3,8 +3,8 @@
 #pragma once
 
 #include "ApplicationModule.h"
-#include "HierarchyModifyingGroup.h"
 #include "Module.h"
+#include "Utilities.h"
 #include "VariableGroup.h"
 #include "VariableNetworkNode.h"
 
@@ -42,23 +42,20 @@ namespace ChimeraTK {
     void addTags(const std::unordered_set<std::string>& tags);
 
     /** Convert into VariableNetworkNode */
-    operator VariableNetworkNode() { return node; }
-    operator const VariableNetworkNode() const { return node; }
-
-    /** Connect with other node */
-    VariableNetworkNode operator>>(const VariableNetworkNode& otherNode) { return node >> otherNode; }
+    explicit operator VariableNetworkNode() { return node; }
+    explicit operator const VariableNetworkNode() const { return node; }
 
     /** Replace with other accessor */
     void replace(Derived&& other);
 
     /** Return the owning module */
-    EntityOwner* getOwner() const { return node.getOwningModule(); }
+    [[nodiscard]] EntityOwner* getOwner() const { return node.getOwningModule(); }
 
-    Model::ProcessVariableProxy getModel() const { return node.getModel(); };
+    [[nodiscard]] Model::ProcessVariableProxy getModel() const { return node.getModel(); };
 
    protected:
     /// complete the description with the full description from the owner
-    std::string completeDescription(EntityOwner* owner, const std::string& description);
+    [[nodiscard]] std::string completeDescription(EntityOwner* owner, const std::string& description) const;
 
     InversionOfControlAccessor(Module* owner, const std::string& name, VariableDirection direction, std::string unit,
         size_t nElements, UpdateMode mode, const std::string& description, const std::type_info* valueType,
@@ -127,10 +124,10 @@ namespace ChimeraTK {
 
   template<typename Derived>
   std::string InversionOfControlAccessor<Derived>::completeDescription(
-      EntityOwner* owner, const std::string& description) {
+      EntityOwner* owner, const std::string& description) const {
     auto ownerDescription = owner->getFullDescription();
-    if(ownerDescription == "") return description;
-    if(description == "") return ownerDescription;
+    if(ownerDescription.empty()) return description;
+    if(description.empty()) return ownerDescription;
     return ownerDescription + " - " + description;
   }
 

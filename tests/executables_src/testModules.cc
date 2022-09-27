@@ -408,8 +408,8 @@ BOOST_AUTO_TEST_CASE(test_getAccessorList) {
     size_t foundSomeInput = 0;
     size_t foundSomeOutput = 0;
     for(const auto& var : list) {
-      if(var == app.testModule.someInput) foundSomeInput++;
-      if(var == app.testModule.someOutput) foundSomeOutput++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someInput)) foundSomeInput++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someOutput)) foundSomeOutput++;
     }
     BOOST_CHECK(foundSomeInput == 1);
     BOOST_CHECK(foundSomeOutput == 1);
@@ -422,8 +422,8 @@ BOOST_AUTO_TEST_CASE(test_getAccessorList) {
     size_t foundInGroup = 0;
     size_t foundAlsoInGroup = 0;
     for(const auto& var : list) {
-      if(var == app.testModule.someGroup.inGroup) foundInGroup++;
-      if(var == app.testModule.someGroup.alsoInGroup) foundAlsoInGroup++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.inGroup)) foundInGroup++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.alsoInGroup)) foundAlsoInGroup++;
     }
     BOOST_CHECK(foundInGroup == 1);
     BOOST_CHECK(foundAlsoInGroup == 1);
@@ -438,11 +438,11 @@ BOOST_AUTO_TEST_CASE(test_getAccessorList) {
     size_t foundAlsoInGroup = 0;
     size_t foundFoo = 0;
     for(const auto& var : list) {
-      if(var == app.testModule.someInput) foundSomeInput++;
-      if(var == app.testModule.someOutput) foundSomeOutput++;
-      if(var == app.testModule.someGroup.inGroup) foundInGroup++;
-      if(var == app.testModule.someGroup.alsoInGroup) foundAlsoInGroup++;
-      if(var == app.testModule.anotherGroup.foo) foundFoo++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someInput)) foundSomeInput++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someOutput)) foundSomeOutput++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.inGroup)) foundInGroup++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.alsoInGroup)) foundAlsoInGroup++;
+      if(var == ctk::VariableNetworkNode(app.testModule.anotherGroup.foo)) foundFoo++;
     }
     BOOST_CHECK(foundSomeInput == 1);
     BOOST_CHECK(foundSomeOutput == 1);
@@ -460,11 +460,11 @@ BOOST_AUTO_TEST_CASE(test_getAccessorList) {
     size_t foundAlsoInGroup = 0;
     size_t foundFoo = 0;
     for(const auto& var : list) {
-      if(var == app.testModule.someInput) foundSomeInput++;
-      if(var == app.testModule.someOutput) foundSomeOutput++;
-      if(var == app.testModule.someGroup.inGroup) foundInGroup++;
-      if(var == app.testModule.someGroup.alsoInGroup) foundAlsoInGroup++;
-      if(var == app.testModule.anotherGroup.foo) foundFoo++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someInput)) foundSomeInput++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someOutput)) foundSomeOutput++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.inGroup)) foundInGroup++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.alsoInGroup)) foundAlsoInGroup++;
+      if(var == ctk::VariableNetworkNode(app.testModule.anotherGroup.foo)) foundFoo++;
     }
     BOOST_CHECK(foundSomeInput == 1);
     BOOST_CHECK(foundSomeOutput == 1);
@@ -478,7 +478,7 @@ BOOST_AUTO_TEST_CASE(test_getAccessorList) {
     BOOST_CHECK(list.size() == 1);
     size_t foundFoo = 0;
     for(const auto& var : list) {
-      if(var == app.testModule.anotherGroup.foo) foundFoo++;
+      if(var == ctk::VariableNetworkNode(app.testModule.anotherGroup.foo)) foundFoo++;
     }
     BOOST_CHECK(foundFoo == 1);
   }
@@ -540,8 +540,8 @@ BOOST_AUTO_TEST_CASE(testVectorOfApplicationModule) {
     size_t foundSomeInput = 0;
     size_t foundSomeOutput = 0;
     for(auto& acc : accList) {
-      if(acc == app.vectorOfTestModule[i].someInput) foundSomeInput++;
-      if(acc == app.vectorOfTestModule[i].someOutput) foundSomeOutput++;
+      if(acc == ctk::VariableNetworkNode(app.vectorOfTestModule[i].someInput)) foundSomeInput++;
+      if(acc == ctk::VariableNetworkNode(app.vectorOfTestModule[i].someOutput)) foundSomeOutput++;
     }
     BOOST_TEST(foundSomeInput == 1);
     BOOST_TEST(foundSomeOutput == 1);
@@ -678,8 +678,10 @@ BOOST_AUTO_TEST_CASE(testVectorsOfAllModules) {
         size_t someInputFound = 0;
         size_t someOutputFound = 0;
         for(const auto& acc : accList) {
-          if(acc == app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someInput) someInputFound++;
-          if(acc == app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someOutput) someOutputFound++;
+          if(acc == ctk::VariableNetworkNode(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someInput))
+            someInputFound++;
+          if(acc == ctk::VariableNetworkNode(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someOutput))
+            someOutputFound++;
         }
         BOOST_CHECK_EQUAL(someInputFound, 1);
         BOOST_CHECK_EQUAL(someOutputFound, 1);
@@ -718,10 +720,14 @@ BOOST_AUTO_TEST_CASE(testVectorsOfAllModules) {
           size_t inGroupFound = 0;
           size_t alsoInGroupFound = 0;
           for(const auto& acc : accList) {
-            if(acc == app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].inGroup) {
+            if(acc ==
+                ctk::VariableNetworkNode(
+                    app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].inGroup)) {
               inGroupFound++;
             }
-            if(acc == app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].alsoInGroup) {
+            if(acc ==
+                ctk::VariableNetworkNode(
+                    app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].alsoInGroup)) {
               alsoInGroupFound++;
             }
           }
