@@ -1,11 +1,13 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
-#include "VariableNetwork.h"
+#if 0
 
-#include "Application.h"
-#include "VariableNetworkDumpingVisitor.h"
+#  include "VariableNetwork.h"
 
-#include <sstream>
+#  include "Application.h"
+#  include "VariableNetworkDumpingVisitor.h"
+
+#  include <sstream>
 
 namespace ChimeraTK {
 
@@ -115,7 +117,7 @@ namespace ChimeraTK {
     if(!hasFeedingNode()) return TriggerType::none;
     const auto& feeder = getFeedingNode();
     // network has an external trigger
-#if 0
+#  if 0
     if(feeder.hasExternalTrigger()) {
       if(feeder.getMode() == UpdateMode::push) {
         std::stringstream msg;
@@ -130,7 +132,7 @@ namespace ChimeraTK {
       }
       return TriggerType::external;
     }
-#endif
+#  endif
     // network is fed by a pushing node
     if(feeder.getMode() == UpdateMode::push) {
       return TriggerType::feeder;
@@ -353,3 +355,5 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
 } // namespace ChimeraTK
+
+#endif

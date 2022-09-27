@@ -1,11 +1,13 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
-#pragma once
+#if 0
 
-#include "VariableNetworkNodeDumpingVisitor.h"
-#include "Visitor.h"
+#  pragma once
 
-#include <map>
+#  include "VariableNetworkNodeDumpingVisitor.h"
+#  include "Visitor.h"
+
+#  include <map>
 
 namespace ChimeraTK {
 
@@ -48,3 +50,5 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
 } // namespace ChimeraTK
+
+#endif

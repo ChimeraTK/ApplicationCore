@@ -97,20 +97,6 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::setOwner(VariableNetwork* net) {
-    assert(pdata->network == nullptr);
-    assert(pdata->type != NodeType::invalid);
-    pdata->network = net;
-  }
-
-  /*********************************************************************************************************************/
-
-  void VariableNetworkNode::clearOwner() {
-    pdata->network = nullptr;
-  }
-
-  /*********************************************************************************************************************/
-
   bool VariableNetworkNode::hasImplementation() const {
     return pdata->type == NodeType::Device || pdata->type == NodeType::ControlSystem ||
         pdata->type == NodeType::Constant;
@@ -143,55 +129,6 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode VariableNetworkNode::operator>>(VariableNetworkNode other) {
-    if(Application::getInstance().initialiseCalled) {
-      throw ChimeraTK::logic_error("Cannot make connections after Application::initialise() has been run.");
-    }
-
-    if(pdata->direction.dir == VariableDirection::invalid) {
-      if(!other.hasOwner()) {
-        pdata->direction = {VariableDirection::feeding, false};
-      }
-      else {
-        if(other.getOwner().hasFeedingNode()) {
-          pdata->direction = {VariableDirection::consuming, false};
-          if(getType() == NodeType::Device) { // special treatment for Device-type variables:
-                                              // consumers are push-type
-            pdata->mode = UpdateMode::push;
-          }
-        }
-        else {
-          pdata->direction = {VariableDirection::feeding, false};
-        }
-      }
-    }
-    if(other.pdata->direction.dir == VariableDirection::invalid) {
-      if(!hasOwner()) {
-        other.pdata->direction = {VariableDirection::consuming, false};
-        if(other.getType() == NodeType::Device) { // special treatment for Device-type variables:
-                                                  // consumers are push-type
-          other.pdata->mode = UpdateMode::push;
-        }
-      }
-      else {
-        if(getOwner().hasFeedingNode()) {
-          other.pdata->direction = {VariableDirection::consuming, false};
-          if(other.getType() == NodeType::Device) { // special treatment for Device-type variables:
-                                                    // consumers are push-type
-            other.pdata->mode = UpdateMode::push;
-          }
-        }
-        else {
-          other.pdata->direction = {VariableDirection::feeding, false};
-        }
-      }
-    }
-    // Application::getInstance().connect(*this, other);
-    return *this;
-  }
-
-  /*********************************************************************************************************************/
-
   void VariableNetworkNode::setValueType(const std::type_info& newType) const {
     assert(*pdata->valueType == typeid(AnyType));
     pdata->valueType = &newType;
@@ -210,12 +147,6 @@ namespace ChimeraTK {
   void VariableNetworkNode::dump(std::ostream& stream) const {
     VariableNetworkNodeDumpingVisitor visitor(stream, " ");
     visitor.dispatch(*this);
-  }
-
-  /*********************************************************************************************************************/
-
-  bool VariableNetworkNode::hasOwner() const {
-    return pdata->network != nullptr;
   }
 
   /*********************************************************************************************************************/
@@ -265,13 +196,6 @@ namespace ChimeraTK {
 
   const std::string& VariableNetworkNode::getDescription() const {
     return pdata->description;
-  }
-
-  /*********************************************************************************************************************/
-
-  VariableNetwork& VariableNetworkNode::getOwner() const {
-    assert(pdata->network != nullptr);
-    return *(pdata->network);
   }
 
   /*********************************************************************************************************************/
@@ -362,23 +286,17 @@ namespace ChimeraTK {
     detail::CircularDependencyDetectionRecursionStopper::startNewScan();
 
     // find the feeder of the network
-    auto feeder = getOwner().getFeedingNode();
-    auto feedingModule = feeder.getOwningModule();
+    auto amProxy = getModel().visit(Model::returnApplicationModule, Model::keepPvAccess, Model::keepApplicationModules,
+        Model::adjacentInSearch, Model::returnFirstHit(Model::ApplicationModuleProxy{}));
     // CS modules and device modules don't have an owning module. They stop the circle anyway. So if either the feeder
     // or the receiver (this) don't have an owning module, there is nothing to do here.
-    if(!feedingModule || !getOwningModule()) {
+    if(!amProxy.isValid()) {
       return {};
     }
     assert(getDirection().dir == VariableDirection::consuming);
 
-    auto owningModule = getOwningModule();
-    // if the entity owner is a variable group we must go up the hierarchy until we find the applciation module
-    while(owningModule->getModuleType() == EntityOwner::ModuleType::VariableGroup) {
-      auto variableGroup = static_cast<VariableGroup*>(owningModule);
-      owningModule = variableGroup->getOwner();
-    }
-    assert(owningModule->getModuleType() == EntityOwner::ModuleType::ApplicationModule);
-    auto inputModuleList = feedingModule->getInputModulesRecursively({owningModule});
+    Module* owningModule = &amProxy.getApplicationModule();
+    auto inputModuleList = owningModule->getInputModulesRecursively({owningModule});
 
     auto nInstancesFound = std::count(inputModuleList.begin(), inputModuleList.end(), owningModule);
     assert(nInstancesFound >= 1); // the start list must not have been deleted in the call

@@ -18,7 +18,6 @@ namespace ChimeraTK {
   class VoidAccessor : public ChimeraTK::VoidRegisterAccessor, public InversionOfControlAccessor<VoidAccessor> {
    public:
     using InversionOfControlAccessor<VoidAccessor>::operator VariableNetworkNode;
-    using InversionOfControlAccessor<VoidAccessor>::operator>>;
     void replace(const ChimeraTK::NDRegisterAccessorAbstractor<ChimeraTK::Void>& newAccessor) = delete;
     using InversionOfControlAccessor<VoidAccessor>::replace;
     VoidAccessor& operator=(VoidAccessor& other) = delete;

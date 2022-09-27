@@ -48,7 +48,8 @@ namespace ChimeraTK {
 
   void XMLGeneratorVisitor::dispatch(const VariableNetworkNode& node) {
     if(node.getType() != NodeType::ControlSystem) return;
-
+    throw ChimeraTK::logic_error("XML dumping is currently NOT WORKING!");
+#if 0
     // Create the directory for the path name in the XML document with all parent
     // directories, if not yet existing: First split the publication name into
     // components and loop over each component. For each component, try to find
@@ -210,6 +211,7 @@ namespace ChimeraTK {
 
       peer->set_attribute("direction", feeding ? "feeding" : "consuming");
     }
+#endif
   }
 
   /********************************************************************************************************************/

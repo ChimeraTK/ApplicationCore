@@ -1,18 +1,20 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
-#include "VariableNetworkModuleGraphDumpingVisitor.h"
+#if 0
 
-#include "Application.h"
-#include "DeviceModule.h"
-#include "Module.h"
-#include "VariableNetwork.h"
-#include "VisitorHelper.h"
+#  include "VariableNetworkModuleGraphDumpingVisitor.h"
 
-#include <boost/algorithm/string.hpp>
+#  include "Application.h"
+#  include "DeviceModule.h"
+#  include "Module.h"
+#  include "VariableNetwork.h"
+#  include "VisitorHelper.h"
 
-#include <algorithm>
-#include <sstream>
-#include <typeinfo>
+#  include <boost/algorithm/string.hpp>
+
+#  include <algorithm>
+#  include <sstream>
+#  include <typeinfo>
 
 namespace ChimeraTK {
 
@@ -50,12 +52,12 @@ namespace ChimeraTK {
       pair.second->accept(*this);
     } */
 
-#if 0
+#  if 0
     // collect edges (one edge per pair of connected modules)
     for(const auto& network : t.networkList) {
       network.accept(*this);
     }
-#endif
+#  endif
 
     // Correct directions of the edges: to get useful graphs, graphviz must be able to rank the modules properly
     // The Devices should have the first rank. (The ControlSystem is not represented by a node in the graph...)
@@ -284,3 +286,5 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
 } // namespace ChimeraTK
+
+#endif

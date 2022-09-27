@@ -18,6 +18,9 @@
 #include <memory>
 
 namespace ChimeraTK {
+
+  /*********************************************************************************************************************/
+
   ConnectionMaker::NetworkInformation ConnectionMaker::connectNetwork(Model::ProcessVariableProxy& proxy) {
     debug("Network found: ", proxy.getFullyQualifiedPath());
     // This will do two things:
@@ -118,6 +121,8 @@ namespace ChimeraTK {
 
     return net;
   }
+
+  /*********************************************************************************************************************/
 
   void ConnectionMaker::connect() {
     debug("Calling Connect...");

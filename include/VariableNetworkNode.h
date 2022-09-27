@@ -21,7 +21,6 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  class VariableNetwork;
   class AccessorBase;
   class EntityOwner;
   struct VariableNetworkNode_data;
@@ -39,8 +38,7 @@ namespace ChimeraTK {
     /** Copy-constructor: Just copy the pointer to the data storage object */
     VariableNetworkNode(const VariableNetworkNode& other);
 
-    /** Copy by assignment operator: Just copy the pointer to the data storage
-     * object */
+    /** Copy by assignment operator: Just copy the pointer to the data storage object */
     VariableNetworkNode& operator=(const VariableNetworkNode& rightHandSide);
 
     /** Constructor for an Application node */
@@ -82,10 +80,6 @@ namespace ChimeraTK {
     void setMetaData(const std::string& name, const std::string& unit, const std::string& description,
         const std::unordered_set<std::string>& tags);
 
-    /** Set the owner network of this node. If an owner network is already set, an
-     * assertion will be raised */
-    void setOwner(VariableNetwork* network);
-
     /** Clear the owner network of this node. */
     void clearOwner();
 
@@ -105,14 +99,8 @@ namespace ChimeraTK {
     bool operator!=(const VariableNetworkNode& other) const;
     bool operator<(const VariableNetworkNode& other) const;
 
-    /** Connect two nodes */
-    VariableNetworkNode operator>>(VariableNetworkNode other);
-
     /** Print node information to std::cout */
     void dump(std::ostream& stream = std::cout) const;
-
-    /** Check if the node already has an owner */
-    bool hasOwner() const;
 
     /** Add a tag. This function may only be used on Application-type nodes. Valid
      * names for tags only contain
@@ -142,7 +130,6 @@ namespace ChimeraTK {
     std::string getQualifiedName() const;
     const std::string& getUnit() const;
     const std::string& getDescription() const;
-    VariableNetwork& getOwner() const;
     VariableNetworkNode getNodeToTrigger();
     const std::string& getPublicName() const;
     const std::string& getDeviceAlias() const;
@@ -229,9 +216,6 @@ namespace ChimeraTK {
 
     /** Description */
     std::string description{""};
-
-    /** The network this node belongs to */
-    VariableNetwork* network{nullptr};
 
     /** Pointer to instance creator if type == Constant */
     boost::shared_ptr<ConstantAccessorCreator> constNodeCreator;

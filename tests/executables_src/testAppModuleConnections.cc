@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPushAccessors, T, test_types) {
 
   TestApplication<T> app;
 
-  app.testModule.feedingPush >> app.testModule.consumingPush;
+  // app.testModule.feedingPush >> app.testModule.consumingPush;
   app.initialise();
   app.run();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
@@ -131,9 +131,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFourScalarPushAccessors, T, test_types) {
   TestApplication<T> app;
 
   // connect in this strange way to test if connection code can handle this.
-  app.testModule.consumingPush >> app.testModule.consumingPush2;
-  app.testModule.feedingPush >> app.testModule.consumingPush2;
-  app.testModule.feedingPush >> app.testModule.consumingPush3;
+  // app.testModule.consumingPush >> app.testModule.consumingPush2;
+  // app.testModule.feedingPush >> app.testModule.consumingPush2;
+  // app.testModule.feedingPush >> app.testModule.consumingPush3;
   app.initialise();
   app.run();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPushPollAccessors, T, test_types) {
 
   TestApplication<T> app;
 
-  app.testModule.feedingPush >> app.testModule.consumingPoll;
+  // app.testModule.feedingPush >> app.testModule.consumingPoll;
   app.initialise();
   app.run();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
@@ -235,7 +235,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoArrayAccessors, T, test_types) {
 
   TestApplication<T> app;
 
-  app.testModule.feedingArray >> app.testModule.consumingPushArray;
+  // app.testModule.feedingArray >> app.testModule.consumingPushArray;
   app.initialise();
   app.run();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
@@ -282,8 +282,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testLateConstruction, T, test_types) {
   app.testModule.lateConstrScalarOutput.replace(ctk::ScalarOutput<T>(&app.testModule, "LateName3", "", ""));
 
   // connect the scalars
-  app.testModule.lateConstrScalarOutput >> app.testModule.lateConstrScalarPollInput;
-  app.testModule.feedingPush >> app.testModule.lateConstrScalarPushInput;
+  // app.testModule.lateConstrScalarOutput >> app.testModule.lateConstrScalarPollInput;
+  // app.testModule.feedingPush >> app.testModule.lateConstrScalarPushInput;
 
   // create the arrays
   app.testModule.lateConstrArrayPollInput.replace(ctk::ArrayPollInput<T>(&app.testModule, "LateName4", "", 10, ""));
@@ -291,8 +291,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testLateConstruction, T, test_types) {
   app.testModule.lateConstrArrayOutput.replace(ctk::ArrayOutput<T>(&app.testModule, "LateName6", "", 10, ""));
 
   // connect the arrays
-  app.testModule.lateConstrArrayOutput >> app.testModule.lateConstrArrayPollInput;
-  app.testModule.feedingArray >> app.testModule.lateConstrArrayPushInput;
+  // app.testModule.lateConstrArrayOutput >> app.testModule.lateConstrArrayPollInput;
+  // app.testModule.feedingArray >> app.testModule.lateConstrArrayPushInput;
 
   // run the app
   app.initialise();
@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testPseudoArray, T, test_types) {
 
   TestApplication<T> app;
 
-  app.testModule.feedingPseudoArray >> app.testModule.consumingPush;
+  // app.testModule.feedingPseudoArray >> app.testModule.consumingPush;
 
   // run the app
   app.initialise();
@@ -366,11 +366,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testMergeNetworks, T, test_types) {
 
   TestApplication<T> app;
   // This creates a first network
-  app.testModule.feedingPush >> app.testModule.consumingPush;
+  // app.testModule.feedingPush >> app.testModule.consumingPush;
   // This creates a second network with only consumers
-  app.testModule.consumingPush2 >> app.testModule.consumingPush3;
+  // app.testModule.consumingPush2 >> app.testModule.consumingPush3;
   // This merges the two networks
-  app.testModule.consumingPush >> app.testModule.consumingPush2;
+  // app.testModule.consumingPush >> app.testModule.consumingPush2;
 
   // run the app
   app.initialise();

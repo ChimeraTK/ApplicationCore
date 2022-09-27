@@ -66,10 +66,10 @@ namespace ChimeraTK {
 
     /** Obtain the list of accessors/variables directly associated with this
      * instance */
-    virtual std::list<VariableNetworkNode> getAccessorList() const { return _accessorList; }
+    std::list<VariableNetworkNode> getAccessorList() const { return _accessorList; }
 
     /** Obtain the list of submodules associated with this instance */
-    virtual std::list<Module*> getSubmoduleList() const { return _moduleList; }
+    std::list<Module*> getSubmoduleList() const { return _moduleList; }
 
     /** Obtain the list of accessors/variables associated with this instance and
      * any submodules */
@@ -158,17 +158,6 @@ namespace ChimeraTK {
      *  the Application has finalised all connections.
      */
     virtual size_t getCircularNetworkHash() = 0;
-
-    /**
-     *  Create a variable name which will be automatically connected with a constant value. This can be used when
-     *  instantiating generic modules which expect a parameter by variable name, when the parameter shall be set to
-     *  a constant value.
-     *
-     *  This function is a static member of the EntityOwner, since it is normally called in constructors of
-     *  EntityOwners.
-     */
-    template<typename T>
-    static std::string constant(T value);
 
     /** Check whether this module has declared that it reached the testable mode. */
     bool hasReachedTestableMode();

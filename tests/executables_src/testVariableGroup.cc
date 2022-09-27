@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#include "TestFacility.h"
+
 #include <chrono>
 #include <future>
 
@@ -66,7 +68,6 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
 
-  void defineConnections() {} // the setup is done in the tests
 
   TestModule testModule{this, "testModule", "The test module"};
 };
@@ -78,15 +79,15 @@ BOOST_AUTO_TEST_CASE(testModuleReadWrite) {
   std::cout << "*** testModuleReadWrite" << std::endl;
 
   TestApplication app;
+  ctk::TestFacility test(app);
 
-  app.testModule.feedingPush >> app.testModule.mixedGroup.consumingPush;
-  app.testModule.feedingPush2 >> app.testModule.mixedGroup.consumingPush2;
-  app.testModule.feedingPush3 >> app.testModule.mixedGroup.consumingPush3;
-  app.testModule.feedingPoll >> app.testModule.mixedGroup.consumingPoll;
-  app.testModule.feedingPoll2 >> app.testModule.mixedGroup.consumingPoll2;
-  app.testModule.feedingPoll3 >> app.testModule.mixedGroup.consumingPoll3;
-  app.initialise();
-  app.run();
+  // app.testModule.feedingPush >> app.testModule.mixedGroup.consumingPush;
+  // app.testModule.feedingPush2 >> app.testModule.mixedGroup.consumingPush2;
+  // app.testModule.feedingPush3 >> app.testModule.mixedGroup.consumingPush3;
+  // app.testModule.feedingPoll >> app.testModule.mixedGroup.consumingPoll;
+  // app.testModule.feedingPoll2 >> app.testModule.mixedGroup.consumingPoll2;
+  // app.testModule.feedingPoll3 >> app.testModule.mixedGroup.consumingPoll3;
+  test.runApplication();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   // single theaded test
@@ -226,16 +227,16 @@ BOOST_AUTO_TEST_CASE(testReadAny) {
   std::cout << "==> testReadAny" << std::endl;
 
   TestApplication app;
+  ctk::TestFacility test(app);
 
-  app.testModule.feedingPush >> app.testModule.mixedGroup.consumingPush;
-  app.testModule.feedingPush2 >> app.testModule.mixedGroup.consumingPush2;
-  app.testModule.feedingPush3 >> app.testModule.mixedGroup.consumingPush3;
-  app.testModule.feedingPoll >> app.testModule.mixedGroup.consumingPoll;
-  app.testModule.feedingPoll2 >> app.testModule.mixedGroup.consumingPoll2;
-  app.testModule.feedingPoll3 >> app.testModule.mixedGroup.consumingPoll3;
+  // app.testModule.feedingPush >> app.testModule.mixedGroup.consumingPush;
+  // app.testModule.feedingPush2 >> app.testModule.mixedGroup.consumingPush2;
+  // app.testModule.feedingPush3 >> app.testModule.mixedGroup.consumingPush3;
+  // app.testModule.feedingPoll >> app.testModule.mixedGroup.consumingPoll;
+  // app.testModule.feedingPoll2 >> app.testModule.mixedGroup.consumingPoll2;
+  // app.testModule.feedingPoll3 >> app.testModule.mixedGroup.consumingPoll3;
 
-  app.initialise();
-  app.run();
+  test.runApplication();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   auto group = app.testModule.mixedGroup.readAnyGroup();

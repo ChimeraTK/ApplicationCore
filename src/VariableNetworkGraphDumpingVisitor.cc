@@ -1,14 +1,16 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
-#include "VariableNetworkGraphDumpingVisitor.h"
+#if 0
 
-#include "Application.h"
-#include "VariableNetwork.h"
-#include "VisitorHelper.h"
+#  include "VariableNetworkGraphDumpingVisitor.h"
 
-#include <algorithm>
-#include <sstream>
-#include <typeinfo>
+#  include "Application.h"
+#  include "VariableNetwork.h"
+#  include "VisitorHelper.h"
+
+#  include <algorithm>
+#  include <sstream>
+#  include <typeinfo>
 
 namespace ChimeraTK {
 
@@ -53,7 +55,7 @@ namespace ChimeraTK {
         feederNode.accept(*this);
       }
 
-#if 0
+#  if 0
       if(feederNode.hasExternalTrigger()) {
         auto triggerNode = feederNode.getExternalTrigger();
         trigger = detail::encodeDotNodeName(detail::nodeName(triggerNode));
@@ -67,7 +69,7 @@ namespace ChimeraTK {
           popStream();
         }
       }
-#endif
+#  endif
     }
 
     for(auto& consumerNode : network.getConsumingNodes()) {
@@ -129,11 +131,11 @@ namespace ChimeraTK {
                 "fontname=\"monospace\"];\n"
              << "  \n";
 
-#if 0
+#  if 0
     for(auto& network : t.networkList) {
       network.accept(*this);
     }
-#endif
+#  endif
 
     for(auto& mapElem : _triggerMap) {
       stream() << mapElem.second;
@@ -169,3 +171,5 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
 } // namespace ChimeraTK
+
+#endif

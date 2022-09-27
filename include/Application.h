@@ -80,10 +80,10 @@ namespace ChimeraTK {
 
     /** Create Graphviz dot graph and write to file. The graph will contain the
      * connections made in the initialise() function. @see dumpConnections */
-    void dumpConnectionGraph(const std::string& filename = {"connections-graph.dot"}) const;
+    // void dumpConnectionGraph(const std::string& filename = {"connections-graph.dot"}) const;
 
     /** Create Graphviz dot graph representing the connections between the modules, and write to file.*/
-    void dumpModuleConnectionGraph(const std::string& filename = {"module-connections-graph.dot"}) const;
+    // void dumpModuleConnectionGraph(const std::string& filename = {"module-connections-graph.dot"}) const;
 
     /** Enable warning about unconnected variables. This can be helpful to
      * identify missing connections but is
@@ -160,7 +160,7 @@ namespace ChimeraTK {
 
     /** Scan for circular dependencies and mark all affected consuming nodes.
      *  This can only be done after all connections have been established. */
-    void markCircularConsumers(VariableNetwork& variableNetwork);
+    // void markCircularConsumers(VariableNetwork& variableNetwork);
 
     /** The model of the application */
     Model::RootProxy _model;

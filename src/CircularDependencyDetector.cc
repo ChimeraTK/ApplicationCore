@@ -23,9 +23,10 @@ namespace ChimeraTK::detail {
     _awaitedNodes[dependent] = node;
 
     // checking of direct circular dependencies is only done for Application-type feeders
-    if(node.getOwner().getFeedingNode().getType() != NodeType::Application) return;
-    auto* dependency =
-        dynamic_cast<Module*>(node.getOwner().getFeedingNode().getOwningModule())->findApplicationModule();
+    auto feedingModule = node.getModel().visit(Model::returnApplicationModule, Model::keepPvAccess,
+        Model::keepApplicationModules, Model::adjacentInSearch, Model::returnFirstHit(Model::ApplicationModuleProxy{}));
+    if(!feedingModule.isValid()) return;
+    Module* dependency = &feedingModule.getApplicationModule();
 
     // If a module depends on itself, the detector would always detect a circular dependency, even if it is resolved
     // by writing initial values in prepare(). Hence we do not check anything in this case.
@@ -151,55 +152,53 @@ namespace ChimeraTK::detail {
 
         // Iteratively search for reason the module blocks
         std::function<void(const VariableNetworkNode& node)> iterativeSearch = [&](const VariableNetworkNode& node) {
-          const auto& feeder = node.getOwner().getFeedingNode();
-          if(feeder.getType() == NodeType::Application) {
-            // fed by other ApplicationModule: check if that one is waiting, too
-            auto* feedingAppModule = dynamic_cast<Module*>(feeder.getOwningModule())->findApplicationModule();
-            if(feedingAppModule->hasReachedTestableMode()) {
-              // the feeding module has started its mainLoop(), but not sent us an initial value
-              // FIXME: There is a race condition, if the situation has right now resolved and the feeding module just
-              // not yet sent the initial value. Ideally we should wait another iteration before printing warnings!
-              if(_modulesWeHaveWarnedAbout.find(feedingAppModule) == _modulesWeHaveWarnedAbout.end()) {
-                _modulesWeHaveWarnedAbout.insert(feedingAppModule);
-                std::cout << "Note: ApplicationModule " << appModule->getQualifiedName() << " is waiting for an "
-                          << "initial value, because " << feedingAppModule->getQualifiedName()
-                          << " has not yet sent one." << std::endl;
+          auto visitor = [&](auto proxy) {
+            if constexpr(Model::isApplicationModule(proxy)) {
+              // fed by other ApplicationModule: check if that one is waiting, too
+              Module* feedingAppModule = &proxy.getApplicationModule();
+              if(feedingAppModule->hasReachedTestableMode()) {
+                // the feeding module has started its mainLoop(), but not sent us an initial value
+                // FIXME: There is a race condition, if the situation has right now resolved and the feeding module just
+                // not yet sent the initial value. Ideally we should wait another iteration before printing warnings!
+                if(_modulesWeHaveWarnedAbout.find(feedingAppModule) == _modulesWeHaveWarnedAbout.end()) {
+                  _modulesWeHaveWarnedAbout.insert(feedingAppModule);
+                  std::cout << "Note: ApplicationModule " << appModule->getQualifiedName() << " is waiting for an "
+                            << "initial value, because " << feedingAppModule->getQualifiedName()
+                            << " has not yet sent one." << std::endl;
+                }
+                return;
               }
-              return;
-            }
-            if(_awaitedNodes.find(feedingAppModule) == _awaitedNodes.end()) {
-              // The other module is not right now waiting. It will either enter the mainLoop soon, or start waiting
-              // soon. Let's just wait another iteration.
-              return;
-            }
-            // The other module is right now waiting: continue iterative search
-            iterativeSearch(_awaitedNodes.at(feedingAppModule));
-          }
-          else if(feeder.getType() == NodeType::Device) {
-            // fed by device
-            const auto& deviceName = feeder.getDeviceAlias();
-            if(_devicesWeHaveWarnedAbout.find(deviceName) == _devicesWeHaveWarnedAbout.end()) {
-              _devicesWeHaveWarnedAbout.insert(deviceName);
-              std::cout << "Note: Still waiting for device " << deviceName << " to come up";
-              auto dm = Application::getInstance()._deviceManagerMap[deviceName];
-              std::unique_lock dmLock(dm->_errorMutex);
-              if(dm->_deviceHasError) {
-                std::cout << " (" << std::string(dm->_deviceError._message) << ")";
+              if(_awaitedNodes.find(feedingAppModule) == _awaitedNodes.end()) {
+                // The other module is not right now waiting. It will either enter the mainLoop soon, or start
+                // waiting soon. Let's just wait another iteration.
+                return;
               }
-              std::cout << "..." << std::endl;
+              // The other module is right now waiting: continue iterative search
+              iterativeSearch(_awaitedNodes.at(feedingAppModule));
             }
-          }
-          else {
-            // fed by anything else
-            if(_otherThingsWeHaveWarnedAbout.find(feeder.getType()) == _otherThingsWeHaveWarnedAbout.end()) {
-              _otherThingsWeHaveWarnedAbout.insert(feeder.getType());
+            else if constexpr(Model::isDeviceModule(proxy)) {
+              // fed by device
+              const auto& deviceName = proxy.getAliasOrCdd();
+              if(_devicesWeHaveWarnedAbout.find(deviceName) == _devicesWeHaveWarnedAbout.end()) {
+                _devicesWeHaveWarnedAbout.insert(deviceName);
+                std::cout << "Note: Still waiting for device " << deviceName << " to come up";
+                auto dm = Application::getInstance()._deviceManagerMap[deviceName];
+                std::unique_lock dmLock(dm->_errorMutex);
+                if(dm->_deviceHasError) {
+                  std::cout << " (" << std::string(dm->_deviceError._message) << ")";
+                }
+                std::cout << "..." << std::endl;
+              }
+            }
+            else {
+              // fed by anything else?
               std::cout << "At least one ApplicationModule (" << appModule->getQualifiedName() << " is waiting for an "
-                        << "initial value from NodeType " << int(feeder.getType()) << "." << std::endl;
+                        << "initial value from an unexpected source." << std::endl;
               std::cout << "This is probably a BUG in the ChimeraTK framework." << std::endl;
-              std::cout << "Network:" << std::endl;
-              feeder.getOwner().dump();
             }
-          }
+          };
+
+          node.getModel().visit(visitor, Model::keepPvAccess, Model::adjacentInSearch);
         };
         iterativeSearch(_awaitedNodes.at(appModule));
       }
