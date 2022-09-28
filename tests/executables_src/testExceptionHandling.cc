@@ -56,7 +56,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_1, Fixture) {
 
   deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
-  application.pollModule.pollInput.read(); // causes device exception
+  application.group1.pollModule.pollInput.read(); // causes device exception
 
   CHECK_TIMEOUT(status.readNonBlocking() == true, 10000);
   CHECK_TIMEOUT(message.readNonBlocking() == true, 10000);
@@ -518,7 +518,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_5, Fixture) {
   // Go to exception state, report it explicitly
   ctk::VersionNumber someVersionBeforeReporting = {};
   deviceBackend->throwExceptionOpen = true; // required to make sure device stays down
-  application.device.reportException("explicit report by test");
+  application.group1.device.reportException("explicit report by test");
   deviceBackend->setException(); // FIXME: should this be called by reportException()??
   ctk::VersionNumber someVersionAfterReporting = {};
 
