@@ -341,17 +341,17 @@ namespace ChimeraTK::Model {
     auto amm = am->getModel();
     assert(amm.isValid());
     boost::remove_edge(amm._d->vertex, _d->vertex, _d->impl->graph);
+    boost::remove_edge(_d->vertex, amm._d->vertex, _d->impl->graph);
 
-    // Note: We cannot really remove the vertex for the variable, since boost::remove_vertex() invalidates all vertex
-    // descriptors, which are the only link between the "real world" and the model.
-
-    /*
     // if only one incoming edge exists any more, remove the entire variable. the one incoming edge is the parenthood
     // relation. ownership relations are also incoming, of which we must have zero.
     if(boost::in_degree(_d->vertex, _d->impl->graph) <= 1) {
-      boost::remove_vertex(_d->vertex, _d->impl->graph);
+      // Note: We cannot really remove the vertex for the variable, since boost::remove_vertex() invalidates all vertex
+      // descriptors, which are the only link between the "real world" and the model.
+      // Instead we completely disconnect it from the rest of the model (in particular the parent directory), so it
+      // usually is no longer found.
+      clear_vertex(_d->vertex, _d->impl->graph);
     }
-    */
   }
 
   /********************************************************************************************************************/
