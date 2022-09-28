@@ -398,4 +398,26 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  void DeviceManager::terminate() {
+    if(moduleThread.joinable()) {
+      moduleThread.interrupt();
+      // try joining the thread
+      while(!moduleThread.try_join_for(boost::chrono::milliseconds(10))) {
+        // send boost interrupted exception through the _errorQueue
+        try {
+          throw boost::thread_interrupted();
+        }
+        catch(boost::thread_interrupted&) {
+          _errorQueue.push_exception(std::current_exception());
+        }
+
+        // it may not suffice to send the exception once, as the exception might get overwritten in the queue, thus we
+        // repeat this until the thread was joined.
+      }
+    }
+    assert(!moduleThread.joinable());
+  }
+
+  /*********************************************************************************************************************/
+
 } // namespace ChimeraTK

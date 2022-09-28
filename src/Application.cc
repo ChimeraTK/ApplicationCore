@@ -185,6 +185,12 @@ void Application::shutdown() {
     internalModule->deactivate();
   }
 
+  // shutdown all DeviceManagers, otherwise application modules might hang if still waiting for initial values from
+  // devices
+  for(auto& pair : _deviceManagerMap) {
+    pair.second->terminate();
+  }
+
   // next deactivate the modules, as they have running threads inside as well
   for(auto& module : getSubmoduleListRecursive()) {
     module->terminate();
