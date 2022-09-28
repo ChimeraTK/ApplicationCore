@@ -137,12 +137,12 @@ namespace ChimeraTK {
       if(variable.getDirection().dir != VariableDirection::consuming) continue;
       if(variable.getMode() == UpdateMode::push) {
         Application::getInstance().getTestableMode().unlock("Initial value read for push-type " + variable.getName());
-        //Application::getInstance().circularDependencyDetector.registerDependencyWait(variable);
+        Application::getInstance().circularDependencyDetector.registerDependencyWait(variable);
         // Will internally release and lock during the read, hence surround with lock/unlock
         Application::getInstance().getTestableMode().lock("Initial value read for push-type " + variable.getName());
         variable.getAppAccessorNoType().read();
         Application::getInstance().getTestableMode().unlock("Initial value read for push-type " + variable.getName());
-        //Application::getInstance().circularDependencyDetector.unregisterDependencyWait(variable);
+        Application::getInstance().circularDependencyDetector.unregisterDependencyWait(variable);
         Application::getInstance().getTestableMode().lock("Initial value read for push-type " + variable.getName());
       }
     }
