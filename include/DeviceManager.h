@@ -130,6 +130,8 @@ namespace ChimeraTK {
      */
     [[nodiscard]] Device& getDevice() { return _device; }
 
+    void terminate() override;
+
    protected:
     /**
      * Use this function to read the exception version number. It is locking the variable mutex correctly for you.
