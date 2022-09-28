@@ -21,7 +21,7 @@ include_directories(${PROJECT_BINARY_DIR}/version)
 #
 # Define dependences
 include(cmake/add_dependency.cmake)
-add_dependency(ChimeraTK-ApplicationCore 02.11 REQUIRED)
+add_dependency(ChimeraTK-ApplicationCore 03.00 REQUIRED)
 
 # Select the control system adapter
 include(cmake/set_control_system_adapter.cmake)
