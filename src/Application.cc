@@ -46,6 +46,16 @@ Application::Application(const std::string& name) : ApplicationBase(name), Modul
 
 /*********************************************************************************************************************/
 
+Application::~Application() {
+  if(lifeCycleState == LifeCycleState::initialisation && !hasBeenShutdown) {
+    // likely an exception has been thrown in the initialisation phase, in which case we better call shutdown to prevent
+    // ApplicationBase from complaining and hiding the exception
+    ApplicationBase::shutdown();
+  }
+}
+
+/*********************************************************************************************************************/
+
 void Application::enableTestableMode() {
   assert(not initialiseCalled);
   testableMode.enable();
