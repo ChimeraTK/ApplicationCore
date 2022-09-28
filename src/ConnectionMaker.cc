@@ -59,7 +59,7 @@ namespace ChimeraTK {
 
     if(not neededFeeder) {
       // Only add CS consumer if we did not previously add CS feeder
-      debug("  No consumers in network, creating ControlSystem consumer");
+      debug("  No CS feeder in network, creating additional ControlSystem consumer");
       net.consumers.push_back(VariableNetworkNode(
           proxy.getFullyQualifiedPath(), {VariableDirection::consuming, false}, *net.valueType, net.valueLength));
     }
@@ -90,7 +90,7 @@ namespace ChimeraTK {
               Model::returnFirstHit(std::make_pair(Model::ProcessVariableProxy{}, Model::DeviceModuleProxy{})));
       if(!trigger.isValid()) {
         throw ChimeraTK::logic_error(
-            "Poll-Type feeder " + net.feeder.getQualifiedName() + " needs trigger, but none provided");
+            "Poll-Type feeder " + net.feeder.getName() + " needs trigger, but none provided");
       }
     }
 

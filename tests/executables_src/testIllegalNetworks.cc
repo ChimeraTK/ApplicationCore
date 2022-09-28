@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#include "TestFacility.h"
 #include <future>
 
 #define BOOST_TEST_MODULE testIllegalNetworks
@@ -14,147 +15,169 @@
 
 #include <boost/mpl/list.hpp>
 
-#define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
-#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
 // list of user types the accessors are tested with
-typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double> test_types;
-
-/*********************************************************************************************************************/
-/* the ApplicationModule for the test is a template of the user type */
-
-template<typename T>
-struct TestModule : public ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
-
-  ctk::ScalarOutput<T> feedingPush{this, "feedingPush", "MV/m", "Descrption"};
-  ctk::ScalarOutput<T> feedingPush2{this, "feedingPush2", "MV/m", "Descrption"};
-  ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Descrption"};
-  ctk::ScalarPushInput<T> consumingPush2{this, "consumingPush2", "MV/m", "Descrption"};
-  ctk::ScalarPushInput<T> consumingPush3{this, "consumingPush3", "MV/m", "Descrption"};
-
-  ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Descrption"};
-  ctk::ScalarPollInput<T> consumingPoll2{this, "consumingPoll2", "MV/m", "Descrption"};
-  ctk::ScalarPollInput<T> consumingPoll3{this, "consumingPoll3", "MV/m", "Descrption"};
-
-  ctk::ArrayOutput<T> feedingArray{this, "feedingArray", "MV/m", 10, "Description"};
-
-  void mainLoop() {}
-};
-
-/*********************************************************************************************************************/
-/* dummy application */
-
-template<typename T>
-struct TestApplication : public ctk::Application {
-  TestApplication() : Application("testSuite") {}
-  ~TestApplication() { shutdown(); }
-
-  TestModule<T> testModule{this, "testModule", "The test module"};
-  ctk::DeviceModule dev{this, "Dummy0", "/Some/deviceTrigger"};
-};
+using TestTypes = boost::mpl::list < int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double,
+    ctk::Boolean>;
 
 /*********************************************************************************************************************/
 /* test case for two scalar accessors, feeder in poll mode and consumer in push
  * mode (without trigger) */
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPollPushAccessors, T, test_types) {
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
-  TestApplication<T> app;
+struct TestApplication1 : public ctk::Application {
+  TestApplication1() : Application("testSuite") {}
+  ~TestApplication1() override { shutdown(); }
 
-  // app.dev("/MyModule/Variable") >> app.testModule.consumingPush;
-  try {
-    app.initialise();
-    BOOST_ERROR("Exception expected.");
-  }
-  catch(ChimeraTK::logic_error& e) {
-    BOOST_CHECK_NO_THROW(e.what(););
-  }
+  ctk::SetDMapFilePath dmap{"test.dmap"};
+
+  struct : ctk::ApplicationModule {
+    using ApplicationModule::ApplicationModule;
+
+    ctk::ScalarPushInput<int> consumingPush{this, "/MyModule/readBack", "", ""};
+
+    void mainLoop() override {}
+  } testModule{this, ".", ""};
+
+  ctk::DeviceModule dev{this, "Dummy0"};
+};
+
+
+BOOST_AUTO_TEST_CASE(testTwoScalarPollPushAccessors) {
+  TestApplication1 app;
+  app.debugMakeConnections();
+
+  BOOST_CHECK_THROW(ChimeraTK::TestFacility tf(app, false), ctk::logic_error);
 }
 
 /*********************************************************************************************************************/
-/* test case for no feeder */
+/* test case for no feeder - There cannot be no feeder any more, ApplicationCore will generate a CS feeder then      */
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testNoFeeder, T, test_types) {
-  TestApplication<T> app;
-
-  // app.testModule.consumingPush2 >> app.testModule.consumingPush;
-  try {
-    app.initialise();
-    BOOST_ERROR("Exception expected.");
-  }
-  catch(ChimeraTK::logic_error& e) {
-    BOOST_CHECK_NO_THROW(e.what(););
-  }
-}
 
 /*********************************************************************************************************************/
 /* test case for two feeders */
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoFeeders, T, test_types) {
-  TestApplication<T> app;
+template<typename T>
+struct TestApplication3 : public ctk::Application {
+  TestApplication3() : Application("testSuite") { debugMakeConnections(); }
+  ~TestApplication3() override { shutdown(); }
 
-  try {
-    // app.testModule.feedingPush >> app.testModule.feedingPush2;
-    BOOST_ERROR("Exception expected.");
-  }
-  catch(ChimeraTK::logic_error& e) {
-    BOOST_CHECK_NO_THROW(e.what(););
-  }
+  struct : ctk::ApplicationModule {
+    using ApplicationModule::ApplicationModule;
+
+    ctk::ScalarOutput<T> consumingPush{this, "/MyModule/readBack", "", ""};
+
+    void mainLoop() override {}
+  } testModule{this, ".", ""};
+
+  struct : ctk::ApplicationModule {
+    using ApplicationModule::ApplicationModule;
+
+    ctk::ScalarOutput<T> consumingPush2{this, "/MyModule/readBack", "", ""};
+
+    void mainLoop() override {}
+  } testModule2{this, ".", ""};
+};
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoFeeders, T, TestTypes) {
+  TestApplication3<T> app;
+
+  BOOST_CHECK_THROW(ctk::TestFacility tf(app, false), ctk::logic_error);
 }
 
 /*********************************************************************************************************************/
 /* test case for too many polling consumers */
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testTooManyPollingConsumers, T, test_types) {
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+struct TestApplication4 : public ctk::Application {
+  TestApplication4() : Application("testSuite") { debugMakeConnections(); }
+  ~TestApplication4() override { shutdown(); }
 
-  TestApplication<T> app;
+  ctk::SetDMapFilePath dmap{"test.dmap"};
 
-  // app.dev("/MyModule/Variable") >> app.testModule.consumingPoll >> app.testModule.consumingPoll2;
-  try {
-    app.initialise();
-    BOOST_ERROR("Exception expected.");
-  }
-  catch(ChimeraTK::logic_error& e) {
-    BOOST_CHECK_NO_THROW(e.what(););
-  }
+  struct : ctk::ApplicationModule {
+    using ApplicationModule::ApplicationModule;
+
+    ctk::ScalarPollInput<int> consumingPush{this, "/MyModule/readBack", "", ""};
+
+    void mainLoop() override {}
+  } testModule{this, ".", ""};
+
+  struct : ctk::ApplicationModule {
+    using ApplicationModule::ApplicationModule;
+
+    ctk::ScalarPollInput<int> consumingPush2{this, "/MyModule/readBack", "", ""};
+
+    void mainLoop() override {}
+  } testModule2{this, ".", ""};
+
+  ctk::DeviceModule dev{this, "Dummy0"};
+};
+
+BOOST_AUTO_TEST_CASE(testTooManyPollingConsumers) {
+  TestApplication4 app;
+
+  BOOST_CHECK_THROW(ctk::TestFacility(app, false), ctk::logic_error);
 }
 
 /*********************************************************************************************************************/
 /* test case for different number of elements */
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testDifferentNrElements, T, test_types) {
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+template <typename T>
+struct TestApplication5 : public ctk::Application {
+  TestApplication5() : Application("testSuite") { debugMakeConnections(); }
+  ~TestApplication5() override { shutdown(); }
 
-  TestApplication<T> app;
+  struct : ctk::ApplicationModule {
+    using ApplicationModule::ApplicationModule;
 
-  try {
-    // app.testModule.feedingArray >> app.testModule.consumingPoll;
-    BOOST_ERROR("Exception expected.");
-  }
-  catch(ChimeraTK::logic_error& e) {
-    BOOST_CHECK_NO_THROW(e.what(););
-  }
+    ctk::ArrayOutput<T> feed{this, "/MyModule/readBack", "", 10, ""};
+
+    void mainLoop() override {}
+  } testModule{this, ".", ""};
+
+  struct : ctk::ApplicationModule {
+    using ApplicationModule::ApplicationModule;
+
+    ctk::ArrayPollInput<T> consume{this, "/MyModule/readBack", "", 20, ""};
+
+    void mainLoop() override {}
+  } testModule2{this, ".", ""};
+};
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(testDifferentNrElements, T, TestTypes) {
+  TestApplication5<T> app;
+  BOOST_CHECK_THROW(ctk::TestFacility tf(app, false), ctk::logic_error);
 }
 
 /*********************************************************************************************************************/
-/* test case for constant as trigger */
+/* test case for zero-length elements that are not void */
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantTrigger, T, test_types) {
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+template <typename T>
+struct TestApplication6 : public ctk::Application {
+  TestApplication6() : Application("testSuite") { debugMakeConnections(); }
+  ~TestApplication6() override { shutdown(); }
 
-  TestApplication<T> app;
-  // app.dev("/MyModule/Variable")[ctk::VariableNetworkNode::makeConstant<int>(true)] >> app.testModule.consumingPush;
-  try {
-    app.initialise();
-    BOOST_ERROR("Exception expected.");
-  }
-  catch(ChimeraTK::logic_error& e) {
-    BOOST_CHECK_NO_THROW(e.what(););
-  }
+  struct : ctk::ApplicationModule {
+    using ApplicationModule::ApplicationModule;
+
+    ctk::ArrayOutput<T> feed{this, "/MyModule/readBack", "", 0, ""};
+
+    void mainLoop() override {}
+  } testModule{this, ".", ""};
+
+  struct : ctk::ApplicationModule {
+    using ApplicationModule::ApplicationModule;
+
+    ctk::ArrayPollInput<T> consume{this, "/MyModule/readBack", "", 0, ""};
+
+    void mainLoop() override {}
+  } testModule2{this, ".", ""};
+};
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(testNoElements, T, TestTypes) {
+  TestApplication6<T> app;
+  BOOST_CHECK_THROW(ctk::TestFacility tf(app, false), ctk::logic_error);
 }
