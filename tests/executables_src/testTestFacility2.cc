@@ -14,11 +14,11 @@ namespace ctk = ChimeraTK;
 struct MyModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
-  ctk::ScalarPushInput<double> input{this, "input", "", ""};
-  ctk::ScalarOutput<double> output{this, "output", "", ""};
+  ctk::ScalarPushInput<double> input{this, "/input", "", ""};
+  ctk::ScalarOutput<double> output{this, "/output", "", ""};
 
   void mainLoop() override {
-    std::cout << "startin main loop" << std::endl;
+    std::cout << "starting main loop" << std::endl;
     output = 2 * double(input);
     output.write();
 
@@ -36,10 +36,8 @@ struct TestApp : public ctk::Application {
   TestApp() : Application("TestApp") {}
   ~TestApp() override { shutdown(); }
 
-  // ctk::ControlSystemModule cs;
   MyModule myModule{this, "MyModule", ""};
 
-  // void defineConnections() override { myModule.connectTo(cs); }
 };
 
 /**********************************************************************************************************************/
