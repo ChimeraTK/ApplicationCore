@@ -24,7 +24,7 @@ namespace ChimeraTK {
     TriggerFanOut(
         const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl, DeviceManager& deviceModule);
 
-    ~TriggerFanOut();
+    ~TriggerFanOut() override;
 
     void activate() override;
 

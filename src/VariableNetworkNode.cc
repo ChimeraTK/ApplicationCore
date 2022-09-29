@@ -77,16 +77,15 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
-#if 0
-  VariableNetworkNode::VariableNetworkNode(VariableNetworkNode& nodeToTrigger, int)
+
+  VariableNetworkNode::VariableNetworkNode(const std::string& deviceAliasOrCdd, int)
   : pdata(boost::make_shared<VariableNetworkNode_data>()) {
     pdata->type = NodeType::TriggerReceiver;
     pdata->mode = UpdateMode::push;
     pdata->direction = {VariableDirection::consuming, false};
-    pdata->nodeToTrigger = nodeToTrigger;
-    pdata->name = "trigger:" + nodeToTrigger.getName();
+    pdata->deviceAlias = deviceAliasOrCdd;
   }
-#endif
+
   /*********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(boost::shared_ptr<VariableNetworkNode_data> _pdata) : pdata(_pdata) {}
@@ -215,7 +214,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   const std::string& VariableNetworkNode::getDeviceAlias() const {
-    assert(pdata->type == NodeType::Device);
+    assert(pdata->type == NodeType::Device || pdata->type == NodeType::TriggerReceiver);
     return pdata->deviceAlias;
   }
 
