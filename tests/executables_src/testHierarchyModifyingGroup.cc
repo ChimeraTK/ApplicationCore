@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#include "TestFacility.h"
+
 #include <chrono>
 #include <future>
 
@@ -7,7 +9,6 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "HierarchyModifyingGroup.h"
 #include "ModuleGroup.h"
 #include "ScalarAccessor.h"
 #include "VariableGroup.h"
@@ -33,231 +34,201 @@ struct TestApplication : public ctk::Application {
   struct TestModule : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
-    TestGroup a{this, "VariableGroupLike", "Use like normal VariableGroup", {"TagA"}};
-    TestGroup b{this, "/MoveToRoot", "Use like normal VariableGroup with MoveToRoot", {"TagB"}};
-    TestGroup c{this, "../oneUp", "Use like normal VariableGroup with oneUp", {"TagC"}};
-    TestGroup d{this, "..", "Use like normal VariableGroup with oneUpAndHide", {"TagD"}};
-    TestGroup e{this, "local/hierarchy", "Create hierarchy locally", {"TagE"}};
-    TestGroup f{this, "/AtRoot/hierarchy", "Create hierarchy at root", {"TagF"}};
-    TestGroup g{this, "../oneUp/hierarchy", "Create hierarchy one level up", {"TagG"}};
-    TestGroup h{this, "local/very/deep/hierarchy", "Create deep hierarchy locally", {"TagH"}};
-    TestGroup i{this, "/root/very/deep/hierarchy", "Create deep hierarchy at root", {"TagI"}};
-    TestGroup j{this, "../oneUp/very/deep/hierarchy", "Create deep hierarchy one level up", {"TagJ"}};
-    TestGroup k{this, "//extra//slashes////everywhere///", "Extra slashes", {"TagK"}};
+    TestGroup g;
 
     struct ExtraHierarchy : public ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
-      TestGroup l{this, "../../twoUp", "Two levels up"};
-    } extraHierarchy{this, "ExtraHierarchy", "Extra depth", {"TagL"}};
+      TestGroup g;
+    } extraHierarchy{this, "ExtraHierarchy", "Extra depth"};
 
-    TestGroup m{this, "hierarchy/with/../dots/../../anywhere/./also/./single/./dots/..", "Dots everywhere", {"TagM"}};
-    TestGroup n{this, ".", "This is like hideThis", {"TagN"}};
-    TestGroup o{this, "dot/at/end/.", "This is like hideThis", {"TagO"}};
-
-    void mainLoop() override {}
-  };
-  TestModule testModule{this, "TestModule", "The test module"};
-
-  struct TestModuleHidden : ctk::ApplicationModule {
-    using ctk::ApplicationModule::ApplicationModule;
-    TestGroup p{this, "/MoveToRootFromHidden",
-        "Use like normal VariableGroup with MoveToRoot, and place inside a hidden to-level module", {"TagP"}};
-    void mainLoop() override {}
-  };
-  TestModuleHidden testModuleHidden{this, ".", "The hidden test module"};
+    void mainLoop() override {
+      if(getAccessorListRecursive().empty()) return;
+      assert(getAccessorListRecursive().size() == 1);
+      while(true) {
+        readAll();
+      }
+    }
+  } testModule{this, "mod", "The test module"};
 };
 
 /*********************************************************************************************************************/
-/* Helper for tests: Allows to test the virtual hierarchy quickly, assuming each test case uses a separate tag
- * and each tag/test case has exactly one variable. */
-struct TestHelper {
-  template<typename APP>
-  TestHelper(APP& app, const std::string tag) /*: root(app.findTag(tag))*/ {
-    throw;
-    /*current = &root;
-    root.dump();*/
-  }
 
-  TestHelper submodule(const std::string& name) {
-    BOOST_REQUIRE(current->getSubmoduleList().size() == 1);
-    BOOST_CHECK(current->getAccessorList().size() == 0);
-    auto child = current->getSubmoduleList().front();
-    BOOST_CHECK(child->getName() == name);
-    // return TestHelper(root, child);
-  }
+void check(TestApplication& app, TestGroup& group, const std::string& name) {
+  static int myCounter = 42;
 
-  void accessor(ctk::VariableNetworkNode node) {
-    BOOST_CHECK(current->getSubmoduleList().size() == 0);
-    BOOST_REQUIRE(current->getAccessorList().size() == 1);
-    BOOST_CHECK(current->getAccessorList().front() == node);
-  }
+  ChimeraTK::TestFacility test{app};
+  auto acc = test.getScalar<int>(name + "/myVar");
+  test.runApplication();
 
- protected:
-  TestHelper(ctk::VirtualModule& _root, ctk::Module* _current) : /* root(_root),*/ current(_current) {}
+  acc = myCounter;
+  acc.write();
 
-  // ctk::VirtualModule root;
-  ctk::Module* current{nullptr};
-};
+  test.stepApplication();
 
+  BOOST_TEST(int(group.myVar) == myCounter);
+
+  ++myCounter;
+}
+
+/*********************************************************************************************************************/
 /*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(VariableGroupLike) {
   std::cout << "*** VariableGroupLike" << std::endl;
   TestApplication app;
-  TestHelper(app, "TagA")
-      .submodule("TestModule")
-      .submodule("VariableGroupLike")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.a.myVar));
+  app.testModule.g = {&app.testModule, "VariableGroupLike", "Use like normal VariableGroup"};
+  check(app, app.testModule.g, "/mod/VariableGroupLike");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(MoveToRoot) {
   std::cout << "*** MoveToRoot" << std::endl;
   TestApplication app;
-  TestHelper(app, "TagB").submodule("MoveToRoot").accessor(ChimeraTK::VariableNetworkNode(app.testModule.b.myVar));
+  app.testModule.g = {&app.testModule, "/MoveToRoot", "Use like normal VariableGroup with MoveToRoot"};
+  check(app, app.testModule.g, "/MoveToRoot");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(oneUp) {
   std::cout << "*** ../oneUp" << std::endl;
   TestApplication app;
-  TestHelper(app, "TagC").submodule("oneUp").accessor(ChimeraTK::VariableNetworkNode(app.testModule.c.myVar));
+  app.testModule.g = {&app.testModule, "../oneUp", "Use like normal VariableGroup with oneUp"};
+  check(app, app.testModule.g, "/oneUp");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(dotdot) {
   std::cout << "*** .." << std::endl;
   TestApplication app;
-  TestHelper(app, "TagD").accessor(ChimeraTK::VariableNetworkNode(app.testModule.d.myVar));
+  app.testModule.g = {&app.testModule, "..", "Use like normal VariableGroup with oneUpAndHide"};
+  check(app, app.testModule.g, "");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(local_hierarchy) {
   std::cout << "*** local/hierarchy" << std::endl;
   TestApplication app;
-  TestHelper(app, "TagE")
-      .submodule("TestModule")
-      .submodule("local")
-      .submodule("hierarchy")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.e.myVar));
+  app.testModule.g = {&app.testModule, "local/hierarchy", "Create hierarchy locally"};
+  check(app, app.testModule.g, "/mod/local/hierarchy");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(AtRoot_hierarchy) {
   std::cout << "*** /AtRoot/hierarchy" << std::endl;
   TestApplication app;
-  TestHelper(app, "TagF")
-      .submodule("AtRoot")
-      .submodule("hierarchy")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.f.myVar));
+  app.testModule.g = {&app.testModule, "/AtRoot/hierarchy", "Create hierarchy at root"};
+  check(app, app.testModule.g, "/AtRoot/hierarchy");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(oneUp_hierarchy) {
   std::cout << "*** ../oneUp/hierarchy" << std::endl;
   TestApplication app;
-  TestHelper(app, "TagG")
-      .submodule("oneUp")
-      .submodule("hierarchy")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.g.myVar));
+  app.testModule.g = {&app.testModule, "../oneUp/hierarchy", "Create hierarchy one level up"};
+  check(app, app.testModule.g, "/oneUp/hierarchy");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(local_very_deep_hierarchy) {
   std::cout << "*** local/very/deep/hierarchy" << std::endl;
   TestApplication app;
-  TestHelper(app, "TagH")
-      .submodule("TestModule")
-      .submodule("local")
-      .submodule("very")
-      .submodule("deep")
-      .submodule("hierarchy")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.h.myVar));
+  app.testModule.g = {&app.testModule, "local/very/deep/hierarchy", "Create deep hierarchy locally"};
+  check(app, app.testModule.g, "/mod/local/very/deep/hierarchy");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(root_very_deep_hierarchy) {
   std::cout << "*** /root/very/deep/hierarchy" << std::endl;
   TestApplication app;
-  TestHelper(app, "TagI")
-      .submodule("root")
-      .submodule("very")
-      .submodule("deep")
-      .submodule("hierarchy")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.i.myVar));
+  app.testModule.g = {&app.testModule, "/root/very/deep/hierarchy", "Create deep hierarchy at root"};
+  check(app, app.testModule.g, "/root/very/deep/hierarchy");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(oneUp_very_deep_hierarchy) {
   std::cout << "*** ../oneUp/very/deep/hierarchy" << std::endl;
   TestApplication app;
-  TestHelper(app, "TagJ")
-      .submodule("oneUp")
-      .submodule("very")
-      .submodule("deep")
-      .submodule("hierarchy")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.j.myVar));
+  app.testModule.g = {&app.testModule, "../oneUp/very/deep/hierarchy", "Create deep hierarchy one level up"};
+  check(app, app.testModule.g, "/oneUp/very/deep/hierarchy");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(extra_slashes_everywhere) {
   std::cout << "*** //extra//slashes////everywhere///" << std::endl;
   TestApplication app;
-  TestHelper(app, "TagK")
-      .submodule("extra")
-      .submodule("slashes")
-      .submodule("everywhere")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.k.myVar));
+  app.testModule.g = {&app.testModule, "//extra//slashes////everywhere///", "Extra slashes"};
+  check(app, app.testModule.g, "");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(twoUp) {
   std::cout << "*** twoUp" << std::endl;
   TestApplication app;
-  TestHelper(app, "TagL")
-      .submodule("twoUp")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.extraHierarchy.l.myVar));
+  app.testModule.extraHierarchy.g = {&app.testModule.extraHierarchy, "../../twoUp", "Two levels up"};
+  check(app, app.testModule.extraHierarchy.g, "/twoUp");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(hierarchy_with_dots_anywhere_also_single_dots) {
   std::cout << "*** hierarchy/with/../dots/../../anywhere/./also/./single/./dots/.." << std::endl;
   TestApplication app;
-  TestHelper(app, "TagM")
-      .submodule("TestModule")
-      .submodule("anywhere")
-      .submodule("also")
-      .submodule("single")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.m.myVar));
+  app.testModule.g = {
+      &app.testModule, "hierarchy/with/../dots/../../anywhere/./also/./single/./dots/..", "Dots everywhere "};
+  app.getModel().writeGraphViz("vg_test.dot");
+  check(app, app.testModule.g, "/mod/anywhere/also/single");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(dot) {
   std::cout << "*** ." << std::endl;
   TestApplication app;
-  TestHelper(app, "TagN").submodule("TestModule").accessor(ChimeraTK::VariableNetworkNode(app.testModule.n.myVar));
+  app.testModule.g = {&app.testModule, ".", "This is like hideThis"};
+  check(app, app.testModule.g, "/mod");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(dot_at_end) {
   std::cout << "*** dot/at/end/." << std::endl;
   TestApplication app;
-  TestHelper(app, "TagO")
-      .submodule("TestModule")
-      .submodule("dot")
-      .submodule("at")
-      .submodule("end")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.o.myVar));
+  app.testModule.g = {&app.testModule, "dot/at/end/.", "Gets effectively ignored..."};
+  check(app, app.testModule.g, "/mod/dot/at/end");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(MoveToRootFromHidden) {
   std::cout << "*** MoveToRootFromHidden" << std::endl;
   TestApplication app;
-  TestHelper(app, "TagP")
-      .submodule("MoveToRootFromHidden")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModuleHidden.p.myVar));
+  app.testModule = {&app, ".", "The test module is hidden now"};
+  app.testModule.g = {&app.testModule, "/MoveToRootFromHidden",
+      "Use like normal VariableGroup with MoveToRoot, and place inside a hidden to-level module"};
+  check(app, app.testModule.g, "/MoveToRootFromHidden");
 }
 
 /*********************************************************************************************************************/
 
 struct TestApplication_empty : public ctk::Application {
   TestApplication_empty() : Application("testSuite") {}
-  ~TestApplication_empty() { shutdown(); }
+  ~TestApplication_empty() override { shutdown(); }
 
   struct TestModule : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
     void mainLoop() override {}
   } testModule{this, "TestModule", "The test module"};
-
-  struct TestModuleGroup : ctk::ModuleGroup {
-    using ModuleGroup::ModuleGroup;
-  } testModuleGroup{this, "TestModuleGroup", "The test module group"};
 };
 
 /*********************************************************************************************************************/
@@ -269,95 +240,6 @@ BOOST_AUTO_TEST_CASE(bad_path_exception) {
   BOOST_CHECK_THROW(TestGroup tg(&app.testModule, "/..", "This is not allowed either"), ctk::logic_error);
   BOOST_CHECK_THROW(
       TestGroup tg(&app.testModule, "/somthing/less/../../../obvious", "This is also not allowed"), ctk::logic_error);
-}
-
-/*********************************************************************************************************************/
-
-struct TestApplication_moveAssignment : public ctk::Application {
-  TestApplication_moveAssignment() : Application("testSuite") {}
-  ~TestApplication_moveAssignment() { shutdown(); }
-
-  struct TestModule : ctk::ApplicationModule {
-    TestModule(ModuleGroup* owner, const std::string& name, const std::string& description)
-    : ApplicationModule(owner, name, description) {
-      a = TestGroup(this, "VariableGroupLike", "Use like normal VariableGroup", {"TagA"});
-      h = TestGroup(this, "local/very/deep/hierarchy", "Create deep hierarchy locally", {"TagH"});
-    }
-    TestGroup a;
-    TestGroup h;
-    void mainLoop() override {}
-  };
-  TestModule testModule{this, "TestModule", "The test module"};
-};
-
-BOOST_AUTO_TEST_CASE(move_assignment) {
-  std::cout << "*** move_assignment" << std::endl;
-  TestApplication_moveAssignment app;
-  TestHelper(app, "TagA")
-      .submodule("TestModule")
-      .submodule("VariableGroupLike")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.a.myVar));
-  TestHelper(app, "TagH")
-      .submodule("TestModule")
-      .submodule("local")
-      .submodule("very")
-      .submodule("deep")
-      .submodule("hierarchy")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.h.myVar));
-}
-
-/*********************************************************************************************************************/
-
-struct TestApplication_moveConstruct : public ctk::Application {
-  TestApplication_moveConstruct() : Application("testSuite") {}
-  ~TestApplication_moveConstruct() { shutdown(); }
-  // void defineConnections() override { testModule = TestModule(this, "TestModule", "The test module"); }
-
-  struct TestModule : ctk::ApplicationModule {
-    using ctk::ApplicationModule::ApplicationModule;
-    TestGroup a{this, "VariableGroupLike", "Use like normal VariableGroup", {"TagA"}};
-    TestGroup h{this, "local/very/deep/hierarchy", "Create deep hierarchy locally", {"TagH"}};
-    void mainLoop() override {}
-  };
-  TestModule testModule;
-};
-
-BOOST_AUTO_TEST_CASE(move_construct) {
-  std::cout << "*** move_construct" << std::endl;
-  TestApplication_moveConstruct app;
-  TestHelper(app, "TagA")
-      .submodule("TestModule")
-      .submodule("VariableGroupLike")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.a.myVar));
-  TestHelper(app, "TagH")
-      .submodule("TestModule")
-      .submodule("local")
-      .submodule("very")
-      .submodule("deep")
-      .submodule("hierarchy")
-      .accessor(ChimeraTK::VariableNetworkNode(app.testModule.h.myVar));
-}
-
-/*********************************************************************************************************************/
-
-BOOST_AUTO_TEST_CASE(move_invalid) {
-  std::cout << "*** move_invalid" << std::endl;
-  // test move constructor and move assignment works when moving uninitialized/invalid elements
-  struct VG : ChimeraTK::HierarchyModifyingGroup {
-    ChimeraTK::ScalarPushInput<int> valid{this, "valid", "", ""}; // has NodeType::Application
-    ChimeraTK::ScalarPushInput<int> invalid{}; // has default-constructed VariableNetworkType with  NodeType::Invalid
-    void initializeLate() { invalid = ChimeraTK::ScalarPushInput<int>{this, "valid2", "", ""}; }
-  };
-  VG vg0;
-  // move construction from NodeType::Invalid should be fine
-  VG vg1{std::move(vg0)};
-  BOOST_CHECK(static_cast<ChimeraTK::VariableNetworkNode>(vg1.invalid).getType() == ChimeraTK::NodeType::invalid);
-  // move assignment to NodeType::Invalid should be fine
-  vg1 = VG{};
-  VG vg2;
-  vg2.initializeLate();
-  vg1 = std::move(vg2);
-  BOOST_CHECK(static_cast<ChimeraTK::VariableNetworkNode>(vg1.invalid).getType() == ChimeraTK::NodeType::Application);
 }
 
 /*********************************************************************************************************************/
