@@ -13,13 +13,13 @@
 
 using namespace ChimeraTK;
 
-struct DMapSetter {
-  DMapSetter() { setDMapFilePath("test.dmap"); }
-};
+/*********************************************************************************************************************/
 
 struct TestApp : public Application {
   using Application::Application;
-  ~TestApp() { shutdown(); }
+  ~TestApp() override { shutdown(); }
+
+  SetDMapFilePath dmap{"test.dmap"};
 
   DeviceModule dev1{this, "Dummy0",
       "/MyModule/actuator"}; // pick one of the writable variables to AC knows that data type for the trigger
@@ -31,18 +31,24 @@ struct TestApp : public Application {
       this, "InitHander2", "description", "./deviceInitScript2.bash", dev1, "secondInitScriptOutput", 1};
 };
 
+/*********************************************************************************************************************/
+
 struct Fixture {
-  DMapSetter dmapSetter;
   TestApp testApp{"ScriptedInitApp"};
   TestFacility testFacility{testApp, false};
 };
+
+/*********************************************************************************************************************/
+/*********************************************************************************************************************/
 
 BOOST_FIXTURE_TEST_CASE(testSuccess, Fixture) {
   (void)std::filesystem::remove("device1Init.success");
   (void)std::filesystem::remove("continueDevice1Init");
   (void)std::filesystem::remove("produceDevice1InitError");
+
   testFacility.runApplication();
   // testApp.dumpConnections();
+
   auto initMessage = testFacility.getScalar<std::string>("/Devices/Dummy0/initScriptOutput");
 
   initMessage.read();
@@ -81,6 +87,8 @@ BOOST_FIXTURE_TEST_CASE(testSuccess, Fixture) {
   (void)std::filesystem::remove("device1Init.success");
   (void)std::filesystem::remove("continueDevice1Init");
 }
+
+/*********************************************************************************************************************/
 
 BOOST_FIXTURE_TEST_CASE(testError, Fixture) {
   std::ofstream produceErrorFile; // If the file exists, the script produces an error
@@ -126,3 +134,5 @@ BOOST_FIXTURE_TEST_CASE(testError, Fixture) {
   (void)std::filesystem::remove("device1Init.success");
   (void)std::filesystem::remove("continueDevice1Init");
 }
+
+/*********************************************************************************************************************/
