@@ -24,7 +24,6 @@ namespace ChimeraTK {
   class Module;
   class AccessorBase;
   class VariableNetwork;
-  class TriggerFanOut;
   class TestFacility;
   class DeviceManager;
   class ApplicationModule;
@@ -169,10 +168,6 @@ namespace ChimeraTK {
 
     /** List of InternalModules */
     std::list<boost::shared_ptr<InternalModule>> internalModuleList;
-
-    /** Map of trigger consumers to their corresponding TriggerFanOuts. Note: the
-     * key is the ID (address) of the externalTiggerImpl. */
-    std::map<const void*, boost::shared_ptr<TriggerFanOut>> triggerMap;
 
     /** Map of DeviceManagers. The alias name resp. CDD is the key.*/
     std::map<std::string, boost::shared_ptr<DeviceManager>> _deviceManagerMap;

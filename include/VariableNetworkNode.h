@@ -60,7 +60,7 @@ namespace ChimeraTK {
      * another network. The additional dummy argument is only there to
      * discriminate the signature from the copy constructor and will be ignored.
      */
-    // VariableNetworkNode(VariableNetworkNode& nodeToTrigger, int);
+    VariableNetworkNode(const std::string &deviceAliasOrCdd, int);
 
     /** Constructor to wrap a VariableNetworkNode_data pointer */
     VariableNetworkNode(boost::shared_ptr<VariableNetworkNode_data> pdata);

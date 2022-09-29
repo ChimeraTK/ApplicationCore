@@ -17,6 +17,12 @@
 
 #include <memory>
 
+namespace std {
+  bool operator<(const ChimeraTK::Model::ProcessVariableProxy& a, const ChimeraTK::Model::ProcessVariableProxy& b) {
+    return a.getFullyQualifiedPath() < b.getFullyQualifiedPath();
+  }
+} // namespace std
+
 namespace ChimeraTK {
 
   /*********************************************************************************************************************/
@@ -29,22 +35,11 @@ namespace ChimeraTK {
     auto net = checkNetwork(proxy);
 
     if(net.feeder.getType() == NodeType::invalid && net.consumers.empty()) {
-      debug("   Empty trigger network, just creating feeder & impl");
-      net.feeder = VariableNetworkNode(
-          proxy.getName(), VariableDirection{VariableDirection::feeding, false}, *net.valueType, net.valueLength);
-
-      callForType(*net.valueType, [&](auto t) {
-        using UserType = decltype(t);
-        net.feederImpl = createProcessVariable<UserType>(
-            net.feeder, net.valueLength, net.unit, net.description, {AccessMode::wait_for_new_data});
-      });
-
-      return net;
+      throw ChimeraTK::logic_error("Variable network '" + proxy.getFullyQualifiedPath() + "' is empty. Must not happen");
     }
 
     bool neededFeeder{false};
     if(not net.feeder.isValid()) {
-      debug("  No feeder in network, creating ControlSystem feeder");
       debug("  No feeder in network, creating ControlSystem feeder ", proxy.getFullyQualifiedPath());
       debug("    Bi-directional consumers: ", net.numberOfBidirectionalNodes);
 
@@ -58,7 +53,7 @@ namespace ChimeraTK {
     assert(net.feeder.isValid());
 
     if(not neededFeeder) {
-      // Only add CS consumer if we did not previously add CS feeder
+      // Only add CS consumer if we did not previously add CS feeder, we will add one or the other, but never both
       debug("  No CS feeder in network, creating additional ControlSystem consumer");
       net.consumers.push_back(VariableNetworkNode(
           proxy.getFullyQualifiedPath(), {VariableDirection::consuming, false}, *net.valueType, net.valueLength));
@@ -89,8 +84,7 @@ namespace ChimeraTK {
           proxy.visit(triggerFinder, Model::adjacentInSearch, Model::keepPvAccess, Model::keepDeviceModules,
               Model::returnFirstHit(std::make_pair(Model::ProcessVariableProxy{}, Model::DeviceModuleProxy{})));
       if(!trigger.isValid()) {
-        throw ChimeraTK::logic_error(
-            "Poll-Type feeder " + net.feeder.getName() + " needs trigger, but none provided");
+        throw ChimeraTK::logic_error("Poll-Type feeder " + net.feeder.getName() + " needs trigger, but none provided");
       }
     }
 
@@ -127,14 +121,25 @@ namespace ChimeraTK {
   void ConnectionMaker::connect() {
     debug("Calling Connect...");
 
-    debug("Finishing trigger networks...");
+    debug("  Preparing trigger networks");
+    debug("    Collecting triggers");
+    std::set<Model::ProcessVariableProxy> triggers;
+
+    // Collect all triggers, add a TriggerReceiver placeholder for every device associated with that trigger
     auto triggerCollector = [&](auto proxy) {
       auto trigger = proxy.getTrigger();
       if(not trigger.isValid()) return;
 
-      _triggerNetworks.insert({trigger.getFullyQualifiedPath(), connectNetwork(trigger)});
+      triggers.insert(trigger);
+      proxy.addVariable(trigger, VariableNetworkNode(proxy.getAliasOrCdd(), 0));
     };
     _app.getModel().visit(triggerCollector, Model::depthFirstSearch, Model::keepDeviceModules);
+
+    // Finalize the trigger networks
+    debug("    Connecting trigger networks");
+    for(auto trigger : triggers) {
+      _triggerNetworks.insert({trigger.getFullyQualifiedPath(), connectNetwork(trigger)});
+    };
 
     debug("Finishing other networks...");
     auto connectingVisitor = [&](auto proxy) {
@@ -165,7 +170,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void ConnectionMaker::makeDirectConnectionForFeederWithImplementation(const NetworkInformation& net) {
+  void ConnectionMaker::makeDirectConnectionForFeederWithImplementation(NetworkInformation& net) {
     debug("    Making direct connection for feeder with implementation");
 
     callForType(*net.valueType, [&](auto t) {
@@ -213,10 +218,16 @@ namespace ChimeraTK {
           consumingImpl = createDeviceVariable<UserType>(consumer);
           debug("    Node type is Device");
           break;
-        case NodeType::TriggerReceiver:
-          debug("    Node type is Application");
-          assert(false); // TODO: can this happen
-          break;
+        case NodeType::TriggerReceiver: {
+          needsFanOut = false;
+          debug("    Node type is TriggerReceiver");
+
+          // create the trigger fan out and store it in the map and the internalModuleList
+          auto triggerFanOut =
+              boost::make_shared<TriggerFanOut>(feedingImpl, *_app.getDeviceManager(consumer.getDeviceAlias()));
+          _app.internalModuleList.push_back(triggerFanOut);
+          net.triggerImpl[consumer.getDeviceAlias()] = triggerFanOut;
+        } break;
         default:
           throw ChimeraTK::logic_error("Unexpected node type!");
       }
@@ -304,9 +315,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void ConnectionMaker::makeFanOutConnectionForFeederWithImplementation(const NetworkInformation& net,
-      const Model::DeviceModuleProxy& device, const Model::ProcessVariableProxy& trigger) {
-
+  void ConnectionMaker::makeFanOutConnectionForFeederWithImplementation(
+      NetworkInformation& net, const Model::DeviceModuleProxy& device, const Model::ProcessVariableProxy& trigger) {
     // TODO: needs sanity check?
     auto feederTrigger = !net.useExternalTrigger && net.feeder.getMode() == UpdateMode::push;
     assert(feederTrigger || net.useExternalTrigger || net.numberOfPollingConsumers == 1);
@@ -341,18 +351,13 @@ namespace ChimeraTK {
         debug("        Using external trigger.");
         NetworkInformation triggerNetwork = it->second;
 
+        auto jt = triggerNetwork.triggerImpl.find(device.getAliasOrCdd());
+        assert(jt != triggerNetwork.triggerImpl.end());
+
         // if external trigger is enabled, use externally triggered threaded
         // FanOut. Create one per external trigger impl.
-        void* triggerImplId = triggerNetwork.feederImpl.get();
-        auto triggerFanOut = _app.triggerMap[triggerImplId];
-        if(!triggerFanOut) {
-          // create the trigger fan out and store it in the map and the internalModuleList
-          triggerFanOut =
-              boost::make_shared<TriggerFanOut>((net.feederImpl), *_app.getDeviceManager(device.getAliasOrCdd()).get());
-          _app.triggerMap[triggerImplId] = triggerFanOut;
-          _app.internalModuleList.push_back(triggerFanOut);
-        }
-        fanOut = triggerFanOut->addNetwork(feedingImpl, consumerImplementationPairs);
+
+        fanOut = jt->second->addNetwork(feedingImpl, consumerImplementationPairs);
       }
       else if(feederTrigger) {
         debug("        Using feeder trigger.");
@@ -472,11 +477,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   template<typename UserType>
-  ConsumerImplementationPairs<UserType> ConnectionMaker::setConsumerImplementations(const NetworkInformation& net) {
+  ConsumerImplementationPairs<UserType> ConnectionMaker::setConsumerImplementations(NetworkInformation& net) {
     ConsumerImplementationPairs<UserType> consumerImplPairs;
-
-    /** Map of deviceAliases to their corresponding TriggerFanOuts */
-    std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>> triggerFanOuts;
 
     for(const auto& consumer : net.consumers) {
       typename ConsumerImplementationPairs<UserType>::value_type pair{
@@ -497,7 +499,14 @@ namespace ChimeraTK {
         pair = std::make_pair(impl, consumer);
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
-        assert(false);
+        auto triggerConnection = createApplicationVariable<UserType>(net.feeder);
+
+        auto triggerFanOut = boost::make_shared<TriggerFanOut>(
+            triggerConnection.second, *_app.getDeviceManager(consumer.getDeviceAlias()));
+        _app.internalModuleList.push_back(triggerFanOut);
+        net.triggerImpl[consumer.getDeviceAlias()] = triggerFanOut;
+
+        pair = std::make_pair(triggerConnection.first, consumer);
       }
       else {
         throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
@@ -575,7 +584,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void ChimeraTK::ConnectionMaker::makeConnectionForFeederWithoutImplementation(const NetworkInformation& net) {
+  void ChimeraTK::ConnectionMaker::makeConnectionForFeederWithoutImplementation(NetworkInformation& net) {
     // we should be left with an application feeder node
     if(net.feeder.getType() != NodeType::Application) {
       throw ChimeraTK::logic_error("Unexpected node type!"); // LCOV_EXCL_LINE (assert-like)
@@ -614,8 +623,10 @@ namespace ChimeraTK {
           });
           break;
         case NodeType::TriggerReceiver:
+          // This cannot happen. In a network Application -> TriggerReceiver, the trigger
+          // collection code will always add a CS consumer, so there is never a 1:1 connection
           debug("       Node type is TriggerReceiver");
-          assert(false); // TODO: can this happen
+          assert(false);
           break;
         case NodeType::Constant:
           debug("       Node type is Constant");
@@ -645,7 +656,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void ConnectionMaker::makeConnectionForConstantFeeder(const NetworkInformation& net) {
+  void ConnectionMaker::makeConnectionForConstantFeeder(NetworkInformation& net) {
     assert(net.feeder.getType() == NodeType::Constant);
     for(const auto& consumer : net.consumers) {
       AccessModeFlags flags{};
