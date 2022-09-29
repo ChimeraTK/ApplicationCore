@@ -31,7 +31,6 @@ namespace ctk = ChimeraTK;
 /* dummy application */
 
 /*********************************************************************************************************************/
-/*********************************************************************************************************************/
 
 struct TestModule1 : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
@@ -57,27 +56,50 @@ struct TestModule1 : ctk::ApplicationModule {
   }
 };
 
+/*********************************************************************************************************************/
+
+struct TestModule2 : ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+  ctk::ScalarPushInput<int> i1{this, "i1", "", ""};
+  ctk::ArrayPushInput<int> i2{this, "i2", "", 2, ""};
+  ctk::ScalarPushInputWB<int> i3{this, "i3", "", ""};
+  ctk::ScalarPushInput<int> o1{this, "o1", "", ""};
+  ctk::ArrayPushInput<int> o2{this, "o2", "", 2, ""};
+  void mainLoop() override {
+    auto group = readAnyGroup();
+    while(true) {
+      group.readAny();
+    }
+  }
+};
+
+/*********************************************************************************************************************/
+
 struct TestApplication1 : ctk::Application {
   TestApplication1() : Application("testSuite") {}
-  ~TestApplication1() { shutdown(); }
+  ~TestApplication1() override { shutdown(); }
 
   //  void defineConnections() { t1.connectTo(cs); }
 
   TestModule1 t1{this, "t1", ""};
 };
 
+/*********************************************************************************************************************/
+
 struct TestApplication2 : ctk::Application {
   TestApplication2() : Application("testSuite") {}
-  ~TestApplication2() { shutdown(); }
+  ~TestApplication2() override { shutdown(); }
 
   /*  void defineConnections() {
       t1.connectTo(cs["A"]);
       t1.connectTo(cs["B"]);
     }*/
 
-  TestModule1 t1{this, "t1", ""};
+  TestModule1 a{this, "A", ""};
+  TestModule2 b{this, "A", ""};
 };
 
+/*********************************************************************************************************************/
 /*********************************************************************************************************************/
 
 // first test without FanOuts of any kind
@@ -86,11 +108,11 @@ BOOST_AUTO_TEST_CASE(testDirectConnections) {
   TestApplication1 app;
   ctk::TestFacility test(app);
 
-  auto i1 = test.getScalar<int>("i1");
-  auto i2 = test.getArray<int>("i2");
-  auto i3 = test.getScalar<int>("i3");
-  auto o1 = test.getScalar<int>("o1");
-  auto o2 = test.getArray<int>("o2");
+  auto i1 = test.getScalar<int>("/t1/i1");
+  auto i2 = test.getArray<int>("/t1/i2");
+  auto i3 = test.getScalar<int>("/t1/i3");
+  auto o1 = test.getScalar<int>("/t1/o1");
+  auto o2 = test.getArray<int>("/t1/o2");
 
   test.runApplication();
 
@@ -231,11 +253,6 @@ BOOST_AUTO_TEST_CASE(testWithFanOut) {
   auto Ai3 = test.getScalar<int>("A/i3");
   auto Ao1 = test.getScalar<int>("A/o1");
   auto Ao2 = test.getArray<int>("A/o2");
-  auto Bi1 = test.getScalar<int>("B/i1");
-  auto Bi2 = test.getArray<int>("B/i2");
-  auto Bi3 = test.getScalar<int>("B/i3");
-  auto Bo1 = test.getScalar<int>("B/o1");
-  auto Bo2 = test.getArray<int>("B/o2");
 
   test.runApplication();
 
@@ -248,21 +265,18 @@ BOOST_AUTO_TEST_CASE(testWithFanOut) {
   test.stepApplication();
   Ao1.read();
   Ao2.read();
-  Bi1.read();
-  Bo1.read();
-  Bo2.read();
   BOOST_CHECK(Ao1.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(Ao2.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK_EQUAL(int(Ao1), 1);
   BOOST_CHECK_EQUAL(Ao2[0], 0);
   BOOST_CHECK_EQUAL(Ao2[1], 0);
-  BOOST_CHECK(Bo1.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK(Bo2.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK_EQUAL(int(Bo1), 1);
-  BOOST_CHECK_EQUAL(Bo2[0], 0);
-  BOOST_CHECK_EQUAL(Bo2[1], 0);
-  BOOST_CHECK(Bi1.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK_EQUAL(int(Bi1), 1);
+  BOOST_CHECK(app.b.o1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(app.b.o2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(int(app.b.o1), 1);
+  BOOST_CHECK_EQUAL(app.b.o2[0], 0);
+  BOOST_CHECK_EQUAL(app.b.o2[1], 0);
+  BOOST_CHECK(app.b.i1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(int(app.b.i1), 1);
 
   // send fault flag on a second variable
   Ai2[0] = 2;
@@ -272,22 +286,19 @@ BOOST_AUTO_TEST_CASE(testWithFanOut) {
   test.stepApplication();
   Ao1.read();
   Ao2.read();
-  Bi2.read();
-  Bo1.read();
-  Bo2.read();
   BOOST_CHECK(Ao1.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(Ao2.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK_EQUAL(int(Ao1), 1);
   BOOST_CHECK_EQUAL(Ao2[0], 2);
   BOOST_CHECK_EQUAL(Ao2[1], 3);
-  BOOST_CHECK(Bo1.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK(Bo2.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK_EQUAL(int(Bo1), 1);
-  BOOST_CHECK_EQUAL(Bo2[0], 2);
-  BOOST_CHECK_EQUAL(Bo2[1], 3);
-  BOOST_CHECK(Bi2.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK_EQUAL(Bi2[0], 2);
-  BOOST_CHECK_EQUAL(Bi2[1], 3);
+  BOOST_CHECK(app.b.o1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(app.b.o2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(int(app.b.o1), 1);
+  BOOST_CHECK_EQUAL(app.b.o2[0], 2);
+  BOOST_CHECK_EQUAL(app.b.o2[1], 3);
+  BOOST_CHECK(app.b.i2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(app.b.i2[0], 2);
+  BOOST_CHECK_EQUAL(app.b.i2[1], 3);
 
   // clear fault flag on a second variable
   Ai2[0] = 4;
@@ -297,22 +308,19 @@ BOOST_AUTO_TEST_CASE(testWithFanOut) {
   test.stepApplication();
   Ao1.read();
   Ao2.read();
-  Bi2.read();
-  Bo1.read();
-  Bo2.read();
   BOOST_CHECK(Ao1.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(Ao2.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK_EQUAL(int(Ao1), 1);
   BOOST_CHECK_EQUAL(Ao2[0], 4);
   BOOST_CHECK_EQUAL(Ao2[1], 5);
-  BOOST_CHECK(Bo1.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK(Bo2.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK_EQUAL(int(Bo1), 1);
-  BOOST_CHECK_EQUAL(Bo2[0], 4);
-  BOOST_CHECK_EQUAL(Bo2[1], 5);
-  BOOST_CHECK(Bi2.dataValidity() == ctk::DataValidity::ok);
-  BOOST_CHECK_EQUAL(Bi2[0], 4);
-  BOOST_CHECK_EQUAL(Bi2[1], 5);
+  BOOST_CHECK(app.b.o1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(app.b.o2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK_EQUAL(int(app.b.o1), 1);
+  BOOST_CHECK_EQUAL(app.b.o2[0], 4);
+  BOOST_CHECK_EQUAL(app.b.o2[1], 5);
+  BOOST_CHECK(app.b.i2.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK_EQUAL(app.b.i2[0], 4);
+  BOOST_CHECK_EQUAL(app.b.i2[1], 5);
 
   // clear fault flag on a first variable
   Ai1 = 6;
@@ -321,21 +329,18 @@ BOOST_AUTO_TEST_CASE(testWithFanOut) {
   test.stepApplication();
   Ao1.read();
   Ao2.read();
-  Bi1.read();
-  Bo1.read();
-  Bo2.read();
   BOOST_CHECK(Ao1.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK(Ao2.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK_EQUAL(int(Ao1), 6);
   BOOST_CHECK_EQUAL(Ao2[0], 4);
   BOOST_CHECK_EQUAL(Ao2[1], 5);
-  BOOST_CHECK(Bo1.dataValidity() == ctk::DataValidity::ok);
-  BOOST_CHECK(Bo2.dataValidity() == ctk::DataValidity::ok);
-  BOOST_CHECK_EQUAL(int(Bo1), 6);
-  BOOST_CHECK_EQUAL(Bo2[0], 4);
-  BOOST_CHECK_EQUAL(Bo2[1], 5);
-  BOOST_CHECK(Bi1.dataValidity() == ctk::DataValidity::ok);
-  BOOST_CHECK_EQUAL(int(Bi1), 6);
+  BOOST_CHECK(app.b.o1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK(app.b.o2.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK_EQUAL(int(app.b.o1), 6);
+  BOOST_CHECK_EQUAL(app.b.o2[0], 4);
+  BOOST_CHECK_EQUAL(app.b.o2[1], 5);
+  BOOST_CHECK(app.b.i1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK_EQUAL(int(app.b.i1), 6);
 }
 
 /*********************************************************************************************************************/
@@ -415,13 +420,13 @@ struct TestApplication3 : ctk::Application {
   constexpr static char const* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=testDataValidity1.map)";
   constexpr static char const* ExceptionDummyCDD2 = "(ExceptionDummy:1?map=testDataValidity2.map)";
   TestApplication3() : Application("testDataFlagPropagation") {}
-  ~TestApplication3() { shutdown(); }
+  ~TestApplication3() override { shutdown(); }
 
   Module1 m1{this, "m1", ""};
   Module2 m2{this, "m2", ""};
 
-  ctk::DeviceModule device1{this, ExceptionDummyCDD1};
-  ctk::DeviceModule device2{this, ExceptionDummyCDD2};
+  ctk::DeviceModule device1{this, ExceptionDummyCDD1, "/trigger"};
+  ctk::DeviceModule device2{this, ExceptionDummyCDD2, "/trigger"};
 
   /*  void defineConnections() override {
       device1["m1"]("i1") >> m1("i1");
@@ -951,7 +956,7 @@ struct Module3 : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
   ctk::ScalarPushInput<int> pushTypeInputFromCS{this, "o1", "", "", {"CS"}};
 
-  ctk::ScalarPollInput<int> pollInputFromDevice{this, "i2", "", "", {"DEVICE2"}};
+  ctk::ScalarPollInput<int> pollInputFromDevice{this, "/m1/i2", "", "", {"DEVICE2"}};
   ctk::ScalarOutput<int> result{this, "Module3_result", "", "", {"CS"}};
 
   void mainLoop() override {
@@ -970,7 +975,7 @@ struct TestApplication4 : ctk::Application {
 
   constexpr static char const* ExceptionDummyCDD2 = "(ExceptionDummy:1?map=testDataValidity2.map)";
   TestApplication4() : Application("testDataFlagPropagation") {}
-  ~TestApplication4() { shutdown(); }
+  ~TestApplication4() override { shutdown(); }
 
   Module3 module{this, "module", ""};
 
