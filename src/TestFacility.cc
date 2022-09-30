@@ -86,7 +86,7 @@ namespace ChimeraTK {
       for(auto& pv : pvManager->getAllProcessVariables()) {
         if(!pv->isReadable()) continue;
         callForTypeNoVoid(pv->getValueType(), [&](auto t) {
-          typedef decltype(t) UserType;
+          using UserType = decltype(t);
           this->getArray<UserType>(pv->getName()).readNonBlocking();
         });
       }

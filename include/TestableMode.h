@@ -15,6 +15,10 @@
 #include <map>
 #include <mutex>
 
+namespace ChimeraTK {
+  class ConnectionMaker;
+}
+
 namespace ChimeraTK::detail {
   struct TestableMode {
     /** Special exception class which will be thrown if tests with the testable
@@ -68,7 +72,7 @@ namespace ChimeraTK::detail {
     /** Test if the testable mode mutex is locked by the current thread.
      *
      *  This function should generally not be used in user code. */
-    bool testLock();
+    [[nodiscard]] bool testLock() const;
 
     [[nodiscard]] bool canStep() const { return counter != 0; }
 
@@ -211,6 +215,9 @@ namespace ChimeraTK::detail {
      * output of the testable mode. Will return "*UNKNOWN_THREAD*" if the name for the given ID has not yet been set.
      */
     std::string threadName(const boost::thread::id& threadId = boost::this_thread::get_id());
+
+    bool _debugDecorating{false};
+    friend class ChimeraTK::ConnectionMaker;
   };
 
   /********************************************************************************************************************/
@@ -223,6 +230,11 @@ namespace ChimeraTK::detail {
   TestableMode::AccessorPair<T> TestableMode::decorate(
       AccessorPair<T> other, const VariableNetworkNode& producer, const VariableNetworkNode& consumer) {
     if(not enabled) return other;
+
+    if(_debugDecorating) {
+      std::cout << "      Decorating pair " << producer.getQualifiedName() << "[" << other.first->getId() << "] -> "
+                << consumer.getQualifiedName() << "[" << other.second->getId() << "]" << std::endl;
+    }
 
     // create variable IDs
     size_t varId = detail::TestableMode::getNextVariableId();
@@ -262,6 +274,11 @@ namespace ChimeraTK::detail {
       boost::shared_ptr<NDRegisterAccessor<T>> other, DecoratorType direction, const std::string& name, size_t varId) {
     if(not enabled) {
       return other;
+    }
+
+    if(_debugDecorating) {
+      std::cout << "      Decorating single " << (direction == DecoratorType::READ ? "consumer " : "feeder ") << name
+                << "[" << other->getId() << "]" << std::endl;
     }
 
     if(varId == 0) {

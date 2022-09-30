@@ -27,10 +27,27 @@ namespace ChimeraTK::detail {
   }
   /*********************************************************************************************************************/
 
-  bool TestableMode::testLock() {
+  bool TestableMode::testLock() const {
     if(not enabled) return false;
     return getLockObject().owns_lock();
   }
+
+  /*********************************************************************************************************************/
+
+  namespace {
+    /// This is a trick to make sure the exception is never caught, not even by the BOOST test framework.
+    void terminateTestStalled() {
+      struct TestStalled : std::exception {
+        [[nodiscard]] const char* what() const noexcept override { return "Test stalled."; }
+      };
+      try {
+        throw TestStalled();
+      }
+      catch(...) {
+        std::terminate();
+      }
+    }
+  } // namespace
 
   /*********************************************************************************************************************/
 
@@ -66,7 +83,7 @@ namespace ChimeraTK::detail {
                 << std::endl;                                                   // LCOV_EXCL_LINE
 
       // throw a specialised exception to make sure whoever catches it really knows what he does...
-      throw TestsStalled(); // LCOV_EXCL_LINE
+      terminateTestStalled(); // LCOV_EXCL_LINE
     }                       // LCOV_EXCL_LINE
 
     // check if the last owner of the mutex was this thread, which may be a hint
@@ -118,7 +135,7 @@ namespace ChimeraTK::detail {
         // Check for modules waiting for initial values (prints nothing if there are no such modules)
         Application::getInstance().circularDependencyDetector.printWaiters();
         // throw a specialised exception to make sure whoever catches it really knows what he does...
-        throw TestsStalled();
+        terminateTestStalled();
       }
     }
     else {
