@@ -121,6 +121,8 @@ namespace ChimeraTK {
   void ConnectionMaker::connect() {
     debug("Calling Connect...");
 
+    _app.getTestableMode()._debugDecorating = _debugConnections;
+
     debug("  Preparing trigger networks");
     debug("    Collecting triggers");
     std::set<Model::ProcessVariableProxy> triggers;
