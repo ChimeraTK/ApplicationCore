@@ -54,7 +54,7 @@ namespace ChimeraTK {
 
     if(not neededFeeder) {
       // Only add CS consumer if we did not previously add CS feeder, we will add one or the other, but never both
-      debug("  No CS feeder in network, creating additional ControlSystem consumer");
+      debug("  Network has a non-CS feeder, can create additional ControlSystem consumer");
       net.consumers.push_back(VariableNetworkNode(
           proxy.getFullyQualifiedPath(), {VariableDirection::consuming, false}, *net.valueType, net.valueLength));
     }
@@ -94,12 +94,12 @@ namespace ChimeraTK {
       debug("  Creating fixed implementation for feeder '", net.feeder.getName(), "'...");
 
       if(net.consumers.size() == 1 && !net.useExternalTrigger) {
-        debug("    One consumer, setting up direct connection without external trigger.");
+        debug("    One consumer without external trigger, creating direct connection");
         makeDirectConnectionForFeederWithImplementation(net);
       }
       else {
         // More than one consuming node
-        debug("    More than one consuming node, setting up FanOut");
+        debug("    More than one consuming node or having external trigger, setting up FanOut");
         makeFanOutConnectionForFeederWithImplementation(net, device, trigger);
       }
     }
@@ -623,8 +623,8 @@ namespace ChimeraTK {
           });
           break;
         case NodeType::TriggerReceiver:
-          // This cannot happen. In a network Application -> TriggerReceiver, the trigger
-          // collection code will always add a CS consumer, so there is never a 1:1 connection
+          // This cannot happen. In a network Application -> TriggerReceiver, the connectNetwork()
+          // code will always add a CS consumer, so there is never a 1:1 connection
           debug("       Node type is TriggerReceiver");
           assert(false);
           break;

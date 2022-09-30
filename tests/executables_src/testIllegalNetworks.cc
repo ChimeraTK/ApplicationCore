@@ -176,8 +176,3 @@ struct TestApplication6 : public ctk::Application {
     void mainLoop() override {}
   } testModule2{this, ".", ""};
 };
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testNoElements, T, TestTypes) {
-  TestApplication6<T> app;
-  BOOST_CHECK_THROW(ctk::TestFacility tf(app, false), ctk::logic_error);
-}
