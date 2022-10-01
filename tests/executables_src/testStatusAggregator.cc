@@ -19,6 +19,12 @@ namespace ctk = ChimeraTK;
 
 struct StatusGenerator : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
+
+  StatusGenerator(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
+      const std::unordered_set<std::string>& tags = {})
+  : ApplicationModule(owner, name, description, tags) {
+    // std::cout << "The name: " << getName() << std::endl;
+  }
   ctk::StatusOutput status{this, getName(), ""};
   void mainLoop() override {}
 };
@@ -29,17 +35,17 @@ struct TestApplication : ctk::Application {
   TestApplication() : Application("testApp") {}
   ~TestApplication() override { shutdown(); }
 
-  StatusGenerator s{this, ".", "Status"};
+  StatusGenerator s{this, "s", "Status"};
 
   struct OuterGroup : ctk::ModuleGroup {
     using ctk::ModuleGroup::ModuleGroup;
 
-    StatusGenerator s1{this, ".", "Status 1"};
-    StatusGenerator s2{this, ".", "Status 2"};
+    StatusGenerator s1{this, "s1", "Status 1"};
+    StatusGenerator s2{this, "s2", "Status 2"};
 
     struct InnerGroup : ctk::ModuleGroup {
       using ctk::ModuleGroup::ModuleGroup;
-      StatusGenerator s{this, ".", "Status"};
+      StatusGenerator s{this, "s", "Status"};
       StatusGenerator deep{this, "deep", "Status"};
     };
     InnerGroup innerGroup1{this, "InnerGroup1", ""};
@@ -51,7 +57,7 @@ struct TestApplication : ctk::Application {
       this, "Aggregated/status", "aggregated status description", ctk::StatusAggregator::PriorityMode::fwko};
 };
 
-/**********************************************************************************************************************/
+///**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testSingleNoTags) {
   std::cout << "testSingleNoTags" << std::endl;
@@ -107,8 +113,8 @@ struct TestPrioApplication : ctk::Application {
   TestPrioApplication() : Application("testApp") {}
   ~TestPrioApplication() override { shutdown(); }
 
-  StatusGenerator s1{this, ".", "Status 1"};
-  StatusGenerator s2{this, ".", "Status 2"};
+  StatusGenerator s1{this, "sg1/internal", "Status 1"};
+  StatusGenerator s2{this, "sg2/external", "Status 2"};
 
   ctk::StatusAggregator aggregator;
 };
@@ -213,13 +219,13 @@ struct TestApplication2Levels : ctk::Application {
   TestApplication2Levels() : Application("testApp") {}
   ~TestApplication2Levels() override { shutdown(); }
 
-  StatusGenerator s{this, ".", "Status"};
+  StatusGenerator s{this, "s", "Status"};
 
   struct OuterGroup : ctk::ModuleGroup {
     using ctk::ModuleGroup::ModuleGroup;
 
-    StatusGenerator s1{this, ".", "Status 1"};
-    StatusGenerator s2{this, ".", "Status 2"};
+    StatusGenerator s1{this, "s1", "Status 1"};
+    StatusGenerator s2{this, "s2", "Status 2"};
 
     ctk::StatusAggregator extraAggregator{
         this, "/Aggregated/extraStatus", "aggregated status description", ctk::StatusAggregator::PriorityMode::ofwk};
@@ -230,10 +236,10 @@ struct TestApplication2Levels : ctk::Application {
       this, "Aggregated/status", "aggregated status description", ctk::StatusAggregator::PriorityMode::fwko};
 };
 
-/**********************************************************************************************************************/
+///**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testTwoLevels) {
-  std::cout << "testTwoLevels" << std::endl;
+  std::cout << "testTwoLevels" << std::endl << std::endl << std::endl;
   TestApplication2Levels app;
 
   ctk::TestFacility test(app);
@@ -293,8 +299,8 @@ struct TestApplicationTags : ctk::Application {
   struct OuterGroup : ctk::ModuleGroup {
     using ctk::ModuleGroup::ModuleGroup;
 
-    StatusGenerator sA{this, ".", "Status 1", ctk::TAGS{"A"}};
-    StatusGenerator sAB{this, ".", "Status 2", {"A", "B"}};
+    StatusGenerator sA{this, "sA", "Status 1", ctk::TAGS{"A"}};
+    StatusGenerator sAB{this, "sAB", "Status 2", {"A", "B"}};
 
     ctk::StatusAggregator aggregateA{
         this, "aggregateA", "aggregated status description", ctk::StatusAggregator::PriorityMode::fwko, {"A"}};
@@ -408,7 +414,7 @@ BOOST_AUTO_TEST_CASE(testStatusMessage) {
   innerStatus.readLatest();
   innerStatusMessage.readLatest();
   BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::FAULT));
-  const char* faultString = "/testApp/OuterGroup/s2/s2 switched to FAULT";
+  const char* faultString = "/OuterGroup/s2/s2 switched to FAULT";
   BOOST_CHECK_EQUAL(std::string(statusMessage), faultString);
   BOOST_CHECK_EQUAL(int(innerStatus), int(ctk::StatusOutput::Status::FAULT));
   BOOST_CHECK_EQUAL(std::string(innerStatusMessage), faultString);

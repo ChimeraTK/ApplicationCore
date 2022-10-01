@@ -4,6 +4,7 @@
 
 #include "ScalarAccessor.h"
 #include "StatusAccessor.h"
+#include "Utilities.h"
 #include "VariableGroup.h"
 
 #include <ChimeraTK/ControlSystemAdapter/StatusWithMessageReader.h>
@@ -51,17 +52,10 @@ namespace ChimeraTK {
     ScalarPushInput<std::string> _message; // left uninitialized, if no message source provided
 
     /// Construct StatusWithMessageInput which reads only status, not message
-    StatusWithMessageInput(ApplicationModule* owner, std::string name, const std::string& description,
+    StatusWithMessageInput(ApplicationModule* owner, const std::string& qualifiedName, const std::string& description,
         const std::unordered_set<std::string>& tags = {})
-    : VariableGroup(owner, name, "", tags), _status(this, name, description) {
-      hasMessageSource = false;
-      _statusNameLong = description;
-    }
-
-    [[deprecated]] StatusWithMessageInput(ApplicationModule* owner, std::string name, const std::string& description,
-        HierarchyModifier hierarchyModifier = HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
-    : VariableGroup(owner, name, "", tags), _status(this, name, description) {
-      applyHierarchyModifierToName(hierarchyModifier);
+    : VariableGroup(owner, Utilities::getPathName(qualifiedName), "", tags),
+      _status(this, Utilities::getUnqualifiedName(qualifiedName), description) {
       hasMessageSource = false;
       _statusNameLong = description;
     }
@@ -70,7 +64,9 @@ namespace ChimeraTK {
     ///  If not given, it is selected automatically by the naming convention
     void setMessageSource(std::string msgInputName = "") {
       // at the time this function is called, TransferElement impl is not yet set, so don't look there for name
-      if(msgInputName == "") msgInputName = ((VariableNetworkNode)_status).getName() + "_message";
+      if(msgInputName.empty()) {
+        msgInputName = ((VariableNetworkNode)_status).getName() + "_message";
+      }
       // late initialization of _message
       _message = ScalarPushInput<std::string>(this, msgInputName, "", "");
       hasMessageSource = true;

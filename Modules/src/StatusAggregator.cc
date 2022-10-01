@@ -15,13 +15,11 @@ namespace ChimeraTK {
   : ApplicationModule(owner, ".", description, outputTags), _output(this, name), _mode(mode),
     _tagsToAggregate(tagsToAggregate) {
     // check maximum size of tagsToAggregate
-    if(tagsToAggregate.size() > 1) {
+    if(_tagsToAggregate.size() > 1) {
       throw ChimeraTK::logic_error("StatusAggregator: List of tagsToAggregate must contain at most one tag.");
     }
-
     // add reserved tag tagAggregatedStatus to the status output, so it can be detected by other StatusAggregators
     _output._status.addTag(tagAggregatedStatus);
-
     // search the variable tree for StatusOutputs and create the matching inputs
     populateStatusInput();
   }
@@ -29,119 +27,74 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void StatusAggregator::populateStatusInput() {
-    throw ChimeraTK::logic_error("THIS FUNCTION NEEDS TO BE REWRITTEN TO USE THE MODEL.");
-    /*    scanAndPopulateFromHierarchyLevel(*getOwner(), ".");
+    auto model = dynamic_cast<ModuleGroup*>(_owner)->getModel();
 
-        // Special treatment for DeviceModules, because they are formally not owned by the Application: If we are
-        // aggregating all tags at the top-level of the Application, include the status outputs of all DeviceModules.
-        if(getOwner() == &Application::getInstance() && _tagsToAggregate.empty()) {
-          for(auto& p : Application::getInstance().deviceModuleMap) {
-            scanAndPopulateFromHierarchyLevel(p.second->deviceError, ".");
+    // set of potential inputs for this StatusAggregator instance
+    std::set<std::string> inputPathsSet;
+    // set of inputs for other, already created, StatusAggregator instances
+    std::set<std::string> anotherStatusAgregatorInputSet;
+    // map which assigns fully qualified path of StatusAggregator output to the ully qualified path StatusAggregator output message
+    std::map<std::string, std::string> statusToMessagePathsMap;
+
+    auto scanModel = [&](auto proxy) {
+      if constexpr(ChimeraTK::Model::isApplicationModule(proxy)) {
+        StatusAggregator* staAggPtr = dynamic_cast<StatusAggregator*>(&proxy.getApplicationModule());
+        if(staAggPtr != nullptr) {
+          if(staAggPtr == this) return;
+
+          if(_tagsToAggregate == staAggPtr->_tagsToAggregate) {
+            inputPathsSet.insert(staAggPtr->_output._status.getModel().getFullyQualifiedPath());
+
+            statusToMessagePathsMap[staAggPtr->_output._status.getModel().getFullyQualifiedPath()] =
+                staAggPtr->_output._message.getModel().getFullyQualifiedPath();
+
+            for(auto& anotherStatusAgregatorInput : staAggPtr->_inputs) {
+              anotherStatusAgregatorInputSet.insert(
+                  anotherStatusAgregatorInput._status.getModel().getFullyQualifiedPath());
+            }
           }
         }
-
-        // Check if no inputs are present (nothing found to aggregate)
-        if(_inputs.empty()) {
-          throw ChimeraTK::logic_error("StatusAggregator " + VariableNetworkNode(_output._status).getQualifiedName() +
-              " has not found anything to aggregate.");
-        }*/
-  }
-
-  /********************************************************************************************************************/
-
-  void StatusAggregator::scanAndPopulateFromHierarchyLevel(EntityOwner& module, const std::string& namePrefix) {
-    // a map used just for optimization of node lookup by name, which happens in inner loop below
-    std::map<std::string, VariableNetworkNode> nodesByName;
-    for(auto& node : module.getAccessorList()) {
-      nodesByName[node.getName()] = node;
-    }
-    // Search for StatusOutputs to aggregate
-    for(auto& node : module.getAccessorList()) {
-      // Filter required tags
-      // Note: findTag() cannot be used instead, since the search must be done on the original C++ hierarchy. Otherwise
-      // it is not possible to identify which StatusOutputs are aggregated by other StatusAggregators.
-      const auto& tags = node.getTags();
-      if(tags.find(StatusOutput::tagStatusOutput) == tags.end()) {
-        // StatusOutput's reserved tag not present: not a StatusOutput
-        continue;
-      }
-      bool skip = false;
-      for(const auto& tag : _tagsToAggregate) {
-        // Each tag attached to this StatusAggregator must be present at all StatusOutputs to be aggregated
-        if(tags.find(tag) == tags.end()) {
-          skip = true;
-          break;
-        }
-      }
-      if(skip) continue;
-
-      // All variables with the StatusOutput::tagStatusOutput need to be feeding, otherwise someone has used the tag
-      // wrongly
-      if(node.getDirection().dir != VariableDirection::feeding) {
-        throw ChimeraTK::logic_error("BUG DETECTED: StatusOutput's reserved tag has been found on a consumer.");
       }
 
-      // Create matching input for the found StatusOutput of the other StatusAggregator
-      // Unfortunately, the qualified name of the newly-created node is useless,
-      // so we save the original one as description for indication in a message
-      _inputs.emplace_back(this, node.getName(), node.getQualifiedName(), HierarchyModifier::hideThis,
-          std::unordered_set<std::string>{tagInternalVars});
-      // node >> _inputs.back()._status;
-      //  look for matching status message output node
-      auto result = nodesByName.find(node.getName() + "_message");
-      if(result != nodesByName.end()) {
-        // tell the StatusWithMessageInput that it should consider the message source, and connect it
-        auto statusMsgNode = result->second;
-        _inputs.back().setMessageSource();
-        // statusMsgNode >> _inputs.back()._message;
-      }
-    }
-
-    // Search for StatusAggregators among submodules
-    const auto& ml = module.getSubmoduleList();
-    for(const auto& submodule : ml) {
-      // do nothing, if it is *this
-      if(submodule == this) continue;
-
-      auto* aggregator = dynamic_cast<StatusAggregator*>(submodule);
-      if(aggregator != nullptr) {
-        // never aggregate on the same level
-        if(aggregator->getOwner() == getOwner()) {
-          continue;
+      if constexpr(ChimeraTK::Model::isVariable(proxy)) {
+        // check whether its not output of this (current) StatusAggregator. 'Current' StatusAggregator output is also
+        // visible in the scanned model and should be ignored
+        if(proxy.getFullyQualifiedPath().compare(_output._status.getModel().getFullyQualifiedPath()) == 0) {
+          return;
         }
 
-        // if another StatusAggregator has been found, check tags
-        bool skip = false;
-        const auto& tags = aggregator->_tagsToAggregate;
-        for(const auto& tag : _tagsToAggregate) {
-          // Each tag attached to this StatusAggregator must be present at all StatusOutputs to be aggregated
-          if(tags.find(tag) == tags.end()) {
-            skip = true;
-            break;
+        auto tags = proxy.getTags();
+        // find another aggregator output - this is already covered by checking if given module is a StatusAggregator
+        if(tags.find(StatusAggregator::tagAggregatedStatus) != tags.end()) {
+          return;
+        }
+        // find status output - this is potential candidate to be aggregated
+        if(tags.find(StatusOutput::tagStatusOutput) != tags.end()) {
+          for(const auto& tagToAgregate : _tagsToAggregate) {
+            // Each tag attached to this StatusAggregator must be present at all StatusOutputs to be aggregated
+            if(tags.find(tagToAgregate) == tags.end()) {
+              return;
+            }
           }
+          inputPathsSet.insert(proxy.getFullyQualifiedPath());
         }
-        if(skip) continue;
-
-        // aggregate the StatusAggregator's result
-        auto statusNode = VariableNetworkNode(aggregator->_output._status);
-        _inputs.emplace_back(this, statusNode.getName(), "", HierarchyModifier::hideThis,
-            std::unordered_set<std::string>{tagInternalVars});
-        // statusNode >> _inputs.back()._status;
-        auto msgNode = VariableNetworkNode(aggregator->_output._message);
-        _inputs.back().setMessageSource();
-        // msgNode >> _inputs.back()._message;
-        return;
       }
+    };
+
+    model.visit(scanModel, ChimeraTK::Model::keepApplicationModules || ChimeraTK::Model::keepProcessVariables,
+        ChimeraTK::Model::breadthFirstSearch, ChimeraTK::Model::keepOwnership);
+
+    for(auto& pathToBeRemoved : anotherStatusAgregatorInputSet) {
+      inputPathsSet.erase(pathToBeRemoved);
     }
 
-    // If no (matching) StatusAggregator is found, recurse into sub-modules
-    for(const auto& submodule : ml) {
-      if(dynamic_cast<StatusAggregator*>(submodule) != nullptr) continue; // StatusAggregators are already handled
-      scanAndPopulateFromHierarchyLevel(*submodule, namePrefix + "/" + submodule->getName());
+    for(auto& pathToBeAggregated : inputPathsSet) {
+      _inputs.emplace_back(
+          this, pathToBeAggregated, pathToBeAggregated, std::unordered_set<std::string>{tagInternalVars});
+      if(!statusToMessagePathsMap[pathToBeAggregated].empty())
+        _inputs.back().setMessageSource(statusToMessagePathsMap[pathToBeAggregated]);
     }
   }
-
-  /********************************************************************************************************************/
 
   int StatusAggregator::getPriority(StatusOutput::Status status) const {
     using Status = StatusOutput::Status;
