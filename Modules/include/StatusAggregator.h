@@ -87,7 +87,7 @@ namespace ChimeraTK {
     void populateStatusInput();
 
     /// Helper for populateStatusInput
-    void scanAndPopulateFromHierarchyLevel(EntityOwner& module, const std::string& namePrefix);
+    // void scanAndPopulateFromHierarchyLevel(EntityOwner& module, const std::string& namePrefix);
 
     /** Reserved tag which is used to mark aggregated status outputs (need to stop searching further down the
      *  hierarchy) */
