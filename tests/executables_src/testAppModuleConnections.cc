@@ -4,6 +4,7 @@
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
 #include "ScalarAccessor.h"
+#include "TestFacility.h"
 
 #include <ChimeraTK/BackendFactory.h>
 
@@ -31,28 +32,16 @@ struct TestModule : public ctk::ApplicationModule {
       const std::unordered_set<std::string>& tags = {})
   : ApplicationModule(owner, name, description, tags), mainLoopStarted(2) {}
 
-  ctk::ScalarOutput<T> feedingPush{this, "feedingPush", "MV/m", "Some output scalar"};
-  ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Description"};
-  ctk::ScalarPushInput<T> consumingPush2{this, "consumingPush2", "MV/m", "Description"};
-  ctk::ScalarPushInput<T> consumingPush3{this, "consumingPush3", "MV/m", "Description"};
+  ctk::ScalarOutput<T> feedingPush;
+  ctk::ScalarPushInput<T> consumingPush;
+  ctk::ScalarPushInput<T> consumingPush2;
+  ctk::ScalarPushInput<T> consumingPush3;
 
-  ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Description"};
-  ctk::ScalarPollInput<T> consumingPoll2{this, "consumingPoll2", "MV/m", "Description"};
-  ctk::ScalarPollInput<T> consumingPoll3{this, "consumingPoll3", "MV/m", "Description"};
+  ctk::ScalarPollInput<T> consumingPoll;
+  ctk::ArrayPushInput<T> consumingPushArray;
 
-  ctk::ArrayPollInput<T> consumingPollArray{this, "consumingPollArray", "m", 10, "Description"};
-  ctk::ArrayPushInput<T> consumingPushArray{this, "consumingPushArray", "m", 10, "Description"};
-
-  ctk::ArrayOutput<T> feedingArray{this, "feedingArray", "m", 10, "Description"};
-  ctk::ArrayOutput<T> feedingPseudoArray{this, "feedingPseudoArray", "m", 1, "Description"};
-
-  ctk::ScalarPollInput<T> lateConstrScalarPollInput;
-  ctk::ScalarPushInput<T> lateConstrScalarPushInput;
-  ctk::ScalarOutput<T> lateConstrScalarOutput;
-
-  ctk::ArrayPollInput<T> lateConstrArrayPollInput;
-  ctk::ArrayPushInput<T> lateConstrArrayPushInput;
-  ctk::ArrayOutput<T> lateConstrArrayOutput;
+  ctk::ArrayOutput<T> feedingArray;
+  ctk::ArrayOutput<T> feedingPseudoArray;
 
   // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
   // mainLoop(). This is required since the mainLoopWrapper accesses the module variables before the start of the
@@ -76,7 +65,7 @@ struct TestModule : public ctk::ApplicationModule {
 template<typename T>
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
-  ~TestApplication() { shutdown(); }
+  ~TestApplication() override { shutdown(); }
 
   void defineConnections() {} // the setup is done in the tests
 
@@ -87,16 +76,19 @@ struct TestApplication : public ctk::Application {
 /* test case for two scalar accessors in push mode */
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPushAccessors, T, test_types) {
+  // FIXME: With the new scheme, there cannot be a 1:1 module connection any more, it will always be a network involving
+  // the ControlSystem
   std::cout << "*** testTwoScalarPushAccessors<" << typeid(T).name() << ">" << std::endl;
 
   TestApplication<T> app;
+  app.testModule.feedingPush = {&app.testModule, "testTwoScalarPushAccessors", "", ""};
+  app.testModule.consumingPush = {&app.testModule, "testTwoScalarPushAccessors", "", ""};
 
-  // app.testModule.feedingPush >> app.testModule.consumingPush;
-  app.initialise();
-  app.run();
+  ctk::TestFacility tf{app, false};
+  tf.runApplication();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
-  // single theaded test
+  // single threaded test
   app.testModule.consumingPush = 0;
   app.testModule.feedingPush = 42;
   BOOST_CHECK(app.testModule.consumingPush == 0);
@@ -129,16 +121,16 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFourScalarPushAccessors, T, test_types) {
   std::cout << "*** testFourScalarPushAccessors<" << typeid(T).name() << ">" << std::endl;
 
   TestApplication<T> app;
+  app.testModule.consumingPush = {&app.testModule, "testFourScalarPushAccessors", "", ""};
+  app.testModule.consumingPush2 = {&app.testModule, "testFourScalarPushAccessors", "", ""};
+  app.testModule.feedingPush = {&app.testModule, "testFourScalarPushAccessors", "", ""};
+  app.testModule.consumingPush3 = {&app.testModule, "testFourScalarPushAccessors", "", ""};
 
-  // connect in this strange way to test if connection code can handle this.
-  // app.testModule.consumingPush >> app.testModule.consumingPush2;
-  // app.testModule.feedingPush >> app.testModule.consumingPush2;
-  // app.testModule.feedingPush >> app.testModule.consumingPush3;
-  app.initialise();
-  app.run();
+  ctk::TestFacility tf{app, false};
+  tf.runApplication();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
-  // single theaded test
+  // single threaded test
   app.testModule.consumingPush = 0;
   app.testModule.consumingPush2 = 2;
   app.testModule.consumingPush3 = 3;
@@ -198,12 +190,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPushPollAccessors, T, test_types) {
 
   TestApplication<T> app;
 
-  // app.testModule.feedingPush >> app.testModule.consumingPoll;
-  app.initialise();
-  app.run();
+  app.testModule.feedingPush = {&app.testModule, "testTwoScalarPushPollAccessors", "", ""};
+  app.testModule.consumingPoll = {&app.testModule, "testTwoScalarPushPollAccessors", "", ""};
+
+  ctk::TestFacility tf{app, false};
+  tf.runApplication();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
-  // single theaded test only, since read() does not block in this case
+  // single threaded test only, since read() does not block in this case
   app.testModule.consumingPoll = 0;
   app.testModule.feedingPush = 42;
   BOOST_CHECK(app.testModule.consumingPoll == 0);
@@ -236,14 +230,17 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoArrayAccessors, T, test_types) {
   TestApplication<T> app;
 
   // app.testModule.feedingArray >> app.testModule.consumingPushArray;
-  app.initialise();
-  app.run();
+  app.testModule.feedingArray = {&app.testModule, "testFourScalarPushAccessors", "", 10, ""};
+  app.testModule.consumingPushArray = {&app.testModule, "testFourScalarPushAccessors", "", 10, ""};
+  ctk::TestFacility tf{app, false};
+  tf.runApplication();
+
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   BOOST_CHECK(app.testModule.feedingArray.getNElements() == 10);
   BOOST_CHECK(app.testModule.consumingPushArray.getNElements() == 10);
 
-  // single theaded test
+  // single threaded test
   for(auto& val : app.testModule.consumingPushArray) val = 0;
   for(unsigned int i = 0; i < 10; ++i) app.testModule.feedingArray[i] = 99 + (T)i;
   for(auto& val : app.testModule.consumingPushArray) BOOST_CHECK(val == 0);
@@ -268,73 +265,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoArrayAccessors, T, test_types) {
   for(unsigned int i = 0; i < 10; ++i) BOOST_CHECK(app.testModule.consumingPushArray[i] == 42 - (T)i);
 }
 
-/*********************************************************************************************************************/
-/* test case for late constructing accessors */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testLateConstruction, T, test_types) {
-  std::cout << "*** testLateConstruction<" << typeid(T).name() << ">" << std::endl;
-
-  TestApplication<T> app;
-
-  // create the scalars
-  app.testModule.lateConstrScalarPollInput.replace(ctk::ScalarPollInput<T>(&app.testModule, "LateName1", "", ""));
-  app.testModule.lateConstrScalarPushInput.replace(ctk::ScalarPushInput<T>(&app.testModule, "LateName2", "", ""));
-  app.testModule.lateConstrScalarOutput.replace(ctk::ScalarOutput<T>(&app.testModule, "LateName3", "", ""));
-
-  // connect the scalars
-  // app.testModule.lateConstrScalarOutput >> app.testModule.lateConstrScalarPollInput;
-  // app.testModule.feedingPush >> app.testModule.lateConstrScalarPushInput;
-
-  // create the arrays
-  app.testModule.lateConstrArrayPollInput.replace(ctk::ArrayPollInput<T>(&app.testModule, "LateName4", "", 10, ""));
-  app.testModule.lateConstrArrayPushInput.replace(ctk::ArrayPushInput<T>(&app.testModule, "LateName5", "", 10, ""));
-  app.testModule.lateConstrArrayOutput.replace(ctk::ArrayOutput<T>(&app.testModule, "LateName6", "", 10, ""));
-
-  // connect the arrays
-  // app.testModule.lateConstrArrayOutput >> app.testModule.lateConstrArrayPollInput;
-  // app.testModule.feedingArray >> app.testModule.lateConstrArrayPushInput;
-
-  // run the app
-  app.initialise();
-  app.run();
-  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
-
-  // test the scalars
-  app.testModule.feedingPush = 42;
-  app.testModule.feedingPush.write();
-  app.testModule.lateConstrScalarPushInput.read();
-  BOOST_CHECK(app.testModule.lateConstrScalarPushInput == 42);
-
-  app.testModule.feedingPush = 43;
-  app.testModule.feedingPush.write();
-  app.testModule.lateConstrScalarPushInput.read();
-  BOOST_CHECK(app.testModule.lateConstrScalarPushInput == 43);
-
-  app.testModule.lateConstrScalarOutput = 120;
-  app.testModule.lateConstrScalarOutput.write();
-  app.testModule.lateConstrScalarPollInput.read();
-  BOOST_CHECK_EQUAL(app.testModule.lateConstrScalarPollInput, 120);
-  app.testModule.lateConstrScalarPollInput.read();
-  BOOST_CHECK_EQUAL(app.testModule.lateConstrScalarPollInput, 120);
-
-  // test the arrays
-  app.testModule.feedingArray = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  app.testModule.feedingArray.write();
-  app.testModule.lateConstrArrayPushInput.read();
-  for(T i = 0; i < 10; ++i) BOOST_CHECK_EQUAL(app.testModule.lateConstrArrayPushInput[i], i + 1);
-
-  app.testModule.feedingArray = {10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
-  app.testModule.feedingArray.write();
-  app.testModule.lateConstrArrayPushInput.read();
-  for(T i = 0; i < 10; ++i) BOOST_CHECK_EQUAL(app.testModule.lateConstrArrayPushInput[i], (i + 1) * 10);
-
-  app.testModule.lateConstrArrayOutput = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-  app.testModule.lateConstrArrayOutput.write();
-  app.testModule.lateConstrArrayPollInput.read();
-  for(T i = 0; i < 10; ++i) BOOST_CHECK_EQUAL(app.testModule.lateConstrArrayPollInput[i], i);
-  app.testModule.lateConstrArrayPollInput.read();
-  for(T i = 0; i < 10; ++i) BOOST_CHECK_EQUAL(app.testModule.lateConstrArrayPollInput[i], i);
-}
 
 /*********************************************************************************************************************/
 /* test case for connecting array of length 1 with scalar */
@@ -345,10 +275,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testPseudoArray, T, test_types) {
   TestApplication<T> app;
 
   // app.testModule.feedingPseudoArray >> app.testModule.consumingPush;
+  app.testModule.feedingPseudoArray = {&app.testModule, "testPseudoArray", "", 1, ""};
+  app.testModule.consumingPush = {&app.testModule, "testPseudoArray", "", ""};
 
   // run the app
-  app.initialise();
-  app.run();
+  ctk::TestFacility tf{app, false};
+  tf.runApplication();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   // test data transfer
@@ -356,52 +288,4 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testPseudoArray, T, test_types) {
   app.testModule.feedingPseudoArray.write();
   app.testModule.consumingPush.read();
   BOOST_CHECK(app.testModule.consumingPush == 33);
-}
-
-/*********************************************************************************************************************/
-/* test case for "merging" two networks */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testMergeNetworks, T, test_types) {
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
-
-  TestApplication<T> app;
-  // This creates a first network
-  // app.testModule.feedingPush >> app.testModule.consumingPush;
-  // This creates a second network with only consumers
-  // app.testModule.consumingPush2 >> app.testModule.consumingPush3;
-  // This merges the two networks
-  // app.testModule.consumingPush >> app.testModule.consumingPush2;
-
-  // run the app
-  app.initialise();
-  app.run();
-  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
-
-  // test data transfer
-  app.testModule.feedingPush = 44;
-  app.testModule.feedingPush.write();
-  BOOST_CHECK(app.testModule.consumingPush.readLatest() == true);
-  BOOST_CHECK(app.testModule.consumingPush == 44);
-  BOOST_CHECK(app.testModule.consumingPush2.readLatest() == true);
-  BOOST_CHECK(app.testModule.consumingPush2 == 44);
-  BOOST_CHECK(app.testModule.consumingPush3.readLatest() == true);
-  BOOST_CHECK(app.testModule.consumingPush3 == 44);
-}
-
-/*********************************************************************************************************************/
-/* test automatic constants by variable names */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testAutoConstants, T, test_types) {
-  std::cout << "*** testAutoConstants<" << typeid(T).name() << ">" << std::endl;
-
-  TestApplication<T> app;
-  T theValue = 42;
-  // app.testModule.consumingPush.setMetaData(ctk::EntityOwner::constant(theValue), "", "");
-  app.initialise();
-  app.run();
-
-  // make sure the module's mainLoop() is entered, so inital values are propagated
-  app.testModule.mainLoopStarted.wait();
-
-  BOOST_CHECK_EQUAL(T(app.testModule.consumingPush), theValue);
 }
