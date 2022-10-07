@@ -7,8 +7,6 @@
 #include "DeviceManager.h"
 #include "Utilities.h"
 #include "VariableNetworkGraphDumpingVisitor.h"
-#include "VariableNetworkModuleGraphDumpingVisitor.h"
-#include "VariableNetworkNode.h"
 #include "XMLGeneratorVisitor.h"
 
 #include <ChimeraTK/BackendFactory.h>
@@ -214,19 +212,23 @@ void Application::shutdown() {
 
   ApplicationBase::shutdown();
 }
+
+/*********************************************************************************************************************/
+
+
 /*********************************************************************************************************************/
 
 void Application::generateXML() {
   assert(not applicationName.empty());
 
-  XMLGeneratorVisitor visitor;
-  visitor.dispatch(*this);
-  visitor.save(applicationName + ".xml");
+  XMLGenerator generator{*this};
+  generator.run();
+  generator.save(applicationName + ".xml");
 }
 
 /*********************************************************************************************************************/
 
-void Application::dumpConnections(std::ostream& stream) {                                          // LCOV_EXCL_LINE
+void Application::dumpConnections(std::ostream& stream) { // LCOV_EXCL_LINE
 #if 0
   stream << "==== List of all variable connections of the current Application =====" << std::endl; // LCOV_EXCL_LINE
   for(auto& network : networkList) {                                                               // LCOV_EXCL_LINE

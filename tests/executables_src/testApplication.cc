@@ -23,17 +23,10 @@ namespace ctk = ChimeraTK;
 
 struct TestApp : public ctk::Application {
   TestApp(const std::string& name) : ctk::Application(name) {}
-  ~TestApp() { shutdown(); }
-
-  /*void defineConnections() {
-    multiplierD.output >> csmod("myVarD");
-    csmod["mySubModule"]("myVarSIn") >> pipe.input;
-    pipe.output >> csmod["mySubModule"]("myVarSOut");
-    csmod("myVarU16") >> multiplierU16.input;
-  }*/
+  ~TestApp() override { shutdown(); }
 
   ctk::ConstMultiplier<double> multiplierD{this, "multiplierD", "Some module", 42};
-  ctk::ScalarPipe<std::string> pipe{this, "pipe", "unit", "Some pipe module"};
+  ctk::ScalarPipe<std::string> pipe{this, "pipeIn", "pipeOut", "unit", "Some pipe module"};
   ctk::ConstMultiplier<uint16_t, uint16_t, 120> multiplierU16{this, "multiplierU16", "Some other module", 42};
 };
 
@@ -137,23 +130,25 @@ BOOST_AUTO_TEST_CASE(testXmlGeneration) {
   }
 
   // get root element
-  const auto root = parser.get_document()->get_root_node();
+  auto *const root = parser.get_document()->get_root_node();
   BOOST_CHECK_EQUAL(root->get_name(), "application");
 
   // parsing loop
-  bool found_myVarD{false};
-  bool found_myVarSIn{false};
-  bool found_myVarSOut{false};
-  bool found_myVarU8{false};
+  bool found_pipeIn{false};
+  bool found_multiplierDIn{false};
+  bool found_multiplierDOut{false};
+  bool found_multiplierU16In{false};
+  bool found_multiplierU16Out{false};
+  bool found_pipeOut{false};
 
   for(const auto& child : root->get_children()) {
     // cast into element, ignore if not an element (e.g. comment)
-    auto* element = dynamic_cast<const xmlpp::Element*>(child);
+    const auto* element = dynamic_cast<const xmlpp::Element*>(child);
     if(!element) continue;
 
     if(element->get_name() == "variable") {
       // obtain attributes from the element
-      auto xname = element->get_attribute("name");
+      auto *xname = element->get_attribute("name");
       BOOST_REQUIRE(xname != nullptr);
       std::string name(xname->get_value());
 
@@ -165,39 +160,38 @@ BOOST_AUTO_TEST_CASE(testXmlGeneration) {
       std::string numberOfElements = getValueFromNode(element, "numberOfElements");
 
       // check if variables are described correctly
-      if(name == "myVarD") {
-        found_myVarD = true;
-        BOOST_CHECK_EQUAL(value_type, "double");
-        BOOST_CHECK_EQUAL(direction, "application_to_control_system");
-        BOOST_CHECK_EQUAL(unit, "");
-        BOOST_CHECK_EQUAL(description, "Some module");
-        BOOST_CHECK_EQUAL(numberOfElements, "1");
+      if(name == "pipeOut") {
+        found_pipeIn = true;
+        BOOST_TEST(value_type == "string");
+        BOOST_TEST(direction == "application_to_control_system");
+        BOOST_TEST(unit == "unit");
+        BOOST_TEST(description == "Some pipe module");
+        BOOST_TEST(numberOfElements ==  "1");
       }
-      else if(name == "myVarU16") {
-        found_myVarU8 = true;
-        BOOST_CHECK_EQUAL(value_type, "uint16");
+      else if(name == "pipeIn") {
+        found_pipeOut = true;
+        BOOST_TEST(value_type == "string");
         BOOST_CHECK_EQUAL(direction, "control_system_to_application");
-        BOOST_CHECK_EQUAL(unit, "");
-        BOOST_CHECK_EQUAL(description, "Some other module");
-        BOOST_CHECK_EQUAL(numberOfElements, "120");
+        BOOST_TEST(unit == "unit");
+        BOOST_TEST(description == "Some pipe module");
+        BOOST_TEST(numberOfElements ==  "1");
       }
       else {
         BOOST_ERROR("Wrong variable name found.");
       }
     }
     else if(element->get_name() == "directory") {
-      auto xname = element->get_attribute("name");
+      auto *xname = element->get_attribute("name");
       BOOST_REQUIRE(xname != nullptr);
       std::string name(xname->get_value());
-      BOOST_CHECK_EQUAL(name, "mySubModule");
 
       for(const auto& subchild : child->get_children()) {
-        auto* element2 = dynamic_cast<const xmlpp::Element*>(subchild);
+        const auto* element2 = dynamic_cast<const xmlpp::Element*>(subchild);
         if(!element2) continue;
         BOOST_CHECK_EQUAL(element2->get_name(), "variable");
 
         // obtain attributes from the element
-        auto xname2 = element2->get_attribute("name");
+        auto *xname2 = element2->get_attribute("name");
         BOOST_REQUIRE(xname2 != nullptr);
         std::string name2(xname2->get_value());
 
@@ -208,21 +202,43 @@ BOOST_AUTO_TEST_CASE(testXmlGeneration) {
         std::string description = getValueFromNode(element2, "description");
         std::string numberOfElements = getValueFromNode(element2, "numberOfElements");
 
-        if(name2 == "myVarSIn") {
-          found_myVarSIn = true;
-          BOOST_CHECK_EQUAL(value_type, "string");
+        if(name2 == "input") {
+          if(name == "multiplierD") {
+            found_multiplierDIn = true;
+            BOOST_CHECK_EQUAL(value_type, "double");
+            BOOST_CHECK_EQUAL(description, "Some module");
+            BOOST_CHECK_EQUAL(numberOfElements, "1");
+          }
+          else if(name == "multiplierU16") {
+            found_multiplierU16In = true;
+            BOOST_CHECK_EQUAL(value_type, "uint16");
+            BOOST_CHECK_EQUAL(description, "Some other module");
+            BOOST_CHECK_EQUAL(numberOfElements, "120");
+          }
+          else {
+            BOOST_ERROR("Wrong Directory name found");
+          }
           BOOST_CHECK_EQUAL(direction, "control_system_to_application");
-          BOOST_CHECK_EQUAL(unit, "unit");
-          BOOST_CHECK_EQUAL(description, "Some pipe module");
-          BOOST_CHECK_EQUAL(numberOfElements, "1");
+          BOOST_CHECK_EQUAL(unit, "");
         }
-        else if(name2 == "myVarSOut") {
-          found_myVarSOut = true;
-          BOOST_CHECK_EQUAL(value_type, "string");
+        else if(name2 == "output") {
+          if(name == "multiplierD") {
+            found_multiplierDOut = true;
+            BOOST_CHECK_EQUAL(value_type, "double");
+            BOOST_CHECK_EQUAL(description, "Some module");
+            BOOST_CHECK_EQUAL(numberOfElements, "1");
+          }
+          else if(name == "multiplierU16") {
+            found_multiplierU16Out = true;
+            BOOST_CHECK_EQUAL(value_type, "uint16");
+            BOOST_CHECK_EQUAL(description, "Some other module");
+            BOOST_CHECK_EQUAL(numberOfElements, "120");
+          }
+          else {
+            BOOST_ERROR("Wrong Directory name found");
+          }
           BOOST_CHECK_EQUAL(direction, "application_to_control_system");
-          BOOST_CHECK_EQUAL(unit, "unit");
-          BOOST_CHECK_EQUAL(description, "Some pipe module");
-          BOOST_CHECK_EQUAL(numberOfElements, "1");
+          BOOST_CHECK_EQUAL(unit, "");
         }
         else {
           BOOST_ERROR("Wrong variable name found.");
@@ -234,8 +250,10 @@ BOOST_AUTO_TEST_CASE(testXmlGeneration) {
     }
   }
 
-  BOOST_CHECK(found_myVarD);
-  BOOST_CHECK(found_myVarSIn);
-  BOOST_CHECK(found_myVarSOut);
-  BOOST_CHECK(found_myVarU8);
+  BOOST_CHECK(found_pipeIn);
+  BOOST_CHECK(found_pipeOut);
+  BOOST_CHECK(found_multiplierDIn);
+  BOOST_CHECK(found_multiplierDOut);
+  BOOST_CHECK(found_multiplierU16In);
+  BOOST_CHECK(found_multiplierU16Out);
 }

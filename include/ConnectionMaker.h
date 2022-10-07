@@ -12,8 +12,21 @@ namespace ChimeraTK {
   class Application;
   class TriggerFanOut;
 
-  class ConnectionMaker {
+  class NetworkVisitor {
    public:
+    void setDebugConnections(bool enable) { _debugConnections = enable; }
+
+
+    /**
+     * @brief Helper predicate to put ProcessVariableProxies into std::set
+     */
+    struct ProcessVariableComperator {
+      bool operator()(const Model::ProcessVariableProxy& a, const Model::ProcessVariableProxy& b) const {
+        return a.getFullyQualifiedPath() < b.getFullyQualifiedPath();
+      }
+    };
+
+   protected:
     struct NetworkInformation {
       explicit NetworkInformation(const Model::ProcessVariableProxy* p) : proxy(p) {}
 
@@ -30,22 +43,27 @@ namespace ChimeraTK {
       size_t numberOfPollingConsumers{0};
       bool useExternalTrigger{false};
     };
+    std::map<std::string, NetworkInformation> _triggerNetworks{};
+    bool _debugConnections{false};
+
+    NetworkInformation checkNetwork(Model::ProcessVariableProxy& proxy);
+    void finaliseNetwork(NetworkInformation& net);
+
+    template<typename... Args>
+    void debug(Args&&...);
+  };
+
+  class ConnectionMaker : public NetworkVisitor {
+   public:
 
     explicit ConnectionMaker(Application& app) : _app(app) {}
 
     void connect();
-    void setDebugConnections(bool enable) { _debugConnections = enable; }
 
    private:
     Application& _app;
-    bool _debugConnections{false};
-    std::map<std::string, NetworkInformation> _triggerNetworks{};
-
-    template<typename... Args>
-    void debug(Args&&...);
 
     NetworkInformation connectNetwork(Model::ProcessVariableProxy& proxy);
-    NetworkInformation checkNetwork(Model::ProcessVariableProxy& proxy);
 
     void makeDirectConnectionForFeederWithImplementation(NetworkInformation& net);
     void makeFanOutConnectionForFeederWithImplementation(NetworkInformation& net,

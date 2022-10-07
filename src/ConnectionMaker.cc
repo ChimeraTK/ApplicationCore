@@ -17,34 +17,103 @@
 
 #include <memory>
 
-namespace std {
-  bool operator<(const ChimeraTK::Model::ProcessVariableProxy& a, const ChimeraTK::Model::ProcessVariableProxy& b) {
-    return a.getFullyQualifiedPath() < b.getFullyQualifiedPath();
-  }
-} // namespace std
-
 namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  ConnectionMaker::NetworkInformation ConnectionMaker::connectNetwork(Model::ProcessVariableProxy& proxy) {
-    debug("Network found: ", proxy.getFullyQualifiedPath());
-    // This will do two things:
-    //  - Check the network consistency
-    //  - Return feeder and consumers, if available
-    auto net = checkNetwork(proxy);
+  NetworkVisitor::NetworkInformation NetworkVisitor::checkNetwork(Model::ProcessVariableProxy& proxy) {
+    NetworkInformation net{&proxy};
+    // Sanity check for the type and lengths of the nodes, extract the feeding node if any
+
+    for(const auto& node : proxy.getNodes()) {
+      if(node.getDirection().withReturn) {
+        net.numberOfBidirectionalNodes++;
+      }
+      if(node.getDirection().dir == VariableDirection::feeding) {
+        std::stringstream ss;
+        node.dump(ss);
+        debug("    Feeder:   ", ss.str());
+
+        if(net.feeder.getType() == NodeType::invalid) {
+          net.feeder = node;
+        }
+        else {
+          throw ChimeraTK::logic_error(
+              "Variable network " + proxy.getFullyQualifiedPath() + " has more than one feeder");
+        }
+      }
+      else if(node.getDirection().dir == VariableDirection::consuming) {
+        std::stringstream ss;
+        node.dump(ss);
+        debug("    Consumer: ", ss.str());
+        net.consumers.push_back(node);
+        if(node.getMode() == UpdateMode::poll) {
+          net.numberOfPollingConsumers++;
+        }
+      }
+      else {
+        // There should not be an invalid direction variable in here. FIXME: is that true?
+        assert(false);
+      }
+
+      if(*net.valueType == typeid(AnyType)) {
+        net.valueType = &node.getValueType();
+      }
+      else {
+        if(*net.valueType != node.getValueType() && node.getValueType() != typeid(AnyType)) {
+          throw ChimeraTK::logic_error(
+              "Variable network " + proxy.getFullyQualifiedPath() + " contains nodes with different types");
+        }
+      }
+
+      if(net.valueLength == 0) {
+        net.valueLength = node.getNumberOfElements();
+      }
+      else {
+        if(net.valueLength != node.getNumberOfElements() && node.getNumberOfElements() != 0) {
+          throw ChimeraTK::logic_error(
+              "Variable network " + proxy.getFullyQualifiedPath() + " contains nodes with different sizes");
+        }
+      }
+
+      // Get unit and description of network from nodes. First one wins
+      if(net.description.empty()) {
+        net.description = node.getDescription();
+      }
+
+      if(net.unit.empty()) {
+        net.unit = node.getUnit();
+      }
+    }
+
+    // If we are left with an undefined network at this point this should be trigger network and can be assumed
+    // to be void
+    if(*net.valueType == typeid(AnyType)) {
+      net.valueType = &typeid(ChimeraTK::Void);
+    }
+
+    // For void, a length of 0 is ok, otherwise this is not allowed
+    if(net.valueLength == 0 && *net.valueType != typeid(ChimeraTK::Void)) {
+      throw ChimeraTK::logic_error("Cannot determine length of network " + proxy.getFullyQualifiedPath());
+    }
 
     if(net.feeder.getType() == NodeType::invalid && net.consumers.empty()) {
       throw ChimeraTK::logic_error("Variable network '" + proxy.getFullyQualifiedPath() + "' is empty. Must not happen");
     }
 
+    return net;
+  }
+
+  /*********************************************************************************************************************/
+
+  void NetworkVisitor::finaliseNetwork(NetworkInformation& net) {
     bool neededFeeder{false};
     if(not net.feeder.isValid()) {
-      debug("  No feeder in network, creating ControlSystem feeder ", proxy.getFullyQualifiedPath());
+      debug("  No feeder in network, creating ControlSystem feeder ", net.proxy->getFullyQualifiedPath());
       debug("    Bi-directional consumers: ", net.numberOfBidirectionalNodes);
 
       // If we have exactly one bi-directional consumer, mark this CS feeder as bidirectional as well
-      net.feeder = VariableNetworkNode(proxy.getFullyQualifiedPath(),
+      net.feeder = VariableNetworkNode(net.proxy->getFullyQualifiedPath(),
           VariableDirection{VariableDirection::feeding, net.numberOfBidirectionalNodes == 1}, *net.valueType,
           net.valueLength);
 
@@ -56,9 +125,35 @@ namespace ChimeraTK {
       // Only add CS consumer if we did not previously add CS feeder, we will add one or the other, but never both
       debug("  Network has a non-CS feeder, can create additional ControlSystem consumer");
       net.consumers.push_back(VariableNetworkNode(
-          proxy.getFullyQualifiedPath(), {VariableDirection::consuming, false}, *net.valueType, net.valueLength));
+          net.proxy->getFullyQualifiedPath(), {VariableDirection::consuming, false}, *net.valueType, net.valueLength));
     }
     assert(not net.consumers.empty());
+  }
+
+  /*********************************************************************************************************************/
+
+  template<typename... Args>
+  void NetworkVisitor::debug(Args&&... args) {
+    if(not _debugConnections) return;
+
+    // FIXME: Use the proper logging mechanism once in place
+    // https://redmine.msktools.desy.de/issues/8305
+
+    // Fold expression printer from https://en.cppreference.com/w/cpp/language/fold
+    (std::cout << ... << args) << std::endl;
+  }
+
+  /*********************************************************************************************************************/
+  /* ConnectionMaker implementations */
+  /*********************************************************************************************************************/
+
+  NetworkVisitor::NetworkInformation ConnectionMaker::connectNetwork(Model::ProcessVariableProxy& proxy) {
+    debug("Network found: ", proxy.getFullyQualifiedPath());
+    // This will do two things:
+    //  - Check the network consistency
+    //  - Return feeder and consumers, if available
+    auto net = checkNetwork(proxy);
+    finaliseNetwork(net);
 
     auto triggerFinder = [&](auto p) {
       auto deviceTrigger = p.getTrigger();
@@ -125,7 +220,7 @@ namespace ChimeraTK {
 
     debug("  Preparing trigger networks");
     debug("    Collecting triggers");
-    std::set<Model::ProcessVariableProxy> triggers;
+    std::set<Model::ProcessVariableProxy, ProcessVariableComperator> triggers;
 
     // Collect all triggers, add a TriggerReceiver placeholder for every device associated with that trigger
     auto triggerCollector = [&](auto proxy) {
@@ -141,7 +236,7 @@ namespace ChimeraTK {
     debug("    Connecting trigger networks");
     for(auto trigger : triggers) {
       _triggerNetworks.insert({trigger.getFullyQualifiedPath(), connectNetwork(trigger)});
-    };
+    }
 
     debug("Finishing other networks...");
     auto connectingVisitor = [&](auto proxy) {
@@ -155,19 +250,6 @@ namespace ChimeraTK {
     // ChimeraTK::Model::keepParenthood - small optimisation for iterating the model only once
     _app.getModel().visit(connectingVisitor, ChimeraTK::Model::depthFirstSearch, ChimeraTK::Model::keepProcessVariables,
         ChimeraTK::Model::keepParenthood);
-  }
-
-  /*********************************************************************************************************************/
-
-  template<typename... Args>
-  void ConnectionMaker::debug(Args&&... args) {
-    if(not _debugConnections) return;
-
-    // FIXME: Use the proper logging mechanism once in place
-    // https://redmine.msktools.desy.de/issues/8305
-
-    // Fold expression printer from https://en.cppreference.com/w/cpp/language/fold
-    (std::cout << ... << args) << std::endl;
   }
 
   /*********************************************************************************************************************/
@@ -245,78 +327,6 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  ConnectionMaker::NetworkInformation ConnectionMaker::checkNetwork(Model::ProcessVariableProxy& proxy) {
-    NetworkInformation net{&proxy};
-    // Sanity check for the type and lengths of the nodes, extract the feeding node if any
-
-    for(const auto& node : proxy.getNodes()) {
-      if(node.getDirection().withReturn) {
-        net.numberOfBidirectionalNodes++;
-      }
-      if(node.getDirection().dir == VariableDirection::feeding) {
-        std::stringstream ss;
-        node.dump(ss);
-        debug("    Feeder:   ", ss.str());
-
-        if(net.feeder.getType() == NodeType::invalid) {
-          net.feeder = node;
-        }
-        else {
-          throw ChimeraTK::logic_error(
-              "Variable network " + proxy.getFullyQualifiedPath() + " has more than one feeder");
-        }
-      }
-      else if(node.getDirection().dir == VariableDirection::consuming) {
-        std::stringstream ss;
-        node.dump(ss);
-        debug("    Consumer: ", ss.str());
-        net.consumers.push_back(node);
-        if(node.getMode() == UpdateMode::poll) {
-          net.numberOfPollingConsumers++;
-        }
-      }
-      else {
-        // There should not be an invalid direction variable in here. FIXME: is that true?
-        assert(false);
-      }
-
-      if(*net.valueType == typeid(AnyType)) {
-        net.valueType = &node.getValueType();
-      }
-      else {
-        if(*net.valueType != node.getValueType() && node.getValueType() != typeid(AnyType)) {
-          throw ChimeraTK::logic_error(
-              "Variable network " + proxy.getFullyQualifiedPath() + " contains nodes with different types");
-        }
-      }
-
-      if(net.valueLength == 0) {
-        net.valueLength = node.getNumberOfElements();
-      }
-      else {
-        if(net.valueLength != node.getNumberOfElements() && node.getNumberOfElements() != 0) {
-          throw ChimeraTK::logic_error(
-              "Variable network " + proxy.getFullyQualifiedPath() + " contains nodes with different sizes");
-        }
-      }
-    }
-
-    // If we are left with an undefined network at this point this should be trigger network and can be assumed
-    // to be void
-    if(*net.valueType == typeid(AnyType)) {
-      net.valueType = &typeid(ChimeraTK::Void);
-    }
-
-    // For void, a length of 0 is ok, otherwise this is not allowed
-    if(net.valueLength == 0 && *net.valueType != typeid(ChimeraTK::Void)) {
-      throw ChimeraTK::logic_error("Cannot determine length of network " + proxy.getFullyQualifiedPath());
-    }
-
-    return net;
-  }
-
-  /*********************************************************************************************************************/
-
   void ConnectionMaker::makeFanOutConnectionForFeederWithImplementation(
       NetworkInformation& net, const Model::DeviceModuleProxy& device, const Model::ProcessVariableProxy& trigger) {
     // TODO: needs sanity check?
@@ -331,7 +341,7 @@ namespace ChimeraTK {
         feedingImpl = createDeviceVariable<UserType>(net.feeder);
       }
       else if(net.feeder.getType() == NodeType::ControlSystem) {
-        debug("      CS feeder, creating cs variable");
+        debug("      CS feeder, creating CS variable");
         feedingImpl = createProcessVariable<UserType>(
             net.feeder, net.valueLength, net.unit, net.description, {AccessMode::wait_for_new_data});
       }
