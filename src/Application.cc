@@ -94,6 +94,10 @@ void Application::initialise() {
     throw ChimeraTK::logic_error("Application::initialise() was already called before.");
   }
 
+  if(!getPVManager()) {
+    throw ChimeraTK::logic_error("Application::initialise() was called without an instance of ChimeraTK::PVManager.");
+  }
+
   ConnectionMaker cm(*this);
   cm.setDebugConnections(enableDebugMakeConnections);
   cm.connect();
