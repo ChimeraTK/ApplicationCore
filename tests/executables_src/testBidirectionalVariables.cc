@@ -90,12 +90,34 @@ struct ModuleB : public ctk::ApplicationModule {
 
 /*********************************************************************************************************************/
 
+struct ModuleD : public ctk::ApplicationModule {
+  using ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPushInput<int> var1{this, "var1", "inches", "A length, for some reason rounded to integer"};
+  ctk::ScalarOutput<int> varOut{this, "var1_out", "inches", "A length, for some reason rounded to integer"};
+
+  void mainLoop() override {
+    // Copy everything from in to out - this is done because the test runs in testable mode
+    // And would stall if we do not read var1 in here
+    // By propagating the value to varOut, it is possible to selectively read the values from the CS instead
+    // as before with the double connection "trick".
+    while(true) {
+      var1.read();
+      varOut = static_cast<int>(var1);
+      varOut.write();
+    }
+  }
+};
+
+/*********************************************************************************************************************/
+
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() override { shutdown(); }
 
   ModuleA a;
   ModuleB b;
+  ModuleD copy;
 };
 
 /*********************************************************************************************************************/
@@ -125,7 +147,7 @@ struct ModuleC : public ctk::ApplicationModule {
 
 struct InitTestApplication : public ctk::Application {
   InitTestApplication() : Application("testSuite") {}
-  ~InitTestApplication() { shutdown(); }
+  ~InitTestApplication() override { shutdown(); }
 
   ModuleC c{this, "ModuleC", ""};
 };
@@ -136,8 +158,6 @@ BOOST_AUTO_TEST_CASE(testDirectAppToCSConnections) {
   std::cout << "*** testDirectAppToCSConnections" << std::endl;
 
   TestApplication app;
-  app.getTestableMode().enableDebug = true;
-  app.debugMakeConnections();
   app.b = {&app, ".", ""};
 
   ctk::TestFacility test(app);
@@ -189,17 +209,13 @@ BOOST_AUTO_TEST_CASE(testRealisticExample) {
   std::cout << "*** testRealisticExample" << std::endl;
 
   TestApplication app;
-  app.a = {&app, "a", ""};
-  app.b = {&app, "b", ""};
+  app.a = {&app, ".", ""};
+  app.b = {&app, ".", ""};
+  app.copy = {&app, ".", ""};
 
-  // the connections will result in a FeedingFanOut for var2, as it is connected
-  // to the control system as well
-  // app.a.connectTo(app.cs);
-  // app.b.connectTo(app.cs);
-  // app.a.var1 >> app.cs("var1_copied"); // add a ThreadedFanOut with return channel as well...
   ctk::TestFacility test(app);
   auto var1 = test.getScalar<int>("var1");
-  auto var1_copied = test.getScalar<int>("var1_copied");
+  auto var1_copied = test.getScalar<int>("var1_out");
   auto var2 = test.getScalar<double>("var2");
   auto var3 = test.getScalar<double>("var3");
   auto max = test.getScalar<double>("max");
@@ -384,8 +400,8 @@ struct TestApplication2 : ctk::Application {
     boost::latch mainLoopStarted{1};
     void mainLoop() override { mainLoopStarted.count_down(); }
   };
-  Module<ctk::ScalarPushInputWB<int>> lower{this, "Lower", ""};
-  Module<ctk::ScalarOutputPushRB<int>> upper{this, "Upper", ""};
+  Module<ctk::ScalarPushInputWB<int>> lower{this, ".", ""};
+  Module<ctk::ScalarOutputPushRB<int>> upper{this, ".", ""};
 };
 
 /*********************************************************************************************************************/
