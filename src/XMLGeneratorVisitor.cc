@@ -1,55 +1,145 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
+
 #include "XMLGeneratorVisitor.h"
 
 #include "Application.h"
 #include "VariableGroup.h"
 #include "VariableNetworkNode.h"
+
 #include <libxml++/libxml++.h>
 
 #include <ChimeraTK/RegisterPath.h>
 
 #include <cassert>
-#include <cxxabi.h>
+#include <ConnectionMaker.h>
+
+namespace detail {
+  static constexpr char AC_NAMESPACE_URL[] = "https://github.com/ChimeraTK/ApplicationCore";
+} // namespace detail
+
+/********************************************************************************************************************/
+/********************************************************************************************************************/
 
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  XMLGeneratorVisitor::XMLGeneratorVisitor()
-  : Visitor<ChimeraTK::Application, ChimeraTK::VariableNetworkNode>(), _doc(std::make_shared<xmlpp::Document>()),
-    _rootElement(_doc->create_root_node("application", "https://github.com/ChimeraTK/ApplicationCore")) {}
+  XMLGenerator::XMLGenerator(Application& app)
+  : _app{app}, _doc{std::make_shared<xmlpp::Document>()}, _rootElement{_doc->create_root_node(
+                                                              "application", ::detail::AC_NAMESPACE_URL)} {}
+  /********************************************************************************************************************/
+
+  void XMLGenerator::run() {
+    NetworkVisitor::setDebugConnections(true);
+    _rootElement->set_attribute("name", _app.getName());
+
+    std::set<Model::ProcessVariableProxy, NetworkVisitor::ProcessVariableComperator> triggers;
+
+    // Collect all triggers, add a TriggerReceiver placeholder for every device associated with that trigger
+    auto triggerCollector = [&](auto proxy) {
+      auto trigger = proxy.getTrigger();
+      if(not trigger.isValid()) return;
+
+      triggers.insert(trigger);
+      proxy.addVariable(trigger, VariableNetworkNode(proxy.getAliasOrCdd(), 0));
+    };
+    _app.getModel().visit(triggerCollector, Model::depthFirstSearch, Model::keepDeviceModules);
+
+    // Finalize the trigger networks
+    for(auto trigger : triggers) {
+      _triggerNetworks.insert({trigger.getFullyQualifiedPath(), generateXMLNetwork(trigger)});
+    }
+
+    auto connectingVisitor = [&](auto proxy) {
+      if(auto it = _triggerNetworks.find(proxy.getFullyQualifiedPath()); it != _triggerNetworks.end()) {
+        return;
+      }
+
+      generateXMLNetwork(proxy);
+    };
+
+    // ChimeraTK::Model::keepParenthood - small optimisation for iterating the model only once
+    _app.getModel().visit(connectingVisitor, ChimeraTK::Model::depthFirstSearch, ChimeraTK::Model::keepProcessVariables,
+        ChimeraTK::Model::keepParenthood);
+  }
 
   /********************************************************************************************************************/
 
-  void XMLGeneratorVisitor::save(const std::string& fileName) {
+  void XMLGenerator::save(const std::string& fileName) {
     _doc->write_to_file_formatted(fileName);
   }
 
   /********************************************************************************************************************/
 
-  void XMLGeneratorVisitor::dispatch(const Application& app) {
-    _rootElement->set_attribute("name", app.getName());
-#if 0
-    for(auto& network : app.networkList) {
-      network.check();
+  NetworkVisitor::NetworkInformation XMLGenerator::generateXMLNetwork(Model::ProcessVariableProxy& proxy) {
+    auto net = checkNetwork(proxy);
+    finaliseNetwork(net);
 
-      auto feeder = network.getFeedingNode();
-      feeder.accept(*this);
+    RegisterPath folder = proxy.getFullyQualifiedPath();
+    folder--;
 
-      for(auto& consumer : network.getConsumingNodes()) {
-        consumer.accept(*this);
-      }
+    generateXMLForNode(net, net.feeder);
+
+    for(auto& consumer : net.consumers) {
+      generateXMLForNode(net, consumer);
     }
-#endif
+
+    return net;
   }
 
   /********************************************************************************************************************/
 
-  void XMLGeneratorVisitor::dispatch(const VariableNetworkNode& node) {
+  std::string XMLGenerator::mapTypeToName(const std::type_info* type) {
+    // add sub-element containing the data type
+    std::string dataTypeName{"unknown"};
+    if(*type == typeid(int8_t)) {
+      dataTypeName = "int8";
+    }
+    else if(*type == typeid(uint8_t)) {
+      dataTypeName = "uint8";
+    }
+    else if(*type == typeid(int16_t)) {
+      dataTypeName = "int16";
+    }
+    else if(*type == typeid(uint16_t)) {
+      dataTypeName = "uint16";
+    }
+    else if(*type == typeid(int32_t)) {
+      dataTypeName = "int32";
+    }
+    else if(*type == typeid(uint32_t)) {
+      dataTypeName = "uint32";
+    }
+    else if(*type == typeid(int64_t)) {
+      dataTypeName = "int64";
+    }
+    else if(*type == typeid(uint64_t)) {
+      dataTypeName = "uint64";
+    }
+    else if(*type == typeid(float)) {
+      dataTypeName = "float";
+    }
+    else if(*type == typeid(double)) {
+      dataTypeName = "double";
+    }
+    else if(*type == typeid(std::string)) {
+      dataTypeName = "string";
+    }
+    else if(*type == typeid(ChimeraTK::Void)) {
+      dataTypeName = "Void";
+    }
+    else if(*type == typeid(ChimeraTK::Boolean)) {
+      dataTypeName = "Boolean";
+    }
+
+    return dataTypeName;
+  }
+
+  /********************************************************************************************************************/
+
+  void XMLGenerator::generateXMLForNode(NetworkInformation& net, const VariableNetworkNode& node) {
     if(node.getType() != NodeType::ControlSystem) return;
-    throw ChimeraTK::logic_error("XML dumping is currently NOT WORKING!");
-#if 0
     // Create the directory for the path name in the XML document with all parent
     // directories, if not yet existing: First split the publication name into
     // components and loop over each component. For each component, try to find
@@ -57,14 +147,12 @@ namespace ChimeraTK {
     // "current" will point to the Element representing the directory.
 
     // strip the variable name from the path
-    ChimeraTK::RegisterPath directory(node.getPublicName());
+    ChimeraTK::RegisterPath directory(net.proxy->getFullyQualifiedPath());
     directory--;
 
     // the namespace map is needed to properly refer to elements with an xpath
     // expression in xmlpp::Element::find()
-    /// @todo TODO move this somewhere else, or at least take the namespace URI
-    /// from a common place!
-    xmlpp::Node::PrefixNsMap nsMap{{"ac", "https://github.com/ChimeraTK/ApplicationCore"}};
+    xmlpp::Node::PrefixNsMap nsMap{{"ac", ::detail::AC_NAMESPACE_URL}};
 
     // go through each directory path component
     xmlpp::Element* current = _rootElement;
@@ -72,7 +160,7 @@ namespace ChimeraTK {
       // find directory for this path component in the current directory
       std::string xpath = std::string("ac:directory[@name='") + pathComponent + std::string("']");
       auto list = current->find(xpath, nsMap);
-      if(list.size() == 0) { // not found: create it
+      if(list.empty()) { // not found: create it
         xmlpp::Element* newChild = current->add_child("directory");
         newChild->set_attribute("name", pathComponent);
         current = newChild;
@@ -92,57 +180,16 @@ namespace ChimeraTK {
     // set the name attribute
     variable->set_attribute("name", pathComponents[pathComponents.size() - 1]);
 
-    // add sub-element containing the data type
-    std::string dataTypeName{"unknown"};
-    auto& owner = node.getOwner();
-    auto& type = owner.getValueType();
-    if(type == typeid(int8_t)) {
-      dataTypeName = "int8";
-    }
-    else if(type == typeid(uint8_t)) {
-      dataTypeName = "uint8";
-    }
-    else if(type == typeid(int16_t)) {
-      dataTypeName = "int16";
-    }
-    else if(type == typeid(uint16_t)) {
-      dataTypeName = "uint16";
-    }
-    else if(type == typeid(int32_t)) {
-      dataTypeName = "int32";
-    }
-    else if(type == typeid(uint32_t)) {
-      dataTypeName = "uint32";
-    }
-    else if(type == typeid(int64_t)) {
-      dataTypeName = "int64";
-    }
-    else if(type == typeid(uint64_t)) {
-      dataTypeName = "uint64";
-    }
-    else if(type == typeid(float)) {
-      dataTypeName = "float";
-    }
-    else if(type == typeid(double)) {
-      dataTypeName = "double";
-    }
-    else if(type == typeid(std::string)) {
-      dataTypeName = "string";
-    }
-    else if(type == typeid(ChimeraTK::Void)) {
-      dataTypeName = "Void";
-    }
-    else if(type == typeid(ChimeraTK::Boolean)) {
-      dataTypeName = "Boolean";
-    }
+    auto dataTypeName = mapTypeToName(net.valueType);
+
     xmlpp::Element* valueTypeElement = variable->add_child("value_type");
     valueTypeElement->set_child_text(dataTypeName);
 
     // add sub-element containing the data flow direction
     std::string dataFlowName{"application_to_control_system"};
-    if(owner.getFeedingNode() == node) {
+    if(net.feeder == node) {
       dataFlowName = "control_system_to_application";
-      if(!owner.getFeedingNode().getDirection().withReturn) {
+      if(!net.feeder.getDirection().withReturn) {
         dataFlowName = "control_system_to_application";
       }
       else {
@@ -154,23 +201,31 @@ namespace ChimeraTK {
 
     // add sub-element containing the engineering unit
     xmlpp::Element* unitElement = variable->add_child("unit");
-    unitElement->set_child_text(owner.getUnit());
+    unitElement->set_child_text(net.unit);
 
     // add sub-element containing the description
     xmlpp::Element* descriptionElement = variable->add_child("description");
-    descriptionElement->set_child_text(owner.getDescription());
+    descriptionElement->set_child_text(net.description);
 
     // add sub-element containing the description
     xmlpp::Element* nElementsElement = variable->add_child("numberOfElements");
-    nElementsElement->set_child_text(std::to_string(owner.getFeedingNode().getNumberOfElements()));
+    nElementsElement->set_child_text(std::to_string(net.valueLength));
 
     // add sub-element describing how this variable is connected
     xmlpp::Element* connectedModules = variable->add_child("connections");
-    auto nodeList = node.getOwner().getConsumingNodes();
-    nodeList.push_back(node.getOwner().getFeedingNode());
+    std::list nodeList(net.consumers.begin(), net.consumers.end());
+    nodeList.push_back(net.feeder);
+
+    generatePeerList(connectedModules, nodeList);
+  }
+
+  /********************************************************************************************************************/
+
+  void XMLGenerator::generatePeerList(
+      xmlpp::Element* connectedModules, const std::list<VariableNetworkNode>& nodeList) {
     for(const auto& peerNode : nodeList) {
       if(peerNode.getType() == NodeType::ControlSystem) continue;
-      bool feeding = peerNode == node.getOwner().getFeedingNode();
+      bool feeding = peerNode == nodeList.back();
       xmlpp::Element* peer = connectedModules->add_child("peer");
 
       if(peerNode.getType() == NodeType::Application) {
@@ -180,19 +235,14 @@ namespace ChimeraTK {
         while(owningModule->getModuleType() == EntityOwner::ModuleType::VariableGroup) {
           owningModule = dynamic_cast<const VariableGroup&>(*owningModule).getOwner();
         }
-        // get name of ApplicatioModule
+        // get name of ApplicationModule
         auto qname = owningModule->getQualifiedName();
         // strip leading application name
         auto secondSlash = qname.find_first_of('/', 1);
         if(secondSlash != std::string::npos) qname = qname.substr(secondSlash);
         peer->set_attribute("name", qname);
-        int status;
         const auto& owningModuleRef = *owningModule; // dereferencing in separate line to avoid linter warning
-        const char* mangledName = typeid(owningModuleRef).name();
-        std::string className = abi::__cxa_demangle(mangledName, nullptr, nullptr, &status);
-        if(status != 0) {
-          className = std::string(mangledName) + " (demangling failed)";
-        }
+        auto className = boost::core::demangle(typeid(owningModuleRef).name());
         peer->set_attribute("class", className);
       }
       else if(peerNode.getType() == NodeType::Constant) {
@@ -205,15 +255,14 @@ namespace ChimeraTK {
       else if(peerNode.getType() == NodeType::TriggerProvider) {
         peer->set_attribute("type", "TriggerProvider");
       }
+      else if(peerNode.getType() == NodeType::TriggerReceiver) {
+        peer->set_attribute("type", "TriggerReceiver (" + peerNode.getDeviceAlias() + ")");
+      }
       else {
         peer->set_attribute("type", "Unknown (" + std::to_string(int(peerNode.getType())) + ")");
       }
 
       peer->set_attribute("direction", feeding ? "feeding" : "consuming");
     }
-#endif
   }
-
-  /********************************************************************************************************************/
-
 } // namespace ChimeraTK
