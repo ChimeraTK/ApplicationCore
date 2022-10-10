@@ -153,7 +153,7 @@ struct TestApplication : public ctk::Application {
   ~TestApplication() { shutdown(); }
 
   ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
-  TestModule testModule{this, "TestModule", "The test module"};
+  TestModule testModule{this, "config", "The test module"};
 };
 
 /*********************************************************************************************************************/
@@ -185,7 +185,7 @@ struct TestApplicationWithDevice : public ctk::Application {
   TestApplicationWithDevice() : Application("TestApplicationWithDevice") {}
   ~TestApplicationWithDevice() { shutdown(); }
 
-  ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
+  ctk::ConfigReader config{this, ".", "validConfig.xml", {"MyTAG"}};
   ctk::DeviceModule device{this, cdd};
 };
 
@@ -239,8 +239,9 @@ BOOST_AUTO_TEST_CASE(testConfigReader) {
   // app.config.virtualise().dump();
   // app.config.connectTo(app.testModule);
 
-  app.initialise();
-  app.run();
+  // Cheap way to get a PV manager
+  ctk::TestFacility tf{app, false};
+  tf.runApplication();
 
   // wait until tests in TestModule::mainLoop() are complete
   while(app.testModule.done == false) usleep(10000);
