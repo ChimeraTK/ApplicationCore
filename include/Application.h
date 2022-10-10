@@ -159,10 +159,6 @@ namespace ChimeraTK {
     template<typename UserType>
     friend class ExceptionHandlingDecorator;
 
-    /** Scan for circular dependencies and mark all affected consuming nodes.
-     *  This can only be done after all connections have been established. */
-    // void markCircularConsumers(VariableNetwork& variableNetwork);
-
     /** The model of the application */
     Model::RootProxy _model;
 

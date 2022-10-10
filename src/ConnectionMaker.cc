@@ -208,6 +208,18 @@ namespace ChimeraTK {
       makeConnectionForConstantFeeder(net);
     }
 
+    // Mark circular networks
+    for(auto& node : net.consumers) {
+      // A variable network is a tree-like network of VariableNetworkNodes (one feeder and one or more multiple consumers)
+      // A circular network is a list of modules (EntityOwners) which have a circular dependency
+      auto circularNetwork = node.scanForCircularDepencency();
+      if(not circularNetwork.empty()) {
+        auto circularNetworkHash = boost::hash_range(circularNetwork.begin(), circularNetwork.end());
+        _app.circularDependencyNetworks[circularNetworkHash] = circularNetwork;
+        _app.circularNetworkInvalidityCounters[circularNetworkHash] = 0;
+      }
+    }
+
     return net;
   }
 

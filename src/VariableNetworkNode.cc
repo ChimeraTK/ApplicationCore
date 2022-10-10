@@ -284,6 +284,10 @@ namespace ChimeraTK {
     // We are starting a new scan. Reset the indicator for already found circular dependencies.
     detail::CircularDependencyDetectionRecursionStopper::startNewScan();
 
+    if(!getModel().isValid()) {
+      return {};
+    }
+
     // find the feeder of the network
     auto amProxy = getModel().visit(Model::returnApplicationModule, Model::keepPvAccess, Model::keepApplicationModules,
         Model::adjacentInSearch, Model::returnFirstHit(Model::ApplicationModuleProxy{}));
@@ -295,7 +299,11 @@ namespace ChimeraTK {
     assert(getDirection().dir == VariableDirection::consuming);
 
     Module* owningModule = &amProxy.getApplicationModule();
-    auto inputModuleList = owningModule->getInputModulesRecursively({owningModule});
+
+    // We do not put ourselves in the list right away. The called code will do this as well and detect a circle
+    // immediately, even if there is just a simple connection, we leave the marking of the already visited node
+    // to the recursive call.
+    auto inputModuleList = owningModule->getInputModulesRecursively({});
 
     auto nInstancesFound = std::count(inputModuleList.begin(), inputModuleList.end(), owningModule);
     assert(nInstancesFound >= 1); // the start list must not have been deleted in the call
@@ -324,7 +332,7 @@ namespace ChimeraTK {
       return inputModuleList;
     }
 
-    // No circlular network. Return an empty list.
+    // No circular network. Return an empty list.
     return {};
   }
 
