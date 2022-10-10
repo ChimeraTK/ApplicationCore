@@ -52,7 +52,7 @@ struct TestModuleBase : ctk::ApplicationModule {
   }
 };
 
-/// ModuleA has two additonal inputs to get invalidity flags. It is reading all inputs with ReadAny
+/// ModuleA has two additional inputs to get invalidity flags. It is reading all inputs with ReadAny
 struct ModuleA : TestModuleBase {
   using TestModuleBase::TestModuleBase;
 
@@ -602,7 +602,7 @@ struct TestApplication2 : ctk::Application {
 
 /** \anchor dataValidity_test_TestCircularInputDetection2
  * Tests Technical specification: data validity propagation
- *  * \ref dataValidity_4_1_2_1 "4.1.2.1" Entangled circles belonhg to the same circular network.
+ *  * \ref dataValidity_4_1_2_1 "4.1.2.1" Entangled circles belong to the same circular network.
  *  * \ref dataValidity_4_1_2_2 "4.1.2.2" There can be multiple disconnected circular networks.
  *  * \ref dataValidity_4_3_2 "4.3.2" Each module and each circular input knows its circular network.
  */

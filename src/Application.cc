@@ -7,6 +7,7 @@
 #include "DeviceManager.h"
 #include "Utilities.h"
 #include "VariableNetworkGraphDumpingVisitor.h"
+#include "VariableNetworkNode.h"
 #include "XMLGeneratorVisitor.h"
 
 #include <ChimeraTK/BackendFactory.h>
@@ -262,22 +263,6 @@ void Application::dumpModuleConnectionGraph(const std::string& fileName) const {
 
   VariableNetworkModuleGraphDumpingVisitor visitor{file};
   visitor.dispatch(*this);
-}
-*/
-/*********************************************************************************************************************/
-
-/*
-void Application::markCircularConsumers(VariableNetwork& variableNetwork) {
-  for(auto& node : variableNetwork.getConsumingNodes()) {
-    // A variable network is a tree-like network of VariableNetworkNodes (one feeder and one or more multiple consumers)
-    // A circular network is a list of modules (EntityOwners) which have a circular dependency
-    auto circularNetwork = node.scanForCircularDepencency();
-    if(not circularNetwork.empty()) {
-      auto circularNetworkHash = boost::hash_range(circularNetwork.begin(), circularNetwork.end());
-      circularDependencyNetworks[circularNetworkHash] = circularNetwork;
-      circularNetworkInvalidityCounters[circularNetworkHash] = 0;
-    }
-  }
 }
 */
 
