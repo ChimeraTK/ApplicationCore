@@ -17,65 +17,47 @@
 
 namespace ChimeraTK {
   class ConnectionMaker;
-}
+  class DeviceManager;
+  class TriggerFanOut;
+  class TestFacility;
+} /* namespace ChimeraTK */
 
 namespace ChimeraTK::detail {
   struct TestableMode {
-    /** Special exception class which will be thrown if tests with the testable
-     * mode are stalled. Normally this exception should never be caught. The only
-     * reason for catching it might be a situation where the expected behaviour of
-     * an app is to do nothing and one wants to test this. Note that the stall
-     * condition only appears after a certain timeout, thus tests relying on this
-     * will take time.
+    /**
+     * Lock the testable mode mutex for the current thread. Internally, a thread-local std::unique_lock<std::mutex> will
+     * be created and re-used in subsequent calls within the same thread to this function and to testableModeUnlock().
      *
-     *  This exception must not be based on a generic exception class to prevent
-     * catching it unintentionally. */
-    class TestsStalled {};
-
-    /** Flag if noisy debug output is enabled for the testable mode */
-    bool enableDebug{false};
-
-    /** Semaphore counter used in testable mode to check if application code is
-     * finished executing. This value may only be accessed while holding the
-     * testableMode.mutex. */
-    size_t counter{0};
-
-    /** Flag if connections should be made in testable mode (i.e. the
-     * TestableModeAccessorDecorator is put around all push-type input accessors
-     * etc.). */
-    bool enabled{false};
-
-    /** Semaphore counter used in testable mode to check if device initialisation is finished executing. This value may
-     *  only be accessed while holding mutex. This counter is a separate counter from
-     *  counter so stepApplication() can be controlled whether to obey this counter. */
-    size_t deviceInitialisationCounter{0};
-
-    /** Lock the testable mode mutex for the current thread. Internally, a
-     * thread-local std::unique_lock<std::mutex> will be created and re-used in
-     * subsequent calls within the same thread to this function and to
-     *  testableModeUnlock().
-     *
-     *  This function should generally not be used in user code. */
+     * This function should generally not be used in user code.
+     */
     void lock(const std::string& name);
 
-    /** Unlock the testable mode mutex for the current thread. See also
-     * testableModeLock().
+    /**
+     * Unlock the testable mode mutex for the current thread. See also testableModeLock().
      *
-     *  Initially the lock will not be owned by the current thread, so the first
-     * call to this function will throw an exception (see
-     * std::unique_lock::unlock()), unless testableModeLock() has been called
-     * first.
+     * Initially the lock will not be owned by the current thread, so the first call to this function will throw an
+     * exception (see std::unique_lock::unlock()), unless testableModeLock() has been called first.
      *
-     *  This function should generally not be used in user code. */
+     * This function should generally not be used in user code.
+     */
     void unlock(const std::string& name);
 
-    /** Test if the testable mode mutex is locked by the current thread.
+    /**
+     * Test if the testable mode mutex is locked by the current thread.
      *
-     *  This function should generally not be used in user code. */
+     * This function should generally not be used in user code.
+     */
     [[nodiscard]] bool testLock() const;
 
+    /**
+     * Check whether set() can be called or it would throw due to no data in the queues.
+     */
     [[nodiscard]] bool canStep() const { return counter != 0; }
 
+    /**
+     * Let the application modules run until all data in the queues have been processed. Will throw if no data is
+     * available in tue queues to be processed.
+     */
     void step(bool waitForDeviceInitialisation);
 
     /**
@@ -89,14 +71,20 @@ namespace ChimeraTK::detail {
      */
     void enable();
 
-    enum class DecoratorType { READ, WRITE };
+    /**
+     * Check whether testable mode has been enabled
+     */
+    [[nodiscard]] bool isEnabled() const { return enabled; }
 
-    /** Return a fresh variable ID which can be assigned to a sender/receiver
-     * pair. The ID will always be non-zero. */
+    /**
+     * Return a fresh variable ID which can be assigned to a sender/receiver pair. The ID will always be non-zero.
+     */
     static size_t getNextVariableId() {
       static size_t nextId{0};
       return ++nextId;
     }
+
+    enum class DecoratorType { READ, WRITE };
 
     template<typename T>
     boost::shared_ptr<NDRegisterAccessor<T>> decorate(boost::shared_ptr<NDRegisterAccessor<T>> other,
@@ -109,8 +97,9 @@ namespace ChimeraTK::detail {
     AccessorPair<T> decorate(
         AccessorPair<T> other, const VariableNetworkNode& producer, const VariableNetworkNode& consumer);
 
-    /** Decorator of the NDRegisterAccessor which facilitates tests of the
-     * application */
+    /**
+     * Decorator of the NDRegisterAccessor which facilitates tests of the application
+     */
     template<typename UserType>
     class AccessorDecorator : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
      public:
@@ -151,6 +140,34 @@ namespace ChimeraTK::detail {
     };
 
    private:
+    friend class ChimeraTK::DeviceManager;
+    friend class ChimeraTK::TriggerFanOut;
+    friend class ChimeraTK::TestFacility;
+
+    /**
+     * Flag if noisy debug output is enabled for the testable mode
+     */
+    bool enableDebug{false};
+
+    /**
+     * Semaphore counter used in testable mode to check if application code is finished executing. This value may only
+     * be accessed while holding the testableMode.mutex.
+     */
+    size_t counter{0};
+
+    /**
+     * Flag if connections should be made in testable mode (i.e. the TestableModeAccessorDecorator is put around all
+     * push-type input accessors etc.).
+     */
+    bool enabled{false};
+
+    /**
+     * Semaphore counter used in testable mode to check if device initialisation is finished executing. This value may
+     * only be accessed while holding mutex. This counter is a separate counter from counter so stepApplication() can be
+     * controlled whether to obey this counter.
+     */
+    size_t deviceInitialisationCounter{0};
+
     struct VariableDescriptor {
       /** name of the variable, used to print sensible information. */
       std::string name;

@@ -3,7 +3,6 @@
 #include "EntityOwner.h"
 
 #include "Module.h"
-#include "ModuleGraphVisitor.h"
 
 #include <cassert>
 #include <fstream>
@@ -114,22 +113,6 @@ namespace ChimeraTK {
       std::cout << prefix << "| " << submodule->getName() << std::endl;
       submodule->dump(prefix + "| ");
     }
-  }
-
-  /********************************************************************************************************************/
-
-  void EntityOwner::dumpGraph(const std::string& fileName) const {
-    std::fstream file(fileName, std::ios_base::out);
-    ModuleGraphVisitor v{file, true};
-    v.dispatch(*this);
-  }
-
-  /********************************************************************************************************************/
-
-  void EntityOwner::dumpModuleGraph(const std::string& fileName) const {
-    std::fstream file(fileName, std::ios_base::out);
-    ModuleGraphVisitor v{file, false};
-    v.dispatch(*this);
   }
 
   /********************************************************************************************************************/

@@ -691,7 +691,6 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleMove) {
   dev = std::move(dev2);               // test move-assign
   app.cdevs.push_back(std::move(dev)); // test move-construct
   ctk::TestFacility test{app};
-  app.dumpConnections();
   test.runApplication();
   ctk::Device dummy0("Dummy0");
   auto readBack = dummy0.getScalarRegisterAccessor<int>("MyModule/readBack/DUMMY_WRITEABLE");

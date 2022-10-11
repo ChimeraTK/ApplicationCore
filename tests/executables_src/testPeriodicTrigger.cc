@@ -36,7 +36,6 @@ BOOST_AUTO_TEST_CASE(testIterface) {
   TestFacility test{app};
   test.runApplication();
 
-  app.dumpConnections();
   auto tick = test.getScalar<uint64_t>("/tickTock");
   tick.readLatest();
   BOOST_CHECK(tick.getVersionNumber() != VersionNumber{nullptr});

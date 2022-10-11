@@ -118,8 +118,6 @@ namespace ChimeraTK {
      */
     const std::string& getDeviceAliasOrURI() const { return _deviceAliasOrURI; }
 
-    std::string getVirtualQualifiedName() const override { throw ChimeraTK::logic_error("Not implemented."); }
-
     /**
      * Create and return list of VariableNetworkNodes for all device registers
      */

@@ -87,17 +87,13 @@ namespace ChimeraTK {
 
     std::string getFullDescription() const override;
 
-    /** Set a new owner. The caller has to take care himself that the Module gets
-     * unregistered with the old owner
-     *  and registered with the new one. Do not use in user code! */
+    /**
+     * Set a new owner. The caller has to take care himself that the Module gets unregistered with the old owner
+     * and registered with the new one. Do not use in user code!
+     */
     void setOwner(EntityOwner* newOwner) { _owner = newOwner; }
 
     EntityOwner* getOwner() const { return _owner; }
-
-    /**
-     * Explcitly add accept() method so that we can distinguish between a Module and an EntityOwner in the Visitor.
-     */
-    void accept(Visitor<Module>& visitor) const { visitor.dispatch(*this); }
 
     VersionNumber getCurrentVersionNumber() const override { return _owner->getCurrentVersionNumber(); }
 
