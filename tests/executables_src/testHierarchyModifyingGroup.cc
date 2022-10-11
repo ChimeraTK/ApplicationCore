@@ -21,6 +21,19 @@ using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
 /*********************************************************************************************************************/
+/*********************************************************************************************************************/
+
+/**
+ * This test checks use of relative paths in modules at the example of a VariableGroup.
+ *
+ * TODO:
+ * - Rename this test source file
+ * - Add checks for relative paths in ModuleGroups and ApplicationModules
+ * - Add checks for relative paths in accessors
+ */
+
+/*********************************************************************************************************************/
+/*********************************************************************************************************************/
 
 struct TestGroup : public ctk::VariableGroup {
   using ctk::VariableGroup::VariableGroup;

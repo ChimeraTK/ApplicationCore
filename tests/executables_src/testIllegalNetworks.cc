@@ -54,10 +54,6 @@ BOOST_AUTO_TEST_CASE(testTwoScalarPollPushAccessors) {
 }
 
 /*********************************************************************************************************************/
-/* test case for no feeder - There cannot be no feeder any more, ApplicationCore will generate a CS feeder then      */
-
-
-/*********************************************************************************************************************/
 /* test case for two feeders */
 
 template<typename T>
