@@ -1,0 +1,5 @@
+# name                            nr of elements        address       size        bar   width   fracbits    signed
+# both registers have the same address, so whatever we write to actuator we can read back from readBack
+/MyModule/actuator                0x00000001            0x00000000    0x00000004  0     32      0           1       RW
+# Additional registers for test with deep hierarchies
+/Deeper/hierarchies/also          0x00000001            0x00000008    0x00000004  0     32      0           1       RW
