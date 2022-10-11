@@ -113,7 +113,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void DeviceManager::reportException(std::string errMsg) {
-    if(_owner->getTestableMode().enabled) {
+    if(_owner->getTestableMode().isEnabled()) {
       assert(_owner->getTestableMode().testLock());
     }
 
@@ -126,7 +126,7 @@ namespace ChimeraTK {
 
     if(!_deviceHasError) { // only report new errors if the device does not have reported errors already
       if(_errorQueue.push(std::move(errMsg))) {
-        if(_owner->getTestableMode().enabled) ++_owner->getTestableMode().counter;
+        if(_owner->getTestableMode().isEnabled()) ++_owner->getTestableMode().counter;
       } // else do nothing. There are plenty of errors reported already: The queue is full.
       // set the error flag and notify the other threads
       _deviceHasError = true;

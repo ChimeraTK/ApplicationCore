@@ -103,24 +103,8 @@ namespace ChimeraTK {
      * information about tags. */
     void addTag(const std::string& tag);
 
-    void accept(Visitor<EntityOwner>& visitor) const { visitor.dispatch(*this); }
-
     /** Print the full hierarchy to stdout. */
     void dump(const std::string& prefix = "") const;
-
-    /** Create Graphviz dot graph and write to file. The graph will contain the
-     * full hierarchy of modules and variables below (and including) this module.
-     * Each variable will also show which tags are attached to it. ModuleGroups
-     * will be drawn with a double line, ApplicationModules with a bold line.
-     * Hierarchies which will be eliminated in the dynamic information model are
-     * shown with a dotted line. */
-    void dumpGraph(const std::string& fileName = "graph.dot") const;
-
-    /** Create a Graphiz dot graph similar to the one created with dumpGraph, but
-     * just show the modules and not the
-     *  variables. This allows to get an overview over more complex applications.
-     */
-    void dumpModuleGraph(const std::string& fileName = "graph.dot") const;
 
     enum class ModuleType { ApplicationModule, ModuleGroup, VariableGroup, ControlSystem, Device, Invalid };
 

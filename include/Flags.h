@@ -6,13 +6,15 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  /** Struct to define the direction of variables. The main direction is defined
-   * with an enum. In addition the presence of a return channel is specified. */
+  /**
+   * Struct to define the direction of variables. The main direction is defined with an enum. In addition the presence
+   * of a return channel is specified.
+   */
   struct VariableDirection {
-    /** Enum to define directions of variables. The direction is always defined
-     * from the point-of-view of the
-     *  owner, i.e. the application module owning the instance of the accessor in
-     * this context. */
+    /**
+     * Enum to define directions of variables. The direction is always defined from the point-of-view of the owner, i.e.
+     * the application module owning the instance of the accessor in this context.
+     */
     enum { consuming, feeding, invalid } dir;
 
     /** Presence of return channel */
@@ -35,7 +37,11 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  /** Hierarchy modifier: specify if and how the module hierarchy should be modified in EntityOwner::findTag() etc. */
+  /**
+   * Hierarchy modifier: specify if and how the module hierarchy should be modified.
+   *
+   * Deprecated, do not use in new code.
+   */
   enum class HierarchyModifier {
     none,     ///< No modification is performed
     hideThis, ///< The hierarchy level at which this flag is specified is hidden. Everything below this level is moved
@@ -46,9 +52,9 @@ namespace ChimeraTK {
     oneLevelUp, ///< Move the module up to the level where the owner lives. Instead of creating a "daughter"
     ///< of the owning module, it creates a "sister" (module that lives on the same level).
     ///< This modifyer can only be used in sub-modules, not on the first level
-    oneUpAndHide ///< Move the structure inside the module up to the level where the owner lives. Instead of adding a hierrarchy
-    ///< level, one level is removed. This modifyer can only be used in sub-modules, not on the first level
-    ///< inside an application.
+    oneUpAndHide ///< Move the structure inside the module up to the level where the owner lives. Instead of adding a
+                 ///< hierrarchy level, one level is removed. This modifyer can only be used in sub-modules, not on the
+                 ///< first level inside an application.
   };
 
   /********************************************************************************************************************/

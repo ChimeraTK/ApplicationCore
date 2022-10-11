@@ -43,22 +43,23 @@ namespace ChimeraTK {
 
   class Application : public ApplicationBase, public ModuleGroup {
    public:
-    /** The constructor takes the application name as an argument. The name must
-     * have a non-zero length and must not contain any spaces or special
-     * characters. Use only alphanumeric characters and underscores. */
+    /**
+     * The constructor takes the application name as an argument. The name must have a non-zero length and must not
+     * contain any spaces or special characters. Use only alphanumeric characters and underscores.
+     */
     explicit Application(const std::string& name);
 
     ~Application() override;
 
     using ApplicationBase::getName;
 
-    /** This will remove the global pointer to the instance and allows creating
-     * another instance afterwards. This is mostly useful for writing tests, as it
-     * allows to run several applications sequentially in the same executable.
-     * Note that any ApplicationModules etc. owned by this Application are no
-     * longer
-     *  valid after destroying the Application and must be destroyed as well (or
-     * at least no longer used). */
+    /**
+     * This will remove the global pointer to the instance and allows creating another instance afterwards. This is
+     * mostly useful for writing tests, as it allows to run several applications sequentially in the same executable.
+     *
+     * Note that any ApplicationModules etc. owned by this Application are no longer valid after destroying the
+     * Application and must be destroyed as well (or at least no longer used).
+     */
     void shutdown() override;
 
     void initialise() override;
@@ -67,54 +68,49 @@ namespace ChimeraTK {
 
     void run() override;
 
-    /** Return the root of the application model */
+    /**
+     * Return the root of the application model.
+     */
     Model::RootProxy getModel() { return _model; }
 
-    /** Instead of running the application, just initialise it and output the
-     * published variables to an XML file. */
+    /**
+     * Instead of running the application, just initialise it and output the published variables to an XML file.
+     */
     void generateXML();
 
-    /** Output the connections requested in the initialise() function to
-     * std::cout. This may be done also before
-     *  makeConnections() has been called. */
-    void dumpConnections(std::ostream& stream = std::cout);
-
-    /** Create Graphviz dot graph and write to file. The graph will contain the
-     * connections made in the initialise() function. @see dumpConnections */
-    // void dumpConnectionGraph(const std::string& filename = {"connections-graph.dot"}) const;
-
-    /** Create Graphviz dot graph representing the connections between the modules, and write to file.*/
-    // void dumpModuleConnectionGraph(const std::string& filename = {"module-connections-graph.dot"}) const;
-
-    /** Enable warning about unconnected variables. This can be helpful to
-     * identify missing connections but is
-     *  disabled by default since it may often be very noisy. */
-    void warnUnconnectedVariables() { enableUnconnectedVariablesWarning = true; }
-
-    /** Obtain instance of the application. Will throw an exception if called
-     * before the instance has been created by the control system adapter, or if
-     * the instance is not based on the Application class. */
+    /**
+     * Obtain instance of the application. Will throw an exception if called before the instance has been created by the
+     * control system adapter, or if the instance is not based on the Application class.
+     */
     static Application& getInstance();
 
-    /** Enable the testable mode. This allows to step-wise run the application using testableMode.step()
-     *  The application will start in paused state.
+    /**
+     * Enable the testable mode.
      *
-     *  This function must be called before the application is initialised (i.e.
-     * before the call to initialise()).
+     * This allows to step-wise run the application using testableMode.step(). The application will start in paused
+     * state.
      *
-     *  Note: Enabling the testable mode will have a significant impact on the
-     * performance, since it will prevent any module threads to run at the same
-     * time! */
+     * This function must be called before the application is initialised (i.e. before the call to initialise()).
+     *
+     * Note: Enabling the testable mode will have a significant impact on the performance, since it will prevent any
+     * module threads to run at the same time!
+     */
     void enableTestableMode();
 
-    /** Get the TestableMode of this application */
+    /**
+     * Get the TestableMode control object of this application
+     */
     detail::TestableMode& getTestableMode() { return testableMode; }
 
-    /** Register the thread in the application system and give it a name. This
-     * should be done for all threads used by the application to help with
-     * debugging and to allow profiling. */
+    /**
+     * Register the thread in the application system and give it a name. This should be done for all threads used by the
+     * application to help with debugging.
+     */
     static void registerThread(const std::string& name);
 
+    /**
+     * Enable debug output for the ConnectionMaker.
+     */
     void debugMakeConnections() { enableDebugMakeConnections = true; }
 
     ModuleType getModuleType() const override { return ModuleType::ModuleGroup; }
@@ -123,23 +119,43 @@ namespace ChimeraTK {
 
     std::string getFullDescription() const override { return ""; }
 
-    /** Enable debug output for a given variable. */
+    /**
+     * Enable debug output for a given variable.
+     */
     void enableVariableDebugging(const VariableNetworkNode& node) { debugMode_variableList.insert(node.getUniqueId()); }
 
-    /** Enable debug output for lost data. This will print to stdout every time data is lost in internal queues as it
-     *  is counted with the DataLossCounter module. Do not enable in production environments. Do not call after
-     *  initialisation phase of application. */
+    /**
+     * Enable debug output for lost data. This will print to stdout every time data is lost in internal queues as it is
+     * counted with the DataLossCounter module. Do not enable in production environments. Do not call after
+     * initialisation phase of application.
+     */
     void enableDebugDataLoss() { debugDataLoss = true; }
 
-    /** Increment counter for how many write() operations have overwritten unread data */
+    /**
+     * Increment counter for how many write() operations have overwritten unread data. This function is normally not
+     * called by used code.
+     */
     static void incrementDataLossCounter(const std::string& name);
 
+    /**
+     * Return the current value of the data loss counter and (atomically) reset it to 0.
+     */
     static size_t getAndResetDataLossCounter();
 
+    /**
+     * Return the DeviceManager for the given alias name or CDD. If none exists so far, it will be created.
+     */
     boost::shared_ptr<DeviceManager> getDeviceManager(const std::string& aliasOrCDD);
 
+    /**
+     * Get the current LifeCycleState of the application.
+     */
     LifeCycleState getLifeCycleState() const { return lifeCycleState; }
 
+    /**
+     * Return the start version. The start version is the VersionNumber which all modules have initially (before
+     * receiving any data from push-type inputs).
+     */
     VersionNumber getStartVersion() const { return _startVersion; }
 
    protected:
@@ -177,9 +193,6 @@ namespace ChimeraTK {
 
     /** Flag whether run() has been called already, to make sure it doesn't get called twice. */
     bool runCalled{false};
-
-    /** Flag whether to warn about unconnected variables or not */
-    bool enableUnconnectedVariablesWarning{false};
 
     /** Flag if debug output is enabled for creation of the variable connections */
     bool enableDebugMakeConnections{false};

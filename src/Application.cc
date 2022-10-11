@@ -6,8 +6,6 @@
 #include "ConnectionMaker.h"
 #include "DeviceManager.h"
 #include "Utilities.h"
-#include "VariableNetworkGraphDumpingVisitor.h"
-#include "VariableNetworkNode.h"
 #include "XMLGeneratorVisitor.h"
 
 #include <ChimeraTK/BackendFactory.h>
@@ -116,7 +114,7 @@ void Application::optimiseUnmappedVariables(const std::set<std::string>& /*names
 void Application::run() {
   assert(not applicationName.empty());
 
-  if(testableMode.enabled) {
+  if(testableMode.isEnabled()) {
     if(!testFacilityRunApplicationCalled) {
       throw ChimeraTK::logic_error(
           "Testable mode enabled but Application::run() called directly. Call TestFacility::runApplication() instead.");
@@ -165,7 +163,7 @@ void Application::run() {
     }
   };
 
-  if(Application::getInstance().getTestableMode().enabled) {
+  if(Application::getInstance().getTestableMode().isEnabled()) {
     for(auto& internalModule : internalModuleList) {
       waitForTestableMode(internalModule.get());
     }
@@ -187,7 +185,7 @@ void Application::shutdown() {
 
   // first allow to run the application threads again, if we are in testable
   // mode
-  if(testableMode.enabled && testableMode.testLock()) {
+  if(testableMode.isEnabled() && testableMode.testLock()) {
     testableMode.unlock("shutdown");
   }
 
@@ -229,45 +227,6 @@ void Application::generateXML() {
 
 /*********************************************************************************************************************/
 
-void Application::dumpConnections(std::ostream& stream) { // LCOV_EXCL_LINE
-#if 0
-  stream << "==== List of all variable connections of the current Application =====" << std::endl; // LCOV_EXCL_LINE
-  for(auto& network : networkList) {                                                               // LCOV_EXCL_LINE
-    network.dump("", stream);                                                                      // LCOV_EXCL_LINE
-  }                                                                                                // LCOV_EXCL_LINE
-  stream << "==== List of all circular connections in the current Application ====" << std::endl;  // LCOV_EXCL_LINE
-  for(auto& circularDependency : circularDependencyNetworks) {
-    stream << "Circular dependency network " << circularDependency.first << " : ";
-    for(auto& module : circularDependency.second) {
-      stream << module->getName() << ", ";
-    }
-    stream << std::endl;
-  }
-  stream << "======================================================================" << std::endl; // LCOV_EXCL_LINE
-#endif
-} // LCOV_EXCL_LINE
-
-/*********************************************************************************************************************/
-/*
-void Application::dumpConnectionGraph(const std::string& fileName) const {
-  std::fstream file{fileName, std::ios_base::out};
-
-  VariableNetworkGraphDumpingVisitor visitor{file};
-  visitor.dispatch(*this);
-}
-*/
-/*********************************************************************************************************************/
-/*
-void Application::dumpModuleConnectionGraph(const std::string& fileName) const {
-  std::fstream file{fileName, std::ios_base::out};
-
-  VariableNetworkModuleGraphDumpingVisitor visitor{file};
-  visitor.dispatch(*this);
-}
-*/
-
-/*********************************************************************************************************************/
-
 Application& Application::getInstance() {
   return dynamic_cast<Application&>(ApplicationBase::getInstance());
 }
@@ -275,12 +234,11 @@ Application& Application::getInstance() {
 /*********************************************************************************************************************/
 
 boost::shared_ptr<DeviceManager> Application::getDeviceManager(const std::string& aliasOrCDD) {
-  auto& dmm = Application::getInstance()._deviceManagerMap;
-  if(dmm.find(aliasOrCDD) == dmm.end()) {
+  if(_deviceManagerMap.find(aliasOrCDD) == _deviceManagerMap.end()) {
     // Add initialisation handler below, since we also need to add it if the DeviceModule already exists
-    dmm[aliasOrCDD] = boost::make_shared<DeviceManager>(&Application::getInstance(), aliasOrCDD);
+    _deviceManagerMap[aliasOrCDD] = boost::make_shared<DeviceManager>(&Application::getInstance(), aliasOrCDD);
   }
-  return dmm.at(aliasOrCDD);
+  return _deviceManagerMap.at(aliasOrCDD);
 }
 
 /*********************************************************************************************************************/
