@@ -42,7 +42,7 @@ namespace ChimeraTK {
      * matter, so multiple DMAP file entries pointing to the same device are possible if needed).
      */
     DeviceModule(ModuleGroup* owner, const std::string& deviceAliasOrCDD, const std::string& triggerPath = {},
-        std::function<void(DeviceManager*)> initialisationHandler = nullptr, const std::string& pathInDevice = "/");
+        std::function<void(ChimeraTK::Device&)> initialisationHandler = nullptr, const std::string& pathInDevice = "/");
 
     using ModuleGroup::ModuleGroup;
 
@@ -62,7 +62,7 @@ namespace ChimeraTK {
 
     const std::string& getDeviceAliasOrURI() const;
 
-    void addInitialisationHandler(std::function<void(DeviceManager*)> initialisationHandler);
+    void addInitialisationHandler(std::function<void(ChimeraTK::Device&)> initialisationHandler);
 
     /**
      * Use this function to report an exception. It should be called whenever a ChimeraTK::runtime_error has been caught
@@ -101,7 +101,7 @@ namespace ChimeraTK {
   class ConnectingDeviceModule : public DeviceModule {
    public:
     [[deprecated]] ConnectingDeviceModule(ModuleGroup* owner, const std::string& deviceAliasOrCDD,
-        const std::string& triggerPath = {}, std::function<void(DeviceManager*)> initialisationHandler = nullptr,
+        const std::string& triggerPath = {}, std::function<void(ChimeraTK::Device&)> initialisationHandler = nullptr,
         const std::string& pathInDevice = "/")
     : DeviceModule(owner, deviceAliasOrCDD, triggerPath, std::move(initialisationHandler), pathInDevice) {}
 

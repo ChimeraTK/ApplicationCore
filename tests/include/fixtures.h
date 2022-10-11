@@ -4,6 +4,7 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
+#include "DeviceManager.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
@@ -182,16 +183,16 @@ fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers,
     deviceBackend2->throwExceptionOpen = breakSecondDeviceAtStart;
 
     if constexpr(addInitHandlers) {
-      auto initHandler1 = [this](ChimeraTK::DeviceManager* dm) {
-        if(dm == &application.group1.device.getDeviceManager()) {
+      auto initHandler1 = [this](ChimeraTK::Device& dev) {
+        if(&dev == &application.group1.device.getDeviceManager().getDevice()) {
           initHandler1Called = true;
           if(initHandler1Throws) {
             throw ChimeraTK::runtime_error("Init handler 1 throws by request");
           }
         }
       };
-      auto initHandler2 = [this](ChimeraTK::DeviceManager* dm) {
-        if(dm == &application.group1.device.getDeviceManager()) {
+      auto initHandler2 = [this](ChimeraTK::Device& dev) {
+        if(&dev == &application.group1.device.getDeviceManager().getDevice()) {
           initHandler2Called = true;
           if(initHandler2Throws) {
             throw ChimeraTK::runtime_error("Init handler 2 throws by request");

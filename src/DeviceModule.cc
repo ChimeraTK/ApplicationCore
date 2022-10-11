@@ -15,7 +15,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   DeviceModule::DeviceModule(ModuleGroup* owner, const std::string& deviceAliasOrCDD, const std::string& triggerPath,
-      std::function<void(DeviceManager*)> initialisationHandler, const std::string& pathInDevice)
+      std::function<void(ChimeraTK::Device&)> initialisationHandler, const std::string& pathInDevice)
   : ModuleGroup(owner, "**DeviceModule**") {
     // get/create the DeviceManager and add the initialisation handler
     auto dm = Application::getInstance().getDeviceManager(deviceAliasOrCDD);
@@ -103,7 +103,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void DeviceModule::addInitialisationHandler(std::function<void(DeviceManager*)> initialisationHandler) {
+  void DeviceModule::addInitialisationHandler(std::function<void(ChimeraTK::Device&)> initialisationHandler) {
     _dm.lock()->addInitialisationHandler(std::move(initialisationHandler));
   }
 

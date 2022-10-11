@@ -58,8 +58,8 @@ namespace ChimeraTK {
      * You can add multiple handlers. They are executed in the sequence in which they are registered. If a handler
      * has been registered in the constructor, it is called first.
      *
-     * The handler function is called from the DeviceModule thread (not from the thread with the accessor that threw
-     * the exception). It is handed a pointer to the instance of the DeviceModule where the handler was registered. The
+     * The handler function is called from the DeviceManager thread (not from the thread with the accessor that threw
+     * the exception). It is handed a pointer to the instance of the DeviceManager where the handler was registered. The
      * handler function may throw a ChimeraTK::runtime_error, so you don't have to catch errors thrown when accessing
      * the Device inside the handler. After a handler has thrown an exception, the following handlers are not called.
      * The DeviceModule will wait until the Device reports isFunctional() again and retry. The exception is reported to
@@ -70,7 +70,7 @@ namespace ChimeraTK {
      * isFunctional() and one just has to retry. In this case the DeviceModule will start the initialisation sequence
      * every 500 ms.
      */
-    void addInitialisationHandler(std::function<void(DeviceManager*)> initialisationHandler);
+    void addInitialisationHandler(std::function<void(ChimeraTK::Device&)> initialisationHandler);
 
     /**
      * A trigger that indicated that the device just became available again an error (in contrast to the
@@ -177,7 +177,7 @@ namespace ChimeraTK {
     std::list<boost::shared_ptr<RecoveryHelper>> _recoveryHelpers;
 
     /* The list of initialisation handler callback functions */
-    std::list<std::function<void(DeviceManager*)>> _initialisationHandlers;
+    std::list<std::function<void(ChimeraTK::Device&)>> _initialisationHandlers;
 
     /** Mutex for writing the DeviceModule::writeRecoveryOpen.*/
     boost::shared_mutex _recoveryMutex;

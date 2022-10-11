@@ -121,7 +121,7 @@ struct TestApplication1 : ctk::Application {
   TriggerModule m2{this, "m2", ""};
   ctk::DeviceModule dev{this, dummyCdd, "/m2/o1", &initialiseDev};
   std::atomic_bool deviceError = false;
-  static void initialiseDev(ChimeraTK::DeviceManager*) {
+  static void initialiseDev(ChimeraTK::Device&) {
     bool err = ((TestApplication1&)Application::getInstance()).deviceError;
     if(err) {
       throw ChimeraTK::runtime_error("device is not ready.");
