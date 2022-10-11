@@ -16,15 +16,12 @@
 
 #include <boost/mpl/list.hpp>
 
-#define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
-#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
-// list of user types the accessors are tested with
-typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double> test_types;
+/*********************************************************************************************************************/
 
 #define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
   {                                                                                                                    \
@@ -38,20 +35,18 @@ typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, 
   }
 
 /*********************************************************************************************************************/
-/* the ApplicationModule for the test is a template of the user type */
 
-template<typename T>
 struct TestModule : public ctk::ApplicationModule {
   TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
       const std::unordered_set<std::string>& tags = {})
   : ApplicationModule(owner, name, description, tags) {}
 
-  ctk::ScalarPollInput<T> consumingPoll{this, "consumingPoll", "MV/m", "Description"};
+  ctk::ScalarPollInput<int> consumingPoll{this, "consumingPoll", "MV/m", "Description"};
 
-  ctk::ScalarPushInput<T> consumingPush{this, "consumingPush", "MV/m", "Description"};
-  ctk::ScalarPushInput<T> consumingPush2{this, "consumingPush2", "MV/m", "Description"};
+  ctk::ScalarPushInput<int> consumingPush{this, "consumingPush", "MV/m", "Description"};
+  ctk::ScalarPushInput<int> consumingPush2{this, "consumingPush2", "MV/m", "Description"};
 
-  ctk::ScalarOutput<T> feedingToDevice{this, "feedingToDevice", "MV/m", "Description"};
+  ctk::ScalarOutput<int> feedingToDevice{this, "feedingToDevice", "MV/m", "Description"};
 
   void prepare() override {
     incrementDataFaultCounter(); // force data to be flagged as faulty
@@ -65,13 +60,13 @@ struct TestModule : public ctk::ApplicationModule {
 /*********************************************************************************************************************/
 /* dummy application */
 
-template<typename T>
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
-  ~TestApplication() { shutdown(); }
+  ~TestApplication() override { shutdown(); }
 
-  TestModule<T> testModule{this, "testModule", "The test module"};
-  ctk::DeviceModule dev{this, "Dummy0"};
+  TestModule testModule{this, "testModule", "The test module"};
+  ctk::DeviceModule dev{this, "Dummy0", "/dummyTriggerForUnusedVariables"};
+  ctk::DeviceModule dev2;
 
   // note: direct device-to-controlsystem connections are tested in testControlSystemAccessors!
 };
@@ -79,14 +74,14 @@ struct TestApplication : public ctk::Application {
 /*********************************************************************************************************************/
 /* test feeding a scalar to a device */
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDevice, T, test_types) {
+BOOST_AUTO_TEST_CASE(testFeedToDevice) {
   std::cout << "testFeedToDevice" << std::endl;
 
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
-  TestApplication<T> app;
+  TestApplication app;
 
-  // app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
+  app.testModule.feedingToDevice = ctk::ScalarOutput<int>{&app.testModule, "/MyModule/actuator", "MV/m", ""};
 
   ctk::TestFacility test{app};
   test.runApplication();
@@ -110,21 +105,26 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDevice, T, test_types) {
 /*********************************************************************************************************************/
 /* test feeding a scalar to two different device registers */
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDeviceFanOut, T, test_types) {
+BOOST_AUTO_TEST_CASE(testFeedToDeviceFanOut) {
   std::cout << "testFeedToDeviceFanOut" << std::endl;
 
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
-  TestApplication<T> app;
+  TestApplication app;
 
-  // app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator") >> app.dev["Deeper"]["hierarchies"]("also");
+  app.testModule.feedingToDevice = {&app.testModule, "/MyModule/actuator", "MV/m", ""};
+  app.dev2 = {&app, "Dummy0wo"};
+
+  app.getModel().writeGraphViz("testFeedToDeviceFanOut.dot");
+
   ctk::TestFacility test{app};
   test.runApplication();
-  ChimeraTK::Device dev;
-  dev.open("Dummy0");
+
+  ChimeraTK::Device dev("Dummy0");
+  ChimeraTK::Device dev2("Dummy0wo");
 
   auto regac = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
-  auto regrb = dev.getScalarRegisterAccessor<int>("/Deeper/hierarchies/also");
+  auto regrb = dev2.getScalarRegisterAccessor<int>("/MyModule/actuator");
 
   regac = 0;
   regrb = 0;
@@ -149,27 +149,27 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToDeviceFanOut, T, test_types) {
 /*********************************************************************************************************************/
 /* test consuming a scalar from a device */
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromDevice, T, test_types) {
+BOOST_AUTO_TEST_CASE(testConsumeFromDevice) {
   std::cout << "testConsumeFromDevice" << std::endl;
 
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
-  TestApplication<T> app;
+  TestApplication app;
 
-  // We intentionally use an r/w register here to use it as an input only. Just to test the case
-  // (might only be written in initialisation and only read in the server itself)
-  // app.dev("/MyModule/actuator") >> app.testModule.consumingPoll;
+  app.testModule.consumingPoll = {&app.testModule, "/MyModule/readBack", "MV/m", ""};
+
   ctk::TestFacility test{app};
   ChimeraTK::Device dev;
   dev.open("Dummy0");
-  auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
+  auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/readBack.DUMMY_WRITEABLE");
 
   regacc = 1; // write initial value which should be present in accessor after app start
   regacc.write();
 
   test.runApplication();
 
-  // single threaded test only, since read() does not block in this case
+  BOOST_REQUIRE(app.testModule.hasReachedTestableMode());
+
   BOOST_CHECK(app.testModule.consumingPoll == 1);
   regacc = 42;
   regacc.write();
@@ -195,19 +195,21 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromDevice, T, test_types) {
 /* test consuming a scalar from a device with a ConsumingFanOut (i.e. one
  * poll-type consumer and several push-type consumers). */
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumingFanOut, T, test_types) {
+BOOST_AUTO_TEST_CASE(testConsumingFanOut) {
   std::cout << "testConsumingFanOut" << std::endl;
 
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
-  TestApplication<T> app;
+  TestApplication app;
 
-  // app.dev("/MyModule/actuator") >> app.testModule.consumingPoll >> app.testModule.consumingPush >>
-  //     app.testModule.consumingPush2;
+  app.testModule.consumingPoll = {&app.testModule, "/MyModule/readBack", "MV/m", ""};
+  app.testModule.consumingPush = {&app.testModule, "/MyModule/readBack", "MV/m", ""};
+  app.testModule.consumingPush2 = {&app.testModule, "/MyModule/readBack", "MV/m", ""};
+
   ctk::TestFacility test{app};
   ChimeraTK::Device dev;
   dev.open("Dummy0");
-  auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
+  auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/readBack.DUMMY_WRITEABLE");
 
   regacc = 1; // write initial value which should be present in accessor after app start
   regacc.write();
@@ -284,108 +286,17 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumingFanOut, T, test_types) {
 }
 
 /*********************************************************************************************************************/
-/* test feeding a constant to a device register. */
+/* Application for tests of DeviceModule */
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantToDevice, T, test_types) {
-  std::cout << "testConstantToDevice" << std::endl;
-
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
-
-  TestApplication<T> app;
-
-  // ctk::VariableNetworkNode::makeConstant<T>(true, 18) >> app.dev("/MyModule/actuator");
-  ctk::TestFacility test{app};
-  test.runApplication();
-
-  ChimeraTK::Device dev;
-  dev.open("Dummy0");
-
-  CHECK_TIMEOUT(dev.read<T>("/MyModule/actuator") == 18, 10000);
-}
-
-/*********************************************************************************************************************/
-/* test feeding a constant to a device register with a fan out. */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantToDeviceFanOut, T, test_types) {
-  std::cout << "testConstantToDeviceFanOut" << std::endl;
-
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
-
-  TestApplication<T> app;
-
-  // ctk::VariableNetworkNode::makeConstant<T>(true, 20) >> app.dev("/MyModule/actuator") >>
-  //     app.dev("/Deeper/hierarchies/also");
-  ctk::TestFacility test{app};
-  test.runApplication();
-
-  ChimeraTK::Device dev;
-  dev.open("Dummy0");
-
-  CHECK_TIMEOUT(dev.read<T>("/MyModule/actuator") == 20, 10000);
-  CHECK_TIMEOUT(dev.read<T>("/Deeper/hierarchies/also") == 20, 10000);
-}
-
-/*********************************************************************************************************************/
-/* test subscript operator of DeviceModule */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testDeviceModuleSubscriptOp, T, test_types) {
-  std::cout << "testDeviceModuleSubscriptOp" << std::endl;
-
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
-
-  TestApplication<T> app;
-
-  // app.testModule.feedingToDevice >> app.dev["MyModule"]("actuator");
-  ctk::TestFacility test{app};
-  ChimeraTK::Device dev;
-  dev.open("Dummy0");
-  auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/actuator");
-  test.runApplication();
-
-  regacc = 0;
-  app.testModule.feedingToDevice = 42;
-  app.testModule.feedingToDevice.write();
-  regacc.read();
-  BOOST_CHECK(regacc == 42);
-  app.testModule.feedingToDevice = 120;
-  regacc.read();
-  BOOST_CHECK(regacc == 42);
-  app.testModule.feedingToDevice.write();
-  regacc.read();
-  BOOST_CHECK(regacc == 120);
-}
-
-/*********************************************************************************************************************/
-/* test DeviceModule::virtualise()  (trivial implementation) */
-
-BOOST_AUTO_TEST_CASE(testDeviceModuleVirtuallise) {
-  std::cout << "testDeviceModuleVirtuallise" << std::endl;
-
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
-
-  TestApplication<int> app;
-
-  // app.testModule.feedingToDevice >> app.dev.virtualise()["MyModule"]("actuator");
-
-  ctk::TestFacility test{app};
-
-  // BOOST_CHECK(&(app.dev.virtualise()) == &(app.dev));
-}
-
-/*********************************************************************************************************************/
-/* Application for tests of connectTo() */
-
-template<typename T>
 struct TestModule2 : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
-  ctk::ScalarOutput<T> actuator{this, "actuator", "MV/m", "Description"};
-  ctk::ScalarPollInput<T> readback{this, "readBack", "MV/m", "Description"};
+  ctk::ScalarOutput<int> actuator{this, "actuator", "MV/m", "Description"};
+  ctk::ScalarPollInput<int> readback{this, "readBack", "MV/m", "Description"};
 
   void mainLoop() {}
 };
 
-template<typename T>
 struct Deeper : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
@@ -393,157 +304,14 @@ struct Deeper : ctk::ApplicationModule {
     using ctk::VariableGroup ::VariableGroup;
     struct Need : ctk::VariableGroup {
       using ctk::VariableGroup ::VariableGroup;
-      ctk::ScalarPollInput<T> tests{this, "tests", "MV/m", "Description"};
+      ctk::ScalarPollInput<int> tests{this, "tests", "MV/m", "Description"};
     } need{this, "need", ""};
-    ctk::ScalarOutput<T> also{this, "also", "MV/m", "Description", {"ALSO"}};
+    ctk::ScalarOutput<int> also{this, "also", "MV/m", "Description", {"ALSO"}};
   } hierarchies{this, "hierarchies", ""};
 
   void mainLoop() {}
 };
 
-template<typename T>
-struct TestApplication2 : public ctk::Application {
-  TestApplication2() : Application("testSuite") {}
-  ~TestApplication2() { shutdown(); }
-
-  TestModule2<T> testModule{this, "MyModule", "The test module"};
-  Deeper<T> deeper{this, "Deeper", ""};
-  ctk::DeviceModule dev{this, "Dummy0"};
-};
-
-/*********************************************************************************************************************/
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo, T, test_types) {
-  std::cout << "testConnectTo" << std::endl;
-
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
-
-  TestApplication2<int> app;
-  // app.testModule.connectTo(app.dev["MyModule"]);
-  // app.deeper.hierarchies.need.connectTo(app.dev["Deeper"]["hierarchies"]["need"]);
-  // app.deeper.hierarchies.findTag("ALSO").connectTo(app.dev["Deeper"]["hierarchies"]);
-
-  ctk::TestFacility test{app};
-  test.runApplication();
-
-  ctk::Device dev;
-  dev.open("Dummy0");
-  auto actuator = dev.getScalarRegisterAccessor<T>("MyModule/actuator");
-  auto& readback = actuator; // same address in map file
-  auto tests = dev.getScalarRegisterAccessor<T>("Deeper/hierarchies/need/tests/DUMMY_WRITEABLE");
-  auto also = dev.getScalarRegisterAccessor<T>("Deeper/hierarchies/also");
-
-  app.testModule.actuator = 42;
-  app.testModule.actuator.write();
-  actuator.read();
-  BOOST_CHECK_EQUAL(T(actuator), 42);
-
-  app.testModule.actuator = 12;
-  app.testModule.actuator.write();
-  actuator.read();
-  BOOST_CHECK_EQUAL(T(actuator), 12);
-
-  readback = 120;
-  readback.write();
-  app.testModule.readback.read();
-  BOOST_CHECK_EQUAL(T(app.testModule.readback), 120);
-
-  readback = 66;
-  readback.write();
-  app.testModule.readback.read();
-  BOOST_CHECK_EQUAL(T(app.testModule.readback), 66);
-
-  tests = 120;
-  tests.write();
-  app.deeper.hierarchies.need.tests.read();
-  BOOST_CHECK_EQUAL(T(app.deeper.hierarchies.need.tests), 120);
-
-  tests = 66;
-  tests.write();
-  app.deeper.hierarchies.need.tests.read();
-  BOOST_CHECK_EQUAL(T(app.deeper.hierarchies.need.tests), 66);
-
-  app.deeper.hierarchies.also = 42;
-  app.deeper.hierarchies.also.write();
-  also.read();
-  BOOST_CHECK_EQUAL(T(also), 42);
-
-  app.deeper.hierarchies.also = 12;
-  app.deeper.hierarchies.also.write();
-  also.read();
-  BOOST_CHECK_EQUAL(T(also), 12);
-}
-
-/*********************************************************************************************************************/
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testConnectTo2, T, test_types) {
-  // This does currently not work due to
-  //   BackendRegisterCatalogue::getRegister(): Register '/<Device:Dummy0>/deviceBecameFunctional' does not exist.
-
-#if 0
-  std::cout << "testConnectTo2" << std::endl;
-
-  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
-
-  TestApplication2<int> app;
-  app.findTag(".*").connectTo(app.dev);
-
-  ctk::TestFacility test{app};
-  test.runApplication();
-
-  ctk::Device dev;
-  dev.open("Dummy0");
-  auto actuator = dev.getScalarRegisterAccessor<T>("MyModule/actuator");
-  auto& readback = actuator; // same address in map file
-  auto tests = dev.getScalarRegisterAccessor<T>("Deeper/hierarchies/need/tests/DUMMY_WRITEABLE");
-  auto also = dev.getScalarRegisterAccessor<T>("Deeper/hierarchies/also");
-
-  app.testModule.actuator = 42;
-  app.testModule.actuator.write();
-  actuator.read();
-  BOOST_CHECK_EQUAL(T(actuator), 42);
-
-  app.testModule.actuator = 12;
-  app.testModule.actuator.write();
-  actuator.read();
-  BOOST_CHECK_EQUAL(T(actuator), 12);
-
-  readback = 120;
-  readback.write();
-  app.testModule.readback.read();
-  BOOST_CHECK_EQUAL(T(app.testModule.readback), 120);
-
-  readback = 66;
-  readback.write();
-  app.testModule.readback.read();
-  BOOST_CHECK_EQUAL(T(app.testModule.readback), 66);
-
-  tests = 120;
-  tests.write();
-  app.deeper.hierarchies.need.tests.read();
-  BOOST_CHECK_EQUAL(T(app.deeper.hierarchies.need.tests), 120);
-
-  tests = 66;
-  tests.write();
-  app.deeper.hierarchies.need.tests.read();
-  BOOST_CHECK_EQUAL(T(app.deeper.hierarchies.need.tests), 66);
-
-  app.deeper.hierarchies.also = 42;
-  app.deeper.hierarchies.also.write();
-  also.read();
-  BOOST_CHECK_EQUAL(T(also), 42);
-
-  app.deeper.hierarchies.also = 12;
-  app.deeper.hierarchies.also.write();
-  also.read();
-  BOOST_CHECK_EQUAL(T(also), 12);
-#endif
-}
-
-/*********************************************************************************************************************/
-/* Application for tests of DeviceModule */
-
-template<typename T>
 struct Deeper2 : ctk::ModuleGroup {
   using ctk::ModuleGroup::ModuleGroup;
 
@@ -554,22 +322,21 @@ struct Deeper2 : ctk::ModuleGroup {
 
     struct Need : ctk::VariableGroup {
       using ctk::VariableGroup ::VariableGroup;
-      ctk::ScalarPollInput<T> tests{this, "tests", "MV/m", "Description"};
+      ctk::ScalarPollInput<int> tests{this, "tests", "MV/m", "Description"};
     } need{this, "need", ""};
-    ctk::ScalarOutput<T> also{this, "also", "MV/m", "Description", {"ALSO"}};
-    ctk::ScalarOutput<T> trigger{this, "trigger", "MV/m", "Description", {"ALSO"}};
+    ctk::ScalarOutput<int> also{this, "also", "MV/m", "Description", {"ALSO"}};
+    ctk::ScalarOutput<int> trigger{this, "trigger", "MV/m", "Description", {"ALSO"}};
 
     void mainLoop() override {}
   } hierarchies{this, "hierarchies", ""};
 };
 
-template<typename T>
 struct TestApplication3 : public ctk::Application {
   TestApplication3() : Application("testSuite") {}
   ~TestApplication3() override { shutdown(); }
 
-  TestModule2<T> testModule{this, "MyModule", "The test module"};
-  Deeper2<T> deeper{this, "Deeper", ""};
+  TestModule2 testModule{this, "MyModule", "The test module"};
+  Deeper2 deeper{this, "Deeper", ""};
 
   std::atomic<size_t> initHandlerCallCount{0};
   ctk::DeviceModule dev{this, "Dummy0", "", [this](ChimeraTK::Device&) { initHandlerCallCount++; }};
@@ -581,7 +348,7 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleExceptions) {
   std::cout << "testDeviceModuleExceptions" << std::endl;
 
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
-  TestApplication3<int> app;
+  TestApplication3 app;
 
   // non-absolute trigger path
   BOOST_CHECK_THROW(
@@ -599,7 +366,7 @@ BOOST_AUTO_TEST_CASE(testDeviceModule) {
   std::cout << "testDeviceModule" << std::endl;
 
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
-  TestApplication3<int> app;
+  TestApplication3 app;
 
   ctk::TestFacility test{app};
   test.runApplication();
@@ -674,10 +441,13 @@ struct TestApplication4 : public ctk::Application {
   TestApplication4() : Application("testSuite") {}
   ~TestApplication4() override { shutdown(); }
 
+  ctk::DeviceModule dev{this, "Dummy1"};
+  ctk::DeviceModule dev2{this, "Dummy0"};
+
   std::vector<ctk::DeviceModule> cdevs;
 
-  TestModule2<int> m{this, "MyModule", ""};
-  Deeper<int> deeper{this, "Deeper", ""};
+  TestModule2 m{this, "MyModule", ""};
+  Deeper deeper{this, "Deeper", ""};
 };
 
 /*********************************************************************************************************************/
@@ -686,11 +456,13 @@ BOOST_AUTO_TEST_CASE(testDeviceModuleMove) {
   std::cout << "testDeviceModuleMove" << std::endl;
 
   TestApplication4 app;
-  ctk::DeviceModule dev{&app, "Dummy1"};
-  ctk::DeviceModule dev2{&app, "Dummy0"};
-  dev = std::move(dev2);               // test move-assign
-  app.cdevs.push_back(std::move(dev)); // test move-construct
+  app.dev = std::move(app.dev2);           // test move-assign
+  app.cdevs.push_back(std::move(app.dev)); // test move-construct
+
+  app.getModel().writeGraphViz("testDeviceModuleMove.dot");
+
   ctk::TestFacility test{app};
+
   test.runApplication();
   ctk::Device dummy0("Dummy0");
   auto readBack = dummy0.getScalarRegisterAccessor<int>("MyModule/readBack/DUMMY_WRITEABLE");
