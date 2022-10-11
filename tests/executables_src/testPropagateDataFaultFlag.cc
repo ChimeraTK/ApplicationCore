@@ -528,12 +528,11 @@ BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
   deviceRegister = 20;
   deviceRegister.write();
 
-  auto trigger = test.getScalar<int>("trigger");
-  auto result = test.getScalar<int>("i3"); // Cs hook into reg: m1.i3
+  auto trigger = test.getVoid("trigger");
+  auto result = test.getScalar<int>("/m1/i3"); // Cs hook into reg: m1.i3
 
   //----------------------------------------------------------------//
   // trigger works as expected
-  trigger = 1;
   trigger.write();
 
   test.stepApplication();
@@ -546,7 +545,6 @@ BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
   // faulty trigger
   deviceRegister = 30;
   deviceRegister.write();
-  trigger = 1;
   trigger.setDataValidity(ctk::DataValidity::faulty);
   trigger.write();
 
@@ -561,7 +559,6 @@ BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
   deviceRegister = 50;
   deviceRegister.write();
 
-  trigger = 1;
   trigger.setDataValidity(ctk::DataValidity::ok);
   trigger.write();
 
@@ -583,10 +580,10 @@ struct Fixture_noTestableMode {
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD1))),
     device2DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2))) {
-    device1Status.replace(
-        test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication3::ExceptionDummyCDD1 / "status"));
-    device2Status.replace(
-        test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication3::ExceptionDummyCDD2 / "status"));
+    device1Status.replace(test.getScalar<int32_t>(ctk::RegisterPath("/Devices") /
+        ctk::Utilities::stripName(TestApplication3::ExceptionDummyCDD1, false) / "status"));
+    device2Status.replace(test.getScalar<int32_t>(ctk::RegisterPath("/Devices") /
+        ctk::Utilities::stripName(TestApplication3::ExceptionDummyCDD2, false) / "status"));
 
     device1DummyBackend->open();
     device2DummyBackend->open();
@@ -697,19 +694,18 @@ BOOST_FIXTURE_TEST_CASE(testReadDeviceWithTrigger, Fixture_noTestableMode) {
   std::cout << "testReadDeviceWithTrigger" << std::endl;
   waitForDevices();
 
-  auto trigger = test.getScalar<int>("trigger");
-  auto fromDevice = test.getScalar<int>("i3"); // cs side display: m1.i3
+  auto trigger = test.getVoid("trigger");
+  auto fromDevice = test.getScalar<int>("/m1/i3"); // cs side display: m1.i3
   //----------------------------------------------------------------//
   fromDevice.read(); // there is an initial value
   BOOST_CHECK_EQUAL(fromDevice, 0);
 
-  // trigger works as expected
-  trigger = 1;
 
   auto deviceRegister = ctk::Device(app.ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i3/DUMMY_WRITEABLE");
   deviceRegister = 30;
   deviceRegister.write();
 
+  // trigger works as expected
   trigger.write();
 
   fromDevice.read();
@@ -723,7 +719,6 @@ BOOST_FIXTURE_TEST_CASE(testReadDeviceWithTrigger, Fixture_noTestableMode) {
 
   device1DummyBackend->throwExceptionRead = true;
 
-  trigger = 1;
   trigger.write();
 
   fromDevice.read();
@@ -873,8 +868,8 @@ BOOST_FIXTURE_TEST_CASE(testDataFlowOnDeviceException, Fixture_noTestableMode) {
   BOOST_CHECK_EQUAL(m2_result, 1101);
   BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
 
-  auto deviceStatus =
-      test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication3::ExceptionDummyCDD2 / "status");
+  auto deviceStatus = test.getScalar<int32_t>(ctk::RegisterPath("/Devices") /
+      ChimeraTK::Utilities::stripName(TestApplication3::ExceptionDummyCDD2, false) / "status");
   // the device is still OK
   CHECK_EQUAL_TIMEOUT((deviceStatus.readLatest(), deviceStatus), 0, 10000);
 
@@ -1010,8 +1005,8 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   auto pushInput = test.getScalar<int>("module/o1");
   auto result = test.getScalar<int>("module/Module3_result");
 
-  auto deviceStatus =
-      test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / TestApplication4::ExceptionDummyCDD2 / "status");
+  auto deviceStatus = test.getScalar<int32_t>(ctk::RegisterPath("/Devices") /
+      ctk::Utilities::stripName(TestApplication3::ExceptionDummyCDD2, false) / "status");
 
   pushInput = 10;
   pushInput.write();
