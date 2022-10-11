@@ -572,7 +572,7 @@ struct TestApplication3 : public ctk::Application {
   Deeper2<T> deeper{this, "Deeper", ""};
 
   std::atomic<size_t> initHandlerCallCount{0};
-  ctk::DeviceModule dev{this, "Dummy0", "", [this](ctk::DeviceManager*) { initHandlerCallCount++; }};
+  ctk::DeviceModule dev{this, "Dummy0", "", [this](ChimeraTK::Device&) { initHandlerCallCount++; }};
 };
 
 /*********************************************************************************************************************/

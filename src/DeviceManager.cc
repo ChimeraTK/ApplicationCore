@@ -208,7 +208,7 @@ namespace ChimeraTK {
       // [Spec: 2.3.2] Run initialisation handlers
       try {
         for(auto& initHandler : _initialisationHandlers) {
-          initHandler(this);
+          initHandler(_device);
         }
       }
       catch(ChimeraTK::runtime_error& e) {
@@ -339,7 +339,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void DeviceManager::addInitialisationHandler(std::function<void(DeviceManager*)> initialisationHandler) {
+  void DeviceManager::addInitialisationHandler(std::function<void(ChimeraTK::Device&)> initialisationHandler) {
     _initialisationHandlers.push_back(std::move(initialisationHandler));
   }
 

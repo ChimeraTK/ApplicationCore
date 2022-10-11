@@ -29,19 +29,19 @@ static std::atomic<int32_t> var1{0};
 static std::atomic<int32_t> var2{0};
 static std::atomic<int32_t> var3{0};
 
-void initialiseReg1(ctk::DeviceManager*) {
+void initialiseReg1(ChimeraTK::Device&) {
   var1 = 42;
   if(throwInInitialisation) {
     throw ctk::runtime_error(exceptionMessage);
   }
 }
 
-void initialiseReg2(ctk::DeviceManager*) {
+void initialiseReg2(ChimeraTK::Device&) {
   // the initialisation of reg 2 must happen after the initialisation of reg1
   var2 = var1 + 5;
 }
 
-void initialiseReg3(ctk::DeviceManager*) {
+void initialiseReg3(ChimeraTK::Device&) {
   // the initialisation of reg 3 must happen after the initialisation of reg2
   var3 = var2 + 5;
 }
