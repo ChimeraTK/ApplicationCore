@@ -63,26 +63,22 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() { shutdown(); }
 
-  ctk::DeviceModule dev{this, deviceCDD};
+  ctk::DeviceModule dev{this, deviceCDD, "/deviceTrigger"};
   TestModule module{this, "TEST", "The test module"};
 };
 
-/* Test application for the specific case of wrinting to a read-only
+#if 0
+/* Test application for the specific case of writing to a read-only
  * accessor. Provides an input to an ApplicationModule from a read-only
  * accessor of the device. For the test, the accessor must not be routed
- * through the control system, the illegal write would be catched by the
+ * through the control system, the illegal write would be caught by the
  * ControlSystemAdapter, not by the ExceptionHandlingDecorator under test here.
  */
 struct ReadOnlyTestApplication : public ctk::Application {
   ReadOnlyTestApplication() : Application("ReadOnlytestApp") {}
-  ~ReadOnlyTestApplication() { shutdown(); }
+  ~ReadOnlyTestApplication() override { shutdown(); }
 
-  /*  void defineConnections() {
-      dev["TEST"]("FROM_DEV_SCALAR2") >> module("FROM_DEV_SCALAR2");
-      findTag("CS").connectTo(cs);
-    }*/
-
-  ctk::DeviceModule dev{this, deviceCDD};
+  ctk::DeviceModule dev{this, deviceCDD, "/weNowNeedATriggerHere"};
 
   struct TestModule : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -117,6 +113,10 @@ struct ReadOnlyTestApplication : public ctk::Application {
 
 /*********************************************************************************************************************/
 
+// FIXME: This case cannot be created any more with the current setup.
+// It might be possible that it is doable again when implementing optimiseConnections()
+// which might prune the CS connections
+
 BOOST_AUTO_TEST_CASE(testWriteToReadOnly) {
   std::cout << "testWriteToReadOnly" << std::endl;
 
@@ -132,23 +132,13 @@ BOOST_AUTO_TEST_CASE(testWriteToReadOnly) {
   // here, as the exception gets thrown in the thread of the module.
   test.writeScalar("/READ_ONLY_TEST/startTest", 1);
 }
+#endif
 
 /*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   std::cout << "testProcessVariableRecovery" << std::endl;
   TestApplication app;
-
-  /*  app.findTag(".*").connectTo(app.cs); // creates /TEST/TO_DEV_SCALAR1 and /TEST/TO/DEV/ARRAY1
-    // devices are not automatically connected (yet)
-    app.dev.connectTo(app.cs,
-        app.cs("deviceTrigger", typeid(int),
-            1)); // In TEST it connects to TO_DEV_SCALAR1 and TO_DEV_ARRAY1, and creates TO_DEV_SCALAR2, FROM_DEV1,
-                 // FROM_DEV2, TO_DEV_AREA2, FROM_DEV_AREA1 and FROM_DEV_AREA2
-
-    // make a constant and connect to the device
-    auto constante = ctk::VariableNetworkNode::makeConstant(1, 44252, 1);
-    constante >> app.dev["CONSTANT"]("VAR32");*/
 
   ctk::TestFacility test{app, false};
   // Write initial values manually since we do not use the testable mode.
@@ -170,12 +160,11 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
 
   // wait for the device to be opened successfully so the access to the dummy does not throw
   // (as they use the same backend it now throws if there has been an exception somewhere else)
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(std::string("/Devices/") + deviceCDD + "/status"), 0, 10000);
+  CHECK_EQUAL_TIMEOUT(
+      test.readScalar<int32_t>(std::string("/Devices/") + ctk::Utilities::stripName(deviceCDD, false) + "/status"), 0,
+      10000);
 
   // Check that the initial values are there.
-  // auto reg2 = dummy.getScalarRegisterAccessor<int32_t>("/TEST/TO_DEV_SCALAR2");
-  // CHECK_EQUAL_TIMEOUT([=]()mutable{reg2.readLatest(); return int32_t(reg2);},0,10000);
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/CONSTANT/VAR32"), 44252, 10000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_SCALAR2"), 42, 10000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2", 1, 0)[0], 99, 10000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY2", 1, 1)[0], 99, 10000);
@@ -212,18 +201,22 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   dummyBackend->throwExceptionRead = true;
 
   // Now we trigger the reading module. This should put the device into an error state
-  auto trigger2 = test.getScalar<int32_t>("/deviceTrigger");
+  auto trigger2 = test.getVoid("/deviceTrigger");
   trigger2.write();
 
   // Verify that the device is in error state.
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 10000);
+  CHECK_EQUAL_TIMEOUT(
+      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD, false) / "status"),
+      1, 10000);
 
   // Set device back to normal.
   dummyBackend->throwExceptionWrite = false;
   dummyBackend->throwExceptionRead = false;
   dummyBackend->throwExceptionOpen = false;
   // Verify if the device is ready.
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 10000);
+  CHECK_EQUAL_TIMEOUT(
+      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD, false) / "status"),
+      0, 10000);
 
   // Device should have the correct values now. Notice that we did not trigger the writer module!
   BOOST_CHECK_EQUAL(dummy.read<int32_t>("/TEST/TO_DEV_SCALAR2"), 42);
@@ -231,7 +224,4 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
 
   BOOST_CHECK_EQUAL(dummy.read<int32_t>("/TEST/TO_DEV_SCALAR1"), 100);
   BOOST_CHECK((dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1", 0) == std::vector<int32_t>{100, 100, 100, 100}));
-
-  // check if the constant is written back after recovery
-  CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/CONSTANT/VAR32"), 44252, 10000);
 }
