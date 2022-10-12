@@ -1,22 +1,20 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
-//#include <future>
 
 #define BOOST_TEST_MODULE testDeviceInitialisationHandler
 
-//#include <boost/mpl/list.hpp>
 #include "Application.h"
-#include "DeviceModule.h"
-
-#include <boost/test/included/unit_test.hpp>
-//#include "ScalarAccessor.h"
 #include "check_timeout.h"
+#include "DeviceModule.h"
 #include "TestFacility.h"
+#include "Utilities.h"
 
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
 
-#include <stdlib.h>
+#include <boost/test/included/unit_test.hpp>
+
+#include <cstdlib>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -49,9 +47,8 @@ void initialiseReg3(ChimeraTK::Device&) {
 /* dummy application */
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
-  ~TestApplication() { shutdown(); }
+  ~TestApplication() override { shutdown(); }
 
-  void defineConnections() {} // the setup is done in the tests
   ctk::DeviceModule dev{this, deviceCDD, "", &initialiseReg1};
 };
 
@@ -65,10 +62,8 @@ BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
   var2 = 0;
   var3 = 0;
 
-  // app.dev.connectTo(app.cs);
   ctk::TestFacility test{app};
   test.runApplication();
-  // app.dumpConnections();
   ctk::Device dummy;
   dummy.open(deviceCDD);
 
@@ -115,12 +110,11 @@ BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
 
   app.dev.addInitialisationHandler(&initialiseReg2);
   app.dev.addInitialisationHandler(&initialiseReg3);
-  // app.dev.connectTo(app.cs);
   ctk::TestFacility test{app};
   test.runApplication();
-  // app.dumpConnections();
 
-  auto deviceStatus = test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status");
+  auto deviceStatus =
+      test.getScalar<int32_t>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD, false) / "status");
 
   // *********************************************************
   // REQUIRED TEST 4: Handlers are executed in the right order
@@ -179,8 +173,11 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   app.run();
   // app.dumpConnections();
 
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 30000);
-  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "status_message"),
+  CHECK_EQUAL_TIMEOUT(
+      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD, false) / "status"),
+      1, 30000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") /
+                          ctk::Utilities::stripName(deviceCDD, false) / "status_message"),
       exceptionMessage, 10000);
 
   // Check that the execution of init handlers was stopped after the exception:
@@ -194,12 +191,15 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   // recover the error
   throwInInitialisation = false;
 
-  // wait until the device is reported to be OK again (chech with timeout),
+  // wait until the device is reported to be OK again (check with timeout),
   // then check the initialisation (again, no extra timeout needed because of the logic:
   // success is only reported after successful init).
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 10000);
   CHECK_EQUAL_TIMEOUT(
-      test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "status_message"), "", 10000);
+      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD, false) / "status"),
+      0, 10000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") /
+                          ctk::Utilities::stripName(deviceCDD, false) / "status_message"),
+      "", 10000);
 
   // initialisation should be correct now
   BOOST_CHECK_EQUAL(var1, 42);
@@ -222,21 +222,28 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
   reg4_cs = 20;
   reg4_cs.write();
 
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 1, 10000);
+  CHECK_EQUAL_TIMEOUT(
+      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD, false) / "status"),
+      1, 10000);
   // First we see the message from the failing write
-  BOOST_CHECK(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "status_message") != "");
+  BOOST_CHECK(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD, false) /
+                  "status_message") != "");
   dummyBackend->throwExceptionWrite = false;
   // Afterwards we see a message from the failing initialisation (which we can now distinguish from the original write
   // exception because write does not throw any more)
-  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "status_message"),
+  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") /
+                          ctk::Utilities::stripName(deviceCDD, false) / "status_message"),
       exceptionMessage, 10000);
 
   // Now fix the initialisation error and check that the device comes up.
   throwInInitialisation = false;
   // Wait until the device is OK again
-  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / deviceCDD / "status"), 0, 10000);
   CHECK_EQUAL_TIMEOUT(
-      test.readScalar<std::string>(ctk::RegisterPath("/Devices") / deviceCDD / "status_message"), "", 10000);
+      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD, false) / "status"),
+      0, 10000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") /
+                          ctk::Utilities::stripName(deviceCDD, false) / "status_message"),
+      "", 10000);
   // Finally check that the 20 arrives on the device
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/REG4"), 20, 10000);
 }
