@@ -80,6 +80,8 @@ namespace ChimeraTK {
     Model::DeviceModuleProxy _model;
 
     std::string _triggerPath;
+
+    std::string _pathInDevice;
   };
 
   /*********************************************************************************************************************/

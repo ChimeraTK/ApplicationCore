@@ -51,7 +51,7 @@ namespace ChimeraTK {
     /** Return the owning module */
     [[nodiscard]] EntityOwner* getOwner() const { return node.getOwningModule(); }
 
-    [[nodiscard]] Model::ProcessVariableProxy getModel() const { return node.getModel(); };
+    [[nodiscard]] Model::ProcessVariableProxy getModel() const { return node.getModel(); }
 
    protected:
     /// complete the description with the full description from the owner

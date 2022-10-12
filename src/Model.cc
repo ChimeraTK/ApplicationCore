@@ -316,7 +316,7 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   void ProcessVariableProxy::removeNode(const VariableNetworkNode& node) {
-    assert(node.getType() == NodeType::Application);
+    assert(node.getType() == NodeType::Application || node.getType() == NodeType::Device);
 
     auto& nodes = std::get<VertexProperties::ProcessVariableProperties>(_d->impl->graph[_d->vertex].p).nodes;
     auto it = std::find(nodes.begin(), nodes.end(), node);
@@ -325,23 +325,37 @@ namespace ChimeraTK::Model {
     }
     nodes.erase(it);
 
-    // remove model relation ship between PV and variable group and/or module
-    auto* vg = dynamic_cast<VariableGroup*>(node.getOwningModule());
-    assert(vg != nullptr);
+    if (node.getType() == NodeType::Application) {
+      // remove model relation ship between PV and variable group and/or module
+      auto* vg = dynamic_cast<VariableGroup*>(node.getOwningModule());
+      assert(vg != nullptr);
 
-    // remove ownership edge to variable group (if any)
-    auto vgm = vg->getModel();
-    if(vgm.isValid()) {
-      boost::remove_edge(_d->vertex, vgm._d->vertex, _d->impl->graph);
+      // remove ownership edge to variable group (if any)
+      auto vgm = vg->getModel();
+      if(vgm.isValid()) {
+        boost::remove_edge(_d->vertex, vgm._d->vertex, _d->impl->graph);
+      }
+
+      // remove pv access edge, and along side the ownership edge if directly owned by application module
+      auto* am = dynamic_cast<ApplicationModule*>(vg->findApplicationModule());
+      assert(am != nullptr);
+      auto amm = am->getModel();
+      assert(amm.isValid());
+      boost::remove_edge(amm._d->vertex, _d->vertex, _d->impl->graph);
+      boost::remove_edge(_d->vertex, amm._d->vertex, _d->impl->graph);
     }
+    else if(node.getType() == NodeType::Device) {
+      // remove model relation ship between PV and DeviceModule
+      auto* dm = dynamic_cast<DeviceModule*>(node.getOwningModule());
+      assert(dm != nullptr);
 
-    // remove pv access edge, and along side the ownership edge if directly owned by application module
-    auto* am = dynamic_cast<ApplicationModule*>(vg->findApplicationModule());
-    assert(am != nullptr);
-    auto amm = am->getModel();
-    assert(amm.isValid());
-    boost::remove_edge(amm._d->vertex, _d->vertex, _d->impl->graph);
-    boost::remove_edge(_d->vertex, amm._d->vertex, _d->impl->graph);
+      // remove ownership edge to variable group (if any)
+      auto dmm = dm->getModel();
+      if(dmm.isValid()) {
+        boost::remove_edge(_d->vertex, dmm._d->vertex, _d->impl->graph);
+        boost::remove_edge(dmm._d->vertex, _d->vertex, _d->impl->graph);
+      }
+    }
 
     // if only one incoming edge exists any more, remove the entire variable. the one incoming edge is the parenthood
     // relation. ownership relations are also incoming, of which we must have zero.

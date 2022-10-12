@@ -21,6 +21,8 @@ namespace ChimeraTK {
     auto dm = Application::getInstance().getDeviceManager(deviceAliasOrCDD);
     _dm = dm;
 
+    _pathInDevice = pathInDevice;
+
     if(initialisationHandler) {
       addInitialisationHandler(std::move(initialisationHandler));
     }
@@ -44,12 +46,12 @@ namespace ChimeraTK {
     // iterate all registers and add them to the model
     for(auto& node : nodeList) {
       // skip registers which are in a different directory than specified by pathInDevice
-      if(!boost::starts_with(node.getRegisterName(), pathInDevice)) {
+      if(!boost::starts_with(node.getRegisterName(), _pathInDevice)) {
         continue;
       }
 
       // obtain register name relative to pathInDevice
-      assert(boost::starts_with(node.getRegisterName(), pathInDevice));
+      assert(boost::starts_with(node.getRegisterName(), _pathInDevice));
       auto cut = pathInDevice.size();
       if(!boost::ends_with(pathInDevice, "/")) {
         ++cut;
@@ -61,6 +63,7 @@ namespace ChimeraTK {
 
       // add the PV to the directory (or get it if already existing)
       auto var = dir.addVariable(Utilities::getUnqualifiedName(relativePath));
+      node.setOwningModule(this);
 
       // connect the node and the PV
       _model.addVariable(var, node);
@@ -70,6 +73,35 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   DeviceModule& DeviceModule::operator=(DeviceModule&& other) noexcept {
+    // First clean up the model before moving the module itself.
+    if(other._model.isValid()) {
+      auto neighbourDirectory = other._model.visit(
+          Model::returnDirectory, Model::getNeighbourDirectory, Model::returnFirstHit(Model::DirectoryProxy{}));
+      assert(neighbourDirectory.isValid());
+
+      auto dm = _dm.lock();
+      if(dm) {
+        for(const auto& reg : dm->getDevice().getRegisterCatalogue()) {
+          if(reg.getNumberOfDimensions() > 1) continue;
+          std::string registerName = reg.getRegisterName();
+          if(!boost::starts_with(registerName, _pathInDevice)) continue;
+
+          neighbourDirectory.visitByPath(registerName, [&](auto proxy) {
+            if constexpr(isVariable(proxy)) {
+              assert(proxy.isValid());
+
+              for(auto& proxyNode : proxy.getNodes()) {
+                if(proxyNode.getType() == NodeType::Device && proxyNode.getDeviceAlias() == getDeviceAliasOrURI()) {
+                  proxy.removeNode(proxyNode);
+                  break;
+                }
+              }
+            }
+          });
+        }
+      }
+    }
+
     _model = std::move(other._model);
     other._model = {};
     if(_model.isValid()) _model.informMove(*this);
