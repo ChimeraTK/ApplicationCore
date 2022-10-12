@@ -366,6 +366,7 @@ namespace ChimeraTK::Model {
     void removeNode(const VariableNetworkNode& node);
 
     friend class ChimeraTK::VariableNetworkNode;
+    friend class ChimeraTK::DeviceModule;
 
     template<typename T>
     friend class ChimeraTK::InversionOfControlAccessor;

@@ -454,6 +454,7 @@ struct TestApplication4 : public ctk::Application {
 
 BOOST_AUTO_TEST_CASE(testDeviceModuleMove) {
   std::cout << "testDeviceModuleMove" << std::endl;
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
 
   TestApplication4 app;
   app.dev = std::move(app.dev2);           // test move-assign
