@@ -159,14 +159,16 @@ BOOST_AUTO_TEST_CASE(testConsumeFromDevice) {
   app.testModule.consumingPoll = {&app.testModule, "/MyModule/readBack", "MV/m", ""};
 
   ctk::TestFacility test{app};
+
+  // Set the default value through the CS. The actuator and readBack map to the same register in the map file
+  // Not setting a default will overwrite whatever is put into the device before the TestFacility::runApplication()
+  // So we feed the default for the register through the IV mechanism of TestFacility.
+  test.setScalarDefault<int>("/MyModule/actuator", 1);
+  test.runApplication();
+
   ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/readBack.DUMMY_WRITEABLE");
-
-  regacc = 1; // write initial value which should be present in accessor after app start
-  regacc.write();
-
-  test.runApplication();
 
   BOOST_REQUIRE(app.testModule.hasReachedTestableMode());
 
@@ -207,14 +209,16 @@ BOOST_AUTO_TEST_CASE(testConsumingFanOut) {
   app.testModule.consumingPush2 = {&app.testModule, "/MyModule/readBack", "MV/m", ""};
 
   ctk::TestFacility test{app};
+
+  // Set the default value through the CS. The actuator and readBack map to the same register in the map file
+  // Not setting a default will overwrite whatever is put into the device before the TestFacility::runApplication()
+  // So we feed the default for the register through the IV mechanism of TestFacility.
+  test.setScalarDefault<int>("/MyModule/actuator", 1);
   ChimeraTK::Device dev;
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/readBack.DUMMY_WRITEABLE");
-
-  regacc = 1; // write initial value which should be present in accessor after app start
-  regacc.write();
-
   test.runApplication();
+
 
   // single threaded test only, since read() does not block in this case
   BOOST_CHECK(app.testModule.consumingPoll == 1);
