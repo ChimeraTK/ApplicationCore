@@ -19,6 +19,26 @@
 #include <chrono>
 #include <functional>
 #include <future>
+#include <VoidAccessor.h>
+
+/*********************************************************************************************************************/
+
+// Base Application module that provides flags for the various phases
+// of module lifetime and full-fills a promise when the main loop has been reached
+struct NotifyingModule : ChimeraTK::ApplicationModule {
+  using ChimeraTK::ApplicationModule::ApplicationModule;
+
+  std::promise<void> p;
+  std::atomic_bool enteredTheMainLoop{false};
+  std::atomic_bool enteredThePrepareLoop{false};
+  void mainLoop() override {
+    enteredTheMainLoop = true;
+    p.set_value();
+  }
+  void prepare() override { enteredThePrepareLoop = true; }
+};
+
+/*********************************************************************************************************************/
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -28,7 +48,7 @@ namespace ctk = ChimeraTK;
 template<class INPUT_TYPE>
 struct InputModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
-  INPUT_TYPE input{this, "REG1", "", ""};
+  INPUT_TYPE input{this, "/REG1", "", ""};
   std::promise<void> p;
   std::atomic_bool enteredTheMainLoop{false};
   void mainLoop() override {
@@ -38,41 +58,34 @@ struct InputModule : ChimeraTK::ApplicationModule {
 };
 
 struct PollDummyApplication : ChimeraTK::Application {
-  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
+  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test-ro.map)";
   PollDummyApplication() : Application("DummyApplication") {}
   ~PollDummyApplication() override { shutdown(); }
 
   InputModule<ctk::ScalarPollInput<int>> inputModule{this, "PollModule", ""};
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
-
-  // void defineConnections() override { inputModule.connectTo(device); }
 };
 
 // for the push type we need different connection code
 struct PushDummyApplication : ChimeraTK::Application {
-  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
+  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:2?map=test-async.map)";
   PushDummyApplication() : Application("DummyApplication") {}
   ~PushDummyApplication() override { shutdown(); }
 
   InputModule<ctk::ScalarPushInput<int>> inputModule{this, "PushModule", ""};
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
-
-  /*void defineConnections() override {
-    auto push_register = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
-    push_register >> inputModule.input;
-  }*/
 };
 
 template<class APPLICATION_TYPE>
 struct TestFixtureWithEceptionDummy {
   TestFixtureWithEceptionDummy()
   : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend(PollDummyApplication::ExceptionDummyCDD1))) {}
+        ChimeraTK::BackendFactory::getInstance().createBackend(APPLICATION_TYPE::ExceptionDummyCDD1))) {}
   ~TestFixtureWithEceptionDummy() { deviceBackend->throwExceptionRead = false; }
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   APPLICATION_TYPE application;
-  ChimeraTK::TestFacility testFacitiy{application, false};
+  ChimeraTK::TestFacility testFacility{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
 };
 /**
@@ -80,28 +93,29 @@ struct TestFixtureWithEceptionDummy {
  *  InitialValuesInputsOfApplicationCore_D_8 "D.8"
  */
 BOOST_AUTO_TEST_SUITE(testInitialValuesInputsOfApplicationCore_D_8)
-typedef boost::mpl::list<PollDummyApplication, PushDummyApplication> DeviceTestApplicationTypes;
+using DeviceTestApplicationTypes = boost::mpl::list<PushDummyApplication, PollDummyApplication>;
 
 /**
- *  For device variables the ExeptionHandlingDecorator freezes the variable until the device is available
+ *  For device variables the ExceptionHandlingDecorator freezes the variable until the device is available
  * \anchor testInitialValue_D_8_b_i \ref initialValue_D_8_b_i
  */
 BOOST_AUTO_TEST_CASE_TEMPLATE(testInitValueAtDevice8bi, APPLICATION_TYPE, DeviceTestApplicationTypes) {
   std::cout << "===   testInitValueAtDevice8bi " << typeid(APPLICATION_TYPE).name() << "  ===" << std::endl;
   std::chrono::time_point<std::chrono::steady_clock> start, end;
   { // Here the time is stopped until you reach the mainloop.
-    TestFixtureWithEceptionDummy<PollDummyApplication> dummyToStopTimeUntilOpen;
+    TestFixtureWithEceptionDummy<APPLICATION_TYPE> dummyToStopTimeUntilOpen;
     start = std::chrono::steady_clock::now();
     dummyToStopTimeUntilOpen.application.run();
     dummyToStopTimeUntilOpen.application.inputModule.p.get_future().wait();
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     end = std::chrono::steady_clock::now();
   }
-  { // waiting 2 x the time stoped above, in the assumption that it is then freezed,
+  { // waiting 2 x the time stopped above, in the assumption that it is then frozen,
     // as it is described in the spec.
-    TestFixtureWithEceptionDummy<PollDummyApplication> d;
+    TestFixtureWithEceptionDummy<APPLICATION_TYPE> d;
     d.deviceBackend->throwExceptionOpen = true;
     BOOST_CHECK_THROW(d.deviceBackend->open(), std::exception);
+    d.deviceBackend->throwExceptionOpen = true;
     d.application.run();
     auto elapsed_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     BOOST_CHECK(d.application.inputModule.enteredTheMainLoop == false);
@@ -134,12 +148,11 @@ struct ProcessArryDummyApplication : ChimeraTK::Application {
   ProcessArryDummyApplication() : Application("DummyApplication") {}
   ~ProcessArryDummyApplication() override { shutdown(); }
 
-  InputModule<INPUT_TYPE> inputModule{this, "PollModule", ""};
-  ScalarOutputModule scalarOutputModule{this, "ScalarOutputModule", ""};
-  // void defineConnections() override { scalarOutputModule.connectTo(inputModule); }
+  InputModule<INPUT_TYPE> inputModule{this, ".", ""};
+  ScalarOutputModule scalarOutputModule{this, ".", ""};
 };
 
-typedef boost::mpl::list<ctk::ScalarPollInput<int>, ctk::ScalarPushInput<int>> TestInputTypes;
+using TestInputTypes = boost::mpl::list<ctk::ScalarPollInput<int>, ctk::ScalarPushInput<int>>;
 
 /**
  *  ProcessArray freeze in their implementation until the initial value is received
@@ -180,10 +193,10 @@ struct ConstantTestApplication : ChimeraTK::Application {
   ~ConstantTestApplication() override { shutdown(); }
 
   InputModule<INPUT_TYPE> inputModule{this, "constantPollModule", ""};
-
-  // void defineConnections() override {}
 };
 
+#if 0
+// Literally no clue what this was trying to test in the first place
 /**
  * Constants can be read exactly once in case of `AccessMode::wait_for_new_data`, so the initial value can be received.
  * \anchor testInitialValue_D_8_b_iii \ref initialValue_D_8_b_iii
@@ -206,15 +219,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantInitValueAtDevice8biii, INPUT_TYPE, Te
     BOOST_CHECK(d.application.inputModule.input.readNonBlocking() == true);
   }
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct PushModuleD9_1 : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
-  struct : ChimeraTK::VariableGroup {
-    using ChimeraTK::VariableGroup::VariableGroup;
-    ChimeraTK::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
-  } reg1{this, "REG1", ""};
+  ChimeraTK::ScalarPushInput<int> pushInput{this, "/REG1", "", ""};
   std::promise<void> p;
   std::atomic_bool enteredTheMainLoop{false};
   void mainLoop() override {
@@ -224,10 +235,7 @@ struct PushModuleD9_1 : ChimeraTK::ApplicationModule {
 };
 struct PushModuleD9_2 : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
-  struct : ChimeraTK::VariableGroup {
-    using ChimeraTK::VariableGroup::VariableGroup;
-    ChimeraTK::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
-  } reg1{this, "REG2", ""};
+  ChimeraTK::ScalarPushInput<int> pushInput{this, "/REG2", "", ""};
   std::promise<void> p;
   std::atomic_bool enteredTheMainLoop{false};
   void mainLoop() override {
@@ -237,7 +245,7 @@ struct PushModuleD9_2 : ChimeraTK::ApplicationModule {
 };
 
 struct PushD9DummyApplication : ChimeraTK::Application {
-  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
+  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test-async.map)";
   PushD9DummyApplication() : Application("DummyApplication") {}
   ~PushD9DummyApplication() override { shutdown(); }
 
@@ -245,32 +253,25 @@ struct PushD9DummyApplication : ChimeraTK::Application {
   PushModuleD9_2 pushModuleD9_2{this, "PushModule2", ""};
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
-
-  /*void defineConnections() override {
-    auto push_input1 = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
-    auto push_input2 = device("REG2/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
-    push_input1 >> pushModuleD9_1.reg1.pushInput;
-    push_input2 >> pushModuleD9_2.reg1.pushInput;
-  }*/
 };
 
 struct D9InitialValueEceptionDummy {
   D9InitialValueEceptionDummy()
   : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend(PushDummyApplication::ExceptionDummyCDD1))) {}
+        ChimeraTK::BackendFactory::getInstance().createBackend(PushD9DummyApplication::ExceptionDummyCDD1))) {}
   ~D9InitialValueEceptionDummy() { deviceBackend->throwExceptionRead = false; }
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   PushD9DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPushInput<int>& pushVariable1{application.pushModuleD9_1.reg1.pushInput};
-  ChimeraTK::ScalarPushInput<int>& pushVariable2{application.pushModuleD9_2.reg1.pushInput};
+  ChimeraTK::ScalarPushInput<int>& pushVariable1{application.pushModuleD9_1.pushInput};
+  ChimeraTK::ScalarPushInput<int>& pushVariable2{application.pushModuleD9_2.pushInput};
 };
 
 /**
- *  D 9 b for ThreaddedFanOut
- * \anchor testInitialValueThreaddedFanOut_D_9_b_ThreaddedFanOut \ref initialValueThreaddedFanOut_D_9_b
+ *  D 9 b for ThreadedFanOut
+ * \anchor testInitialValueThreadedFanOut_D_9_b_ThreadedFanOut \ref initialValueThreadedFanOut_D_9_b
  */
 BOOST_AUTO_TEST_CASE(testPushInitValueAtDeviceD9) {
   std::cout << "===   testPushInitValueAtDeviceD9   === " << std::endl;
@@ -304,10 +305,7 @@ BOOST_AUTO_TEST_CASE(testPushInitValueAtDeviceD9) {
 
 struct TriggerModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
-  struct : ChimeraTK::VariableGroup {
-    using ChimeraTK::VariableGroup::VariableGroup;
-    ChimeraTK::ScalarOutput<int> trigger{this, "PUSH_OUT", "", ""};
-  } trigger{this, "TRIG1", ""};
+  ChimeraTK::VoidOutput trigger{this, "/TRIG1/PUSH_OUT", "", ""};
   std::promise<void> p;
   std::atomic_bool enteredTheMainLoop{false};
   void mainLoop() override {
@@ -317,7 +315,7 @@ struct TriggerModule : ChimeraTK::ApplicationModule {
 };
 
 struct TriggerFanOutD9DummyApplication : ChimeraTK::Application {
-  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
+  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test-trigger-fanout-iv.map)";
   TriggerFanOutD9DummyApplication() : Application("DummyApplication") {}
   ~TriggerFanOutD9DummyApplication() override { shutdown(); }
 
@@ -325,34 +323,26 @@ struct TriggerFanOutD9DummyApplication : ChimeraTK::Application {
   PushModuleD9_2 pushModuleD9_2{this, "PushModule2", ""};
   TriggerModule triggerModule{this, "TriggerModule", ""};
 
-  ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
-
-  /*  void defineConnections() override {
-      auto pollInput1 = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::poll);
-      auto pollInput2 = device("REG2/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::poll);
-      auto trigger = triggerModule["TRIG1"]("PUSH_OUT");
-      pollInput1[trigger] >> pushModuleD9_1.reg1.pushInput;
-      pollInput2[trigger] >> pushModuleD9_2.reg1.pushInput;
-    }*/
+  ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1, "/TRIG1/PUSH_OUT"};
 };
 
 struct TriggerFanOutInitialValueEceptionDummy {
   TriggerFanOutInitialValueEceptionDummy()
   : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend(PushDummyApplication::ExceptionDummyCDD1))) {}
+        ChimeraTK::BackendFactory::getInstance().createBackend(TriggerFanOutD9DummyApplication::ExceptionDummyCDD1))) {}
   ~TriggerFanOutInitialValueEceptionDummy() { deviceBackend->throwExceptionRead = false; }
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   TriggerFanOutD9DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPushInput<int>& pushVariable1{application.pushModuleD9_1.reg1.pushInput};
-  ChimeraTK::ScalarPushInput<int>& pushVariable2{application.pushModuleD9_2.reg1.pushInput};
+  ChimeraTK::ScalarPushInput<int>& pushVariable1{application.pushModuleD9_1.pushInput};
+  ChimeraTK::ScalarPushInput<int>& pushVariable2{application.pushModuleD9_2.pushInput};
 };
 
 /**
  *  D 9 b for TriggerFanOut
- * \anchor testInitialValueThreaddedFanOut_D_9_b_TriggerFanOut \ref initialValueThreaddedFanOut_D_9_b
+ * \anchor testInitialValueThreadedFanOut_D_9_b_TriggerFanOut \ref initialValueThreadedFanOut_D_9_b
  */
 BOOST_AUTO_TEST_CASE(testTriggerFanOutInitValueAtDeviceD9) {
   std::cout << "===   testTriggerFanOutInitValueAtDeviceD9   === " << std::endl;
@@ -361,7 +351,7 @@ BOOST_AUTO_TEST_CASE(testTriggerFanOutInitValueAtDeviceD9) {
     TriggerFanOutInitialValueEceptionDummy dummyToStopTimeUntilOpen;
     start = std::chrono::steady_clock::now();
     dummyToStopTimeUntilOpen.application.run();
-    dummyToStopTimeUntilOpen.application.triggerModule.trigger.trigger.write();
+    dummyToStopTimeUntilOpen.application.triggerModule.trigger.write();
     dummyToStopTimeUntilOpen.application.pushModuleD9_1.p.get_future().wait();
     dummyToStopTimeUntilOpen.application.pushModuleD9_2.p.get_future().wait();
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -377,7 +367,7 @@ BOOST_AUTO_TEST_CASE(testTriggerFanOutInitValueAtDeviceD9) {
     BOOST_CHECK(d.application.pushModuleD9_1.enteredTheMainLoop == false);
     BOOST_CHECK(d.pushVariable1.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
     d.deviceBackend->throwExceptionOpen = false;
-    d.application.triggerModule.trigger.trigger.write();
+    d.application.triggerModule.trigger.write();
     d.application.pushModuleD9_1.p.get_future().wait();
     BOOST_CHECK(d.application.pushModuleD9_1.enteredTheMainLoop == true);
     BOOST_CHECK(d.pushVariable1.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
@@ -427,6 +417,9 @@ struct ConstantD10InitialValueEceptionDummy {
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.constantModule.reg1.constant};
 };
 
+#if 0
+// We do not add constant feeders to networks without feeders anymore but CS feeders. Might change with
+// optimiseConnections again, hence leaving this test here.
 /**
  *  D 10 for Constant
  * \anchor testConstantD10InitialValue_D_10 \ref initialValue_d_10
@@ -450,16 +443,14 @@ BOOST_AUTO_TEST_CASE(testConstantD10InitialValue) {
   CHECK_TIMEOUT(dev.read<int>("REG1/PUSH_READ") == 24, 1000000);
   BOOST_CHECK(d.pushVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct TestModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
-  struct : ChimeraTK::VariableGroup {
-    using ChimeraTK::VariableGroup::VariableGroup;
-    ChimeraTK::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
-  } reg1{this, "REG1", ""};
-  ChimeraTK::ScalarOutput<int> output{this, "REG2", "", ""};
+  ChimeraTK::ScalarPushInput<int> pushInput{this, "/REG1", "", ""};
+  ChimeraTK::ScalarOutput<int> output{this, "SomeOutput", "", ""};
   std::promise<void> p;
   std::atomic_bool enteredTheMainLoop{false};
   void mainLoop() override {
@@ -469,29 +460,24 @@ struct TestModule : ChimeraTK::ApplicationModule {
 };
 
 struct TestDummyApplication : ChimeraTK::Application {
-  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
+  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test-async.map)";
   TestDummyApplication() : Application("DummyApplication") {}
   ~TestDummyApplication() override { shutdown(); }
 
   TestModule testModule{this, "TestModule", ""};
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
-
-  /*void defineConnections() override {
-    auto push_input = device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
-    push_input >> testModule.reg1.pushInput;
-  }*/
 };
 
-struct TestInitialValueEceptionDummy {
-  TestInitialValueEceptionDummy()
+struct TestInitialValueExceptionDummy {
+  explicit TestInitialValueExceptionDummy()
   : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy:1?map=test.map)"))) {}
-  ~TestInitialValueEceptionDummy() { deviceBackend->throwExceptionRead = false; }
+        ChimeraTK::BackendFactory::getInstance().createBackend(TestDummyApplication::ExceptionDummyCDD1))) {}
+  ~TestInitialValueExceptionDummy() { deviceBackend->throwExceptionRead = false; }
 
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   TestDummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
-  ChimeraTK::ScalarPushInput<int>& pushVariable{application.testModule.reg1.pushInput};
+  ChimeraTK::ScalarPushInput<int>& pushVariable{application.testModule.pushInput};
   ChimeraTK::ScalarOutput<int>& outputVariable{application.testModule.output};
 };
 
@@ -503,7 +489,8 @@ struct TestInitialValueEceptionDummy {
 BOOST_AUTO_TEST_CASE(testD1InitialValue) {
   std::cout << "===   testD1InitialValue   === " << std::endl;
 
-  TestInitialValueEceptionDummy d;
+  TestInitialValueExceptionDummy d;
+
   d.application.run();
   // commented line might fail on jenkins.
   // BOOST_CHECK(d.application.testModule.enteredTheMainLoop == false);
@@ -523,7 +510,7 @@ BOOST_AUTO_TEST_CASE(testD1InitialValue) {
 BOOST_AUTO_TEST_CASE(testD2InitialValue) {
   std::cout << "===   testD2InitialValue   === " << std::endl;
 
-  TestInitialValueEceptionDummy d;
+  TestInitialValueExceptionDummy d;
   d.application.run();
   // Commented lines are subject to race conditions because the initial value might or might not have
   //  arrived already when the test is done. One would need a way to stop the application start after the
@@ -545,7 +532,7 @@ BOOST_AUTO_TEST_CASE(testD2InitialValue) {
 BOOST_AUTO_TEST_CASE(testD3InitialValue) {
   std::cout << "===   testD3InitialValue   === " << std::endl;
 
-  TestInitialValueEceptionDummy d;
+  TestInitialValueExceptionDummy d;
   d.application.run();
   // commented line might fail on jenkins, race cond?
   // BOOST_CHECK(d.pushVariable.dataValidity() == ctk::DataValidity::faulty);
@@ -563,8 +550,8 @@ BOOST_AUTO_TEST_CASE(testD3InitialValue) {
 
 struct WriterModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
-  ChimeraTK::ScalarOutput<int> output1{this, "REG1", "", ""};
-  ChimeraTK::ScalarOutput<int> output2{this, "REG2", "", ""};
+  ChimeraTK::ScalarOutput<int> output1{this, "/REG1", "", ""};
+  ChimeraTK::ScalarOutput<int> output2{this, "/REG2", "", ""};
   std::atomic_bool enteredTheMainLoop{false};
   std::atomic_bool enteredThePrepareLoop{false};
   void mainLoop() override {
@@ -579,39 +566,19 @@ struct WriterModule : ChimeraTK::ApplicationModule {
   }
 };
 
-struct ReaderModule : ChimeraTK::ApplicationModule {
-  using ChimeraTK::ApplicationModule::ApplicationModule;
-  struct : ChimeraTK::VariableGroup {
-    using ChimeraTK::VariableGroup::VariableGroup;
-    ChimeraTK::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
-  } reg1{this, "REG1", ""};
-  struct Reg2 : ChimeraTK::VariableGroup {
-    using ChimeraTK::VariableGroup::VariableGroup;
-    ChimeraTK::ScalarPushInput<int> pushInput{this, "PUSH_READ", "", ""};
-  } reg2{this, "REG2", ""};
-  std::promise<void> p;
-  std::atomic_bool enteredTheMainLoop{false};
-  std::atomic_bool enteredThePrepareLoop{false};
-  void mainLoop() override {
-    enteredTheMainLoop = true;
-    p.set_value();
-  }
-  void prepare() override { enteredThePrepareLoop = true; }
+struct ReaderModule : NotifyingModule {
+  using NotifyingModule::NotifyingModule;
+
+  ChimeraTK::ScalarPushInput<int> reg1{this, "/REG1", "", ""};
+  ChimeraTK::ScalarPushInput<int> reg2{this, "/REG2", "", ""};
 };
 
 struct Test7DummyApplication : ChimeraTK::Application {
-  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
   Test7DummyApplication() : Application("DummyApplication") {}
   ~Test7DummyApplication() override { shutdown(); }
 
   WriterModule writerModule{this, "WriterModule", ""};
   ReaderModule readerModule{this, "ReaderModule", ""};
-  ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
-
-  /*  void defineConnections() override {
-      writerModule.output1 >> readerModule.reg1.pushInput;
-      writerModule.output2 >> readerModule.reg2.pushInput;
-    }*/
 };
 
 /**
@@ -627,7 +594,7 @@ BOOST_AUTO_TEST_CASE(testD7_1_InitialValue) {
   application.run();
   BOOST_CHECK(application.writerModule.enteredThePrepareLoop == true);
   application.readerModule.p.get_future().wait();
-  CHECK_TIMEOUT(application.readerModule.reg1.pushInput == 777, 500);
+  CHECK_TIMEOUT(application.readerModule.reg1 == 777, 500);
 }
 
 /**
@@ -646,41 +613,33 @@ BOOST_AUTO_TEST_CASE(testD7_2_InitialValue) {
   // BOOST_CHECK(application.readerModule.reg2.pushInput == 0);
   application.readerModule.p.get_future().wait();
   BOOST_CHECK(application.readerModule.enteredTheMainLoop == true);
-  CHECK_TIMEOUT(application.readerModule.reg2.pushInput == 555, 500);
+  CHECK_TIMEOUT(application.readerModule.reg2 == 555, 500);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct Test6_a1_DummyApplication : ChimeraTK::Application {
-  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
+  // This application connects the CS to the device and and the input of the readerModule
+  constexpr static const char* CDD = "(dummy:1?map=test.map)";
   Test6_a1_DummyApplication() : Application("DummyApplication") {}
   ~Test6_a1_DummyApplication() override { shutdown(); }
 
-  WriterModule writerModule{this, "WriterModule", ""};
-  ReaderModule readerModule{this, "ReaderModule", ""};
-  ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
+  struct : NotifyingModule {
+    using NotifyingModule::NotifyingModule;
 
-  /*
-  ChimeraTK::ControlSystemModule csModule{};
+    ChimeraTK::ScalarPushInput<int> reg1{this, "/REG1", "", ""};
+  } readerModule{this, ".", ""};
 
-  void defineConnections() override {
-    csModule("REG1") >> device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
-    csModule("REG1") >> readerModule.reg1.pushInput;
-    // dumpConnections();
-  }*/
+  ChimeraTK::DeviceModule device{this, CDD};
 };
 
 struct Test6_a1_InitialValueEceptionDummy {
-  Test6_a1_InitialValueEceptionDummy()
-  : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy:1?map=test.map)"))) {}
-  ~Test6_a1_InitialValueEceptionDummy() { deviceBackend->throwExceptionRead = false; }
+  Test6_a1_InitialValueEceptionDummy() = default;
+  ~Test6_a1_InitialValueEceptionDummy() = default;
 
-  boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   Test6_a1_DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
-  ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg1.pushInput};
+  ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg1};
 };
 
 /**
@@ -695,9 +654,9 @@ BOOST_AUTO_TEST_CASE(testD6_a1_InitialValue) {
   BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   d.testFacitiy.writeScalar<int>("REG1", 27);
   ChimeraTK::Device dev;
-  dev.open("(ExceptionDummy:1?map=test.map)");
+  dev.open(Test6_a1_DummyApplication::CDD);
   CHECK_TIMEOUT(dev.read<int>("REG1") == 27, 1000000);
-  // wait until the main loop has been entered. then we know the version number of the inputs must not ne 0.
+  // wait until the main loop has been entered. then we know the version number of the inputs must not be 0.
   // FIXME: I think this does not belong into this test....
   d.application.readerModule.p.get_future().wait(); // synchronisation point for the thread sanitizer
   BOOST_CHECK(d.pushVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
@@ -705,38 +664,28 @@ BOOST_AUTO_TEST_CASE(testD6_a1_InitialValue) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 struct Test6_a2_DummyApplication : ChimeraTK::Application {
-  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
-  constexpr static const char* ExceptionDummyCDD2 = "(ExceptionDummy:2?map=test.map)";
+  constexpr static const char* CDD1 = "(dummy:1?map=one-register.map)";
+  constexpr static const char* CDD2 = "(dummy:2?map=test-ro.map)";
   Test6_a2_DummyApplication() : Application("DummyApplication") {}
   ~Test6_a2_DummyApplication() override { shutdown(); }
 
-  ReaderModule readerModule{this, "ReaderModule", ""};
-  TriggerModule triggerModule{this, "ReaderModule", ""};
-  ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
-  ChimeraTK::DeviceModule device2{this, ExceptionDummyCDD2};
-  /*
-  ChimeraTK::ControlSystemModule csModule{};
+  struct : NotifyingModule {
+    using NotifyingModule::NotifyingModule;
+    ChimeraTK::ScalarPushInput<int> reg1{this, "/REG1", "", ""};
+  } readerModule{this, "ReaderModule", ""};
 
-  void defineConnections() override {
-    auto pollInput1 = device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::poll);
-    auto trigger = triggerModule["TRIG1"]("PUSH_OUT");
-    pollInput1[trigger] >> device("REG2");
-    pollInput1[trigger] >> readerModule.reg2.pushInput;
-    // dumpConnections();
-  }*/
+  TriggerModule triggerModule{this, "ReaderModule", ""};
+  ChimeraTK::DeviceModule device{this, CDD1};
+  ChimeraTK::DeviceModule device2{this, CDD2, "/TRIG1/PUSH_OUT"};
 };
 
 struct Test6_a2_InitialValueEceptionDummy {
-  Test6_a2_InitialValueEceptionDummy()
-  : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy:2?map=test.map)"))) {}
-  ~Test6_a2_InitialValueEceptionDummy() { deviceBackend->throwExceptionRead = false; }
+  Test6_a2_InitialValueEceptionDummy() = default;
+  ~Test6_a2_InitialValueEceptionDummy() = default;
 
-  boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   Test6_a2_DummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{application, false};
-  ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg2.pushInput};
+  ChimeraTK::TestFacility testFacility{application, false};
+  ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg1};
 };
 
 /**
@@ -753,54 +702,46 @@ BOOST_AUTO_TEST_CASE(testD6_a2_InitialValue) {
   Test6_a2_InitialValueEceptionDummy d;
 
   ChimeraTK::Device dev2;
-  dev2.open("(ExceptionDummy:2?map=test.map)");
+  dev2.open(Test6_a2_DummyApplication::CDD2);
   dev2.write<int>("REG1/DUMMY_WRITEABLE", 99); // value now in in dev2
 
   d.application.run();
   // no trigger yet and the value is not on dev1 yet
   BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   ChimeraTK::Device dev;
-  dev.open("(ExceptionDummy:1?map=test.map)");
-  BOOST_CHECK(dev.read<int>("REG2") != 99);
+  dev.open(Test6_a2_DummyApplication::CDD1);
+  BOOST_CHECK(dev.read<int>("REG1") != 99);
 
   // send the trigger and check that the data arrives on the device
-  d.application.triggerModule.trigger.trigger.write();
+  d.application.triggerModule.trigger.write();
 
-  CHECK_TIMEOUT(dev.read<int>("REG2") == 99, 1000000);
+  CHECK_TIMEOUT(dev.read<int>("REG1") == 99, 1000000);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct Test6_a3_DummyApplication : ChimeraTK::Application {
-  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
-  constexpr static const char* ExceptionDummyCDD2 = "(ExceptionDummy:2?map=test.map)";
+  constexpr static const char* CDD1 = "(dummy:1?map=one-register.map)";
+  constexpr static const char* CDD2 = "(dummy:2?map=test-async.map)";
   Test6_a3_DummyApplication() : Application("DummyApplication") {}
   ~Test6_a3_DummyApplication() override { shutdown(); }
 
-  ReaderModule readerModule{this, "ReaderModule", ""};
-  ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
-  ChimeraTK::DeviceModule device2{this, ExceptionDummyCDD2};
-  /*
-   * ChimeraTK::ControlSystemModule csModule{};
+  struct : NotifyingModule {
+    using NotifyingModule::NotifyingModule;
+    ChimeraTK::ScalarPushInput<int> reg1{this, "/REG1", "", ""};
+  } readerModule{this, "ReaderModule", ""};
 
-  void defineConnections() override {
-    device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> device("REG2");
-    device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> readerModule.reg2.pushInput;
-    // dumpConnections();
-  }*/
+  ChimeraTK::DeviceModule device{this, CDD1};
+  ChimeraTK::DeviceModule device2{this, CDD2};
 };
 
 struct Test6_a3_InitialValueEceptionDummy {
-  Test6_a3_InitialValueEceptionDummy()
-  : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy:2?map=test.map)"))) {}
-  ~Test6_a3_InitialValueEceptionDummy() { deviceBackend->throwExceptionRead = false; }
+  Test6_a3_InitialValueEceptionDummy() = default;
+  ~Test6_a3_InitialValueEceptionDummy() = default;
 
-  boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   Test6_a3_DummyApplication application;
-  ChimeraTK::TestFacility testFacitiy{application, false};
-  ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg2.pushInput};
+  ChimeraTK::TestFacility testFacility{application, false};
+  ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg1};
 };
 
 /**
@@ -813,7 +754,7 @@ BOOST_AUTO_TEST_CASE(testD6_a3_InitialValue) {
   Test6_a3_InitialValueEceptionDummy d;
 
   ChimeraTK::Device dev2;
-  dev2.open("(ExceptionDummy:2?map=test.map)");
+  dev2.open(Test6_a3_DummyApplication::CDD2);
   dev2.write<int>("REG1/DUMMY_WRITEABLE", 99);
 
   d.application.run();
@@ -823,8 +764,8 @@ BOOST_AUTO_TEST_CASE(testD6_a3_InitialValue) {
   // BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
 
   ChimeraTK::Device dev;
-  dev.open("(ExceptionDummy:1?map=test.map)");
-  CHECK_TIMEOUT(dev.read<int>("REG2") == 99, 1000000);
+  dev.open(Test6_a3_DummyApplication::CDD1);
+  CHECK_TIMEOUT(dev.read<int>("REG1") == 99, 1000000);
   d.application.readerModule.p.get_future().wait();
   BOOST_CHECK(d.pushVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
 }
@@ -832,31 +773,24 @@ BOOST_AUTO_TEST_CASE(testD6_a3_InitialValue) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct Test6_a4_DummyApplication : ChimeraTK::Application {
-  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
   Test6_a4_DummyApplication() : Application("DummyApplication") {}
   ~Test6_a4_DummyApplication() override { shutdown(); }
 
-  ReaderModule readerModule{this, "ReaderModule", ""};
-  WriterModule writerModule{this, "WriterModule", ""};
-  ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
+  struct : NotifyingModule {
+    using NotifyingModule::NotifyingModule;
+    ChimeraTK::ScalarPushInput<int> reg1{this, "/REG1", "", ""};
+  } readerModule{this, "ReaderModule", ""};
 
-  /*void defineConnections() override {
-    writerModule.output1 >> readerModule.reg2.pushInput;
-    // dumpConnections();
-  }*/
+  WriterModule writerModule{this, "WriterModule", ""};
 };
 
 struct Test6_a4_InitialValueEceptionDummy {
-  Test6_a4_InitialValueEceptionDummy()
-  : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy:2?map=test.map)"))) {}
-  ~Test6_a4_InitialValueEceptionDummy() { deviceBackend->throwExceptionRead = false; }
+  Test6_a4_InitialValueEceptionDummy() {}
+  ~Test6_a4_InitialValueEceptionDummy() {}
 
-  boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   Test6_a4_DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
-  ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg2.pushInput};
+  ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg1};
 };
 
 /**
@@ -877,53 +811,34 @@ BOOST_AUTO_TEST_CASE(testD6_a4_InitialValue) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct PollModule : ChimeraTK::ApplicationModule {
-  using ChimeraTK::ApplicationModule::ApplicationModule;
-  struct : ChimeraTK::VariableGroup {
-    using ChimeraTK::VariableGroup::VariableGroup;
-    ChimeraTK::ScalarPollInput<int> pollInput{this, "PUSH_READ", "", ""};
-  } reg1{this, "REG1", ""};
-  std::promise<void> p;
-  std::atomic_bool enteredTheMainLoop{false};
-  void mainLoop() override {
-    enteredTheMainLoop = true;
-    p.set_value();
-  }
+struct PollModule : NotifyingModule {
+  using NotifyingModule::NotifyingModule;
+
+  ChimeraTK::ScalarPollInput<int> pollInput{this, "/REG1", "", ""};
 };
 
 struct Test6_b_DummyApplication : ChimeraTK::Application {
-  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
+  constexpr static const char* CDD = "(dummy?map=test-ro.map)";
   Test6_b_DummyApplication() : Application("DummyApplication") {}
   ~Test6_b_DummyApplication() override { shutdown(); }
 
   PollModule pollModule{this, "PollModule", ""};
-  ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
-
-  /*
-   * ChimeraTK::ControlSystemModule csModule{};
-
-  void defineConnections() override {
-    device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::poll) >> pollModule.reg1.pollInput;
-    // dumpConnections();
-  }*/
+  ChimeraTK::DeviceModule device{this, CDD};
 };
 
 struct Test6_b_InitialValueEceptionDummy {
-  Test6_b_InitialValueEceptionDummy()
-  : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy:1?map=test.map)"))) {}
-  ~Test6_b_InitialValueEceptionDummy() { deviceBackend->throwExceptionRead = false; }
+  Test6_b_InitialValueEceptionDummy() = default;
+  ~Test6_b_InitialValueEceptionDummy() = default;
 
-  boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   Test6_b_DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
-  ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPollInput<int>& pollVariable{application.pollModule.reg1.pollInput};
+  ChimeraTK::ScalarPollInput<int>& pollVariable{application.pollModule.pollInput};
 };
 
 /**
  *  D 6_b initial value from device in poll mode
  * \anchor testD6_b_InitialValue \ref testD6_b_InitialValue
+ * FIXME: Is this supposed to test push variables in poll mode or poll variables?
  */
 BOOST_AUTO_TEST_CASE(testD6_b_InitialValue) {
   std::cout << "===   testD6_b_InitialValue   === " << std::endl;
@@ -933,7 +848,7 @@ BOOST_AUTO_TEST_CASE(testD6_b_InitialValue) {
   d.application.run();
 
   ChimeraTK::Device dev;
-  dev.open("(ExceptionDummy:1?map=test.map)");
+  dev.open(Test6_b_DummyApplication::CDD);
   dev.write<int>("REG1/DUMMY_WRITEABLE", 99);
   // commented line might fail on jenkins, race cond?
   // BOOST_CHECK(d.application.pollModule.enteredTheMainLoop == false);
@@ -947,30 +862,26 @@ BOOST_AUTO_TEST_CASE(testD6_b_InitialValue) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct Test6_c_DummyApplication : ChimeraTK::Application {
-  constexpr static const char* ExceptionDummyCDD1 = "(ExceptionDummy:1?map=test.map)";
-  Test6_c_DummyApplication() : Application("DummyApplication") {}
+  constexpr static const char* ExceptionDummyCDD1 = "(dummy:1?map=test-async.map)";
+  Test6_c_DummyApplication() : Application("DummyApplication") { debugMakeConnections(); }
   ~Test6_c_DummyApplication() override { shutdown(); }
 
-  ReaderModule readerModule{this, "ReaderModule", ""};
-  ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
+  struct : NotifyingModule {
+    using NotifyingModule::NotifyingModule;
+    ChimeraTK::ScalarPushInput<int> reg1{this, "/REG1", "", ""};
+  } readerModule{this, "ReaderModule", ""};
 
-  /*void defineConnections() override {
-    device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> readerModule.reg2.pushInput;
-    // dumpConnections();
-  }*/
+  ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 };
 
 struct Test6_c_InitialValueEceptionDummy {
-  Test6_c_InitialValueEceptionDummy()
-  : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend("(ExceptionDummy:1?map=test.map)"))) {}
-  ~Test6_c_InitialValueEceptionDummy() { deviceBackend->throwExceptionRead = false; }
+  Test6_c_InitialValueEceptionDummy() = default;
+  ~Test6_c_InitialValueEceptionDummy() = default;
 
-  boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   Test6_c_DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg2.pushInput};
+  ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg1};
 };
 /**
  *  D 6_c initial value from device in push mode
@@ -984,14 +895,15 @@ BOOST_AUTO_TEST_CASE(testD6_c_InitialValue) {
   d.application.run();
 
   ChimeraTK::Device dev;
-  dev.open("(ExceptionDummy:1?map=test.map)");
+  dev.open(Test6_c_DummyApplication::ExceptionDummyCDD1);
   dev.write<int>("REG1/DUMMY_WRITEABLE", 99);
+  dev.getVoidRegisterAccessor("/DUMMY_INTERRUPT_1_3").write();
   // commented line might fail on jenkins, race cond?
   // BOOST_CHECK(d.application.readerModule.enteredTheMainLoop == false);
   // BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   d.application.readerModule.p.get_future().wait();
   BOOST_CHECK(d.application.readerModule.enteredTheMainLoop == true);
-  BOOST_CHECK(d.pushVariable == 99);
+  BOOST_TEST(d.pushVariable == 99);
   BOOST_CHECK(d.pushVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
 }
 
