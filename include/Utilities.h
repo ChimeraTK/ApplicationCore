@@ -37,4 +37,12 @@ namespace ChimeraTK::Utilities {
    */
   bool checkName(const std::string& name, bool allowDotsAndSlashes);
 
+  /**
+   * Set name of the current thread.
+   *
+   * @note: This function contains platform-dependent code and may need adjustment for new platforms. On unsupported
+   * platforms, this function does nothing.
+   */
+  void setThreadName(const std::string& name);
+
 } // namespace ChimeraTK::Utilities

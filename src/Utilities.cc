@@ -54,4 +54,14 @@ namespace ChimeraTK::Utilities {
 
   /********************************************************************************************************************/
 
+  void setThreadName(const std::string& name) {
+#if defined(__linux__)
+    pthread_setname_np(pthread_self(), name.substr(0, std::min<std::string::size_type>(name.length(), 15)).c_str());
+#elif defined(__APPLE__)
+    pthread_setname_np(name.substr(0, std::min<std::string::size_type>(name.length(), 15)).c_str());
+#endif
+  }
+
+  /********************************************************************************************************************/
+
 } // namespace ChimeraTK::Utilities

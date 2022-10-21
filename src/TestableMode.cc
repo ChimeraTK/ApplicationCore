@@ -4,6 +4,8 @@
 #include "TestableMode.h"
 
 #include "Application.h"
+#include "Utilities.h"
+
 namespace ChimeraTK::detail {
   std::timed_mutex TestableMode::mutex;
   /*********************************************************************************************************************/
@@ -196,6 +198,7 @@ namespace ChimeraTK::detail {
   void TestableMode::setThreadName(const std::string& name) {
     std::unique_lock<std::mutex> myLock(threadNamesMutex);
     threadNames[boost::this_thread::get_id()] = name;
+    Utilities::setThreadName(name);
   }
 
   /*********************************************************************************************************************/
