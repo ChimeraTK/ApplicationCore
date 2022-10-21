@@ -37,7 +37,10 @@ include(cmake/set_default_flags.cmake)
 include(cmake/enable_code_coverage_report.cmake)
 
 # linker flags
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
+if(NOT APPLE)
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
+endif()
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 file(GLOB headers "${CMAKE_SOURCE_DIR}/include/*.h")
