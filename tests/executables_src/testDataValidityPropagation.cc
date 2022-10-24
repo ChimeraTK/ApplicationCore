@@ -4,7 +4,6 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "check_timeout.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
@@ -27,6 +26,8 @@
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
+/*********************************************************************************************************************/
+
 // A module used for initial value tests:
 // It has an output which is never written to.
 struct TestModule0 : ctk::ApplicationModule {
@@ -40,6 +41,8 @@ struct TestModule0 : ctk::ApplicationModule {
     }
   }
 };
+
+/*********************************************************************************************************************/
 
 // module for most of hte data validity propagation tests
 struct TestModule1 : ctk::ApplicationModule {
@@ -78,6 +81,8 @@ struct TestModule1 : ctk::ApplicationModule {
   }
 };
 
+/*********************************************************************************************************************/
+
 struct TestModule2 : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
   ctk::ScalarPushInput<int> i1{this, "i1", "", ""};
@@ -95,6 +100,8 @@ struct TestModule2 : ctk::ApplicationModule {
   }
 };
 
+/*********************************************************************************************************************/
+
 struct TriggerModule : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
   ctk::ScalarOutput<int> o1{this, "o1", "", ""};
@@ -109,10 +116,12 @@ struct TriggerModule : ctk::ApplicationModule {
   }
 };
 
+/*********************************************************************************************************************/
+
 template<typename ModuleT>
 struct TestApplication1 : ctk::Application {
   TestApplication1() : Application("testSuite") {}
-  ~TestApplication1() { shutdown(); }
+  ~TestApplication1() override { shutdown(); }
 
   ModuleT mod{this, "m1", ""};
 
@@ -129,28 +138,21 @@ struct TestApplication1 : ctk::Application {
   }
 };
 
-// BOOST_AUTO_TEST_SUITE(dataValidityPropagation)
+/*********************************************************************************************************************/
 
 struct TestApplication3 : ctk::Application {
   constexpr static char const* ExceptionDummyCDD = "(ExceptionDummy?map=testDataValidityPropagation2.map)";
   TestApplication3() : Application("testPartiallyInvalidDevice") {}
-  ~TestApplication3() { shutdown(); }
+  ~TestApplication3() override { shutdown(); }
 
   TriggerModule m2{this, "m2", ""};
 
   ctk::DeviceModule device1{this, ExceptionDummyCDD, "/m2/o1"};
-
-  // ctk::DeviceModule device1{this, ExceptionDummyCDD};
-  //   void defineConnections() override {
-  //     // use manual connection setup instead of ConnectingDeviceModule.
-  //     // note, differently from automatic connection setup, registers contain . and not / as separator
-  //     auto pollInput1 = device1("dev.i1", typeid(int), 1, ChimeraTK::UpdateMode::poll);
-  //     auto pollInput2 = device1("dev.i2", typeid(int), 1, ChimeraTK::UpdateMode::poll);
-  //     auto trigger = m2("o1");
-  //     pollInput1[trigger] >> cs("dev.i1", typeid(int));
-  //     pollInput2[trigger] >> cs("dev.i2", typeid(int));
-  //   }
 };
+
+/*********************************************************************************************************************/
+/*********************************************************************************************************************/
+
 /**
  *  tests the ExceptionDummyPollDecorator of the ExceptionDummyBackend, which provides a way for
  *  forcing individual (poll-type) device outputs to DataValidity=faulty
@@ -158,7 +160,6 @@ struct TestApplication3 : ctk::Application {
 BOOST_AUTO_TEST_CASE(testDataValidity_exceptionDummy) {
   TestApplication3 app;
   ctk::TestFacility test{app};
-  // app.dumpConnections();
 
   ChimeraTK::Device dev(TestApplication3::ExceptionDummyCDD);
 
@@ -179,23 +180,29 @@ BOOST_AUTO_TEST_CASE(testDataValidity_exceptionDummy) {
   BOOST_CHECK(devI2.dataValidity() == ctk::DataValidity::ok);
 }
 
+/*********************************************************************************************************************/
+/*********************************************************************************************************************/
+
 /*
  * \anchor testDataValidity_1_1 \ref dataValidity_1_1 "1.1"
  * In ApplicationCore each variable has a data validiy flag attached to it. DataValidity can be 'ok' or 'faulty'.
  *
- * Explicit test does not make sense since this is clear if this suite compiles,
- * i.e. expressions testmod1.i1.dataValidity() and testmod1.o1.dataValidity();
+ * Explicit test does not make sense since this is clear if this suite compiles, i.e. expressions
+ * testmod1.i1.dataValidity() and testmod1.o1.dataValidity();
  */
+
+/*********************************************************************************************************************/
 
 /*
  * \anchor testDataValidity_1_2 \ref dataValidity_1_2 "1.2"
- * This flag is automatically propagated: If any of the inputs of an ApplicationModule is faulty,
- * the data validity of the module becomes faulty, which means all outputs of this module will automatically be
- * flagged as faulty.
- * Fan-outs might be special cases (see 2.4).
+ * This flag is automatically propagated: If any of the inputs of an ApplicationModule is faulty, the data validity of
+ * the module becomes faulty, which means all outputs of this module will automatically be flagged as faulty. Fan-outs
+ * might be special cases (see 2.4).
  *
  * See \ref testDataValidity_2_3_3
  */
+
+/*********************************************************************************************************************/
 
 /**
  * \anchor testDataValidity_1_3 \ref dataValidity_1_3 "1.3"
@@ -221,12 +228,16 @@ BOOST_AUTO_TEST_CASE(testDataValidity_1_3) {
   // redmine issue: #8550
 }
 
+/*********************************************************************************************************************/
+
 /*
  * \anchor testDataValidity_1_4 \ref dataValidity_1_4 "1.4"
  * The user code has the possibility to query the data validity of the module
  *
  * No explicit test, if test suite compiles it's ok.
  */
+
+/*********************************************************************************************************************/
 
 /*
  * \anchor testDataValidity_1_5 \ref dataValidity_1_5 "1.5"
@@ -239,17 +250,14 @@ BOOST_AUTO_TEST_CASE(testDataValidity_1_3) {
  *
  */
 
+/*********************************************************************************************************************/
+
 /**
  * app with two chained modules, for \ref testDataValidity_1_6
  */
 struct TestApplication16 : ctk::Application {
   TestApplication16() : Application("testSuite") {}
-  ~TestApplication16() { shutdown(); }
-
-  /*void defineConnections() {
-    mod1("o1") >> mod2("i1");
-    findTag(".*").connectTo(cs);
-  }*/
+  ~TestApplication16() override { shutdown(); }
 
   TestModule1 mod1{this, "m1", ""};
   TestModule1 mod2{this, "m2", ""};
@@ -262,9 +270,13 @@ struct TestApplication16 : ctk::Application {
  */
 BOOST_AUTO_TEST_CASE(testDataValidity_1_6) {
   TestApplication16 app;
+  app.mod2.i1 = {&app.mod2, "/m1/o1", "", ""};
+
   app.mod1.outputValidity = ctk::DataValidity::faulty;
   app.mod2.outputValidity = ctk::DataValidity::ok;
   ctk::TestFacility test{app};
+
+  app.mod1.o1.write(); // satisfy initial value
 
   // app.dumpConnections();
   auto input = test.getScalar<int>("/m1/i1");
@@ -282,12 +294,16 @@ BOOST_AUTO_TEST_CASE(testDataValidity_1_6) {
   BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
 }
 
+/*********************************************************************************************************************/
+
 /*
  * \anchor testDataValidity_1_7 \ref dataValidity_1_7 "1.7"
  *  The user code can get the data validity flag of individual inputs and take special actions.
  *
  *  No explicit test required.
  */
+
+/*********************************************************************************************************************/
 
 /**
  * \anchor testDataValidity_1_8 \ref dataValidity_1_8 "1.8"
@@ -307,6 +323,8 @@ BOOST_AUTO_TEST_CASE(testDataValidity_1_8) {
 
   BOOST_CHECK(o0.dataValidity() == ctk::DataValidity::faulty);
 }
+
+/*********************************************************************************************************************/
 
 /**
  * \anchor testDataValidity_2_1_1 \ref dataValidity_2_1_1 "2.1.1"
@@ -335,13 +353,16 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_1_1) {
   BOOST_CHECK(app.mod.getDataValidity() == ctk::DataValidity::faulty);
 }
 
+/*********************************************************************************************************************/
+
 /*
  * \anchor testDataValidity_2_1_2 \ref dataValidity_2_1_2 "2.1.2"
  * The decorator knows about the module it is connected to. It is called the 'owner'.
  *
- * There is no public function for getting the owner, but implicitly this was
- * tested in \ref testDataValidity_2_1_1.
+ * There is no public function for getting the owner, but implicitly this was tested in \ref testDataValidity_2_1_1.
  */
+
+/*********************************************************************************************************************/
 
 /**
  * \anchor testDataValidity_2_1_3 \ref dataValidity_2_1_3 "2.1.3"
@@ -372,6 +393,8 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_1_3) {
   BOOST_CHECK(app.mod.decCalled == 1);
 }
 
+/*********************************************************************************************************************/
+
 /*
  * \anchor testDataValidity_2_1_5 \ref dataValidity_2_1_5 "2.1.5"
  * **write:** When writing, the decorator is checking the validity of the owner and the individual flag of the output
@@ -379,6 +402,8 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_1_3) {
  *
  * Test ist identical to \ref testDataValidity_1_6
  */
+
+/*********************************************************************************************************************/
 
 /**
  * \anchor testDataValidity_2_3_1 \ref dataValidity_2_3_1  "2.3.1"
@@ -394,12 +419,16 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_3_1) {
   BOOST_CHECK(testmod1.getDataValidity() == ctk::DataValidity::ok);
 }
 
+/*********************************************************************************************************************/
+
 /*
  * \anchor testDataValidity_2_3_2 \ref dataValidity_2_3_2 "2.3.2"
  * All inputs and outputs have a MetaDataPropagatingRegisterDecorator.
  *
  * Tested in \ref testDataValidity_2_1_1
  */
+
+/*********************************************************************************************************************/
 
 /**
  * \anchor testDataValidity_2_3_3 \ref dataValidity_2_3_3 "2.3.3"
@@ -429,6 +458,8 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_3_3) {
   BOOST_CHECK(oconst.readLatest() == false);
 }
 
+/*********************************************************************************************************************/
+
 /**
  * \anchor testDataValidity_2_3_4 \ref dataValidity_2_3_4 "2.3.4"
  * Inside the ApplicationModule main loop the module's data fault counter is accessible. The user can increment and
@@ -454,6 +485,8 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_3_4) {
   BOOST_CHECK(app.mod.dataValidity1 == false);
 }
 
+/*********************************************************************************************************************/
+
 /**
  * \anchor testDataValidity_2_4_1 \ref dataValidity_2_4_1 "2.4.1"
  * Only the push-type trigger input of the TriggerFanOut is equiped with a MetaDataPropagatingRegisterDecorator.
@@ -478,12 +511,16 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_4_1) {
   BOOST_CHECK(result1.dataValidity() == ctk::DataValidity::faulty);
 }
 
+/*********************************************************************************************************************/
+
 /*
  * \anchor testDataValidity_2_4_2 \ref dataValidity_2_4_2 "2.4.2"
  * The poll-type data inputs do not have a MetaDataPropagatingRegisterDecorator.
  *
  * No functionality that needs testing
  */
+
+/*********************************************************************************************************************/
 
 /**
  * \anchor testDataValidity_2_4_3 \ref dataValidity_2_4_3 "2.4.3"
@@ -513,6 +550,8 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_4_3) {
   BOOST_CHECK(result2.dataValidity() == ctk::DataValidity::ok);
 }
 
+/*********************************************************************************************************************/
+
 /*
  * \anchor testDataValidity_2_4_4 \ref dataValidity_2_4_4 "2.4.4"
  * Although the trigger conceptually has data type 'void', it can also be `faulty`. An invalid trigger is processed,
@@ -520,6 +559,8 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_4_3) {
  *
  * Already tested in \ref testDataValidity_2_4_1
  */
+
+/*********************************************************************************************************************/
 
 /*
  * \anchor testDataValidity_2_5_1 \ref dataValidity_2_5_1 "2.5.1"
@@ -529,6 +570,9 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_4_3) {
  *
  * Already tested in  \ref testDataValidity_1_3
  */
+
+/*********************************************************************************************************************/
+
 /*
  * \anchor testDataValidity_2_5_2 \ref dataValidity_2_5_2 "2.5.2"
  * The first failing read returns with the old data and the 'faulty' flag. Like this the flag is propagated to the
@@ -536,6 +580,8 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_4_3) {
  *
  *  Already tested in  \ref testDataValidity_1_3
  */
+
+/*********************************************************************************************************************/
 
 /*
  * \anchor testDataValidity_2_6_1 \ref dataValidity_2_6_1 "2.6.1"
@@ -546,6 +592,8 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_4_3) {
  * Already tested in  \ref testDataValidity_1_3
  */
 
+/*********************************************************************************************************************/
+
 /*
  * \anchor testDataValidiy_3_1 \ref dataValidity_3_1 "3.1"
  * The decorators which manipulate the data fault counter are responsible for counting up and down in pairs, such that
@@ -553,5 +601,7 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_4_3) {
  *
  * Not tested since it's an implementation detail.
  */
+
+/*********************************************************************************************************************/
 
 // BOOST_AUTO_TEST_SUITE_END()
