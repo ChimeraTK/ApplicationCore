@@ -13,7 +13,7 @@
 #include <ChimeraTK/DummyRegisterAccessor.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
 
-#define BOOST_NO_EXCEPTIONS 1
+#define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
 #undef BOOST_NO_EXCEPTIONS
 using namespace boost::unit_test_framework;
@@ -22,11 +22,11 @@ namespace ctk = ChimeraTK;
 
 constexpr char ExceptionDummyCDD1[] = "(ExceptionDummy:1?map=test3.map)";
 
+/*********************************************************************************************************************/
+
 struct TestApplication : ctk::Application {
   TestApplication() : Application("testSuite") {}
-  ~TestApplication() { shutdown(); }
-
-  void defineConnections() {}
+  ~TestApplication() override { shutdown(); }
 
   struct Name : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -47,12 +47,12 @@ struct TestApplication : ctk::Application {
 
     struct Vars : ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
-      ctk::ScalarPushInput<uint64_t> tick{this, "tick", "", ""};
-      ctk::ScalarPollInput<int> read{this, "readBack", "", ""};
-      ctk::ScalarOutput<int> set{this, "actuator", "", ""};
+      ctk::ScalarPushInput<uint64_t> tick{this, "/trigger/tick", "", ""};
+      ctk::ScalarPollInput<int> read{this, "/MyModule/readBack", "", ""};
+      ctk::ScalarOutput<int> set{this, "/MyModule/actuator", "", ""};
     } vars{this, ".", ""};
 
-    std::atomic<ctk::DataValidity> readDataValidity;
+    std::atomic<ctk::DataValidity> readDataValidity{ctk::DataValidity::ok};
 
     void prepare() override {
       readDataValidity = vars.read.dataValidity();
@@ -93,20 +93,19 @@ struct TestApplication : ctk::Application {
 
   ctk::PeriodicTrigger trigger{this, "trigger", ""};
 
-  ctk::DeviceModule dev{this, ExceptionDummyCDD1};
+  ctk::DeviceModule dev{this, ExceptionDummyCDD1, "/fakeTriggerToMakeUnusedPollRegsHappy"};
 };
 
+/*********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
-  std::cout << "testDirectConnectOpen" << std::endl;
   for(int readMode = 0; readMode < 2; ++readMode) {
+    std::cout << "testDirectConnectOpen (readMode = " << readMode << ")" << std::endl;
+
     TestApplication app;
 
     boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
-
-    //    app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
-    //    app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
-    //    app.name.name.tick >> app.module.vars.tick;
 
     ctk::TestFacility test(app, false);
 
@@ -115,11 +114,16 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
     // set the read mode
     app.module.readMode = readMode;
     std::cout << "Read mode is: " << app.module.readMode << ". Run application.\n";
-    app.run();
-    CHECK_EQUAL_TIMEOUT(test.readScalar<int>("Devices/" + std::string(ExceptionDummyCDD1) + "/status"), 1, 10000);
+
+    // app.run();
+    test.runApplication();
+
+    CHECK_EQUAL_TIMEOUT(
+        test.readScalar<int>("Devices/" + ctk::Utilities::stripName(ExceptionDummyCDD1, false) + "/status"), 1, 10000);
 
     // Trigger and check
-    app.name.name.tick.write();
+    app.trigger.sendTrigger();
+    // app.name.name.tick.write();
     usleep(10000);
     BOOST_CHECK(app.module.readDataValidity == ctk::DataValidity::faulty);
 
@@ -129,17 +133,21 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
   }
 }
 
+/*********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
   std::cout << "testDirectConnectRead" << std::endl;
   TestApplication app;
   boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
 
-  //  app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
-  //  app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
-  //  app.trigger.tick >> app.module.vars.tick;
+  app.module.vars.tick = {&app.module.vars, "/trigger/tick", "", ""};
 
-  ctk::TestFacility test(app, true);
+  app.getModel().writeGraphViz("testDirectConnectRead.dot");
+
+  app.debugMakeConnections();
+
+  ctk::TestFacility test(app);
   test.runApplication();
 
   // Advance through all read methods
@@ -165,18 +173,17 @@ BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
   }
 }
 
+/*********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testDirectConnectWrite) {
   std::cout << "testDirectConnectWrite" << std::endl;
   TestApplication app;
   boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
 
-  //  app.dev("/MyModule/readBack", typeid(int), 1) >> app.module.vars.read;
-  //  app.module.vars.set >> app.dev("/MyModule/actuator", typeid(int), 1);
   app.module.readMode = 3;
-  //  app.trigger.tick >> app.module.vars.tick;
 
-  ctk::TestFacility test(app, true);
+  ctk::TestFacility test(app);
   test.runApplication();
 
   // Advance through all non-blocking read methods
@@ -198,3 +205,5 @@ BOOST_AUTO_TEST_CASE(testDirectConnectWrite) {
     app.module.readMode++;
   }
 }
+
+/*********************************************************************************************************************/

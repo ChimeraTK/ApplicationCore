@@ -6,7 +6,6 @@
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "DeviceManager.h"
-#include "VariableNetwork.h"
 
 /*********************************************************************************************************************/
 

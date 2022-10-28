@@ -31,7 +31,6 @@ namespace ChimeraTK {
    private:
     using NetworkVisitor::_triggerNetworks;
 
-    Application& _app;
     std::shared_ptr<xmlpp::Document> _doc;
     xmlpp::Element* _rootElement;
 

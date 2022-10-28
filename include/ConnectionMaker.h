@@ -12,10 +12,13 @@ namespace ChimeraTK {
   class Application;
   class TriggerFanOut;
 
+  /**********************************************************************************************************************/
+
   class NetworkVisitor {
    public:
-    void setDebugConnections(bool enable) { _debugConnections = enable; }
+    explicit NetworkVisitor(Application& app) : _app(app) {}
 
+    void setDebugConnections(bool enable) { _debugConnections = enable; }
 
     /**
      * @brief Helper predicate to put ProcessVariableProxies into std::set
@@ -43,27 +46,60 @@ namespace ChimeraTK {
       size_t numberOfPollingConsumers{0};
       bool useExternalTrigger{false};
     };
-    std::map<std::string, NetworkInformation> _triggerNetworks{};
+    std::set<std::string> _triggerNetworks{};
+    std::map<std::string, NetworkInformation> _networks{};
     bool _debugConnections{false};
 
     NetworkInformation checkNetwork(Model::ProcessVariableProxy& proxy);
     void finaliseNetwork(NetworkInformation& net);
+    NetworkInformation checkAndFinaliseNetwork(Model::ProcessVariableProxy& proxy);
+
+    template<typename UserType>
+    void createProcessVariable(const VariableNetworkNode& node, size_t length, const std::string& unit,
+        const std::string& description, AccessModeFlags flags);
 
     template<typename... Args>
     void debug(Args&&...);
+
+    // Map of control system PVs with decorator
+    template<typename UserType>
+    using AccessorMap = std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>>;
+    mutable ChimeraTK::TemplateUserTypeMap<AccessorMap> _decoratedPvImpls;
+
+    Application& _app;
   };
+
+  /**********************************************************************************************************************/
 
   class ConnectionMaker : public NetworkVisitor {
    public:
+    explicit ConnectionMaker(Application& app) : NetworkVisitor(app) {}
 
-    explicit ConnectionMaker(Application& app) : _app(app) {}
+    /**
+     * Finalise the model and register all PVs with the control system adapter. The connections itself are not yet
+     * realised, to allow optimising them with information from the control system adapter.
+     *
+     * Must be called exactly once before connect().
+     */
+    void finalise();
 
+    /**
+     * Execute the optimisation request from the control system adapter (remove unused variables)
+     */
+    void optimiseUnmappedVariables(const std::set<std::string>& names);
+
+    /**
+     * Realise connections.
+     *
+     * Must be called exactly once after finalise().
+     */
     void connect();
 
    private:
-    Application& _app;
 
-    NetworkInformation connectNetwork(Model::ProcessVariableProxy& proxy);
+    std::set<Model::ProcessVariableProxy, ProcessVariableComperator> triggers;
+
+    void connectNetwork(Model::ProcessVariableProxy& proxy);
 
     void makeDirectConnectionForFeederWithImplementation(NetworkInformation& net);
     void makeFanOutConnectionForFeederWithImplementation(NetworkInformation& net,
@@ -72,8 +108,7 @@ namespace ChimeraTK {
     void makeConnectionForConstantFeeder(NetworkInformation& net);
 
     template<typename UserType>
-    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> createProcessVariable(const VariableNetworkNode& node,
-        size_t length, const std::string& unit, const std::string& description, AccessModeFlags flags);
+    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> getProcessVariable(const VariableNetworkNode& node);
 
     template<typename UserType>
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> createDeviceVariable(VariableNetworkNode const& node);
@@ -86,4 +121,7 @@ namespace ChimeraTK {
         boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>>
         createApplicationVariable(VariableNetworkNode const& node, VariableNetworkNode const& consumer = {});
   };
+
+  /**********************************************************************************************************************/
+
 } // namespace ChimeraTK

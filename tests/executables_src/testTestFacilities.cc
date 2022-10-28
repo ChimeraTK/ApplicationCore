@@ -16,7 +16,9 @@
 #include <ChimeraTK/Device.h>
 
 #include <boost/mpl/list.hpp>
+#define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 #include <boost/thread/barrier.hpp>
 
 using namespace boost::unit_test_framework;
@@ -169,6 +171,8 @@ struct PollingReadModule : public ctk::ApplicationModule {
 /*********************************************************************************************************************/
 /* the PollingThroughFanoutsModule is designed to test poll-type transfers in combination with FanOuts */
 
+std::function<void(void)> tester;
+
 struct PollingThroughFanoutsModule : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
   ctk::ScalarPushInput<int> push1{this, "push1", "", ""};
@@ -180,7 +184,19 @@ struct PollingThroughFanoutsModule : ctk::ApplicationModule {
   std::mutex m_forChecking;
   bool hasRead{false};
 
-  void prepare() override { writeAll(); }
+  void prepare() override {
+    std::cout << "BGN prepare: " << getName() << std::endl;
+    tester();
+    writeAll();
+    tester();
+    std::cout << "END prepare: " << getName() << std::endl;
+  }
+
+  void run() override {
+    std::cout << "BGN run: " << getName() << std::endl;
+    tester();
+    ApplicationModule::run();
+  }
 
   void mainLoop() override {
     while(true) {
@@ -740,17 +756,21 @@ BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
   // ---------------------
   {
     TestPollingThroughFanOutsApplication app;
+    app.debugMakeConnections();
+    // app.getTestableMode().setEnableDebug();
+
     app.m2.poll1 = {&app.m2, "/m1/out1", "", ""};
     app.m2.poll2 = {&app.m2, "/m1/out1", "", ""};
+    std::cout << "SIZE = " << app.m2.getAccessorList().size() << std::endl;
     app.m2.push1 = {&app.m2, "/m1/out2", "", ""};
+    std::cout << "SIZE = " << app.m2.getAccessorList().size() << std::endl;
 
     std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
     std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
 
-    ctk::TestFacility test{app};
+    tester = [&] { std::cout << "HIER: " << app.m2.push1.get()->getReadQueue().empty() << std::endl; };
 
-    app.m1.out1.write(); // write initial value
-    app.m1.out2.write(); // write initial value
+    ctk::TestFacility test{app};
 
     test.runApplication();
 
@@ -823,15 +843,18 @@ BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
   // Case 3: ThreadedFanOut
   // ----------------------
   {
+    std::cout << "=== Case 3" << std::endl;
     TestPollingThroughFanOutsApplication app;
+    std::cout << " HIER 1" << std::endl;
     app.m1.poll2 = {&app.m1, "poll1", "", ""};
+    std::cout << " HIER 2" << std::endl;
     app.m1.push1 = {&app.m1, "/m2/out2", "", ""};
+    std::cout << " HIER 3" << std::endl;
 
     std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
     std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
 
     ctk::TestFacility test{app};
-    app.m2.out2.write(); // initial value
 
     auto var = test.getScalar<int>("/m1/poll1");
     app.getModel().writeGraphViz("testPollingThroughFanOuts.dot");

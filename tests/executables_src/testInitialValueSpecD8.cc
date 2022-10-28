@@ -14,12 +14,15 @@
 #include <ChimeraTK/ExceptionDummyBackend.h>
 
 #include <boost/mpl/list.hpp>
-#include <boost/test/included/unit_test.hpp>
 
 #include <chrono>
 #include <functional>
 #include <future>
 #include <VoidAccessor.h>
+
+#define BOOST_NO_EXCEPTIONS
+#include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 
 /*********************************************************************************************************************/
 
@@ -195,17 +198,20 @@ struct ConstantTestApplication : ChimeraTK::Application {
   InputModule<INPUT_TYPE> inputModule{this, "constantPollModule", ""};
 };
 
-#if 0
-// Literally no clue what this was trying to test in the first place
 /**
  * Constants can be read exactly once in case of `AccessMode::wait_for_new_data`, so the initial value can be received.
  * \anchor testInitialValue_D_8_b_iii \ref initialValue_D_8_b_iii
+ *
+ * Note: "Constants" here refer to the ConstantAccessor, which is nowadays only used for unconnected inputs when the
+ * control system connection has been optimised out (cf. Application::optimiseUnmappedVariables()).
+ *
  */
 BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantInitValueAtDevice8biii, INPUT_TYPE, TestInputTypes) {
   std::cout << "===   testConstantInitValueAtDevice8biii " << typeid(INPUT_TYPE).name() << "  === " << std::endl;
   TestFixtureWithEceptionDummy<ConstantTestApplication<INPUT_TYPE>> d;
 
-  BOOST_CHECK(d.application.inputModule.input.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
+  // make sure, inputModule.input is not connected to anything, not even the control system.
+  d.application.optimiseUnmappedVariables({"/REG1"});
 
   d.application.run();
   d.application.inputModule.p.get_future().wait();
@@ -219,7 +225,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantInitValueAtDevice8biii, INPUT_TYPE, Te
     BOOST_CHECK(d.application.inputModule.input.readNonBlocking() == true);
   }
 }
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -378,12 +383,19 @@ BOOST_AUTO_TEST_CASE(testTriggerFanOutInitValueAtDeviceD9) {
 
 struct ConstantModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
+
   struct : ChimeraTK::VariableGroup {
     using ChimeraTK::VariableGroup::VariableGroup;
-    ChimeraTK::ScalarPushInput<int> constant{this, "PUSH_READ", "", ""};
-  } reg1{this, "REG1", ""};
+    ChimeraTK::ScalarPushInput<int> constant{this, "/REG1", "", ""};
+  } reg1{this, ".", ""};
+
   std::promise<void> p;
   std::atomic_bool enteredTheMainLoop{false};
+
+  void prepare() override {
+    reg1.constant = 543; // some non-zero value to detect if the 0 constant is written later
+  }
+
   void mainLoop() override {
     enteredTheMainLoop = true;
     p.set_value();
@@ -398,11 +410,6 @@ struct ConstantD10DummyApplication : ChimeraTK::Application {
   ConstantModule constantModule{this, "ConstantModule", ""};
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
-
-  /*void defineConnections() override {
-    ctk::VariableNetworkNode::makeConstant<int>(true, 24) >> constantModule.reg1.constant;
-    constantModule.reg1.constant >> device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push);
-  }*/
 };
 
 struct ConstantD10InitialValueEceptionDummy {
@@ -414,36 +421,35 @@ struct ConstantD10InitialValueEceptionDummy {
   boost::shared_ptr<ChimeraTK::ExceptionDummy> deviceBackend;
   ConstantD10DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
-  ChimeraTK::ScalarPushInput<int>& pushVariable{application.constantModule.reg1.constant};
 };
 
-#if 0
-// We do not add constant feeders to networks without feeders anymore but CS feeders. Might change with
-// optimiseConnections again, hence leaving this test here.
 /**
  *  D 10 for Constant
  * \anchor testConstantD10InitialValue_D_10 \ref initialValue_d_10
  */
 BOOST_AUTO_TEST_CASE(testConstantD10InitialValue) {
   std::cout << "===   testConstantD10InitialValue   === " << std::endl;
-
   ConstantD10InitialValueEceptionDummy d;
+  d.application.optimiseUnmappedVariables({"/REG1"});
+
+  ChimeraTK::Device dev("(ExceptionDummy:1?map=test.map)");
+  dev.open();
+  dev.write<int>("REG1", 1234); // place some value, we expect it to be overwritten with 0
+
   d.deviceBackend->throwExceptionOpen = true;
   BOOST_CHECK_THROW(d.deviceBackend->open(), std::exception);
+
   d.application.run();
-  // commented line might fail on jenkins, race cond?
-  // BOOST_CHECK(d.application.constantModule.enteredTheMainLoop == false);
-  // BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   d.application.constantModule.p.get_future().wait();
+
   BOOST_CHECK(d.application.constantModule.enteredTheMainLoop == true);
-  BOOST_CHECK(d.pushVariable == 24);
+  BOOST_CHECK(d.application.constantModule.reg1.constant == 0); // no longer at the value set in prepare()
+  BOOST_CHECK(d.application.constantModule.reg1.constant.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
+
+  BOOST_CHECK(dev.read<int>("REG1") == 1234);
   d.deviceBackend->throwExceptionOpen = false;
-  ChimeraTK::Device dev;
-  dev.open("(ExceptionDummy:1?map=test.map)");
-  CHECK_TIMEOUT(dev.read<int>("REG1/PUSH_READ") == 24, 1000000);
-  BOOST_CHECK(d.pushVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
+  CHECK_TIMEOUT(dev.read<int>("REG1") == 0, 1000000);
 }
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -492,10 +498,6 @@ BOOST_AUTO_TEST_CASE(testD1InitialValue) {
   TestInitialValueExceptionDummy d;
 
   d.application.run();
-  // commented line might fail on jenkins.
-  // BOOST_CHECK(d.application.testModule.enteredTheMainLoop == false);
-  // BOOST_CHECK(d.pushVariable.dataValidity() == ctk::DataValidity::faulty);
-  // BOOST_CHECK(d.outputVariable.dataValidity() == ctk::DataValidity::ok);
   d.application.testModule.p.get_future().wait();
   BOOST_CHECK(d.application.testModule.enteredTheMainLoop == true);
   BOOST_CHECK(d.pushVariable.dataValidity() == ctk::DataValidity::ok);
@@ -512,12 +514,6 @@ BOOST_AUTO_TEST_CASE(testD2InitialValue) {
 
   TestInitialValueExceptionDummy d;
   d.application.run();
-  // Commented lines are subject to race conditions because the initial value might or might not have
-  //  arrived already when the test is done. One would need a way to stop the application start after the
-  //  inversion of control has created all PVs, but before the initial values are propagated
-  // BOOST_CHECK(d.application.testModule.enteredTheMainLoop == false);
-  // BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
-  // BOOST_CHECK(d.outputVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   d.application.testModule.p.get_future().wait();
   d.application.testModule.output.write();
   BOOST_CHECK(d.application.testModule.enteredTheMainLoop == true);
@@ -534,10 +530,6 @@ BOOST_AUTO_TEST_CASE(testD3InitialValue) {
 
   TestInitialValueExceptionDummy d;
   d.application.run();
-  // commented line might fail on jenkins, race cond?
-  // BOOST_CHECK(d.pushVariable.dataValidity() == ctk::DataValidity::faulty);
-  // BOOST_CHECK(d.outputVariable.dataValidity() == ctk::DataValidity::ok);
-  // d.application.testModule.output.write();
   d.application.testModule.p.get_future().wait();
   BOOST_CHECK(d.application.testModule.enteredTheMainLoop == true);
   BOOST_CHECK(d.pushVariable.dataValidity() == ctk::DataValidity::ok);
@@ -607,10 +599,6 @@ BOOST_AUTO_TEST_CASE(testD7_2_InitialValue) {
   Test7DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
   application.run();
-  // The commented line is subject to race conditions because the initial value might or might not have
-  // arrived already when the test is done. One would need a way to stop the application start after the
-  // inversion of control has created all PVs, but before the initial values are propagated
-  // BOOST_CHECK(application.readerModule.reg2.pushInput == 0);
   application.readerModule.p.get_future().wait();
   BOOST_CHECK(application.readerModule.enteredTheMainLoop == true);
   CHECK_TIMEOUT(application.readerModule.reg2 == 555, 500);
@@ -758,10 +746,6 @@ BOOST_AUTO_TEST_CASE(testD6_a3_InitialValue) {
   dev2.write<int>("REG1/DUMMY_WRITEABLE", 99);
 
   d.application.run();
-  // The commented line is subject to race conditions because the initial value might or might not have
-  // arrived already when the test is done. One would need a way to stop the application start after the
-  // inversion of control has created all PVs, but before the initial values are propagated
-  // BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
 
   ChimeraTK::Device dev;
   dev.open(Test6_a3_DummyApplication::CDD1);
@@ -850,9 +834,6 @@ BOOST_AUTO_TEST_CASE(testD6_b_InitialValue) {
   ChimeraTK::Device dev;
   dev.open(Test6_b_DummyApplication::CDD);
   dev.write<int>("REG1/DUMMY_WRITEABLE", 99);
-  // commented line might fail on jenkins, race cond?
-  // BOOST_CHECK(d.application.pollModule.enteredTheMainLoop == false);
-  // BOOST_CHECK(d.pollVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   d.application.pollModule.p.get_future().wait();
   BOOST_CHECK(d.application.pollModule.enteredTheMainLoop == true);
   BOOST_CHECK(d.pollVariable == 99);
@@ -863,7 +844,7 @@ BOOST_AUTO_TEST_CASE(testD6_b_InitialValue) {
 
 struct Test6_c_DummyApplication : ChimeraTK::Application {
   constexpr static const char* ExceptionDummyCDD1 = "(dummy:1?map=test-async.map)";
-  Test6_c_DummyApplication() : Application("DummyApplication") { debugMakeConnections(); }
+  Test6_c_DummyApplication() : Application("DummyApplication") {}
   ~Test6_c_DummyApplication() override { shutdown(); }
 
   struct : NotifyingModule {
@@ -898,9 +879,6 @@ BOOST_AUTO_TEST_CASE(testD6_c_InitialValue) {
   dev.open(Test6_c_DummyApplication::ExceptionDummyCDD1);
   dev.write<int>("REG1/DUMMY_WRITEABLE", 99);
   dev.getVoidRegisterAccessor("/DUMMY_INTERRUPT_1_3").write();
-  // commented line might fail on jenkins, race cond?
-  // BOOST_CHECK(d.application.readerModule.enteredTheMainLoop == false);
-  // BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   d.application.readerModule.p.get_future().wait();
   BOOST_CHECK(d.application.readerModule.enteredTheMainLoop == true);
   BOOST_TEST(d.pushVariable == 99);

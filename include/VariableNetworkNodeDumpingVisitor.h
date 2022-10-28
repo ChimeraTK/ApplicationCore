@@ -65,7 +65,7 @@ namespace ChimeraTK {
      * for textual
      */
     VariableNetworkNodeDumpingVisitor(std::ostream& stream, const std::string& separator);
-    virtual ~VariableNetworkNodeDumpingVisitor() {}
+    virtual ~VariableNetworkNodeDumpingVisitor() override {}
 
     /**
      * @brief dispatch
@@ -74,7 +74,7 @@ namespace ChimeraTK {
      * Visitor function for VariableNetworkNode. Will dump a verbose description
      * of the node
      */
-    void dispatch(const VariableNetworkNode& t);
+    void dispatch(const VariableNetworkNode& t) override;
 
    private:
     std::string _separator;

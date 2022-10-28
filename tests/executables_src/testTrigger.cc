@@ -157,7 +157,12 @@ BOOST_AUTO_TEST_CASE(testDev2AppWithCsDirectTrigger) {
   {
     TestApp2 app;
     app.dev = {&app, "Dummy0"};
-    BOOST_CHECK_THROW(ChimeraTK::TestFacility(app, true), ChimeraTK::logic_error);
+    BOOST_CHECK_THROW(
+        {
+          app.initialise();
+          app.run();
+        },
+        ChimeraTK::logic_error);
   }
 
   // TestApp2 also works with a trigger. If the trigger is triggered, no data transfer should happen

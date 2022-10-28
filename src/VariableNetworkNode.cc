@@ -7,7 +7,6 @@
 #include "CircularDependencyDetectionRecursionStopper.h"
 #include "EntityOwner.h"
 #include "VariableGroup.h"
-#include "VariableNetwork.h"
 #include "VariableNetworkNodeDumpingVisitor.h"
 #include "Visitor.h"
 
@@ -87,6 +86,25 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
+
+  VariableNetworkNode::VariableNetworkNode(const std::type_info* valTyp, bool makeFeeder, size_t length)
+  : pdata(boost::make_shared<VariableNetworkNode_data>()) {
+    pdata = boost::make_shared<VariableNetworkNode_data>();
+    pdata->type = NodeType::Constant;
+    pdata->valueType = valTyp;
+    pdata->nElements = length;
+    pdata->name = "*UNNAMED CONSTANT*";
+    if(makeFeeder) {
+      pdata->direction = {VariableDirection::feeding, false};
+      pdata->mode = UpdateMode::push;
+    }
+    else {
+      pdata->direction = {VariableDirection::consuming, false};
+      pdata->mode = UpdateMode::poll;
+    }
+  }
+
+  /********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(boost::shared_ptr<VariableNetworkNode_data> _pdata) : pdata(_pdata) {}
 
@@ -385,5 +403,25 @@ namespace ChimeraTK {
     pdata->_model = std::move(model);
   }
 
+  /********************************************************************************************************************/
+
+  void VariableNetworkNode::setAppAccessorConstImplementation() const {
+    callForType(getValueType(), [&](auto t) {
+      using UserType = decltype(t);
+      auto impl = boost::dynamic_pointer_cast<ChimeraTK::NDRegisterAccessor<UserType>>(
+          boost::make_shared<ConstantAccessor<UserType>>(UserType(), getNumberOfElements(),
+              getMode() == UpdateMode::push ? AccessModeFlags{AccessMode::wait_for_new_data} : AccessModeFlags{}));
+
+      if(getMode() == UpdateMode::push && getDirection().dir == VariableDirection::consuming) {
+        setAppAccessorImplementation<UserType>(Application::getInstance().getTestableMode().decorate(
+            impl, detail::TestableMode::DecoratorType::READ, "Constant"));
+      }
+      else {
+        setAppAccessorImplementation<UserType>(impl);
+      }
+    });
+  }
+
   /*********************************************************************************************************************/
+
 } // namespace ChimeraTK

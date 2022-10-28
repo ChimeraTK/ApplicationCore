@@ -4,7 +4,6 @@
 
 #include "Application.h"
 #include "EntityOwner.h"
-#include "VariableNetworkNode.h"
 
 #include <boost/pointer_cast.hpp>
 

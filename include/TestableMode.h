@@ -72,6 +72,16 @@ namespace ChimeraTK::detail {
     void enable();
 
     /**
+     * Enable noisy debugging output for testable mode
+     */
+    void setEnableDebug(bool enable = true) { enableDebug = enable; }
+
+    /**
+     * Enable debugging output for decorating the accessor
+     */
+    void setEnableDebugDecorating(bool enable = true) { _debugDecorating = enable; }
+
+    /**
      * Check whether testable mode has been enabled
      */
     [[nodiscard]] bool isEnabled() const { return enabled; }
@@ -271,13 +281,13 @@ namespace ChimeraTK::detail {
     }
 
     // put the decorators into the list
-    auto& variable = variables[varId];
+    auto& variable = variables.at(varId);
     variable.name = "Internal:" + producer.getQualifiedName();
     if(consumer.getType() != NodeType::invalid) {
       variable.name += "->" + consumer.getQualifiedName();
     }
     if(producer.getDirection().withReturn) {
-      auto& returnVariable = variables[varIdReturn];
+      auto& returnVariable = variables.at(varIdReturn);
       returnVariable.name = variable.name + " (return)";
     }
 
@@ -302,11 +312,13 @@ namespace ChimeraTK::detail {
       varId = detail::TestableMode::getNextVariableId();
     }
 
+    variables[varId].processVariable = other;
+    if(not name.empty()) {
+      variables.at(varId).name = name;
+    }
+
     auto pvarDec = boost::make_shared<AccessorDecorator<T>>(
         *this, other, direction == DecoratorType::READ, direction == DecoratorType::WRITE, varId, varId);
-    if(not name.empty()) {
-      variables[varId].name = name;
-    }
 
     return pvarDec;
   }
@@ -387,7 +399,7 @@ namespace ChimeraTK::detail {
   void TestableMode::AccessorDecorator<UserType>::obtainLockAndDecrementCounter(bool hasNewData) {
     if(!_testableMode.testLock()) _testableMode.lock("doReadTransfer " + this->getName());
     if(!hasNewData) return;
-    auto& variable = _testableMode.variables[_variableIdRead];
+    auto& variable = _testableMode.variables.at(_variableIdRead);
     if(variable.counter > 0) {
       assert(_testableMode.counter > 0);
       --_testableMode.counter;
@@ -437,7 +449,7 @@ namespace ChimeraTK::detail {
 
     if(!dataLost) {
       ++_testableMode.counter;
-      ++_testableMode.variables[_variableIdWrite].counter;
+      ++_testableMode.variables.at(_variableIdWrite).counter;
       if(_testableMode.enableDebug) {
         std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
                   << "]: testableMode.counter increased, now at value " << _testableMode.counter << std::endl;

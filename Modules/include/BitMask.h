@@ -15,9 +15,7 @@ namespace ChimeraTK {
     /// individual inputs for each bit
     struct Input : public VariableGroup {
       Input() {}
-      Input(EntityOwner* owner, const std::string& name, const std::string& description)
-      : VariableGroup(owner, name, description) {
-        setEliminateHierarchy();
+      explicit Input(VariableGroup* owner) : VariableGroup(owner, ".", "The input bits") {
         for(size_t i = 0; i < NBITS; ++i) {
           bit[i].replace(ScalarPushInput<int>(
               this, "bit" + std::to_string(i), "", "The bit " + std::to_string(i) + " of the bit mask"));
@@ -26,7 +24,7 @@ namespace ChimeraTK {
 
       ScalarPushInput<int> bit[NBITS];
     };
-    Input input{this, "input", "The input bits"};
+    Input input{this};
 
     ScalarOutput<int32_t> bitmask{this, "bitmask", "", "Output bit mask."};
 
@@ -74,9 +72,7 @@ namespace ChimeraTK {
     /// individual outputs for each bit
     struct Output : public VariableGroup {
       Output() {}
-      Output(EntityOwner* owner, const std::string& name, const std::string& description)
-      : VariableGroup(owner, name, description) {
-        setEliminateHierarchy();
+      explicit Output(VariableGroup* owner) : VariableGroup(owner, ".", "The extracted output bits") {
         for(size_t i = 0; i < NBITS; ++i) {
           bit[i].replace(ScalarOutput<int>(
               this, "bit" + std::to_string(i), "", "The bit " + std::to_string(i) + " of the bit mask"));
@@ -85,7 +81,7 @@ namespace ChimeraTK {
 
       ScalarOutput<int> bit[NBITS];
     };
-    Output output{this, "output", "The extracted output bits"};
+    Output output{this};
 
     ScalarPushInput<int32_t> bitmask{this, "bitmask", "", "Input bit mask."};
 

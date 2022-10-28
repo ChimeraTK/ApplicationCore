@@ -9,7 +9,6 @@
 #include "Model.h"
 #include "ModuleGroup.h"
 #include "TestableMode.h"
-#include "VariableNetwork.h"
 
 #include <ChimeraTK/ControlSystemAdapter/ApplicationBase.h>
 #include <ChimeraTK/DeviceBackend.h>
@@ -167,6 +166,7 @@ namespace ChimeraTK {
     friend class XMLGeneratorVisitor;
     friend struct StatusAggregator;
     friend struct detail::TestableMode;
+    friend class NetworkVisitor;
     friend class ConnectionMaker;
 
     template<typename UserType>
@@ -177,6 +177,9 @@ namespace ChimeraTK {
 
     /** The model of the application */
     Model::RootProxy _model;
+
+    /** Helper class to create connections */
+    ConnectionMaker cm{*this};
 
     /** List of InternalModules */
     std::list<boost::shared_ptr<InternalModule>> internalModuleList;

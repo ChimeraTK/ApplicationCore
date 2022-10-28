@@ -79,8 +79,6 @@ struct TestApplication1 : ctk::Application {
   TestApplication1() : Application("testSuite") {}
   ~TestApplication1() override { shutdown(); }
 
-  //  void defineConnections() { t1.connectTo(cs); }
-
   TestModule1 t1{this, "t1", ""};
 };
 
@@ -89,11 +87,6 @@ struct TestApplication1 : ctk::Application {
 struct TestApplication2 : ctk::Application {
   TestApplication2() : Application("testSuite") {}
   ~TestApplication2() override { shutdown(); }
-
-  /*  void defineConnections() {
-      t1.connectTo(cs["A"]);
-      t1.connectTo(cs["B"]);
-    }*/
 
   TestModule1 a{this, "A", ""};
   TestModule2 b{this, "A", ""};
@@ -106,6 +99,7 @@ struct TestApplication2 : ctk::Application {
 BOOST_AUTO_TEST_CASE(testDirectConnections) {
   std::cout << "testDirectConnections" << std::endl;
   TestApplication1 app;
+  app.debugMakeConnections();
   ctk::TestFacility test(app);
 
   auto i1 = test.getScalar<int>("/t1/i1");

@@ -26,8 +26,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   XMLGenerator::XMLGenerator(Application& app)
-  : _app{app}, _doc{std::make_shared<xmlpp::Document>()}, _rootElement{_doc->create_root_node(
-                                                              "application", ::detail::AC_NAMESPACE_URL)} {}
+  : NetworkVisitor{app}, _doc{std::make_shared<xmlpp::Document>()}, _rootElement{_doc->create_root_node(
+                                                                        "application", ::detail::AC_NAMESPACE_URL)} {}
   /********************************************************************************************************************/
 
   void XMLGenerator::run() {
@@ -46,16 +46,8 @@ namespace ChimeraTK {
     };
     _app.getModel().visit(triggerCollector, Model::depthFirstSearch, Model::keepDeviceModules);
 
-    // Finalize the trigger networks
-    for(auto trigger : triggers) {
-      _triggerNetworks.insert({trigger.getFullyQualifiedPath(), generateXMLNetwork(trigger)});
-    }
 
     auto connectingVisitor = [&](auto proxy) {
-      if(auto it = _triggerNetworks.find(proxy.getFullyQualifiedPath()); it != _triggerNetworks.end()) {
-        return;
-      }
-
       generateXMLNetwork(proxy);
     };
 
@@ -73,8 +65,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   NetworkVisitor::NetworkInformation XMLGenerator::generateXMLNetwork(Model::ProcessVariableProxy& proxy) {
-    auto net = checkNetwork(proxy);
-    finaliseNetwork(net);
+    auto net = checkAndFinaliseNetwork(proxy);
 
     RegisterPath folder = proxy.getFullyQualifiedPath();
     folder--;
