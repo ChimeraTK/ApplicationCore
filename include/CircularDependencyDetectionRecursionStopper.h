@@ -4,7 +4,7 @@
 
 #include <cstddef>
 
-namespace ChimeraTK { namespace detail {
+namespace ChimeraTK::detail {
 
   /** A helper class do stop the recursion when scanning for circular dependency networks.
    *
@@ -33,4 +33,4 @@ namespace ChimeraTK { namespace detail {
     bool recursionDetected();
   };
 
-}} // namespace ChimeraTK::detail
+} // namespace ChimeraTK::detail

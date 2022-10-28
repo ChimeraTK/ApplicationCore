@@ -95,18 +95,21 @@ void Application::initialise() {
     throw ChimeraTK::logic_error("Application::initialise() was called without an instance of ChimeraTK::PVManager.");
   }
 
-  ConnectionMaker cm(*this);
   cm.setDebugConnections(enableDebugMakeConnections);
-  cm.connect();
+  cm.finalise();
 
   initialiseCalled = true;
 }
 
 /*********************************************************************************************************************/
 
-void Application::optimiseUnmappedVariables(const std::set<std::string>& /*names*/) {
-  // TODO: This is not working anymore
-  // Follow up with https://redmine.msktools.desy.de/issues/10371
+void Application::optimiseUnmappedVariables(const std::set<std::string>& names) {
+  if(!initialiseCalled) {
+    throw ChimeraTK::logic_error(
+        "Application::initialise() must be called before Application::optimiseUnmappedVariables().");
+  }
+
+  cm.optimiseUnmappedVariables(names);
 }
 
 /*********************************************************************************************************************/
@@ -125,6 +128,9 @@ void Application::run() {
     throw ChimeraTK::logic_error("Application::run() has already been called before.");
   }
   runCalled = true;
+
+  // realise the PV connections
+  cm.connect();
 
   // set all initial version numbers in the modules to the same value
   for(auto& module : getSubmoduleListRecursive()) {

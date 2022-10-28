@@ -26,19 +26,11 @@ namespace ctk = ChimeraTK;
 /* Application without name */
 
 struct TestApp : public ctk::Application {
-  TestApp(const std::string& name) : ctk::Application(name) {}
-  ~TestApp() { shutdown(); }
+  explicit TestApp(const std::string& name) : ctk::Application(name) {}
+  ~TestApp() override { shutdown(); }
 
-  /*  void defineConnections() {
-      csmod["Multiplier"]("input") >> multiplierD.input;
-      multiplierD.output >> csmod["Multiplier"]("tap");
-      multiplierD.output >> pipe.input;
-      pipe.output >> csmod["mySubModule"]("output");
-      pipe.output >> csmod["mySubModule"]("output_copy");
-    } */
-
-  ctk::ConstMultiplier<double> multiplierD{this, "multiplierD", "Some module", 42};
-  ctk::ScalarPipe<double> pipe{this, "pipe", "unit", "Some pipe module"};
+  ctk::ConstMultiplier<double> multiplierD{this, "Multiplier", "Some module", 42};
+  ctk::ScalarPipe<double> pipe{this, "/Multiplier/output", "/mySubModule/output", "unit", "Some pipe module"};
 };
 
 /*********************************************************************************************************************/
@@ -50,11 +42,11 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
   // test without even calling the function
   {
     TestApp app("testApp");
+    app.getModel().writeGraphViz("testOptimiseUnmappedVariables.dot");
     ctk::TestFacility test{app};
     auto input = test.getScalar<double>("/Multiplier/input");
-    auto tap = test.getScalar<double>("/Multiplier/tap");
+    auto tap = test.getScalar<double>("/Multiplier/output");
     auto output = test.getScalar<double>("/mySubModule/output");
-    auto output_copy = test.getScalar<double>("/mySubModule/output_copy");
     test.runApplication();
     input = 10;
     input.write();
@@ -65,9 +57,6 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
     BOOST_CHECK(output.readNonBlocking());
     BOOST_CHECK_CLOSE(double(output), 420., 0.001);
     BOOST_CHECK(!output.readNonBlocking());
-    BOOST_CHECK(output_copy.readNonBlocking());
-    BOOST_CHECK_CLOSE(double(output_copy), 420., 0.001);
-    BOOST_CHECK(!output_copy.readNonBlocking());
   }
 
   // test passing empty set
@@ -75,9 +64,8 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
     TestApp app("testApp");
     ctk::TestFacility test{app};
     auto input = test.getScalar<double>("/Multiplier/input");
-    auto tap = test.getScalar<double>("/Multiplier/tap");
+    auto tap = test.getScalar<double>("/Multiplier/output");
     auto output = test.getScalar<double>("/mySubModule/output");
-    auto output_copy = test.getScalar<double>("/mySubModule/output_copy");
     app.optimiseUnmappedVariables({});
     test.runApplication();
     input = 10;
@@ -89,9 +77,6 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
     BOOST_CHECK(output.readNonBlocking());
     BOOST_CHECK_CLOSE(double(output), 420., 0.001);
     BOOST_CHECK(!output.readNonBlocking());
-    BOOST_CHECK(output_copy.readNonBlocking());
-    BOOST_CHECK_CLOSE(double(output_copy), 420., 0.001);
-    BOOST_CHECK(!output_copy.readNonBlocking());
   }
 
   // test passing single variable
@@ -99,10 +84,9 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
     TestApp app("testApp");
     ctk::TestFacility test{app};
     auto input = test.getScalar<double>("/Multiplier/input");
-    auto tap = test.getScalar<double>("/Multiplier/tap");
+    auto tap = test.getScalar<double>("/Multiplier/output");
     auto output = test.getScalar<double>("/mySubModule/output");
-    auto output_copy = test.getScalar<double>("/mySubModule/output_copy");
-    app.optimiseUnmappedVariables({"/Multiplier/tap"});
+    app.optimiseUnmappedVariables({"/Multiplier/output"});
     test.runApplication();
     input = 10;
     input.write();
@@ -111,9 +95,6 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
     BOOST_CHECK(output.readNonBlocking());
     BOOST_CHECK_CLOSE(double(output), 420., 0.001);
     BOOST_CHECK(!output.readNonBlocking());
-    BOOST_CHECK(output_copy.readNonBlocking());
-    BOOST_CHECK_CLOSE(double(output_copy), 420., 0.001);
-    BOOST_CHECK(!output_copy.readNonBlocking());
   }
 
   // test passing two variables
@@ -121,39 +102,15 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
     TestApp app("testApp");
     ctk::TestFacility test{app};
     auto input = test.getScalar<double>("/Multiplier/input");
-    auto tap = test.getScalar<double>("/Multiplier/tap");
+    auto tap = test.getScalar<double>("/Multiplier/output");
     auto output = test.getScalar<double>("/mySubModule/output");
-    auto output_copy = test.getScalar<double>("/mySubModule/output_copy");
-    app.optimiseUnmappedVariables({"/Multiplier/tap", "/mySubModule/output"});
+    app.optimiseUnmappedVariables({"/Multiplier/output", "/mySubModule/output"});
     test.runApplication();
     input = 10;
     input.write();
     test.stepApplication();
     BOOST_CHECK(!tap.readNonBlocking());
     BOOST_CHECK(!output.readNonBlocking());
-    BOOST_CHECK(output_copy.readNonBlocking());
-    BOOST_CHECK_CLOSE(double(output_copy), 420., 0.001);
-    BOOST_CHECK(!output_copy.readNonBlocking());
-  }
-
-  // test passing two variables, now with the other copy of the output
-  {
-    TestApp app("testApp");
-    ctk::TestFacility test{app};
-    auto input = test.getScalar<double>("/Multiplier/input");
-    auto tap = test.getScalar<double>("/Multiplier/tap");
-    auto output = test.getScalar<double>("/mySubModule/output");
-    auto output_copy = test.getScalar<double>("/mySubModule/output_copy");
-    app.optimiseUnmappedVariables({"/Multiplier/tap", "/mySubModule/output_copy"});
-    test.runApplication();
-    input = 10;
-    input.write();
-    test.stepApplication();
-    BOOST_CHECK(!tap.readNonBlocking());
-    BOOST_CHECK(output.readNonBlocking());
-    BOOST_CHECK_CLOSE(double(output), 420., 0.001);
-    BOOST_CHECK(!output.readNonBlocking());
-    BOOST_CHECK(!output_copy.readNonBlocking());
   }
 
   // test passing unknown variables
@@ -161,8 +118,8 @@ BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
     TestApp app("testApp");
     ctk::TestFacility test{app};
     auto input = test.getScalar<double>("/Multiplier/input");
-    auto tap = test.getScalar<double>("/Multiplier/tap");
+    auto tap = test.getScalar<double>("/Multiplier/output");
     auto output = test.getScalar<double>("/mySubModule/output");
-    BOOST_CHECK_THROW(app.optimiseUnmappedVariables({"/Multiplier/tap", "/this/is/not/known"}), std::out_of_range);
+    BOOST_CHECK_THROW(app.optimiseUnmappedVariables({"/Multiplier/output", "/this/is/not/known"}), std::out_of_range);
   }
 }

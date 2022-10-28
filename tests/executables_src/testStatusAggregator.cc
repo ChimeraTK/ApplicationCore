@@ -21,11 +21,18 @@ struct StatusGenerator : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
   StatusGenerator(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
-      const std::unordered_set<std::string>& tags = {})
-  : ApplicationModule(owner, name, description, tags) {
-    // std::cout << "The name: " << getName() << std::endl;
-  }
+      const std::unordered_set<std::string>& tags = {},
+      ctk::StatusOutput::Status initialValue = ctk::StatusOutput::Status::OFF)
+  : ApplicationModule(owner, name, description, tags), _initialValue(initialValue) {}
+
   ctk::StatusOutput status{this, getName(), ""};
+
+  ctk::StatusOutput::Status _initialValue;
+
+  void prepare() override {
+    status = _initialValue;
+    status.write();
+  }
   void mainLoop() override {}
 };
 
@@ -67,22 +74,6 @@ BOOST_AUTO_TEST_CASE(testSingleNoTags) {
 
   auto status = test.getScalar<int>("/Aggregated/status");
 
-  // write initial values
-  app.s.status = ctk::StatusOutput::Status::OFF;
-  app.s.status.write();
-  app.outerGroup.s1.status = ctk::StatusOutput::Status::OFF;
-  app.outerGroup.s1.status.write();
-  app.outerGroup.s2.status = ctk::StatusOutput::Status::OFF;
-  app.outerGroup.s2.status.write();
-  app.outerGroup.innerGroup1.s.status = ctk::StatusOutput::Status::OFF;
-  app.outerGroup.innerGroup1.s.status.write();
-  app.outerGroup.innerGroup1.deep.status = ctk::StatusOutput::Status::OFF;
-  app.outerGroup.innerGroup1.deep.status.write();
-  app.outerGroup.innerGroup2.s.status = ctk::StatusOutput::Status::OFF;
-  app.outerGroup.innerGroup2.s.status.write();
-  app.outerGroup.innerGroup2.deep.status = ctk::StatusOutput::Status::OFF;
-  app.outerGroup.innerGroup2.deep.status.write();
-
   test.runApplication();
 
   // check that statuses on different levels are correctly aggregated
@@ -110,11 +101,14 @@ BOOST_AUTO_TEST_CASE(testSingleNoTags) {
 /**********************************************************************************************************************/
 
 struct TestPrioApplication : ctk::Application {
-  TestPrioApplication() : Application("testApp") {}
+  explicit TestPrioApplication(ctk::StatusOutput::Status initialValue)
+  : Application("testApp"), _initialValue(initialValue) {}
   ~TestPrioApplication() override { shutdown(); }
 
-  StatusGenerator s1{this, "sg1/internal", "Status 1"};
-  StatusGenerator s2{this, "sg2/external", "Status 2"};
+  ctk::StatusOutput::Status _initialValue;
+
+  StatusGenerator s1{this, "sg1/internal", "Status 1", {}, _initialValue};
+  StatusGenerator s2{this, "sg2/external", "Status 2", {}, _initialValue};
 
   ctk::StatusAggregator aggregator;
 };
@@ -127,18 +121,14 @@ BOOST_AUTO_TEST_CASE(testPriorities) {
   // Define repeated check for a given priority mode
   auto check = [&](ctk::StatusAggregator::PriorityMode mode, auto prio0, auto prio1, auto prio2, auto prio3,
                    bool warnMixed01 = false) {
-    TestPrioApplication app;
+    // create app with initial values set to lowest prio value
+    TestPrioApplication app(prio0);
+
     app.aggregator = ctk::StatusAggregator{&app, "Aggregated/status", "aggregated status description", mode};
 
     ctk::TestFacility test(app);
 
     auto status = test.getScalar<int>("/Aggregated/status");
-
-    // write initial values (all in lowest prio value)
-    app.s1.status = prio0;
-    app.s1.status.write();
-    app.s2.status = prio0;
-    app.s2.status.write();
 
     test.runApplication();
 
@@ -224,7 +214,10 @@ struct TestApplication2Levels : ctk::Application {
   struct OuterGroup : ctk::ModuleGroup {
     using ctk::ModuleGroup::ModuleGroup;
 
-    StatusGenerator s1{this, "s1", "Status 1"};
+    // Set one of the inputs for the extraAggregator to fault, which has no effect, since one other is OFF which is
+    // prioritised. If the top-level aggregator would wrongly aggregate this input directly, it would go to FAULT.
+    StatusGenerator s1{this, "s1", "Status 1", {}, ctk::StatusOutput::Status::FAULT};
+
     StatusGenerator s2{this, "s2", "Status 2"};
 
     ctk::StatusAggregator extraAggregator{
@@ -246,16 +239,6 @@ BOOST_AUTO_TEST_CASE(testTwoLevels) {
 
   auto status = test.getScalar<int>("/Aggregated/status");
   auto extraStatus = test.getScalar<int>("/Aggregated/extraStatus");
-
-  // write initial values
-  app.s.status = ctk::StatusOutput::Status::OFF;
-  app.s.status.write();
-  app.outerGroup.s2.status = ctk::StatusOutput::Status::OFF;
-  app.outerGroup.s2.status.write();
-  // Set one of the inputs for the extraAggregator to fault, which has no effect, since one other is OFF which is
-  // prioritised. If the top-level aggregator would wrongly aggregate this input directly, it would go to FAULT.
-  app.outerGroup.s1.status = ctk::StatusOutput::Status::FAULT;
-  app.outerGroup.s1.status.write();
 
   test.runApplication();
 
@@ -299,8 +282,8 @@ struct TestApplicationTags : ctk::Application {
   struct OuterGroup : ctk::ModuleGroup {
     using ctk::ModuleGroup::ModuleGroup;
 
-    StatusGenerator sA{this, "sA", "Status 1", ctk::TAGS{"A"}};
-    StatusGenerator sAB{this, "sAB", "Status 2", {"A", "B"}};
+    StatusGenerator sA{this, "sA", "Status 1", ctk::TAGS{"A"}, ctk::StatusOutput::Status::WARNING};
+    StatusGenerator sAB{this, "sAB", "Status 2", {"A", "B"}, ctk::StatusOutput::Status::OFF};
 
     ctk::StatusAggregator aggregateA{
         this, "aggregateA", "aggregated status description", ctk::StatusAggregator::PriorityMode::fwko, {"A"}};
@@ -331,12 +314,6 @@ BOOST_AUTO_TEST_CASE(testTags) {
   auto aggregateAll = test.getScalar<int>("/aggregateAll");
   auto Group_aggregateA = test.getScalar<int>("/Group/aggregateA");
   auto Group_aggregateB = test.getScalar<int>("/Group/aggregateB");
-
-  // write initial values
-  app.group.sA.status = ctk::StatusOutput::Status::WARNING;
-  app.group.sA.status.write();
-  app.group.sAB.status = ctk::StatusOutput::Status::OFF;
-  app.group.sAB.status.write();
 
   test.runApplication();
 
@@ -373,11 +350,35 @@ BOOST_AUTO_TEST_CASE(testTags) {
 
 /**********************************************************************************************************************/
 
+struct TestApplicationMessage : ctk::Application {
+  TestApplicationMessage() : Application("testApp") {}
+  ~TestApplicationMessage() override { shutdown(); }
+
+  StatusGenerator s{this, "s", "Status", {}, ctk::StatusOutput::Status::OK};
+
+  struct OuterGroup : ctk::ModuleGroup {
+    using ctk::ModuleGroup::ModuleGroup;
+
+    StatusGenerator s1{this, "s1", "Status 1", {}, ctk::StatusOutput::Status::OK};
+
+    StatusGenerator s2{this, "s2", "Status 2", {}, ctk::StatusOutput::Status::OK};
+
+    ctk::StatusAggregator extraAggregator{
+        this, "/Aggregated/extraStatus", "aggregated status description", ctk::StatusAggregator::PriorityMode::ofwk};
+
+  } outerGroup{this, "OuterGroup", ""};
+
+  ctk::StatusAggregator aggregator{
+      this, "Aggregated/status", "aggregated status description", ctk::StatusAggregator::PriorityMode::fwko};
+};
+
+/**********************************************************************************************************************/
+
 // test behavior for status+string:
 // test that status aggregator always has a message output and hands it over to next status aggregator
 BOOST_AUTO_TEST_CASE(testStatusMessage) {
   std::cout << "testStatusMessage" << std::endl;
-  TestApplication2Levels app;
+  TestApplicationMessage app;
 
   ctk::TestFacility test(app);
 
@@ -385,14 +386,6 @@ BOOST_AUTO_TEST_CASE(testStatusMessage) {
   auto statusMessage = test.getScalar<std::string>("/Aggregated/status_message");
   auto innerStatus = test.getScalar<int>("/Aggregated/extraStatus");
   auto innerStatusMessage = test.getScalar<std::string>("/Aggregated/extraStatus_message");
-
-  // write initial values
-  app.s.status = ctk::StatusOutput::Status::OK;
-  app.s.status.write();
-  app.outerGroup.s1.status = ctk::StatusOutput::Status::OK;
-  app.outerGroup.s1.status.write();
-  app.outerGroup.s2.status = ctk::StatusOutput::Status::OK;
-  app.outerGroup.s2.status.write();
 
   test.runApplication();
 

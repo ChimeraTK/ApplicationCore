@@ -50,7 +50,12 @@ BOOST_AUTO_TEST_CASE(testTwoScalarPollPushAccessors) {
   TestApplication1 app;
   app.debugMakeConnections();
 
-  BOOST_CHECK_THROW(ChimeraTK::TestFacility tf(app, false), ctk::logic_error);
+  BOOST_CHECK_THROW(
+      {
+        app.initialise();
+        app.run();
+      },
+      ctk::logic_error);
 }
 
 /*********************************************************************************************************************/
@@ -115,7 +120,12 @@ struct TestApplication4 : public ctk::Application {
 BOOST_AUTO_TEST_CASE(testTooManyPollingConsumers) {
   TestApplication4 app;
 
-  BOOST_CHECK_THROW(ctk::TestFacility(app, false), ctk::logic_error);
+  BOOST_CHECK_THROW(
+      {
+        app.initialise();
+        app.run();
+      },
+      ctk::logic_error);
 }
 
 /*********************************************************************************************************************/

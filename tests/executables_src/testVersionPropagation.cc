@@ -24,13 +24,13 @@ BOOST_FIXTURE_TEST_SUITE(versionPropagation, Fixture)
 BOOST_AUTO_TEST_CASE(versionPropagation_testPolledRead) {
   std::cout << "versionPropagation_testPolledRead" << std::endl;
   auto moduleVersion = application.group1.pollModule.getCurrentVersionNumber();
-  auto pollVariableVersion = pollVariable.getVersionNumber();
+  auto pollVariableVersion = pollVariable2.getVersionNumber();
 
   application.group1.outputModule.setCurrentVersionNumber({});
-  outputVariable.write();
-  pollVariable.read();
+  outputVariable2.write();
+  pollVariable2.read();
 
-  assert(pollVariable.getVersionNumber() > pollVariableVersion);
+  assert(pollVariable2.getVersionNumber() > pollVariableVersion);
   BOOST_CHECK(moduleVersion == application.group1.pollModule.getCurrentVersionNumber());
 }
 
@@ -39,13 +39,13 @@ BOOST_AUTO_TEST_CASE(versionPropagation_testPolledRead) {
 BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadNonBlocking) {
   std::cout << "versionPropagation_testPolledReadNonBlocking" << std::endl;
   auto moduleVersion = application.group1.pollModule.getCurrentVersionNumber();
-  auto pollVariableVersion = pollVariable.getVersionNumber();
+  auto pollVariableVersion = pollVariable2.getVersionNumber();
 
   application.group1.outputModule.setCurrentVersionNumber({});
-  outputVariable.write();
-  pollVariable.readNonBlocking();
+  outputVariable2.write();
+  pollVariable2.readNonBlocking();
 
-  assert(pollVariable.getVersionNumber() > pollVariableVersion);
+  assert(pollVariable2.getVersionNumber() > pollVariableVersion);
   BOOST_CHECK(moduleVersion == application.group1.pollModule.getCurrentVersionNumber());
 }
 
@@ -54,13 +54,13 @@ BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadNonBlocking) {
 BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadLatest) {
   std::cout << "versionPropagation_testPolledReadLatest" << std::endl;
   auto moduleVersion = application.group1.pollModule.getCurrentVersionNumber();
-  auto pollVariableVersion = pollVariable.getVersionNumber();
+  auto pollVariableVersion = pollVariable2.getVersionNumber();
 
   application.group1.outputModule.setCurrentVersionNumber({});
-  outputVariable.write();
-  pollVariable.readLatest();
+  outputVariable2.write();
+  pollVariable2.readLatest();
 
-  assert(pollVariable.getVersionNumber() > pollVariableVersion);
+  assert(pollVariable2.getVersionNumber() > pollVariableVersion);
   BOOST_CHECK(moduleVersion == application.group1.pollModule.getCurrentVersionNumber());
 }
 

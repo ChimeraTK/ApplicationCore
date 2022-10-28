@@ -38,9 +38,9 @@ namespace ChimeraTK {
 
     other._name = "**INVALID**";
     other._description = "This EntityOwner was moved from.";
-    assert(other._accessorList.size() == 0);
-    assert(other._moduleList.size() == 0);
-    assert(other._tags.size() == 0);
+    assert(other._accessorList.empty());
+    assert(other._moduleList.empty());
+    assert(other._tags.empty());
 
     return *this;
   }

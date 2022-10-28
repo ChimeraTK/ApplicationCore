@@ -13,11 +13,14 @@
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
 
-#include <boost/test/included/unit_test.hpp>
 #include <boost/thread/barrier.hpp>
 
 #include <cstdlib>
 #include <regex>
+
+#define BOOST_NO_EXCEPTIONS
+#include <boost/test/included/unit_test.hpp>
+#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -61,18 +64,16 @@ struct TestModule : public ctk::ApplicationModule {
 /* dummy application */
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
-  ~TestApplication() { shutdown(); }
+  ~TestApplication() override { shutdown(); }
 
   ctk::DeviceModule dev{this, deviceCDD, "/deviceTrigger"};
   TestModule module{this, "TEST", "The test module"};
 };
 
-#if 0
-/* Test application for the specific case of writing to a read-only
- * accessor. Provides an input to an ApplicationModule from a read-only
- * accessor of the device. For the test, the accessor must not be routed
- * through the control system, the illegal write would be caught by the
- * ControlSystemAdapter, not by the ExceptionHandlingDecorator under test here.
+/*
+ * Test application for the specific case of writing to a read-only accessor. Provides an input to an ApplicationModule
+ * from a read-only accessor of the device. For the test, the accessor must not be routed through the control system,
+ * the illegal write would be caught by the ControlSystemAdapter, not by the ExceptionHandlingDecorator under test here.
  */
 struct ReadOnlyTestApplication : public ctk::Application {
   ReadOnlyTestApplication() : Application("ReadOnlytestApp") {}
@@ -85,12 +86,11 @@ struct ReadOnlyTestApplication : public ctk::Application {
 
     ctk::ScalarPushInput<int> start{
         this, "startTest", "", "This has to be written once, before writing to the device", {"CS"}};
-    ctk::ScalarPollInput<int32_t> scalarROInput{this, "FROM_DEV_SCALAR2", "", "Here I read from a scalar RO-register"};
+    ctk::ScalarPollInput<int32_t> scalarROInput{
+        this, "/TEST/FROM_DEV_SCALAR2", "", "Here I read from a scalar RO-register"};
 
     void mainLoop() override {
-      // Just to have a blocking read, gives the test
-      // time to dumpConnections and explicitly trigger
-      // before terminating.
+      // Just to have a blocking read, gives the test time to dumpConnections and explicitly trigger before terminating.
       start.read();
 
       scalarROInput = 42;
@@ -104,6 +104,8 @@ struct ReadOnlyTestApplication : public ctk::Application {
         std::regex exceptionHandlingRegex{"^ChimeraTK::ExceptionhandlingDecorator:*"};
         std::smatch exMatch;
 
+        std::cout << exMsg << std::endl;
+
         BOOST_CHECK(std::regex_search(exMsg, exMatch, exceptionHandlingRegex));
       }
     }
@@ -113,26 +115,21 @@ struct ReadOnlyTestApplication : public ctk::Application {
 
 /*********************************************************************************************************************/
 
-// FIXME: This case cannot be created any more with the current setup.
-// It might be possible that it is doable again when implementing optimiseConnections()
-// which might prune the CS connections
-
 BOOST_AUTO_TEST_CASE(testWriteToReadOnly) {
   std::cout << "testWriteToReadOnly" << std::endl;
 
   ReadOnlyTestApplication app;
 
   ctk::TestFacility test{app};
+  app.optimiseUnmappedVariables({"/TEST/FROM_DEV_SCALAR2"});
 
   test.runApplication();
 
-  // Should trigger the blocking read in ReadOnlyTestApplication's
-  // ApplicationModule. It then writes to a read-only register of the device,
-  // which should throw. Check is done in the module's mainLoop. We can not check
-  // here, as the exception gets thrown in the thread of the module.
+  // Should trigger the blocking read in ReadOnlyTestApplication's ApplicationModule. It then writes to a read-only
+  // register of the device, which should throw. Check is done in the module's mainLoop. We can not check here, as the
+  // exception gets thrown in the thread of the module.
   test.writeScalar("/READ_ONLY_TEST/startTest", 1);
 }
-#endif
 
 /*********************************************************************************************************************/
 

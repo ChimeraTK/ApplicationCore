@@ -22,7 +22,8 @@
 
 struct PollModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
-  ChimeraTK::ScalarPollInput<int> pollInput{this, "REG1", "", "", {"DEVICE"}};
+  ChimeraTK::ScalarPollInput<int> pollInput{this, "REG1", "", ""};
+  ChimeraTK::ScalarPollInput<int> pollInput2{this, "REG2", "", ""};
   std::promise<void> p;
   void mainLoop() override { p.set_value(); }
 };
@@ -34,8 +35,35 @@ struct PushModule : ChimeraTK::ApplicationModule {
   struct : ChimeraTK::VariableGroup {
     using ChimeraTK::VariableGroup::VariableGroup;
     ChimeraTK::ScalarPushInput<int> pushInput{this, "../REG1_PUSHED", "", ""};
+  } reg1{this, "PushModule", ""};
+
+  std::promise<void> p;
+  void mainLoop() override { p.set_value(); }
+};
+
+/**********************************************************************************************************************/
+
+struct PushModuleForFanOut : ChimeraTK::ApplicationModule {
+  using ChimeraTK::ApplicationModule::ApplicationModule;
+  struct : ChimeraTK::VariableGroup {
+    using ChimeraTK::VariableGroup::VariableGroup;
+    ChimeraTK::ScalarPushInput<int> pushInput{this, "../REG1_PUSHED", "", ""};
     ChimeraTK::ScalarPushInput<int> pushInputCopy{this, "../REG1_PUSHED", "", ""};
-  } reg1{this, "REG1", ""};
+  } reg1{this, "PushModuleForFanOut", ""};
+
+  std::promise<void> p;
+  void mainLoop() override { p.set_value(); }
+};
+
+/**********************************************************************************************************************/
+
+struct PushModuleForTrigger : ChimeraTK::ApplicationModule {
+  using ChimeraTK::ApplicationModule::ApplicationModule;
+  struct : ChimeraTK::VariableGroup {
+    using ChimeraTK::VariableGroup::VariableGroup;
+    ChimeraTK::ScalarPushInput<int> pushInput{this, "../REG1", "", ""};
+    ChimeraTK::ScalarPushInput<int> pushInputCopy{this, "../REG1", "", ""};
+  } reg1{this, "PushModuleForTrigger", ""};
 
   std::promise<void> p;
   void mainLoop() override { p.set_value(); }
@@ -45,12 +73,12 @@ struct PushModule : ChimeraTK::ApplicationModule {
 
 struct OutputModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
-  ChimeraTK::ScalarOutput<int> deviceRegister{this, "REG1", "", "", {"DEVICE"}};
-  ChimeraTK::ScalarOutput<int> deviceRegister2{this, "REG2", "", "", {"DEVICE"}};
-  ChimeraTK::ScalarOutput<int> deviceRegister3{this, "REG3", "", "", {"DEVICE"}};
+  // Note: REG1 is not writeable. REG1.DUMMY_WRITEABLE is not part of the catalogue and hence cannot be used.
+  ChimeraTK::ScalarOutput<int> deviceRegister2{this, "REG2", "", ""};
+  ChimeraTK::ScalarOutput<int> deviceRegister3{this, "REG3", "", ""};
   ChimeraTK::ScalarOutput<int> trigger{this, "trigger", "", ""}; // must not be connected to any device
   std::promise<void> p;
-  void prepare() override { deviceRegister.write(); }
+  void prepare() override { writeAll(); }
   void mainLoop() override { p.set_value(); }
 };
 
@@ -61,7 +89,9 @@ struct DummyApplication : ChimeraTK::Application {
   constexpr static const char* ExceptionDummyCDD2 = "(ExceptionDummy:2?map=test_with_push.map)";
   constexpr static const char* ExceptionDummyCDD3 = "(ExceptionDummy:3?map=test_with_push.map)";
 
-  DummyApplication() : Application("DummyApplication") { // debugMakeConnections();
+  DummyApplication() : Application("DummyApplication") {
+    // enable this for debugging:
+    // debugMakeConnections();
   }
   ~DummyApplication() override { shutdown(); }
 
@@ -75,10 +105,10 @@ struct DummyApplication : ChimeraTK::Application {
 
   struct Group2 : ChimeraTK::ModuleGroup {
     using ChimeraTK::ModuleGroup::ModuleGroup;
-    ChimeraTK::DeviceModule device2{this, ExceptionDummyCDD2};
-    PushModule pushModule2{this, ".", "With TriggerFanOut"};
-    PushModule pushModule3{this, ".", "With ThreadedFanOut"};
-    PollModule pollModule2{this, ".", ""};
+    ChimeraTK::DeviceModule device2{this, ExceptionDummyCDD2, "/Group3/REG1_PUSHED"};
+    PushModuleForTrigger pushModule2{this, ".", "With TriggerFanOut"};
+    PushModuleForFanOut pushModule3{this, ".", "With ThreadedFanOut"};
+    // PollModule pollModule2{this, ".", ""};
     OutputModule outputModule2{this, ".", ""};
   } group2{this, "Group2", ""};
 
@@ -88,22 +118,6 @@ struct DummyApplication : ChimeraTK::Application {
     PollModule pollModule3{this, ".", ""};
   } group3{this, "Group3", ""};
 
-  /*
-    ChimeraTK::ControlSystemModule cs;
-
-    void defineConnections() override {
-      findTag("DEVICE").excludeTag("DEV2").excludeTag("DEV3").flatten().connectTo(device);
-      findTag("DEVICE").excludeTag("DEV").excludeTag("DEV3").flatten().connectTo(device2);
-      findTag("DEVICE").excludeTag("DEV").excludeTag("DEV2").flatten().connectTo(device3);
-
-         device("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> pushModule.reg1.pushInput;
-          device2("REG1")[device3("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push)] >>
-              pushModule2.reg1.pushInput;
-          device2("REG1/PUSH_READ", typeid(int), 1, ChimeraTK::UpdateMode::push) >> pushModule3.reg1.pushInput >>
-              cs("dev2_reg1_push_read");
-          findTag("DEVICE").excludeTag("DEV").connectTo(cs["Device2"]);
-       dumpConnections();
-    }*/
 };
 
 /**********************************************************************************************************************/
@@ -145,12 +159,11 @@ struct fixture_with_poll_and_push_input {
 
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.group1.pushModule.reg1.pushInput};
   ChimeraTK::ScalarPollInput<int>& pollVariable{application.group1.pollModule.pollInput};
-  ChimeraTK::ScalarOutput<int>& outputVariable{application.group1.outputModule.deviceRegister};
+  ChimeraTK::ScalarPollInput<int>& pollVariable2{application.group1.pollModule.pollInput2};
   ChimeraTK::ScalarOutput<int>& outputVariable2{application.group1.outputModule.deviceRegister2};
   ChimeraTK::ScalarOutput<int>& outputVariable3{application.group1.outputModule.deviceRegister3};
 
   ChimeraTK::ScalarPushInput<int>& triggeredInput{application.group2.pushModule2.reg1.pushInput};
-  ChimeraTK::ScalarPollInput<int>& pollVariable2{application.group2.pollModule2.pollInput};
 
   ChimeraTK::ScalarPushInput<int>& pushVariable3{application.group2.pushModule3.reg1.pushInput};
   ChimeraTK::ScalarPushInput<int>& pushVariable3copy{application.group2.pushModule3.reg1.pushInputCopy};
@@ -175,10 +188,10 @@ fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers,
       ChimeraTK::BackendFactory::getInstance().createBackend(DummyApplication::ExceptionDummyCDD2))),
   deviceBackend3(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(DummyApplication::ExceptionDummyCDD3))),
-  exceptionDummyRegister(deviceBackend->getRawAccessor("", "REG1")),
+  exceptionDummyRegister(deviceBackend->getRawAccessor("", "REG1.DUMMY_WRITEABLE")),
   exceptionDummyRegister2(deviceBackend->getRawAccessor("", "REG2")),
   exceptionDummyRegister3(deviceBackend->getRawAccessor("", "REG3")),
-  exceptionDummy2Register(deviceBackend2->getRawAccessor("", "REG1")) {
+  exceptionDummy2Register(deviceBackend2->getRawAccessor("", "REG1.DUMMY_WRITEABLE")) {
   try {
     deviceBackend2->throwExceptionOpen = breakSecondDeviceAtStart;
 
@@ -203,6 +216,12 @@ fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers,
       application.group1.device.addInitialisationHandler(initHandler2);
     }
 
+    // Make sure that some variables are not connected to the control system, to allow testing direct device-to-app
+    // connections without a ThreadedFanOut in between:
+    // "/Group1/REG1_PUSHED" aka "application.group1.pushModule.reg1.pushInput" aka "pushVariable"
+    // "/Group1/REG1_WRITE" aka "application.group1.outputModule.deviceRegister" aka "outputVariable"
+    application.optimiseUnmappedVariables({"/Group1/REG1_PUSHED", "/Group1/REG2"});
+
     testFacitiy.runApplication();
 
     auto dm1 = ChimeraTK::Utilities::stripName(DummyApplication::ExceptionDummyCDD1, false);
@@ -223,7 +242,7 @@ fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers,
     application.group1.outputModule.p.get_future().wait();
     if(!breakSecondDeviceAtStart) {
       application.group2.outputModule2.p.get_future().wait();
-      application.group2.pollModule2.p.get_future().wait();
+      // application.group2.pollModule2.p.get_future().wait();
       application.group2.pushModule2.p.get_future().wait();
     }
     deviceBecameFunctional.read();

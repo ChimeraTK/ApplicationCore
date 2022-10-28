@@ -72,7 +72,9 @@ namespace ChimeraTK {
 
   template<typename Derived>
   InversionOfControlAccessor<Derived>::~InversionOfControlAccessor() {
-    if(getOwner() != nullptr) getOwner()->unregisterAccessor(node);
+    if(getOwner() != nullptr) {
+      getOwner()->unregisterAccessor(node);
+    }
     if(getModel().isValid()) {
       getModel().removeNode(node);
     }
@@ -106,11 +108,22 @@ namespace ChimeraTK {
   template<typename Derived>
   void InversionOfControlAccessor<Derived>::replace(Derived&& other) {
     assert(static_cast<Derived*>(this)->_impl == nullptr && other._impl == nullptr);
+
+    // remove node from model
     if(getModel().isValid()) {
       getModel().removeNode(node);
     }
-    node = other.node; // just copies the pointer, but other will be destroyed right after this move constructor
-    other.node = VariableNetworkNode();
+
+    // remove accessor from owning module
+    if(node.getType() == NodeType::Application) {
+      getOwner()->unregisterAccessor(node);
+    }
+
+    // transfer the node
+    node = std::move(other.node);
+    other.node = VariableNetworkNode(); // Make sure the destructor of other sees an invalid node
+
+    // update the app accesor pointer in the node
     if(node.getType() == NodeType::Application) {
       node.setAppAccessorPointer(static_cast<Derived*>(this));
     }

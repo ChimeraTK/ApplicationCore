@@ -47,9 +47,15 @@ struct TestModule0 : ctk::ApplicationModule {
 // module for most of hte data validity propagation tests
 struct TestModule1 : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
+
   ctk::ScalarPushInput<int> i1{this, "i1", "", ""};
+
   ctk::ScalarOutput<int> o1{this, "o1", "", ""};
+
   ctk::ScalarOutput<int> oconst{this, "oconst", "", ""};
+
+  void prepare() override { writeAll(); }
+
   void mainLoop() override {
     oconst = 1;
     oconst.setDataValidity(outputValidity);
@@ -67,14 +73,17 @@ struct TestModule1 : ctk::ApplicationModule {
       o1.write();
     }
   }
+
   // used for overwriting the outputs validities.
   ctk::DataValidity outputValidity = ctk::DataValidity::ok;
   int incCalled = 0;
   int decCalled = 0;
+
   void incrementDataFaultCounter() override {
     incCalled++;
     ctk::ApplicationModule::incrementDataFaultCounter();
   }
+
   void decrementDataFaultCounter() override {
     decCalled++;
     ctk::ApplicationModule::decrementDataFaultCounter();
@@ -276,12 +285,12 @@ BOOST_AUTO_TEST_CASE(testDataValidity_1_6) {
   app.mod2.outputValidity = ctk::DataValidity::ok;
   ctk::TestFacility test{app};
 
-  app.mod1.o1.write(); // satisfy initial value
-
   // app.dumpConnections();
   auto input = test.getScalar<int>("/m1/i1");
   auto result = test.getScalar<int>("/m2/o1");
   test.runApplication();
+  result.readLatest();
+
   input.write();
   test.stepApplication();
   input.write();
@@ -443,6 +452,8 @@ BOOST_AUTO_TEST_CASE(testDataValidity_2_3_3) {
   auto o1 = test.getScalar<int>("/m1/o1");
   auto oconst = test.getScalar<int>("/m1/oconst");
   test.runApplication();
+  o1.readLatest();
+  oconst.readLatest();
 
   i1 = 1;
   i1.setDataValidity(ctk::DataValidity::faulty);

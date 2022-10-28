@@ -158,6 +158,7 @@ BOOST_AUTO_TEST_CASE(testDirectAppToCSConnections) {
   std::cout << "*** testDirectAppToCSConnections" << std::endl;
 
   TestApplication app;
+  app.debugMakeConnections();
   app.b = {&app, ".", ""};
 
   ctk::TestFacility test(app);
