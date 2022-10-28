@@ -316,7 +316,7 @@ namespace ChimeraTK {
           break;
         case NodeType::TriggerReceiver: {
           needsFanOut = false;
-          debug("    Node type is TriggerReceiver");
+          debug("    Node type is TriggerReceiver (Alias = " + consumer.getDeviceAlias() + ")");
 
           // create the trigger fan out and store it in the map and the internalModuleList
           auto triggerFanOut =
@@ -502,6 +502,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   ConsumerImplementationPairs<UserType> ConnectionMaker::setConsumerImplementations(NetworkInformation& net) {
+    debug("    setConsumerImplementations");
     ConsumerImplementationPairs<UserType> consumerImplPairs;
 
     for(const auto& consumer : net.consumers) {
@@ -509,20 +510,24 @@ namespace ChimeraTK {
           boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>(), consumer};
 
       if(consumer.getType() == NodeType::Application) {
+        debug("      Node type is Application");
         auto impls = createApplicationVariable<UserType>(consumer);
         consumer.setAppAccessorImplementation<UserType>(impls.second);
         pair = std::make_pair(impls.first, consumer);
       }
       else if(consumer.getType() == NodeType::ControlSystem) {
+        debug("      Node type is ControlSystem");
         auto impl = createProcessVariable<UserType>(
             consumer, net.valueLength, net.unit, net.description, {AccessMode::wait_for_new_data});
         pair = std::make_pair(impl, consumer);
       }
       else if(consumer.getType() == NodeType::Device) {
+        debug("      Node type is Device");
         auto impl = createDeviceVariable<UserType>(consumer);
         pair = std::make_pair(impl, consumer);
       }
       else if(consumer.getType() == NodeType::TriggerReceiver) {
+        debug("      Node type is TriggerReceiver");
         auto triggerConnection = createApplicationVariable<UserType>(net.feeder);
 
         auto triggerFanOut = boost::make_shared<TriggerFanOut>(
