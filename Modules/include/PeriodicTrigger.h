@@ -48,12 +48,6 @@ namespace ChimeraTK {
       applyHierarchyModifierToName(hierarchyModifier);
     }
 
-    // The references period and tick allow to directly access the input and output.
-    // This serves two purposes:
-    // 1. Avoid having to call the .value of ModifyHierarchy each time.
-    // 2. Keep the code API compatible with the previous version which did not have the ModifyHierarchy but directly
-    //    had a ScalarOutput named tick. Some older code which does not connect via the CS name yet but uses direct
-    //    connection might break otherwise.
     ScalarPollInput<uint32_t> period;
     ScalarOutput<uint64_t> tick;
 
