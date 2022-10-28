@@ -318,6 +318,7 @@ namespace ChimeraTK::Model {
   void ProcessVariableProxy::removeNode(const VariableNetworkNode& node) {
     assert(node.getType() == NodeType::Application || node.getType() == NodeType::Device);
 
+    // remove node from the list of nodes in the PV's vertex properties
     auto& nodes = std::get<VertexProperties::ProcessVariableProperties>(_d->impl->graph[_d->vertex].p).nodes;
     auto it = std::find(nodes.begin(), nodes.end(), node);
     if(it == nodes.end()) {
@@ -325,27 +326,27 @@ namespace ChimeraTK::Model {
     }
     nodes.erase(it);
 
-    if (node.getType() == NodeType::Application) {
-      // remove model relation ship between PV and variable group and/or module
+    // remove model relationships between PV and module
+    if(node.getType() == NodeType::Application) {
       auto* vg = dynamic_cast<VariableGroup*>(node.getOwningModule());
       assert(vg != nullptr);
 
       // remove ownership edge to variable group (if any)
       auto vgm = vg->getModel();
       if(vgm.isValid()) {
-        boost::remove_edge(_d->vertex, vgm._d->vertex, _d->impl->graph);
+        boost::remove_edge(vgm._d->vertex, _d->vertex, _d->impl->graph);
       }
 
       // remove pv access edge, and along side the ownership edge if directly owned by application module
       auto* am = dynamic_cast<ApplicationModule*>(vg->findApplicationModule());
       assert(am != nullptr);
       auto amm = am->getModel();
+
       assert(amm.isValid());
       boost::remove_edge(amm._d->vertex, _d->vertex, _d->impl->graph);
       boost::remove_edge(_d->vertex, amm._d->vertex, _d->impl->graph);
     }
     else if(node.getType() == NodeType::Device) {
-      // remove model relation ship between PV and DeviceModule
       auto* dm = dynamic_cast<DeviceModule*>(node.getOwningModule());
       assert(dm != nullptr);
 
