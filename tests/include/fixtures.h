@@ -117,7 +117,6 @@ struct DummyApplication : ChimeraTK::Application {
     ChimeraTK::DeviceModule device3{this, ExceptionDummyCDD3};
     PollModule pollModule3{this, ".", ""};
   } group3{this, "Group3", ""};
-
 };
 
 /**********************************************************************************************************************/

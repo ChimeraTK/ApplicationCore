@@ -334,7 +334,7 @@ namespace ChimeraTK {
       // Remember that we are part of a circle, and of which circle
       pdata->circularNetworkHash = boost::hash_range(inputModuleList.begin(), inputModuleList.end());
       // we already did the assertion that the owning module is an application module above, so we can static cast here
-      auto *applicationModule = static_cast<ApplicationModule*>(owningModule);
+      auto* applicationModule = static_cast<ApplicationModule*>(owningModule);
       applicationModule->setCircularNetworkHash(pdata->circularNetworkHash);
 
       // Find the MetaDataPropagatingRegisterDecorator which is involved and set the _isCirularInput flag

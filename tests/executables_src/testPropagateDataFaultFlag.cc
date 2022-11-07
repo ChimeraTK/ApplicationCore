@@ -694,7 +694,6 @@ BOOST_FIXTURE_TEST_CASE(testReadDeviceWithTrigger, Fixture_noTestableMode) {
   fromDevice.read(); // there is an initial value
   BOOST_CHECK_EQUAL(fromDevice, 0);
 
-
   auto deviceRegister = ctk::Device(app.ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i3/DUMMY_WRITEABLE");
   deviceRegister = 30;
   deviceRegister.write();
