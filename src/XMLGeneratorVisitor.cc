@@ -6,7 +6,6 @@
 #include "Application.h"
 #include "VariableGroup.h"
 #include "VariableNetworkNode.h"
-
 #include <libxml++/libxml++.h>
 
 #include <ChimeraTK/RegisterPath.h>
@@ -46,10 +45,7 @@ namespace ChimeraTK {
     };
     _app.getModel().visit(triggerCollector, Model::depthFirstSearch, Model::keepDeviceModules);
 
-
-    auto connectingVisitor = [&](auto proxy) {
-      generateXMLNetwork(proxy);
-    };
+    auto connectingVisitor = [&](auto proxy) { generateXMLNetwork(proxy); };
 
     // ChimeraTK::Model::keepParenthood - small optimisation for iterating the model only once
     _app.getModel().visit(connectingVisitor, ChimeraTK::Model::depthFirstSearch, ChimeraTK::Model::keepProcessVariables,

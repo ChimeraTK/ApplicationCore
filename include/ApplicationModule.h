@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CircularDependencyDetectionRecursionStopper.h"
-#include "VariableGroup.h"
 #include "Model.h"
+#include "VariableGroup.h"
 
 #include <boost/thread.hpp>
 

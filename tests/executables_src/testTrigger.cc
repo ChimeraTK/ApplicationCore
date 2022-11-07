@@ -358,7 +358,7 @@ BOOST_AUTO_TEST_CASE(testDev2App1Trigger2Devices) {
 /**********************************************************************************************************************/
 
 struct TestApp5 : ctk::Application {
-  TestApp5() : ctk::Application("testApp5") { }
+  TestApp5() : ctk::Application("testApp5") {}
   ~TestApp5() override { shutdown(); }
 
   struct : ctk::ApplicationModule {

@@ -96,14 +96,13 @@ namespace ChimeraTK {
     void connect();
 
    private:
-
     std::set<Model::ProcessVariableProxy, ProcessVariableComperator> triggers;
 
     void connectNetwork(Model::ProcessVariableProxy& proxy);
 
     void makeDirectConnectionForFeederWithImplementation(NetworkInformation& net);
-    void makeFanOutConnectionForFeederWithImplementation(NetworkInformation& net,
-        const Model::DeviceModuleProxy& device, const Model::ProcessVariableProxy& trigger);
+    void makeFanOutConnectionForFeederWithImplementation(
+        NetworkInformation& net, const Model::DeviceModuleProxy& device, const Model::ProcessVariableProxy& trigger);
     void makeConnectionForFeederWithoutImplementation(NetworkInformation& net);
     void makeConnectionForConstantFeeder(NetworkInformation& net);
 

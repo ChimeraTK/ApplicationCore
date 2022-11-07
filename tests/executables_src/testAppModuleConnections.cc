@@ -265,7 +265,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoArrayAccessors, T, test_types) {
   for(unsigned int i = 0; i < 10; ++i) BOOST_CHECK(app.testModule.consumingPushArray[i] == 42 - (T)i);
 }
 
-
 /*********************************************************************************************************************/
 /* test case for connecting array of length 1 with scalar */
 

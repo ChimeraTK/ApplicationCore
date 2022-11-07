@@ -84,7 +84,7 @@ namespace ChimeraTK::detail {
 
       // throw a specialised exception to make sure whoever catches it really knows what he does...
       terminateTestStalled(); // LCOV_EXCL_LINE
-    }                       // LCOV_EXCL_LINE
+    }                         // LCOV_EXCL_LINE
 
     // check if the last owner of the mutex was this thread, which may be a hint
     // that no other thread is waiting for the lock

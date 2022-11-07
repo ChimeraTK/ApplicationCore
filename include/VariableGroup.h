@@ -61,6 +61,7 @@ namespace ChimeraTK {
 
    protected:
     ChimeraTK::Model::VariableGroupProxy _model;
+
    private:
     friend class ApplicationModule;
     /** Constructor: Create ModuleGroup by the given name with the given description and register it with its

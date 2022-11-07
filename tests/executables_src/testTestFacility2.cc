@@ -37,7 +37,6 @@ struct TestApp : public ctk::Application {
   ~TestApp() override { shutdown(); }
 
   MyModule myModule{this, "MyModule", ""};
-
 };
 
 /**********************************************************************************************************************/

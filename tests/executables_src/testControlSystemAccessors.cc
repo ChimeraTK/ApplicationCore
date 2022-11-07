@@ -67,7 +67,6 @@ struct TestApplication : public ctk::Application {
   ~TestApplication() { shutdown(); }
 
   TestModule<T> testModule{this, "TestModule", "The test module"};
-
 };
 
 /*********************************************************************************************************************/

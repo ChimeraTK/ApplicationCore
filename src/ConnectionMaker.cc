@@ -98,7 +98,8 @@ namespace ChimeraTK {
     }
 
     if(net.feeder.getType() == NodeType::invalid && net.consumers.empty()) {
-      throw ChimeraTK::logic_error("Variable network '" + proxy.getFullyQualifiedPath() + "' is empty. Must not happen");
+      throw ChimeraTK::logic_error(
+          "Variable network '" + proxy.getFullyQualifiedPath() + "' is empty. Must not happen");
     }
 
     return net;
@@ -245,8 +246,8 @@ namespace ChimeraTK {
 
     // Mark circular networks
     for(auto& node : _networks.at(path).consumers) {
-      // A variable network is a tree-like network of VariableNetworkNodes (one feeder and one or more multiple consumers)
-      // A circular network is a list of modules (EntityOwners) which have a circular dependency
+      // A variable network is a tree-like network of VariableNetworkNodes (one feeder and one or more multiple
+      // consumers) A circular network is a list of modules (EntityOwners) which have a circular dependency
       auto circularNetwork = node.scanForCircularDepencency();
       if(not circularNetwork.empty()) {
         auto circularNetworkHash = boost::hash_range(circularNetwork.begin(), circularNetwork.end());

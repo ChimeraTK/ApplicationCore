@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(testXmlGeneration) {
   }
 
   // get root element
-  auto *const root = parser.get_document()->get_root_node();
+  auto* const root = parser.get_document()->get_root_node();
   BOOST_CHECK_EQUAL(root->get_name(), "application");
 
   // parsing loop
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(testXmlGeneration) {
 
     if(element->get_name() == "variable") {
       // obtain attributes from the element
-      auto *xname = element->get_attribute("name");
+      auto* xname = element->get_attribute("name");
       BOOST_REQUIRE(xname != nullptr);
       std::string name(xname->get_value());
 
@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(testXmlGeneration) {
         BOOST_TEST(direction == "application_to_control_system");
         BOOST_TEST(unit == "unit");
         BOOST_TEST(description == "Some pipe module");
-        BOOST_TEST(numberOfElements ==  "1");
+        BOOST_TEST(numberOfElements == "1");
       }
       else if(name == "pipeIn") {
         found_pipeOut = true;
@@ -174,14 +174,14 @@ BOOST_AUTO_TEST_CASE(testXmlGeneration) {
         BOOST_CHECK_EQUAL(direction, "control_system_to_application");
         BOOST_TEST(unit == "unit");
         BOOST_TEST(description == "Some pipe module");
-        BOOST_TEST(numberOfElements ==  "1");
+        BOOST_TEST(numberOfElements == "1");
       }
       else {
         BOOST_ERROR("Wrong variable name found.");
       }
     }
     else if(element->get_name() == "directory") {
-      auto *xname = element->get_attribute("name");
+      auto* xname = element->get_attribute("name");
       BOOST_REQUIRE(xname != nullptr);
       std::string name(xname->get_value());
 
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(testXmlGeneration) {
         BOOST_CHECK_EQUAL(element2->get_name(), "variable");
 
         // obtain attributes from the element
-        auto *xname2 = element2->get_attribute("name");
+        auto* xname2 = element2->get_attribute("name");
         BOOST_REQUIRE(xname2 != nullptr);
         std::string name2(xname2->get_value());
 

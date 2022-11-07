@@ -15,7 +15,6 @@
 #include <ChimeraTK/NDRegisterAccessor.h>
 
 #include <boost/mpl/list.hpp>
-
 #include <boost/test/included/unit_test.hpp>
 
 using namespace boost::unit_test_framework;
@@ -218,7 +217,6 @@ BOOST_AUTO_TEST_CASE(testConsumingFanOut) {
   dev.open("Dummy0");
   auto regacc = dev.getScalarRegisterAccessor<int>("/MyModule/readBack.DUMMY_WRITEABLE");
   test.runApplication();
-
 
   // single threaded test only, since read() does not block in this case
   BOOST_CHECK(app.testModule.consumingPoll == 1);

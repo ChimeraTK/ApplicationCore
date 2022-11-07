@@ -63,7 +63,7 @@ namespace ChimeraTK {
      * Constructor for a TriggerReceiver node triggering the data transfer of another network. The additional dummy
      * argument is only there to discriminate the signature from the copy constructor and will be ignored.
      */
-    VariableNetworkNode(const std::string &deviceAliasOrCdd, int);
+    VariableNetworkNode(const std::string& deviceAliasOrCdd, int);
 
     /** Constructor to wrap a VariableNetworkNode_data pointer */
     explicit VariableNetworkNode(boost::shared_ptr<VariableNetworkNode_data> pdata);

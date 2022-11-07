@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "TestFacility.h"
+
 #include <future>
 
 #define BOOST_TEST_MODULE testIllegalNetworks
@@ -14,15 +15,13 @@
 #include <ChimeraTK/BackendFactory.h>
 
 #include <boost/mpl/list.hpp>
-
 #include <boost/test/included/unit_test.hpp>
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
 // list of user types the accessors are tested with
-using TestTypes = boost::mpl::list < int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double,
-    ctk::Boolean>;
+using TestTypes = boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double, ctk::Boolean>;
 
 /*********************************************************************************************************************/
 /* test case for two scalar accessors, feeder in poll mode and consumer in push
@@ -44,7 +43,6 @@ struct TestApplication1 : public ctk::Application {
 
   ctk::DeviceModule dev{this, "Dummy0"};
 };
-
 
 BOOST_AUTO_TEST_CASE(testTwoScalarPollPushAccessors) {
   TestApplication1 app;
@@ -131,7 +129,7 @@ BOOST_AUTO_TEST_CASE(testTooManyPollingConsumers) {
 /*********************************************************************************************************************/
 /* test case for different number of elements */
 
-template <typename T>
+template<typename T>
 struct TestApplication5 : public ctk::Application {
   TestApplication5() : Application("testSuite") { debugMakeConnections(); }
   ~TestApplication5() override { shutdown(); }
@@ -161,7 +159,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testDifferentNrElements, T, TestTypes) {
 /*********************************************************************************************************************/
 /* test case for zero-length elements that are not void */
 
-template <typename T>
+template<typename T>
 struct TestApplication6 : public ctk::Application {
   TestApplication6() : Application("testSuite") { debugMakeConnections(); }
   ~TestApplication6() override { shutdown(); }
