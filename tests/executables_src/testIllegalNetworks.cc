@@ -39,7 +39,7 @@ struct TestApplication1 : public ctk::Application {
     ctk::ScalarPushInput<int> consumingPush{this, "/MyModule/readBack", "", ""};
 
     void mainLoop() override {}
-  } testModule{this, ".", ""};
+  } testModule{(this), ".", ""}; // extra parentheses are for doxygen...
 
   ctk::DeviceModule dev{this, "Dummy0"};
 };
