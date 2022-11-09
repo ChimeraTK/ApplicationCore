@@ -202,29 +202,5 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
-  /*
-    void StatusAggregator::findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag,
-        bool eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const {
-      // Change behaviour to exclude the auto-generated inputs which are connected to the data sources. Otherwise those
-      // variables might get published twice to the control system, if findTag(".*") is used to connect the entire
-      // application to the control system.
-      // This is a temporary solution. In future, instead the inputs should be generated at the same place in the
-      // hierarchy as the source variable, and the connetion should not be made by the module itself. This currently would
-      // be complicated to implement, since it is difficult to find the correct virtual name for the variables.
-
-      struct MyVirtualModule : VirtualModule {
-        using VirtualModule::VirtualModule;
-        using VirtualModule::findTagAndAppendToModule;
-      };
-
-      MyVirtualModule tempParent("tempRoot", "", ModuleType::ApplicationModule);
-      MyVirtualModule tempRoot("tempRoot", "", ModuleType::ApplicationModule);
-      EntityOwner::findTagAndAppendToModule(
-          tempParent, tagInternalVars, eliminateAllHierarchies, eliminateFirstHierarchy, true, tempRoot);
-      tempParent.findTagAndAppendToModule(virtualParent, tag, false, true, negate, root);
-      tempRoot.findTagAndAppendToModule(root, tag, false, true, negate, root);
-    }
-  */
-  /********************************************************************************************************************/
 
 } // namespace ChimeraTK

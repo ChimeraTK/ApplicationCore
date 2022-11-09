@@ -14,7 +14,6 @@ namespace ChimeraTK {
 
   class AccessorBase;
   class Module;
-  class VirtualModule;
 
   /********************************************************************************************************************/
 
