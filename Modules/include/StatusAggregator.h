@@ -3,7 +3,6 @@
 #pragma once
 
 #include "ApplicationModule.h"
-#include "HierarchyModifyingGroup.h"
 #include "ModuleGroup.h"
 #include "StatusAccessor.h"
 #include "StatusWithMessage.h"
@@ -78,16 +77,10 @@ namespace ChimeraTK {
     StatusAggregator& operator=(StatusAggregator&& other) = default;
 
     void mainLoop() override;
-    /*
-        void findTagAndAppendToModule(VirtualModule& virtualParent, const std::string& tag, bool
-       eliminateAllHierarchies, bool eliminateFirstHierarchy, bool negate, VirtualModule& root) const override;
-    */
+
    protected:
     /// Recursivly search for StatusMonitors and other StatusAggregators
     void populateStatusInput();
-
-    /// Helper for populateStatusInput
-    // void scanAndPopulateFromHierarchyLevel(EntityOwner& module, const std::string& namePrefix);
 
     /** Reserved tag which is used to mark aggregated status outputs (need to stop searching further down the
      *  hierarchy) */
