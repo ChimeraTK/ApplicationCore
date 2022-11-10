@@ -42,9 +42,11 @@ namespace ChimeraTK::Model {
   class DirectoryProxy;
   class Impl;
 
-  // Note: This is effectively a forward-declaration. The type must match the type Model::vertex_descriptor which is
+  // Note: This is effectively a forward-declaration. The type must match the type Graph::vertex_descriptor which is
   // only known below. It will be re-aliased below so we get an error if the type mismatches.
-  using Vertex = uint64_t;
+  // This trick is necessary to break the otherwise circular dependency of the VertexProperties class using the Vertex
+  // definition, while the VertexProperties class is necessary to define the Graph bringing the vertex_descriptor.
+  using Vertex = unsigned long int;
 
   /********************************************************************************************************************/
 
