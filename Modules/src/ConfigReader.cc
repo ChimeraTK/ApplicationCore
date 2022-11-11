@@ -263,9 +263,9 @@ namespace ChimeraTK {
 
   ConfigReader::ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
       HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
-  : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", tags), _fileName(fileName),
-    _moduleTree(std::make_unique<ModuleTree>(this, ".", "")) {
-    applyHierarchyModifierToName(hierarchyModifier);
+  : ApplicationModule(owner, applyHierarchyModifierToName(name, hierarchyModifier),
+        "Configuration read from file '" + fileName + "'", tags),
+    _fileName(fileName), _moduleTree(std::make_unique<ModuleTree>(this, ".", "")) {
     construct(fileName);
   }
 

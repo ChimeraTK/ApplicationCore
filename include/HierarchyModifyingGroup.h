@@ -13,9 +13,9 @@ namespace ChimeraTK {
    *  Deprecated class for backwards compatibility ownly. Use VariableGroup instead!
    */
   struct HierarchyModifyingGroup : VariableGroup {
-    [[deprecated]] HierarchyModifyingGroup(VariableGroup* owner, const std::string& name,
-        const std::string& description, const std::unordered_set<std::string>& tags = {})
-    : VariableGroup(owner, name, description, tags) {}
+    [[deprecated]] HierarchyModifyingGroup(EntityOwner* owner, const std::string& name, const std::string& description,
+        const std::unordered_set<std::string>& tags = {})
+    : VariableGroup(dynamic_cast<VariableGroup*>(owner), name, description, tags) {}
 
     using VariableGroup::VariableGroup;
 

@@ -32,25 +32,22 @@ namespace ChimeraTK {
 
   ApplicationModule::ApplicationModule(ModuleGroup* owner, const std::string& name, const std::string& description,
       HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
-  : ApplicationModule(owner, name, description, tags) {
-    applyHierarchyModifierToName(hierarchyModifier);
-  }
+  : ApplicationModule(owner, applyHierarchyModifierToName(name, hierarchyModifier), description, tags) {}
 
   /*********************************************************************************************************************/
 
   ApplicationModule::ApplicationModule(EntityOwner* owner, const std::string& name, const std::string& description,
       HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
-  : ApplicationModule(dynamic_cast<ModuleGroup*>(owner), name, description, tags) {
-    applyHierarchyModifierToName(hierarchyModifier);
-  }
+  : ApplicationModule(
+        dynamic_cast<ModuleGroup*>(owner), applyHierarchyModifierToName(name, hierarchyModifier), description, tags) {}
 
   /*********************************************************************************************************************/
 
   ApplicationModule::ApplicationModule(EntityOwner* owner, const std::string& name, const std::string& description,
       bool eliminateHierarchy, const std::unordered_set<std::string>& tags)
-  : ApplicationModule(dynamic_cast<ModuleGroup*>(owner), name, description, tags) {
-    applyHierarchyModifierToName(eliminateHierarchy ? HierarchyModifier::hideThis : HierarchyModifier::none);
-  }
+  : ApplicationModule(dynamic_cast<ModuleGroup*>(owner),
+        applyHierarchyModifierToName(name, eliminateHierarchy ? HierarchyModifier::hideThis : HierarchyModifier::none),
+        description, tags) {}
 
   /*********************************************************************************************************************/
 

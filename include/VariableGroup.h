@@ -40,6 +40,14 @@ namespace ChimeraTK {
         HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags = {});
 
     /**
+     * Deprecated constructor with HierarchyModifier for backwards compatibility. Use constructor without
+     * HierarchyModifier and if necessary qualified names instead.
+     */
+    [[deprecated]] VariableGroup(EntityOwner* owner, const std::string& name, const std::string& description,
+        HierarchyModifier hierarchyModifier = HierarchyModifier::none,
+        const std::unordered_set<std::string>& tags = {});
+
+    /**
      * Default constructor: Allows late initialisation of VariableGroups (e.g. when creating arrays of VariableGroups).
      */
     VariableGroup() = default;
