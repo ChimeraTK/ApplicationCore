@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "Utilities.h"
 
+#include <pthread.h>
+
 namespace ChimeraTK::Utilities {
 
   /********************************************************************************************************************/

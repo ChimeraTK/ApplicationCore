@@ -186,18 +186,8 @@ namespace ChimeraTK::Model {
    */
   class RootProxy : public Proxy {
    public:
-    friend class Proxy;
-    friend class ModuleGroupProxy;
-    friend class ApplicationModuleProxy;
-    friend class VariableGroupProxy;
-    friend class DeviceModuleProxy;
-    friend class ProcessVariableProxy;
-    friend class DirectoryProxy;
-
     /// This constructor creates a new, empty model with the given ModuleGroup as application root.
     explicit RootProxy(ModuleGroup& app);
-
-    using Proxy::Proxy;
 
     ModuleGroupProxy add(ModuleGroup& module);
     ApplicationModuleProxy add(ApplicationModule& module);
@@ -234,13 +224,22 @@ namespace ChimeraTK::Model {
      * Convert into a proxy for the Directory part/aspect of the Application
      */
     explicit operator Model::DirectoryProxy();
+
+   private:
+    using Proxy::Proxy;
+    friend class Proxy;
+    friend class ModuleGroupProxy;
+    friend class ApplicationModuleProxy;
+    friend class VariableGroupProxy;
+    friend class DeviceModuleProxy;
+    friend class ProcessVariableProxy;
+    friend class DirectoryProxy;
+    friend struct VertexProperties;
   };
 
   /********************************************************************************************************************/
 
   class ModuleGroupProxy : public Proxy {
-    using Proxy::Proxy;
-
    public:
     /// Get the name of the ModuleGroup
     [[nodiscard]] const std::string& getName() const;
@@ -253,6 +252,9 @@ namespace ChimeraTK::Model {
     DeviceModuleProxy add(DeviceModule& module);
 
    private:
+    using Proxy::Proxy;
+    friend struct VertexProperties;
+
     /// Update ModuleGroup reference after move operation
     void informMove(ModuleGroup& group);
     friend class ChimeraTK::ModuleGroup;
@@ -261,8 +263,6 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   class ApplicationModuleProxy : public Proxy {
-    using Proxy::Proxy;
-
    public:
     /// Get the name of the ApplicationModule
     [[nodiscard]] const std::string& getName() const;
@@ -279,6 +279,9 @@ namespace ChimeraTK::Model {
     explicit operator Model::VariableGroupProxy();
 
    private:
+    using Proxy::Proxy;
+    friend struct VertexProperties;
+
     /// Update ApplicationModule reference after move operation
     void informMove(ApplicationModule& module);
     friend class ChimeraTK::ApplicationModule;
@@ -287,8 +290,6 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   class VariableGroupProxy : public Proxy {
-    using Proxy::Proxy;
-
    public:
     /// Get the name of the VariableGroup
     [[nodiscard]] const std::string& getName() const;
@@ -303,6 +304,9 @@ namespace ChimeraTK::Model {
     void addVariable(const ProcessVariableProxy& variable, const VariableNetworkNode& node);
 
    private:
+    using Proxy::Proxy;
+    friend struct VertexProperties;
+
     /// Update VariableGroup reference after move operation
     void informMove(VariableGroup& group);
     friend class ChimeraTK::VariableGroup;
@@ -311,8 +315,6 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   class DeviceModuleProxy : public Proxy {
-    using Proxy::Proxy;
-
    public:
     /// Get the alias or CDD of the device
     [[nodiscard]] const std::string& getAliasOrCdd() const;
@@ -324,6 +326,9 @@ namespace ChimeraTK::Model {
     void addVariable(const ProcessVariableProxy& variable, const VariableNetworkNode& node);
 
    private:
+    using Proxy::Proxy;
+    friend struct VertexProperties;
+
     /// Update DeviceModule reference after move operation
     void informMove(DeviceModule& group);
     friend class ChimeraTK::DeviceModule;
@@ -332,8 +337,6 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   class ProcessVariableProxy : public Proxy {
-    using Proxy::Proxy;
-
    public:
     /// Get the name of the ProcessVariable
     [[nodiscard]] const std::string& getName() const;
@@ -361,6 +364,9 @@ namespace ChimeraTK::Model {
     bool visitByPath(std::string_view path, VISITOR visitor) const;
 
    protected:
+    using Proxy::Proxy;
+    friend struct VertexProperties;
+
     /// Add tag to this PV. Used by VariableNetworkNode to update the model when tags are added to PVs.
     void addTag(const std::string& tag);
 
@@ -377,8 +383,6 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   class DirectoryProxy : public Proxy {
-    using Proxy::Proxy;
-
    public:
     /// Get the name of the Directory
     [[nodiscard]] const std::string& getName() const;
@@ -400,6 +404,10 @@ namespace ChimeraTK::Model {
     ProcessVariableProxy addVariable(const std::string& name);
     DirectoryProxy addDirectory(const std::string& name);
     DirectoryProxy addDirectoryRecursive(const std::string& name);
+
+   private:
+    using Proxy::Proxy;
+    friend struct VertexProperties;
   };
 
   /********************************************************************************************************************/
