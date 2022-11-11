@@ -145,6 +145,18 @@ namespace ChimeraTK {
     /** Check whether this module has declared that it reached the testable mode. */
     bool hasReachedTestableMode();
 
+    /**
+     * Create a variable name which will be automatically connected with a constant value. This can be used when a
+     * constant value.
+     */
+    template<typename T>
+    std::string constant(T value);
+
+    /**
+     * Prefix for costants created by constant().
+     */
+    static const std::string namePrefixConstant;
+
    protected:
     /** Convert HierarchyModifier into path qualification (for backwards compatibility only!) */
     void applyHierarchyModifierToName(HierarchyModifier hierarchyModifier);
@@ -171,6 +183,13 @@ namespace ChimeraTK {
      *  has been properly unified with the normal Module class. */
     std::atomic<bool> _testableModeReached{false};
   };
+
+  /********************************************************************************************************************/
+
+  template<typename T>
+  std::string EntityOwner::constant(T value) {
+    return namePrefixConstant + userTypeToUserType<std::string>(value);
+  }
 
   /********************************************************************************************************************/
 

@@ -288,3 +288,29 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testPseudoArray, T, test_types) {
   app.testModule.consumingPush.read();
   BOOST_CHECK(app.testModule.consumingPush == 33);
 }
+
+/*********************************************************************************************************************/
+/* test case for EntityOwner::constant() */
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
+  std::cout << "*** testConstants<" << typeid(T).name() << ">" << std::endl;
+
+  TestApplication<T> app;
+  app.testModule.consumingPush = {&app.testModule, app.testModule.constant(T(66)), "", ""};
+  app.testModule.consumingPoll = {&app.testModule, app.testModule.constant(T(77)), "", ""};
+
+  ctk::TestFacility tf{app, false};
+  tf.runApplication();
+  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+
+  BOOST_TEST(app.testModule.consumingPush == 66);
+  BOOST_TEST(app.testModule.consumingPoll == 77);
+
+  BOOST_TEST(app.testModule.consumingPush.readNonBlocking() == false);
+
+  app.testModule.consumingPoll = 0;
+  app.testModule.consumingPoll.read();
+  BOOST_TEST(app.testModule.consumingPoll == 77);
+}
+
+/*********************************************************************************************************************/

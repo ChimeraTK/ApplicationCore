@@ -405,11 +405,11 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void VariableNetworkNode::setAppAccessorConstImplementation() const {
-    callForType(getValueType(), [&](auto t) {
+  void VariableNetworkNode::setAppAccessorConstImplementation(const VariableNetworkNode& feeder) const {
+    callForTypeNoVoid(getValueType(), [&](auto t) {
       using UserType = decltype(t);
       auto impl = boost::dynamic_pointer_cast<ChimeraTK::NDRegisterAccessor<UserType>>(
-          boost::make_shared<ConstantAccessor<UserType>>(UserType(), getNumberOfElements(),
+          boost::make_shared<ConstantAccessor<UserType>>(feeder.getConstantValue<UserType>(), getNumberOfElements(),
               getMode() == UpdateMode::push ? AccessModeFlags{AccessMode::wait_for_new_data} : AccessModeFlags{}));
 
       if(getMode() == UpdateMode::push && getDirection().dir == VariableDirection::consuming) {
