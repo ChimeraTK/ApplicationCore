@@ -62,7 +62,6 @@ void Application::enableTestableMode() {
 
 void Application::registerThread(const std::string& name) {
   getInstance().testableMode.setThreadName(name);
-  pthread_setname_np(pthread_self(), name.substr(0, std::min<std::string::size_type>(name.length(), 15)).c_str());
 }
 
 /*********************************************************************************************************************/

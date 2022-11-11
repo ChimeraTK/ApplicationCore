@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "Utilities.h"
 
+#include <pthread.h>
+
 namespace ChimeraTK::Utilities {
 
   /********************************************************************************************************************/
@@ -50,6 +52,16 @@ namespace ChimeraTK::Utilities {
     }
 
     return (name.find_first_not_of(legalChars) == std::string::npos);
+  }
+
+  /********************************************************************************************************************/
+
+  void setThreadName(const std::string& name) {
+#if defined(__linux__)
+    pthread_setname_np(pthread_self(), name.substr(0, std::min<std::string::size_type>(name.length(), 15)).c_str());
+#elif defined(__APPLE__)
+    pthread_setname_np(name.substr(0, std::min<std::string::size_type>(name.length(), 15)).c_str());
+#endif
   }
 
   /********************************************************************************************************************/
