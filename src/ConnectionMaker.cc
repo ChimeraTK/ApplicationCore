@@ -41,6 +41,11 @@ namespace ChimeraTK {
           throw ChimeraTK::logic_error(
               "Variable network " + proxy.getFullyQualifiedPath() + " has more than one feeder");
         }
+
+        // feeding a constant (created with ApplicationModule::constant()) is not allowed
+        if(boost::starts_with(node.getName(), ApplicationModule::namePrefixConstant)) {
+          throw ChimeraTK::logic_error("Feeding a constant is not allowed (" + node.getQualifiedName() + ")");
+        }
       }
       else if(node.getDirection().dir == VariableDirection::consuming) {
         std::stringstream ss;
@@ -119,6 +124,23 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void NetworkVisitor::finaliseNetwork(NetworkInformation& net) {
+    // check whether this is a constant created via ApplicationModule::constant()
+    bool isConstant{net.consumers.size() > 0 &&
+        boost::starts_with(net.consumers.front().getName(), ApplicationModule::namePrefixConstant)};
+    if(isConstant) {
+      assert(!net.feeder.isValid());
+
+      net.feeder =
+          VariableNetworkNode{&net.consumers.front().getValueType(), true, net.consumers.front().getNumberOfElements()};
+
+      std::string stringValue = net.consumers.front().getName().substr(ApplicationModule::namePrefixConstant.length());
+
+      callForType(net.consumers.front().getValueType(), [&](auto t) {
+        using UserType = decltype(t);
+        net.feeder.setConstantValue(userTypeToUserType<UserType>(stringValue));
+      });
+    }
+
     bool neededFeeder{false};
     if(not net.feeder.isValid()) {
       debug("  No feeder in network, creating ControlSystem feeder ", net.proxy->getFullyQualifiedPath());
@@ -133,8 +155,9 @@ namespace ChimeraTK {
     }
     assert(net.feeder.isValid());
 
-    if(not neededFeeder) {
+    if(not neededFeeder and not isConstant) {
       // Only add CS consumer if we did not previously add CS feeder, we will add one or the other, but never both
+      // Also we will not add CS consumers for constants.
       debug("  Network has a non-CS feeder, can create additional ControlSystem consumer");
       net.consumers.push_back(VariableNetworkNode(
           net.proxy->getFullyQualifiedPath(), {VariableDirection::consuming, false}, *net.valueType, net.valueLength));
@@ -729,7 +752,7 @@ namespace ChimeraTK {
           break;
         case NodeType::Constant:
           debug("       Node type is Constant");
-          net.feeder.setAppAccessorConstImplementation();
+          net.feeder.setAppAccessorConstImplementation(net.feeder);
           break;
         default:
           throw ChimeraTK::logic_error("Unexpected node type!");
@@ -749,7 +772,7 @@ namespace ChimeraTK {
     }
     else {
       debug("   No consumer (presumably optimised out)");
-      net.feeder.setAppAccessorConstImplementation();
+      net.feeder.setAppAccessorConstImplementation(VariableNetworkNode(net.valueType, true, net.valueLength));
     }
   }
 
@@ -767,19 +790,22 @@ namespace ChimeraTK {
         using UserType = decltype(t);
         // each consumer gets its own implementation
         if(consumer.getType() == NodeType::Application) {
-          consumer.setAppAccessorConstImplementation();
+          consumer.setAppAccessorConstImplementation(net.feeder);
         }
         else if(consumer.getType() == NodeType::ControlSystem) {
           throw ChimeraTK::logic_error("Using constants as feeders for control system variables is not supported!");
         }
         else if(consumer.getType() == NodeType::Device) {
           // We register the required accessor as a recovery accessor. This is just a bare RegisterAccessor without
-          // any decorations directly from the backend. It will not be initialised with any value hence it will always
-          // write zeros to the device ("Constants" always are zero in ApplicationCore).
+          // any decorations directly from the backend.
           auto deviceManager = _app.getDeviceManager(consumer.getDeviceAlias());
           auto dev = deviceManager->getDevice().getBackend();
           auto impl =
               dev->getRegisterAccessor<UserType>(consumer.getRegisterName(), consumer.getNumberOfElements(), 0, {});
+
+          // Set the value
+          impl->accessChannel(0) =
+              std::vector<UserType>(consumer.getNumberOfElements(), net.feeder.getConstantValue<UserType>());
 
           // The accessor implementation already has its data in the user buffer. We now just have to add a valid
           // version number and have a recovery accessors (RecoveryHelper to be exact) which we can register at the

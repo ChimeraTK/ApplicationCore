@@ -11,6 +11,10 @@
 
 namespace ChimeraTK {
 
+  /*********************************************************************************************************************/
+
+  const std::string EntityOwner::namePrefixConstant{"@CONST@"};
+
   /********************************************************************************************************************/
 
   EntityOwner::EntityOwner(std::string name, std::string description, std::unordered_set<std::string> tags)

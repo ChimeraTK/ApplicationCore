@@ -150,7 +150,7 @@ namespace ChimeraTK {
     template<typename UserType>
     void setAppAccessorImplementation(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> impl) const;
 
-    void setAppAccessorConstImplementation() const;
+    void setAppAccessorConstImplementation(const VariableNetworkNode& feeder) const;
 
     /** Return the unique ID of this node (will change every time the application
      * is started). */
@@ -164,6 +164,12 @@ namespace ChimeraTK {
     void setOwningModule(EntityOwner* newOwner) const;
 
     void accept(Visitor<VariableNetworkNode>& visitor) const;
+
+    template<typename UserType>
+    void setConstantValue(UserType value);
+
+    template<typename UserType>
+    UserType getConstantValue() const;
 
     // protected:  @todo make protected again (with proper interface extension)
 
@@ -238,6 +244,9 @@ namespace ChimeraTK {
 
     /** Model representation of this variable */
     Model::ProcessVariableProxy _model;
+
+    /** Value in case of a constant */
+    userTypeMap _constantValue;
   };
 
   /********************************************************************************************************************/
@@ -261,6 +270,22 @@ namespace ChimeraTK {
     getAppAccessor<UserType>().replace(decorated);
     auto flagProvider = boost::dynamic_pointer_cast<MetaDataPropagationFlagProvider>(decorated);
     assert(flagProvider);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void VariableNetworkNode::setConstantValue(UserType value) {
+    assert(pdata->type == NodeType::Constant);
+    boost::fusion::at_key<UserType>(pdata->_constantValue) = value;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  UserType VariableNetworkNode::getConstantValue() const {
+    assert(pdata->type == NodeType::Constant);
+    return boost::fusion::at_key<UserType>(pdata->_constantValue);
   }
 
   /********************************************************************************************************************/
