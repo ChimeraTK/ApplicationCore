@@ -109,6 +109,9 @@ namespace ChimeraTK {
     template<typename T>
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> getAccessor(const ChimeraTK::RegisterPath& name) const;
 
+    /** */
+    [[nodiscard]] boost::shared_ptr<ControlSystemPVManager> getPvManager() const { return pvManager; }
+
    protected:
     boost::shared_ptr<ControlSystemPVManager> pvManager;
 
@@ -205,10 +208,18 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("TestFacility::setArrayDefault() called after runApplication().");
     }
     // check if PV exists
-    auto pv = pvManager->getProcessArray<typename detail::BoolTypeHelper<T>::type>(name);
-    if(pv == nullptr) {
+    if(!pvManager->hasProcessVariable(name)) {
       throw ChimeraTK::logic_error("Process variable '" + name + "' does not exist.");
     }
+
+    // check if the type is right
+    auto pv = pvManager->getProcessArray<typename detail::BoolTypeHelper<T>::type>(name);
+    if(pv == nullptr) {
+      auto pvUntyped = pvManager->getProcessVariable(name);
+      throw ChimeraTK::logic_error("Process variable '" + name + "' requested by the wrong type: " + typeid(T).name() +
+          " != " + pvUntyped->getValueType().name());
+    }
+
     // store default value in map
     auto& tv = boost::fusion::at_key<typename detail::BoolTypeHelper<T>::type>(defaults.table)[name];
     if constexpr(!std::is_same<T, bool>::value) {

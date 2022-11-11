@@ -135,19 +135,20 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void EntityOwner::applyHierarchyModifierToName(HierarchyModifier hierarchyModifier) {
+  std::string EntityOwner::applyHierarchyModifierToName(std::string name, HierarchyModifier hierarchyModifier) {
     if(hierarchyModifier == HierarchyModifier::hideThis) {
-      _name = ".";
+      name = ".";
     }
     else if(hierarchyModifier == HierarchyModifier::moveToRoot) {
-      _name = "/" + _name;
+      name = "/" + name;
     }
     else if(hierarchyModifier == HierarchyModifier::oneLevelUp) {
-      _name = "../" + _name;
+      name = "../" + name;
     }
     else if(hierarchyModifier == HierarchyModifier::oneUpAndHide) {
-      _name = "..";
+      name = "..";
     }
+    return name;
   }
 
   /********************************************************************************************************************/

@@ -61,8 +61,7 @@ namespace ChimeraTK {
         const std::string& description, HierarchyModifier hierarchyModifier = HierarchyModifier::hideThis,
         const std::unordered_set<std::string>& inputTags = {}, const std::unordered_set<std::string>& factorTags = {},
         const std::unordered_set<std::string>& outputTags = {})
-    : ApplicationModule(owner, "Multiplier", "") {
-      applyHierarchyModifierToName(hierarchyModifier);
+    : ApplicationModule(owner, applyHierarchyModifierToName("Multiplier", hierarchyModifier), "") {
       std::string factorUnit = "(" + outputUnit + ")/(" + inputUnit + ")";
       input.replace(ArrayPushInput<InputType>(this, inputPath, inputUnit, NELEMS, description, inputTags));
       factor.replace(ScalarPushInput<InputType>(this, factorPath, factorUnit, description, factorTags));

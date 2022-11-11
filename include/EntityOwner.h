@@ -159,7 +159,7 @@ namespace ChimeraTK {
 
    protected:
     /** Convert HierarchyModifier into path qualification (for backwards compatibility only!) */
-    void applyHierarchyModifierToName(HierarchyModifier hierarchyModifier);
+    std::string applyHierarchyModifierToName(std::string name, HierarchyModifier hierarchyModifier);
 
     /** The name of this instance */
     std::string _name;
