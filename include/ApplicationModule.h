@@ -96,6 +96,8 @@ namespace ChimeraTK {
     /** Return the application model proxy representing this module */
     ChimeraTK::Model::ApplicationModuleProxy getModel() { return _model; }
 
+    void unregisterModule(Module* module) override;
+
    protected:
     /** Wrapper around mainLoop(), to execute additional tasks in the thread
      * before entering the main loop */

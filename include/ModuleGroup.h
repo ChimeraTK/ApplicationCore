@@ -55,6 +55,8 @@ namespace ChimeraTK {
 
     std::string getVirtualQualifiedName() const override;
 
+    void unregisterModule(Module* module) override;
+
    private:
     friend class Application;
     friend class DeviceModule;

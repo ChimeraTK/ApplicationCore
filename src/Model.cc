@@ -83,6 +83,18 @@ namespace ChimeraTK::Model {
 
   /********************************************************************************************************************/
 
+  void RootProxy::remove(ModuleGroup& module) {
+    _d->impl->remove(_d->vertex, module);
+  }
+
+  /********************************************************************************************************************/
+
+  void RootProxy::remove(ApplicationModule& module) {
+    _d->impl->remove(_d->vertex, module);
+  }
+
+  /********************************************************************************************************************/
+
   RootProxy::operator Model::ModuleGroupProxy() {
     return {_d->vertex, _d->impl};
   }
@@ -123,6 +135,18 @@ namespace ChimeraTK::Model {
 
   /********************************************************************************************************************/
 
+  void ModuleGroupProxy::remove(ModuleGroup& module) {
+    _d->impl->remove(_d->vertex, module);
+  }
+
+  /********************************************************************************************************************/
+
+  void ModuleGroupProxy::remove(ApplicationModule& module) {
+    _d->impl->remove(_d->vertex, module);
+  }
+
+  /********************************************************************************************************************/
+
   ModuleGroup& ModuleGroupProxy::getModuleGroup() const {
     return std::get<VertexProperties::ModuleGroupProperties>(_d->impl->graph[_d->vertex].p).module;
   }
@@ -159,6 +183,12 @@ namespace ChimeraTK::Model {
 
   void ApplicationModuleProxy::addVariable(const ProcessVariableProxy& variable, const VariableNetworkNode& node) {
     return _d->impl->addVariableNode(*this, variable, node);
+  }
+
+  /********************************************************************************************************************/
+
+  void ApplicationModuleProxy::remove(VariableGroup& module) {
+    _d->impl->remove(_d->vertex, module);
   }
 
   /********************************************************************************************************************/
@@ -208,6 +238,13 @@ namespace ChimeraTK::Model {
   void VariableGroupProxy::addVariable(const ProcessVariableProxy& variable, const VariableNetworkNode& node) {
     return _d->impl->addVariableNode(*this, variable, node);
   }
+
+  /********************************************************************************************************************/
+
+  void VariableGroupProxy::remove(VariableGroup& module) {
+    _d->impl->remove(_d->vertex, module);
+  }
+
   /********************************************************************************************************************/
 
   ApplicationModuleProxy VariableGroupProxy::getOwningModule() const {
@@ -481,6 +518,105 @@ namespace ChimeraTK::Model {
 
   /********************************************************************************************************************/
 
+  void Impl::remove(Model::Vertex owner, ModuleGroup& module) {
+    generic_remove(owner, module);
+  }
+
+  /********************************************************************************************************************/
+
+  void Impl::remove(Model::Vertex owner, ApplicationModule& module) {
+    generic_remove(owner, module);
+  }
+
+  /********************************************************************************************************************/
+
+  void Impl::remove(Model::Vertex owner, VariableGroup& module) {
+    generic_remove(owner, module);
+  }
+
+  /********************************************************************************************************************/
+
+  void Impl::remove(Model::Vertex owner, DeviceModule& module) {
+    generic_remove(owner, module);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename MODULE>
+  void Impl::generic_remove(Model::Vertex owner, MODULE& module) {
+    auto modelToRemove = module.getModel();
+
+    // The model may be invalid e.g. in case of calls to unregisterModule() in move assignment operations. Nothing to be
+    // removed from the model in that case.
+    if(!modelToRemove.isValid()) {
+      return;
+    }
+
+    // Remove all relationships (edges) of the module and its sub-modules.
+    // Do not remove edges while iterating the model (invalidates iterators), so store them first and remove later.
+    std::list<std::pair<Model::Vertex, Model::Vertex>> removeList;
+    std::set<Module*> moduleList; // needed to remove the VariableNetworkNodes below
+    modelToRemove.visit(
+        [&](auto proxy) {
+          if constexpr(isApplicationModule(proxy)) {
+            moduleList.insert(&proxy.getApplicationModule());
+          }
+
+          auto vertex = proxy._d->vertex;
+
+          {
+            auto [b, e] = boost::adjacent_vertices(vertex, graph);
+            for(auto vtx = b; vtx != e; ++vtx) {
+              removeList.push_back({vertex, *vtx});
+            }
+          }
+          {
+            auto [b, e] = boost::inv_adjacent_vertices(vertex, graph);
+            for(auto vtx = b; vtx != e; ++vtx) {
+              removeList.push_back({vertex, *vtx});
+            }
+          }
+        },
+        keepModuleGroups || keepApplicationModules || keepVariableGroups, keepOwnership, depthFirstSearch);
+
+    // Remove all VariableNetworkNodes from the PVs owned by the module and its sub-modules. We are using the above
+    // collected moduleList here to determine which node is owned by one of the (sub-)modules.
+    // Again, the nodes must not be removed while iterating the model, since ProcessVariableProxy::removeNode() alters
+    // the model and hence invalidates the iterators.
+    std::list<std::pair<ProcessVariableProxy, VariableNetworkNode>> nodeRemoveList;
+    modelToRemove.visit(
+        [&](const ProcessVariableProxy& proxy) {
+          for(const auto& node : proxy.getNodes()) {
+            if(node.getType() != NodeType::Application) continue;
+            auto* am = dynamic_cast<VariableGroup*>(node.getOwningModule())->findApplicationModule();
+            if(moduleList.count(am) == 0) {
+              continue;
+            }
+            node.dump();
+            nodeRemoveList.emplace_back(proxy, node);
+          }
+        },
+        keepProcessVariables, keepOwnership, depthFirstSearch);
+
+    // Now execute actual removal of nodes
+    for(auto p : nodeRemoveList) {
+      p.first.removeNode(p.second);
+    }
+
+    // Now execute actual removal of edges
+    for(auto p : removeList) {
+      boost::remove_edge(p.first, p.second, graph);
+      boost::remove_edge(p.second, p.first, graph);
+    }
+
+    // Remove the ownership relationship for the module.
+    auto vertexToRemove = modelToRemove._d->vertex;
+    boost::remove_edge(owner, vertexToRemove, graph);
+    boost::remove_edge(vertexToRemove, owner, graph);
+  }
+
+  /********************************************************************************************************************/
+
   template<typename PROXY>
   void Impl::addVariableNode(PROXY module, const ProcessVariableProxy& variable, const VariableNetworkNode& node) {
     // get vertex of for variable
@@ -636,12 +772,14 @@ namespace ChimeraTK::Model {
       // Loop until we have found the root vertex, add all names to the path
       while(currentVertex != *boost::vertices(graph).first) {
         // define vistor to be executed for the owner of currentVertex
+        bool found = false;
         auto vis = [&](auto proxy) {
           if constexpr(hasName(proxy)) {
             // prefix name of current object to path, since we are iterating towards the root
             path = proxy.getName() / path;
           }
           currentVertex = proxy._d->vertex;
+          found = true;
         };
 
         // just call the lambda for the owner/parent of currentVertex
@@ -650,6 +788,12 @@ namespace ChimeraTK::Model {
         }
         else {
           visit(currentVertex, vis, getParent);
+        }
+
+        // abort condition in case we try to get the qualified path for something not connected with the root any more
+        if(!found) {
+          path = "<disjunct>" / path;
+          break;
         }
       }
 

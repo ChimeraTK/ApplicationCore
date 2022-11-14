@@ -370,9 +370,14 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   std::list<EntityOwner*> DeviceManager::getInputModulesRecursively(std::list<EntityOwner*> startList) {
-    // The DeviceModule is the end of the recursion, and is not considered recursive to itself.
-    // There will always be circular connections to the CS module which does not pose a problem.
-    // Just return the startList without adding anything (not even the DeviceModule itself)
+    // The DeviceManager does not process the device registers, and hence circular networks involving the DeviceManager
+    // are not truely circular. Hence no real circular network cecking is done here.
+
+    // If the startList is empty, the recursion scan might be about the status/control variables of the DeviceManager.
+    // Hence we add the DeviceManager to the empty list.
+    if(startList.empty()) {
+      startList.push_back(this);
+    }
     return startList;
   }
 

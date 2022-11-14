@@ -279,6 +279,9 @@ namespace ChimeraTK {
 
   void VariableNetworkNode::setMetaData(const std::string& name, const std::string& unit,
       const std::string& description, const std::unordered_set<std::string>& tags) {
+    if(getType() == NodeType::invalid) {
+      return;
+    }
     setMetaData(name, unit, description);
     pdata->tags = tags;
   }
@@ -287,7 +290,9 @@ namespace ChimeraTK {
 
   void VariableNetworkNode::addTag(const std::string& tag) {
     pdata->tags.insert(tag);
-    pdata->_model.addTag(tag);
+    if(pdata->_model.isValid()) {
+      pdata->_model.addTag(tag);
+    }
   }
 
   /*********************************************************************************************************************/

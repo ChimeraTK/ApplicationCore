@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "ModuleGroup.h"
 
+#include "ApplicationModule.h"
+
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
@@ -57,6 +59,29 @@ namespace ChimeraTK {
 
   std::string ModuleGroup::getVirtualQualifiedName() const {
     return _model.getFullyQualifiedPath();
+  }
+
+  /********************************************************************************************************************/
+
+  void ModuleGroup::unregisterModule(Module* module) {
+    EntityOwner::unregisterModule(module);
+
+    // unregister from model
+    if(_model.isValid()) {
+      auto* mg = dynamic_cast<ModuleGroup*>(module);
+      if(mg) {
+        _model.remove(*mg);
+      }
+      else {
+        auto* am = dynamic_cast<ApplicationModule*>(module);
+        if(!am) {
+          // ModuleGroups own either other ModuleGroups or ApplicationModules, but during destruction unregisterModule
+          // is called from the base class destructor where the dynamic_cast already fails.
+          return;
+        }
+        _model.remove(*am);
+      }
+    }
   }
 
   /********************************************************************************************************************/
