@@ -7,6 +7,8 @@
 #include "CircularDependencyDetector.h"
 #include "ModuleGroup.h"
 
+#include <ChimeraTK/Utilities.h>
+
 #include <iterator>
 #include <list>
 
@@ -53,10 +55,17 @@ namespace ChimeraTK {
 
   ApplicationModule& ApplicationModule::operator=(ApplicationModule&& other) noexcept {
     assert(!moduleThread.joinable()); // if the thread is already running, moving is no longer allowed!
-    _model = std::move(other._model);
+
+    // Keep the model as is (except from updating the pointers to the C++ objects). To do so, we have to hide it from
+    // unregisterModule() which is executed in Module::operator=(), because it would destroy the model.
+    Model::ApplicationModuleProxy model = std::move(other._model);
     other._model = {};
-    if(_model.isValid()) _model.informMove(*this);
+
     VariableGroup::operator=(std::move(other));
+
+    if(model.isValid()) model.informMove(*this);
+    _model = model;
+
     return *this;
   }
 
@@ -105,7 +114,8 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void ApplicationModule::mainLoopWrapper() {
-    Application::registerThread("AM_" + getName());
+    std::string className = boost::core::demangle(typeid(*this).name());
+    Application::registerThread("AM_" + className); // + getName());
 
     // Acquire testable mode lock, so from this point on we are running only one user thread concurrently
     Application::getInstance().getTestableMode().lock("start");
@@ -245,6 +255,21 @@ namespace ChimeraTK {
     }
     // not a circular network or invalidity counter not 0 -> keep the faulty flag
     return DataValidity::faulty;
+  }
+
+  /********************************************************************************************************************/
+
+  void ApplicationModule::unregisterModule(Module* module) {
+    VariableGroup::unregisterModule(module);
+    if(_model.isValid()) {
+      auto* vg = dynamic_cast<VariableGroup*>(module);
+      if(!vg) {
+        // during destruction unregisterModule is called from the base class destructor where the dynamic_cast already
+        // fails.
+        return;
+      }
+      _model.remove(*vg);
+    }
   }
 
   /*********************************************************************************************************************/

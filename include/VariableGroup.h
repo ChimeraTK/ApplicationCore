@@ -67,6 +67,8 @@ namespace ChimeraTK {
 
     std::string getVirtualQualifiedName() const override;
 
+    void unregisterModule(Module* module) override;
+
    protected:
     ChimeraTK::Model::VariableGroupProxy _model;
 

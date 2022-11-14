@@ -95,7 +95,7 @@ namespace ChimeraTK {
 
     /** Unregister another module as a sub-module. Will be called automatically by
      * all modules in their destructors. */
-    void unregisterModule(Module* module);
+    virtual void unregisterModule(Module* module);
 
     /** Add a tag to all Application-type nodes inside this group. It will recurse
      * into any subgroups. See VariableNetworkNode::addTag() for additional

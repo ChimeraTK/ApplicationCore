@@ -49,10 +49,16 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   VariableGroup& VariableGroup::operator=(VariableGroup&& other) noexcept {
-    _model = std::move(other._model);
+    // Keep the model as is (except from updating the pointers to the C++ objects). To do so, we have to hide it from
+    // unregisterModule() which is executed in Module::operator=(), because it would destroy the model.
+    ChimeraTK::Model::VariableGroupProxy model = std::move(other._model);
     other._model = {};
-    if(_model.isValid()) _model.informMove(*this);
+
     Module::operator=(std::move(other));
+
+    if(model.isValid()) model.informMove(*this);
+    _model = model;
+
     return *this;
   }
 
@@ -60,6 +66,21 @@ namespace ChimeraTK {
 
   std::string VariableGroup::getVirtualQualifiedName() const {
     return _model.getFullyQualifiedPath();
+  }
+
+  /********************************************************************************************************************/
+
+  void VariableGroup::unregisterModule(Module* module) {
+    EntityOwner::unregisterModule(module);
+    if(_model.isValid()) {
+      auto* vg = dynamic_cast<VariableGroup*>(module);
+      if(!vg) {
+        // during destruction unregisterModule is called from the base class destructor where the dynamic_cast already
+        // fails.
+        return;
+      }
+      _model.remove(*vg);
+    }
   }
 
   /********************************************************************************************************************/

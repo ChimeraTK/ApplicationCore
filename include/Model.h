@@ -197,6 +197,9 @@ namespace ChimeraTK::Model {
     ProcessVariableProxy addVariable(const std::string& name);
     DirectoryProxy addDirectoryRecursive(const std::string& name);
 
+    void remove(ApplicationModule& module);
+    void remove(ModuleGroup& module);
+
     /**
      * Resolve the given path and call the visitor for the found object. If the path does not exist, the visitor is
      * not called and false is returned.
@@ -251,6 +254,9 @@ namespace ChimeraTK::Model {
     ApplicationModuleProxy add(ApplicationModule& module);
     DeviceModuleProxy add(DeviceModule& module);
 
+    void remove(ApplicationModule& module);
+    void remove(ModuleGroup& module);
+
    private:
     using Proxy::Proxy;
     friend struct VertexProperties;
@@ -272,6 +278,7 @@ namespace ChimeraTK::Model {
 
     VariableGroupProxy add(VariableGroup& module);
     void addVariable(const ProcessVariableProxy& variable, const VariableNetworkNode& node);
+    void remove(VariableGroup& module);
 
     /**
      * Convert into a proxy for the VariableGroup part/aspect of the ApplicationModule
@@ -302,6 +309,7 @@ namespace ChimeraTK::Model {
 
     VariableGroupProxy add(VariableGroup& module);
     void addVariable(const ProcessVariableProxy& variable, const VariableNetworkNode& node);
+    void remove(VariableGroup& module);
 
    private:
     using Proxy::Proxy;
@@ -375,6 +383,7 @@ namespace ChimeraTK::Model {
 
     friend class ChimeraTK::VariableNetworkNode;
     friend class ChimeraTK::DeviceModule;
+    friend class ChimeraTK::Model::Impl;
 
     template<typename T>
     friend class ChimeraTK::InversionOfControlAccessor;
@@ -1247,6 +1256,17 @@ namespace ChimeraTK::Model {
     // common implementation to add any object (ModuleGroup, ApplicationModule, VariableGroup or DeviceModule)
     template<typename PROXY, typename MODULE, typename PROPS, Model::VertexProperties::Type TYPE>
     PROXY generic_add(Model::Vertex owner, MODULE& module);
+
+    // convenience functions just redirecting to generic_remove.
+    void remove(Model::Vertex owner, ModuleGroup& module);
+    void remove(Model::Vertex owner, ApplicationModule& module);
+    void remove(Model::Vertex owner, VariableGroup& module);
+    void remove(Model::Vertex owner, DeviceModule& module);
+
+    // Common implementation to remove any object (ModuleGroup, ApplicationModule, VariableGroup or DeviceModule).
+    // For ProcessVariables, remove the node from the ProcessVariable instead.
+    template<typename MODULE>
+    void generic_remove(Model::Vertex owner, MODULE& module);
 
     // Add variable to parent directory if not yet existing. The corresponding proxy is returned even if the variable
     // existed before.
