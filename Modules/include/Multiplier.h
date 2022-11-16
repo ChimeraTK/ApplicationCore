@@ -56,7 +56,19 @@ namespace ChimeraTK {
           input, factorName, "(" + unitOutput + ")/(" + unitInput + ")", description, tagsFactor));
       output.replace(ArrayOutput<OutputType>(input, name, unitOutput, NELEMS, description, tagsOutput));
     }
-    [[deprecated]] Multiplier(ModuleGroup* owner, const std::string& inputPath, const std::string& inputUnit,
+
+    Multiplier(ModuleGroup* owner, const std::string& inputPath, const std::string& inputUnit,
+        const std::string& factorPath, const std::string& outputPath, const std::string& outputUnit,
+        const std::string& description, const std::unordered_set<std::string>& inputTags = {},
+        const std::unordered_set<std::string>& factorTags = {}, const std::unordered_set<std::string>& outputTags = {})
+    : ApplicationModule(owner, ".", "") {
+      std::string factorUnit = "(" + outputUnit + ")/(" + inputUnit + ")";
+      input.replace(ArrayPushInput<InputType>(this, inputPath, inputUnit, NELEMS, description, inputTags));
+      factor.replace(ScalarPushInput<InputType>(this, factorPath, factorUnit, description, factorTags));
+      output.replace(ArrayOutput<InputType>(this, outputPath, outputUnit, NELEMS, description, outputTags));
+    }
+
+    [[deprecated]] Multiplier(EntityOwner* owner, const std::string& inputPath, const std::string& inputUnit,
         const std::string& factorPath, const std::string& outputPath, const std::string& outputUnit,
         const std::string& description, HierarchyModifier hierarchyModifier = HierarchyModifier::hideThis,
         const std::unordered_set<std::string>& inputTags = {}, const std::unordered_set<std::string>& factorTags = {},
@@ -68,7 +80,6 @@ namespace ChimeraTK {
       output.replace(ArrayOutput<InputType>(this, outputPath, outputUnit, NELEMS, description, outputTags));
     }
 
-    /** Note: This constructor is deprectated! */
     [[deprecated]] Multiplier(EntityOwner* owner, const std::string& name, const std::string& description)
     : ApplicationModule(owner, name, "", HierarchyModifier::hideThis) {
       input.replace(ArrayPushInput<InputType>(this, "input", "", NELEMS, description));
