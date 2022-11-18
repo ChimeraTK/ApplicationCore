@@ -6,6 +6,7 @@ ChimeraTK ApplicationCore is a library for writing control system applcations wi
 API documentation:
 - \subpage conceptualOverview
 - \subpage exceptionHandling
+- \subpage migration_guide_v2_to_v3
 
 Module documentation:
 - \subpage configreader
