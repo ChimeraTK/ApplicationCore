@@ -592,7 +592,6 @@ namespace ChimeraTK::Model {
             if(moduleList.count(am) == 0) {
               continue;
             }
-            node.dump();
             nodeRemoveList.emplace_back(proxy, node);
           }
         },
