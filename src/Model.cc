@@ -397,7 +397,7 @@ namespace ChimeraTK::Model {
 
     // if only one incoming edge exists any more, remove the entire variable. the one incoming edge is the parenthood
     // relation. ownership relations are also incoming, of which we must have zero.
-    if(boost::in_degree(_d->vertex, _d->impl->graph) <= 1) {
+    if(boost::in_degree(_d->vertex, _d->impl->graph) <= 1 && boost::out_degree(_d->vertex, _d->impl->graph) == 0) {
       // Note: We cannot really remove the vertex for the variable, since boost::remove_vertex() invalidates all vertex
       // descriptors, which are the only link between the "real world" and the model.
       // Instead we completely disconnect it from the rest of the model (in particular the parent directory), so it
@@ -489,6 +489,10 @@ namespace ChimeraTK::Model {
       if(!triggerPath.empty()) {
         auto dir = parentDirectory.addDirectoryRecursive(Utilities::getPathName(triggerPath));
         trigger = dir.addVariable(Utilities::getUnqualifiedName(triggerPath));
+
+        // connect trigger vertex with trigger edge
+        auto triggerEdge = boost::add_edge(trigger._d->vertex, newVertex, graph).first;
+        graph[triggerEdge].type = EdgeProperties::Type::trigger;
       }
 
       graph[newVertex].p.emplace<PROPS>(PROPS{alias, trigger, module});

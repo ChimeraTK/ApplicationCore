@@ -278,8 +278,6 @@ namespace ChimeraTK {
         _app.circularNetworkInvalidityCounters[circularNetworkHash] = 0;
       }
     }
-
-    return;
   }
 
   /*********************************************************************************************************************/

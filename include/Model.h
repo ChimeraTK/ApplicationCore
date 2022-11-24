@@ -501,10 +501,11 @@ namespace ChimeraTK::Model {
   struct EdgeProperties {
     enum class Type {
       invalid,
-      pvAccess,     /// Edge represents access of an module to a PV. Arrow shows data flow direction (read/write).
-      ownership,    /// Edge represents (C++) ownership. Arrow points towards the sub-module or PV.
-      parenthood,   /// Edge represents the PV directory hierarchy. Arrow points towards the sub-directory or PV.
-      neighbourhood /// Edge points from a module to the directory where its PVs appear without hierarchy modification
+      pvAccess,      /// Edge represents access of an module to a PV. Arrow shows data flow direction (read/write).
+      ownership,     /// Edge represents (C++) ownership. Arrow points towards the sub-module or PV.
+      parenthood,    /// Edge represents the PV directory hierarchy. Arrow points towards the sub-directory or PV.
+      neighbourhood, /// Edge points from a module to the directory where its PVs appear without hierarchy modification
+      trigger        /// Edge represents trigger access. Arrow points from PV to device module.
     };
     Type type{Type::invalid};
 
@@ -1697,6 +1698,10 @@ namespace ChimeraTK::Model {
         }
         case EdgeProperties::Type::neighbourhood: {
           out << "color=olive, arrowhead=tee";
+          break;
+        }
+        case EdgeProperties::Type::trigger: {
+          out << "color=grey, arrowhead=crow";
           break;
         }
         default: {
