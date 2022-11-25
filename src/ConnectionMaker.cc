@@ -455,7 +455,7 @@ namespace ChimeraTK {
         // if external trigger is enabled, use externally triggered threaded
         // FanOut. Create one per external trigger impl.
 
-        fanOut = jt->second->addNetwork(feedingImpl, consumerImplementationPairs);
+        jt->second->addNetwork(feedingImpl, consumerImplementationPairs);
       }
       else if(feederTrigger) {
         debug("        Using feeder trigger.");
@@ -477,7 +477,7 @@ namespace ChimeraTK {
         fanOut = threadedFanOut;
       }
       else {
-        // FIXME: Is this case even used?
+        // Trigger by single poll-type consumer
         debug("        No trigger, using consuming fanout.");
         consumingFanOut = boost::make_shared<ConsumingFanOut<UserType>>(feedingImpl, consumerImplementationPairs);
 
