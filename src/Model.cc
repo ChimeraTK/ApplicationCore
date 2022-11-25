@@ -602,7 +602,7 @@ namespace ChimeraTK::Model {
         keepProcessVariables, keepOwnership, depthFirstSearch);
 
     // Now execute actual removal of nodes
-    for(auto p : nodeRemoveList) {
+    for(auto& p : nodeRemoveList) {
       p.first.removeNode(p.second);
     }
 

@@ -6,7 +6,6 @@
 #include "Model.h"
 #include "ModuleGroup.h"
 #include "ScalarAccessor.h"
-#include "TestFacility.h"
 #include "VariableGroup.h"
 
 #define BOOST_TEST_MODULE testApplicationPVModel
