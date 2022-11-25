@@ -829,7 +829,7 @@ BOOST_AUTO_TEST_CASE(testKeepNeighbourhood) {
   {
     // get the directory. this relies on some other features...
     ChimeraTK::Model::DirectoryProxy dir;
-    auto found = app.getModel().visitByPath("/Deeper/hierarchies", [&](auto proxy) {
+    [[maybe_unused]] auto found = app.getModel().visitByPath("/Deeper/hierarchies", [&](auto proxy) {
       if constexpr(ChimeraTK::Model::isDirectory(proxy)) {
         dir = proxy;
       }
@@ -1069,7 +1069,7 @@ BOOST_AUTO_TEST_CASE(testKeepProcessVariables) {
   {
     // get the directory. this relies on some other features...
     ChimeraTK::Model::DirectoryProxy dir;
-    auto found = app.getModel().visitByPath("/Deeper/hierarchies", [&](auto proxy) {
+    [[maybe_unused]] auto found = app.getModel().visitByPath("/Deeper/hierarchies", [&](auto proxy) {
       if constexpr(ChimeraTK::Model::isDirectory(proxy)) {
         dir = proxy;
       }
@@ -1122,7 +1122,7 @@ BOOST_AUTO_TEST_CASE(testKeepDirectories) {
   {
     // get the directory. this relies on some other features...
     ChimeraTK::Model::DirectoryProxy dir;
-    auto found = app.getModel().visitByPath("/Deeper/hierarchies", [&](auto proxy) {
+    [[maybe_unused]] auto found = app.getModel().visitByPath("/Deeper/hierarchies", [&](auto proxy) {
       if constexpr(ChimeraTK::Model::isDirectory(proxy)) {
         dir = proxy;
       }
@@ -1543,7 +1543,7 @@ BOOST_AUTO_TEST_CASE(testChildVariables) {
   {
     // get the directory. this relies on some other features...
     ChimeraTK::Model::DirectoryProxy dir;
-    auto found = app.getModel().visitByPath("/MyModule", [&](auto proxy) {
+    [[maybe_unused]] auto found = app.getModel().visitByPath("/MyModule", [&](auto proxy) {
       if constexpr(ChimeraTK::Model::isDirectory(proxy)) {
         dir = proxy;
       }
@@ -1576,7 +1576,7 @@ BOOST_AUTO_TEST_CASE(testChildren) {
   {
     // get the directory. this relies on some other features...
     ChimeraTK::Model::DirectoryProxy dir;
-    auto found = app.getModel().visitByPath("/MyModule", [&](auto proxy) {
+    [[maybe_unused]] auto found = app.getModel().visitByPath("/MyModule", [&](auto proxy) {
       if constexpr(ChimeraTK::Model::isDirectory(proxy)) {
         dir = proxy;
       }
@@ -1684,7 +1684,7 @@ BOOST_AUTO_TEST_CASE(testNeighbourModules) {
   {
     // get the directory. this relies on some other features...
     ChimeraTK::Model::DirectoryProxy dir;
-    auto found = app.getModel().visitByPath("/Deeper/hierarchies", [&](auto proxy) {
+    [[maybe_unused]] auto found = app.getModel().visitByPath("/Deeper/hierarchies", [&](auto proxy) {
       if constexpr(ChimeraTK::Model::isDirectory(proxy)) {
         dir = proxy;
       }

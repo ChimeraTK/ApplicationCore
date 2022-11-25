@@ -102,7 +102,7 @@ namespace ChimeraTK {
     }
     assert(slave_typed != nullptr);
 
-    size_t nOld = slaves.size();
+    [[maybe_unused]] size_t nOld = slaves.size();
     slaves.remove(slave_typed);
     assert(slaves.size() == nOld - 1);
   }
