@@ -24,7 +24,7 @@ BOOST_FIXTURE_TEST_SUITE(versionPropagation, Fixture)
 BOOST_AUTO_TEST_CASE(versionPropagation_testPolledRead) {
   std::cout << "versionPropagation_testPolledRead" << std::endl;
   auto moduleVersion = application.group1.pollModule.getCurrentVersionNumber();
-  auto pollVariableVersion = pollVariable2.getVersionNumber();
+  [[maybe_unused]] auto pollVariableVersion = pollVariable2.getVersionNumber();
 
   application.group1.outputModule.setCurrentVersionNumber({});
   outputVariable2.write();
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(versionPropagation_testPolledRead) {
 BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadNonBlocking) {
   std::cout << "versionPropagation_testPolledReadNonBlocking" << std::endl;
   auto moduleVersion = application.group1.pollModule.getCurrentVersionNumber();
-  auto pollVariableVersion = pollVariable2.getVersionNumber();
+  [[maybe_unused]] auto pollVariableVersion = pollVariable2.getVersionNumber();
 
   application.group1.outputModule.setCurrentVersionNumber({});
   outputVariable2.write();
@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadNonBlocking) {
 BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadLatest) {
   std::cout << "versionPropagation_testPolledReadLatest" << std::endl;
   auto moduleVersion = application.group1.pollModule.getCurrentVersionNumber();
-  auto pollVariableVersion = pollVariable2.getVersionNumber();
+  [[maybe_unused]] auto pollVariableVersion = pollVariable2.getVersionNumber();
 
   application.group1.outputModule.setCurrentVersionNumber({});
   outputVariable2.write();
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeRead) {
   // Make sure we pop out any stray values in the pushInput before test start:
   CHECK_TIMEOUT(pushVariable.readLatest() == false, 10000);
 
-  ctk::VersionNumber nextVersionNumber = {};
+  [[maybe_unused]] ctk::VersionNumber nextVersionNumber = {};
   interrupt.write();
   pushVariable.read();
   assert(pushVariable.getVersionNumber() > nextVersionNumber);

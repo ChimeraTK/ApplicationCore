@@ -123,7 +123,7 @@ namespace ChimeraTK {
     DataValidity lastStatusValidity = DataValidity::ok;
     while(true) {
       // find highest priority status of all inputs
-      StatusOutput::Status status;
+      StatusOutput::Status status{StatusOutput::Status::FAULT}; // initialised just to prevent warning
       StatusWithMessageInput* statusOrigin = nullptr;
       // flag whether status has been set from an input already
       bool statusSet = false;
