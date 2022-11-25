@@ -30,12 +30,9 @@ namespace ChimeraTK {
 
     void deactivate() override;
 
-    /** Add a new network the TriggerFanOut. The network is defined by its feeding
-     * node. This function will return the corresponding FeedingFanOut, to which
-     * all slaves have to be added. */
+    /** Add a new network the TriggerFanOut. The network is defined by its feeding node. */
     template<typename UserType>
-    boost::shared_ptr<FeedingFanOut<UserType>> addNetwork(
-        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingNode,
+    void addNetwork(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingNode,
         ConsumerImplementationPairs<UserType> const& consumerImplementationPairs);
 
     /** Synchronise feeder and the consumers. This function is executed in the
@@ -67,17 +64,25 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  boost::shared_ptr<FeedingFanOut<UserType>> TriggerFanOut::addNetwork(
-      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingNode,
+  void TriggerFanOut::addNetwork(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingNode,
       ConsumerImplementationPairs<UserType> const& consumerImplementationPairs) {
     assert(feedingNode.get() != nullptr);
+
+    // if no consumers present, ignore this network. This primarily might happen if the only consumer was a control
+    // system variable which was optimised out.
+    if(consumerImplementationPairs.empty()) {
+      return;
+    }
+
+    // add feeder to TransferGroup
     transferGroup.addAccessor(feedingNode);
+
+    // create FeedingFanOut to distribute the read value to all consumers (even if just one)
     auto feedingFanOut = boost::make_shared<FeedingFanOut<UserType>>(feedingNode->getName(), feedingNode->getUnit(),
         feedingNode->getDescription(), feedingNode->getNumberOfSamples(),
         false, // in TriggerFanOuts we cannot have return channels
         consumerImplementationPairs);
     boost::fusion::at_key<UserType>(fanOutMap.table)[feedingNode] = feedingFanOut;
-    return feedingFanOut;
   }
 
   /********************************************************************************************************************/
