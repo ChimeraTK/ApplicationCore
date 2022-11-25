@@ -743,10 +743,25 @@ namespace ChimeraTK {
           });
           break;
         case NodeType::TriggerReceiver:
-          // This cannot happen. In a network Application -> TriggerReceiver, the connectNetwork()
-          // code will always add a CS consumer, so there is never a 1:1 connection
           debug("       Node type is TriggerReceiver");
-          assert(false);
+
+          // create a PV implementation to connect the Application with the TriggerFanOut.
+          {
+            boost::shared_ptr<TransferElement> consumingImpl;
+            callForType(*net.valueType, [&](auto t) {
+              using UserType = decltype(t);
+              auto impls = createApplicationVariable<UserType>(net.feeder, consumer);
+              net.feeder.setAppAccessorImplementation<UserType>(impls.first);
+              consumingImpl = impls.second;
+            });
+
+            // create the trigger fan out and store it in the map and the internalModuleList
+            auto triggerFanOut =
+                boost::make_shared<TriggerFanOut>(consumingImpl, *_app.getDeviceManager(consumer.getDeviceAlias()));
+            _app.internalModuleList.push_back(triggerFanOut);
+            net.triggerImpl[consumer.getDeviceAlias()] = triggerFanOut;
+          }
+
           break;
         case NodeType::Constant:
           debug("       Node type is Constant");
