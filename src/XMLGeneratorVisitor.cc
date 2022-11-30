@@ -30,7 +30,6 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void XMLGenerator::run() {
-    NetworkVisitor::setDebugConnections(true);
     _rootElement->set_attribute("name", _app.getName());
 
     std::set<Model::ProcessVariableProxy, NetworkVisitor::ProcessVariableComperator> triggers;
