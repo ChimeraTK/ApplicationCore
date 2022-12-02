@@ -755,7 +755,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_3_2, Fixture_initHandlers) {
   BOOST_CHECK_NE(exceptionDummyRegister2[0], 803);
   BOOST_CHECK_NE(exceptionDummyRegister3[0], 802);
 
-  // recover device for readling/opening but not yet for writing
+  // recover device for reading/opening but not yet for writing
   initHandler1Called = false;
   deviceBackend->throwExceptionRead = false;
   deviceBackend->throwExceptionWrite = true;
