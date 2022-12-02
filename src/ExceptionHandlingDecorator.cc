@@ -27,7 +27,7 @@ namespace ChimeraTK {
 
       // writable registers get a recoveryAccessor
       // Notice: There will be write-accessors without recovery accessors in future (intentionally turned off by the
-      // application programmer) When this feature is added the VariableNetworkNode will get a new data member to
+      // application programmer). When this feature is added the VariableNetworkNode will get a new data member to
       // indicate this.
       auto nElements = networkNode.getNumberOfElements();
 
