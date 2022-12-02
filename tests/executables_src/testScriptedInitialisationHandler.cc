@@ -45,6 +45,7 @@ BOOST_FIXTURE_TEST_CASE(testSuccess, Fixture) {
   (void)std::filesystem::remove("device1Init.success");
   (void)std::filesystem::remove("continueDevice1Init");
   (void)std::filesystem::remove("produceDevice1InitError");
+  (void)std::filesystem::remove("produceDevice2InitError");
 
   testFacility.runApplication();
   // testApp.dumpConnections();
