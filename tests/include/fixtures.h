@@ -77,6 +77,7 @@ struct OutputModule : ChimeraTK::ApplicationModule {
   ChimeraTK::ScalarOutput<int> deviceRegister2{this, "REG2", "", ""};
   ChimeraTK::ScalarOutput<int> deviceRegister3{this, "REG3", "", ""};
   ChimeraTK::ScalarOutput<int> trigger{this, "trigger", "", ""}; // must not be connected to any device
+  ChimeraTK::VoidOutput deviceRegisterV{this, "REGV", "", ""};
   std::promise<void> p;
   void prepare() override { writeAll(); }
   void mainLoop() override { p.set_value(); }
@@ -161,6 +162,7 @@ struct fixture_with_poll_and_push_input {
   ChimeraTK::ScalarPollInput<int>& pollVariable2{application.group1.pollModule.pollInput2};
   ChimeraTK::ScalarOutput<int>& outputVariable2{application.group1.outputModule.deviceRegister2};
   ChimeraTK::ScalarOutput<int>& outputVariable3{application.group1.outputModule.deviceRegister3};
+  ChimeraTK::VoidOutput& outputVariableV{application.group1.outputModule.deviceRegisterV};
 
   ChimeraTK::ScalarPushInput<int>& triggeredInput{application.group2.pushModule2.reg1.pushInput};
 

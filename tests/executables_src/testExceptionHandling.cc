@@ -727,9 +727,9 @@ BOOST_FIXTURE_TEST_CASE(B_3_1_1, Fixture_initHandlers) {
  *
  * [After calling the initialisation handlers are called, the recovery procedure involves] "restoring all registers that
  * have been written since the start of the application with their latest values. The register values are restored in
- * the same order they were written."
+ * the same order they were written. Registers of the type ChimeraTK::Void are not written."
  */
-BOOST_FIXTURE_TEST_CASE(B_2_3_2, Fixture_initHandlers) {
+BOOST_FIXTURE_TEST_CASE(B_3_1_2, Fixture_initHandlers) {
   std::cout << "B_3_1_2 - delayed writes" << std::endl;
 
   // trigger runtime error
@@ -738,6 +738,11 @@ BOOST_FIXTURE_TEST_CASE(B_2_3_2, Fixture_initHandlers) {
   pollVariable.read();
   CHECK_TIMEOUT((status.readNonBlocking(), status == 1), 10000); // no test intended, just wait until error is reported
 
+  // get current write count for each register (as a reference)
+  auto wcReg2 = deviceBackend->getWriteCount("REG2");
+  auto wcReg3 = deviceBackend->getWriteCount("REG3");
+  auto wcRegV = deviceBackend->getWriteCount("REGV");
+
   // multiple writes to different registers on faulty device
   outputVariable2 = 801;
   outputVariable2.write();
@@ -745,10 +750,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_3_2, Fixture_initHandlers) {
   outputVariable3.write();
   outputVariable2 = 803; // write a second time, overwriting the first value
   outputVariable2.write();
-
-  // get current write count for each register (as a reference)
-  auto wcReg2 = deviceBackend->getWriteCount("REG2");
-  auto wcReg3 = deviceBackend->getWriteCount("REG3");
+  outputVariableV.write(); // write the Void-typed register
 
   // check that values are not yet written to the device
   usleep(10000);
@@ -782,9 +784,12 @@ BOOST_FIXTURE_TEST_CASE(B_2_3_2, Fixture_initHandlers) {
   auto woReg3 = deviceBackend->getWriteOrder("REG3");
   BOOST_CHECK_GT(woReg2, woReg3);
 
-  // check each register is written only once ("only the latest written value [...] prevails").
+  // check each register is written only once ("only the latest written value [...] prevails"), except the Void register
   BOOST_CHECK_EQUAL(deviceBackend->getWriteCount("REG2") - wcReg2, 1);
   BOOST_CHECK_EQUAL(deviceBackend->getWriteCount("REG3") - wcReg3, 1);
+
+  // The Void-typed register must have not been written.
+  BOOST_CHECK_EQUAL(deviceBackend->getWriteCount("REGV"), wcRegV);
 }
 
 /**********************************************************************************************************************/
