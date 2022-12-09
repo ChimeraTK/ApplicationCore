@@ -25,7 +25,7 @@ namespace ChimeraTK {
     if(_direction.dir == VariableDirection::consuming) {
       deviceManager->_writeRegisterPaths.push_back(registerName);
 
-      // writable registers get a recoveryAccessor
+      // writeable registers get a recoveryAccessor
       // Notice: There will be write-accessors without recovery accessors in future (intentionally turned off by the
       // application programmer). When this feature is added the VariableNetworkNode will get a new data member to
       // indicate this.
@@ -61,12 +61,12 @@ namespace ChimeraTK {
   void ExceptionHandlingDecorator<UserType>::doPreWrite(TransferType type, VersionNumber versionNumber) {
     auto deviceManager = _deviceManager.lock();
 
-    /* For writable accessors, copy data to the recoveryAcessor before perfroming the write.
+    /* For writeable accessors, copy data to the recoveryAccessor before performing the write.
      * Otherwise, the decorated accessor may have swapped the data out of the user buffer already.
-     * This obtains a shared lock from the DeviceModule, hence, the regular writing happeniin here
+     * This obtains a shared lock from the DeviceModule, hence, the regular writing happening here
      * can be performed in shared mode of the mutex and accessors are not blocking each other.
      * In case of recovery, the DeviceModule thread will take an exclusive lock so that this thread can not
-     * modify the recoveryAcessor's user buffer while data is written to the device.
+     * modify the recoveryAccessor's user buffer while data is written to the device.
      */
     {
       _inhibitWriteTransfer = false;
