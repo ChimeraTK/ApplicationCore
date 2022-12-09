@@ -239,8 +239,6 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_3_TriggerFanOut, Fixture) {
 BOOST_FIXTURE_TEST_CASE(B_2_2_4_blocking, Fixture) {
   std::cout << "B_2_2_4_blocking - first skip of blocking read" << std::endl;
 
-  application.getModel().writeGraphViz("FixtureDummyApp.dot");
-
   pushVariable.readLatest();
 
   // go to exception state
