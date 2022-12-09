@@ -288,6 +288,38 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_nonBlocking, Fixture) {
 
 /**********************************************************************************************************************/
 /**
+ * \anchor testExceptionHandling_b_2_2_4_any \ref exceptionHandling_b_2_2_4 "B.2.2.4"
+ *
+ * "Read operations with AccessMode::wait_for_new_data will be skipped once for each accessor to propagate the
+ * DataValidity::faulty flag (which counts as new data, i.e. readNonBlocking()/readLatest() will return true
+ * (= hasNewData), and a new VersionNumber is obtained)."
+ *
+ * This test is for readAny.
+ */
+BOOST_FIXTURE_TEST_CASE(B_2_2_4_any, Fixture) {
+  std::cout << "B_2_2_4_any - first skip of readAny" << std::endl;
+
+  pushVariable.readLatest();
+
+  ChimeraTK::ReadAnyGroup group({pushVariable});
+
+  // go to exception state
+  ctk::VersionNumber version = {};
+  deviceBackend->throwExceptionOpen = true;
+  deviceBackend->throwExceptionRead = true;
+  write(exceptionDummyRegister, 456);
+  deviceBackend->triggerInterrupt(1, 0);
+
+  // as soon as the fault state has arrived, the operation is skipped
+  group.readAny();
+  BOOST_CHECK_NE(pushVariable, 456); // value did not come through
+  BOOST_CHECK(pushVariable.dataValidity() == ctk::DataValidity::faulty);
+  auto versionNumberOnRuntimeError = pushVariable.getVersionNumber();
+  BOOST_CHECK(versionNumberOnRuntimeError > version);
+}
+
+/**********************************************************************************************************************/
+/**
  * \anchor testExceptionHandling_b_2_2_4_latest \ref exceptionHandling_b_2_2_4 "B.2.2.4"
  *
  * "Read operations with AccessMode::wait_for_new_data will be skipped once for each accessor to propagate the
