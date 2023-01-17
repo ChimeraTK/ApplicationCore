@@ -11,6 +11,7 @@
 #define BOOST_TEST_MODULE testApplicationPVModel
 #define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
+
 #undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
