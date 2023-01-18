@@ -45,7 +45,7 @@ struct TestApp1 : ctk::Application {
     // automatically which would require a trigger
     ctk::ScalarPollInput<int> tests{this, "/Deeper/hierarchies/need/tests", "unit", "description"};
 
-    ctk::VoidInput finger{this, "/finger", "", ""};
+    ctk::VoidInput finger{this, "/finger", ""};
 
     void mainLoop() override {
       while(true) {
@@ -206,7 +206,7 @@ struct TestApp3 : ctk::Application {
   struct : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
-    ctk::VoidInput tick{this, "/cs/trigger", "unit", "description"};
+    ctk::VoidInput tick{this, "/cs/trigger", "description"};
     ctk::ScalarOutput<int> tock{this, "/tock", "", ""};
 
     void mainLoop() override {
@@ -364,8 +364,8 @@ struct TestApp5 : ctk::Application {
   struct : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
-    ctk::VoidInput finger{this, "/finger", "", ""};
-    ctk::VoidOutput trigger{this, "/trigger", "", ""};
+    ctk::VoidInput finger{this, "/finger", ""};
+    ctk::VoidOutput trigger{this, "/trigger", ""};
 
     void mainLoop() override {
       while(true) {

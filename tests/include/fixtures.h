@@ -77,7 +77,7 @@ struct OutputModule : ChimeraTK::ApplicationModule {
   ChimeraTK::ScalarOutput<int> deviceRegister2{this, "REG2", "", ""};
   ChimeraTK::ScalarOutput<int> deviceRegister3{this, "REG3", "", ""};
   ChimeraTK::ScalarOutput<int> trigger{this, "trigger", "", ""}; // must not be connected to any device
-  ChimeraTK::VoidOutput deviceRegisterV{this, "REGV", "", ""};
+  ChimeraTK::VoidOutput deviceRegisterV{this, "REGV", ""};
   std::promise<void> p;
   void prepare() override { writeAll(); }
   void mainLoop() override { p.set_value(); }

@@ -43,6 +43,9 @@ namespace ChimeraTK {
     VoidAccessor(Module* owner, const std::string& name, VariableDirection direction, std::string& unit,
         UpdateMode mode, const std::string& description, const std::unordered_set<std::string>& tags = {});
 
+    VoidAccessor(Module* owner, const std::string& name, VariableDirection direction, UpdateMode mode,
+        const std::string& description, const std::unordered_set<std::string>& tags = {});
+
     /** Default constructor creates a dysfunctional accessor (to be assigned with a real accessor later) */
     VoidAccessor() = default;
   };
@@ -51,9 +54,14 @@ namespace ChimeraTK {
 
   /** Convenience class for input accessors. For Void there is only UpdateMode::push */
   struct VoidInput : public VoidAccessor {
-    VoidInput(Module* owner, const std::string& name, std::string unit, const std::string& description,
+    VoidInput(Module* owner, const std::string& name, const std::string& description,
         const std::unordered_set<std::string>& tags = {})
+    : VoidAccessor(owner, name, {VariableDirection::consuming, false}, UpdateMode::push, description, tags) {}
+
+    [[deprecated("Use signature without 'unit' argument")]] VoidInput(Module* owner, const std::string& name,
+        std::string unit, const std::string& description, const std::unordered_set<std::string>& tags = {})
     : VoidAccessor(owner, name, {VariableDirection::consuming, false}, unit, UpdateMode::push, description, tags) {}
+
     VoidInput() = default;
     using VoidAccessor::operator=;
   };
@@ -62,9 +70,14 @@ namespace ChimeraTK {
 
   /** Convenience class for output void (always UpdateMode::push) */
   struct VoidOutput : public VoidAccessor {
-    VoidOutput(Module* owner, const std::string& name, std::string unit, const std::string& description,
+    VoidOutput(Module* owner, const std::string& name, const std::string& description,
         const std::unordered_set<std::string>& tags = {})
+    : VoidAccessor(owner, name, {VariableDirection::feeding, false}, UpdateMode::push, description, tags) {}
+
+    [[deprecated("Use signature without 'unit' argument")]] VoidOutput(Module* owner, const std::string& name,
+        std::string unit, const std::string& description, const std::unordered_set<std::string>& tags = {})
     : VoidAccessor(owner, name, {VariableDirection::feeding, false}, unit, UpdateMode::push, description, tags) {}
+
     VoidOutput() = default;
     using VoidAccessor::operator=;
   };
@@ -106,6 +119,13 @@ namespace ChimeraTK {
       std::string& unit, UpdateMode mode, const std::string& description, const std::unordered_set<std::string>& tags)
   : InversionOfControlAccessor<VoidAccessor>(
         owner, name, direction, unit, 1, mode, description, &typeid(ChimeraTK::Void), tags) {}
+
+  /********************************************************************************************************************/
+
+  inline VoidAccessor::VoidAccessor(Module* owner, const std::string& name, VariableDirection direction,
+      UpdateMode mode, const std::string& description, const std::unordered_set<std::string>& tags)
+  : InversionOfControlAccessor<VoidAccessor>(
+        owner, name, direction, "", 1, mode, description, &typeid(ChimeraTK::Void), tags) {}
 
   /********************************************************************************************************************/
 
