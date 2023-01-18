@@ -82,7 +82,7 @@ namespace ChimeraTK {
      * Like the deviceError, it is automatically published to the control systen to ensure that there is at least one
      * consumer connected.
      */
-    VoidOutput deviceBecameFunctional{this, "deviceBecameFunctional", "", ""};
+    VoidOutput deviceBecameFunctional{this, "deviceBecameFunctional", ""};
 
     /**
      * Add a TransferElement to the list DeviceModule::writeRecoveryOpen. This list will be written during a recovery,

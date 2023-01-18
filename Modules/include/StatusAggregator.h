@@ -107,7 +107,7 @@ namespace ChimeraTK {
     int getPriority(StatusOutput::Status status) const;
 
     /// Allow runtime debugging
-    VoidInput debug{this, "/Debug/statusAggregators", "", "Print debug info for all status aggregators once."};
+    VoidInput debug{this, "/Debug/statusAggregators", "Print debug info for all status aggregators once."};
   };
 
   /********************************************************************************************************************/

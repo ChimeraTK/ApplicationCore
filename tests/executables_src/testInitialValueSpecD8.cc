@@ -310,7 +310,7 @@ BOOST_AUTO_TEST_CASE(testPushInitValueAtDeviceD9) {
 
 struct TriggerModule : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
-  ChimeraTK::VoidOutput trigger{this, "/TRIG1/PUSH_OUT", "", ""};
+  ChimeraTK::VoidOutput trigger{this, "/TRIG1/PUSH_OUT", ""};
   std::promise<void> p;
   std::atomic_bool enteredTheMainLoop{false};
   void mainLoop() override {
