@@ -46,7 +46,7 @@ namespace ChimeraTK::Model {
   // only known below. It will be re-aliased below so we get an error if the type mismatches.
   // This trick is necessary to break the otherwise circular dependency of the VertexProperties class using the Vertex
   // definition, while the VertexProperties class is necessary to define the Graph bringing the vertex_descriptor.
-  using Vertex = unsigned long int;
+  using Vertex = size_t;
 
   /********************************************************************************************************************/
 
