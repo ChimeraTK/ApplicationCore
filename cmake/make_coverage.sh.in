@@ -30,29 +30,24 @@ if [ -z "${TESTFILES}" ]; then
 fi
 
 #
-# Check which test types exist (C++ and Python)
+# Check whether Python tests are present
 #
-N_TOTAL=0
 N_PYTHON=0
 for f in $TESTFILES; do
-  N_TOTAL=$(( N_TOTAL + `grep '^add_test(' $f | wc -l` ))
-  N_PYTHON=$(( N_PYTHON + `grep '^add_test([^ ]* "/usr/bin/python3" ' $f | wc -l` ))
+  N_PYTHON=$(( N_PYTHON + `grep -E '^add_test\([^ ]* "/usr/bin/python3?" ' $f | wc -l` ))
 done
-N_CPP=$(( N_TOTAL - N_PYTHON ))
 
 #
 # Preparations for C++ coverage report
 #
-if (( N_CPP > 0 )); then
-  cmake --build . --target clean-gcda
-fi
+cmake --build . --target clean-gcda
 
 #
 # Preparations for Python coverage report
 #
 if (( N_PYTHON > 0 )); then
   cp CTestTestfile.cmake CTestTestfile-backup.cmake
-  sed -i CTestTestfile.cmake -e 's_"/usr/bin/python3"_"/usr/bin/python3-coverage" "run" "-a"_'
+  sed -E 's_"/usr/bin/python(3)?"_"/usr/bin/python\1-coverage" "run" "-a"_' -i CTestTestfile.cmake
   python3-coverage erase
 fi
 
@@ -62,9 +57,14 @@ fi
 cmake --build . --target test
 
 #
-# Generate C++ coverage report
+# Check if C++ report has been generated
 #
-if (( N_CPP > 0 )); then
+N_GCDA=`find -name *.gcda | wc -l`
+
+#
+# Generate C++ coverage report, if files have been found
+#
+if (( N_GCDA > 0 )); then
   lcov --capture --directory . --output-file coverage_all.info --ignore-errors gcov
 
   # lcov capture also includes external stuff like glibc, boost etc.
@@ -97,7 +97,7 @@ fi
 # Generate Python coverage report
 #
 if (( N_PYTHON > 0 )); then
-  python3-coverage html -d coverage_python_html
-  python3-coverage xml -o coverage_python.xml
-  cp CTestTestfile-backup.cmake CTestTestfile.cmake
+  python3-coverage html --omit='/usr/lib/*' -d coverage_python_html
+  python3-coverage xml --omit='/usr/lib/*' -o coverage_python.xml
+  mv CTestTestfile-backup.cmake CTestTestfile.cmake
 fi
