@@ -182,13 +182,9 @@ struct PollingThroughFanoutsModule : ctk::ApplicationModule {
   std::mutex m_forChecking;
   bool hasRead{false};
 
-  void prepare() override {
-    writeAll();
-  }
+  void prepare() override { writeAll(); }
 
-  void run() override {
-    ApplicationModule::run();
-  }
+  void run() override { ApplicationModule::run(); }
 
   void mainLoop() override {
     while(true) {
