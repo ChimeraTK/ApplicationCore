@@ -13,7 +13,7 @@
 // Declare the server instance
 static Server theServer;
 
-static ChimeraTK::TestFacility testFacility;
+static ChimeraTK::TestFacility testFacility{theServer};
 
 struct TestFixture {
   TestFixture() { testFacility.runApplication(); }
