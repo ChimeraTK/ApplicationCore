@@ -96,15 +96,6 @@ install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS} DESTINATION include/ChimeraTK/
                                                                  PATTERN ".svn" EXCLUDE
                                                                  PATTERN "${PROJECT_NAME}" EXCLUDE)
 
-# (this section is for compatibility only, no longer required when consuming project uses imported target)
-set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
-set(${PROJECT_NAME}_LIBRARIES "${ChimeraTK-ControlSystemAdapter_LIBRARIES}")
-set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib")
-set(${PROJECT_NAME}_CXX_FLAGS "${ChimeraTK-ControlSystemAdapter_CXX_FLAGS}")
-set(${PROJECT_NAME}_LINK_FLAGS "${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
-# (end of compatibility section)
-
-
 # we need the public dependencies so create_cmake_config_files can find them as implicit dependencies
 list(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES "Boost COMPONENTS system thread chrono filesystem date_time;ChimeraTK-ControlSystemAdapter")
 # we support our cmake EXPORTS as imported targets
