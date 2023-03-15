@@ -1,4 +1,2 @@
-Device      sdm://./DemoDummy:0=DemoDummy.map       DemoDummy.map
-Timer       sdm://./TimerDummy:0=TimerDummy.map     TimerDummy.map
-
-#Timer     (TimerDummy?map=TimerDummy.map)
+Device      (DemoDummy:0?map=DemoDummy.map)
+Timer     (TimerDummy:0?map=TimerDummy.map)
