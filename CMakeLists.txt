@@ -68,7 +68,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_
 # exported includes are all under ${CMAKE_INSTALL_PREFIX}/include
 target_include_directories(${PROJECT_NAME} INTERFACE "$<INSTALL_INTERFACE:include>")
 target_link_libraries(${PROJECT_NAME} 
-    # TODO - what needs to be public here?
+    # put ControlSystemAdapter public since implicit dep DeviceAccess must be public
     PUBLIC ChimeraTK::ChimeraTK-ControlSystemAdapter
     PUBLIC ${Boost_LIBRARIES}
     PRIVATE pthread PkgConfig::LibXML++ PkgConfig::glib ${HDF5_LIBRARIES})
