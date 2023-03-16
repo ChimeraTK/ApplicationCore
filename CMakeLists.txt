@@ -4,17 +4,17 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 03)
-set(${PROJECT_NAME}_MINOR_VERSION 00)
-set(${PROJECT_NAME}_PATCH_VERSION 02)
+set(${PROJECT_NAME}_MINOR_VERSION 01)
+set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
 option(BUILD_TESTS "Build tests." ON)
 
 # Find the ControlSystemAdapter
-FIND_PACKAGE(ChimeraTK-ControlSystemAdapter 02.04 REQUIRED)
+FIND_PACKAGE(ChimeraTK-ControlSystemAdapter 02.06 REQUIRED)
 
 # Find the DeviceAccess
-FIND_PACKAGE(ChimeraTK-DeviceAccess 03.03 REQUIRED)
+FIND_PACKAGE(ChimeraTK-DeviceAccess 03.08 REQUIRED)
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)
@@ -35,7 +35,6 @@ include(cmake/enable_code_coverage_report.cmake)
 if(NOT APPLE)
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
 endif()
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ChimeraTK-ControlSystemAdapter_LINK_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 file(GLOB headers "${CMAKE_SOURCE_DIR}/include/*.h")
