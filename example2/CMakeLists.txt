@@ -3,7 +3,7 @@
 # which is used to build ApplicationCore itself.
 PROJECT(demo_example2)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.16)
 
 # Use the project template to get the settings required for an application core project
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
@@ -17,7 +17,7 @@ include(cmake/set_default_build_to_release.cmake)
 include(cmake/set_default_flags.cmake)
 
 # Add the dependencies. We need ApplicationCore and a control system adapter implementation.
-add_dependency(ChimeraTK-ApplicationCore 03.00 REQUIRED)
+find_package(ChimeraTK-ApplicationCore 03.01 REQUIRED)
 
 # Use cmake option -DADAPTER=DOOCS, -DADAPTER=OPCUA or -DADAPTER=EPICSIOC to select a
 # control system adapter implementation.
@@ -27,15 +27,15 @@ AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR} demo_sources)
 
 # The server proper. It depends on application core and the control system adapter implementation.
 add_executable(${PROJECT_NAME} ${demo_sources})
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${ChimeraTK-ApplicationCore_LINK_FLAGS} ${Adapter_LINK_FLAGS}")
-  target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} ${Adapter_LIBRARIES} )
+set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${Adapter_LINK_FLAGS}")
+target_link_libraries(${PROJECT_NAME} PRIVATE ChimeraTK::ChimeraTK-ApplicationCore ${Adapter_LIBRARIES} )
 
 # We compile the same sources with the GENERATE_XML flag to get an xml generator.
 # This one does not depent on a control system adapter implementation.
 add_executable(${PROJECT_NAME}-xmlGenerator ${demo_sources})
-set_target_properties( ${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES LINK_FLAGS "${ChimeraTK-ApplicationCore_LINK_FLAGS}")
-target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES})
+target_compile_options(${PROJECT_NAME}-xmlGenerator PRIVATE "-DGENERATE_XML")
+set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${Adapter_LINK_FLAGS}")
+target_link_libraries(${PROJECT_NAME}-xmlGenerator PRIVATE ChimeraTK::ChimeraTK-ApplicationCore)
 
 # copy the (test) config files and the test simulation to the build directory for tests
 FILE( COPY config/ DESTINATION ${PROJECT_BINARY_DIR})
