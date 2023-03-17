@@ -31,11 +31,6 @@ include(cmake/set_default_build_to_release.cmake)
 include(cmake/set_default_flags.cmake)
 include(cmake/enable_code_coverage_report.cmake)
 
-# linker flags
-if(NOT APPLE)
-  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
-endif()
-
 include_directories(${CMAKE_SOURCE_DIR}/include)
 file(GLOB headers "${CMAKE_SOURCE_DIR}/include/*.h")
 aux_source_directory(${CMAKE_SOURCE_DIR}/src library_sources)
