@@ -64,7 +64,12 @@ struct TableGeneration : public ctk::ApplicationModule {
 };
 
 struct ExampleApp : public ctk::Application {
-  ExampleApp() : Application("exampleApp") {  }
+  ExampleApp() : Application("exampleApp") {
+    dumpConnections();
+    // dumpConnectionGraph();
+    dumpGraph();
+    dumpModuleGraph("module-graph.dot");
+  }
   ~ExampleApp() { shutdown(); }
 
   ctk::SetDMapFilePath dmapPath{"dummy.dmap"};
@@ -75,5 +80,30 @@ struct ExampleApp : public ctk::Application {
   ctk::DeviceModule dev{this, "Device"};
   // ctk::DeviceModule timer{this, "Timer"};
   ctk::DeviceModule timer{this, "Timer"};
+
+  // ctk::ControlSystemModule cs; // -> not needed anymore as all is connected to cs automatically
+  // void defineConnections();    // -> not needed anymore as all is connected to cs automatically
 };
 ExampleApp theExampleApp;
+
+// void ExampleApp::defineConnections() {
+//   ChimeraTK::setDMapFilePath("dummy.dmap");
+
+//  cs("setpoint") >> automation.opSP;
+//  automation.curSP >> tableGeneration.tableParameters.setpoint >> cs("currentSetpoint");
+
+//  auto macropulseNr = timer("macropulseNr", typeid(int), 1, ctk::UpdateMode::push);
+//  macropulseNr >> automation.trigger;
+
+//  cs("pulseLength") >> tableGeneration.tableParameters.pulseLength;
+
+//  tableGeneration.setpointTable >> dev("setpointTable");
+//  tableGeneration.feedforwardTable >> dev("feedforwardTable");
+
+//  dev("probeSignal", typeid(int), tableLength)[macropulseNr] >> cs("probeSignal");
+
+//  dumpConnections();
+//  dumpConnectionGraph();
+//  dumpGraph();
+//  dumpModuleGraph("module-graph.dot");
+//}

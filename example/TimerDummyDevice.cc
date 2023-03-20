@@ -16,7 +16,7 @@ class TimerDummy : public ChimeraTK::DeviceBackendImpl {
   TimerDummy() : DeviceBackendImpl() { FILL_VIRTUAL_FUNCTION_TEMPLATE_VTABLE(getRegisterAccessor_impl); }
 
   static boost::shared_ptr<DeviceBackend> createInstance(
-      std::string /* address */, std::map<std::string, std::string> /* parameters */) {
+      std::string, std::string, std::list<std::string>, std::string) {
     return boost::shared_ptr<DeviceBackend>(new TimerDummy());
   }
 
@@ -52,7 +52,8 @@ TimerDummy::BackendRegisterer TimerDummy::backendRegisterer;
 
 TimerDummy::BackendRegisterer::BackendRegisterer() {
   std::cout << "TimerDummy::BackendRegisterer: registering backend type TimerDummy" << std::endl;
-  ChimeraTK::BackendFactory::getInstance().registerBackendType("TimerDummy", &TimerDummy::createInstance);
+  ChimeraTK::BackendFactory::getInstance().registerBackendType(
+      "TimerDummy", "", &TimerDummy::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
 }
 
 template<typename UserType>
