@@ -9,8 +9,8 @@ class DemoDummy : public ChimeraTK::DummyBackend {
   DemoDummy(std::string mapFileName) : DummyBackend(mapFileName) {}
 
   static boost::shared_ptr<DeviceBackend> createInstance(
-      std::string, std::string, std::list<std::string> parameters, std::string) {
-    return boost::shared_ptr<DeviceBackend>(new DemoDummy(parameters.front()));
+      std::string /* address */, std::map<std::string, std::string> parameters) {
+    return boost::shared_ptr<DeviceBackend>(new DemoDummy(parameters["map"]));
   }
 
   void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override {
@@ -41,6 +41,5 @@ DemoDummy::BackendRegisterer DemoDummy::backendRegisterer;
 
 DemoDummy::BackendRegisterer::BackendRegisterer() {
   std::cout << "DemoDummy::BackendRegisterer: registering backend type DemoDummy" << std::endl;
-  ChimeraTK::BackendFactory::getInstance().registerBackendType(
-      "DemoDummy", "", &DemoDummy::createInstance, CHIMERATK_DEVICEACCESS_VERSION);
+  ChimeraTK::BackendFactory::getInstance().registerBackendType("DemoDummy", &DemoDummy::createInstance);
 }
