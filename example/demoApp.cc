@@ -64,7 +64,7 @@ struct TableGeneration : public ctk::ApplicationModule {
 };
 
 struct ExampleApp : public ctk::Application {
-  ExampleApp() : Application("exampleApp") {  }
+  ExampleApp() : Application("exampleApp") {}
   ~ExampleApp() { shutdown(); }
 
   ctk::SetDMapFilePath dmapPath{"dummy.dmap"};
