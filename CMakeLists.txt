@@ -27,6 +27,8 @@ PKG_CHECK_MODULES(glib REQUIRED IMPORTED_TARGET glib-2.0)
 #       unit_test_framework library (use header-only)
 FIND_PACKAGE(Boost COMPONENTS filesystem date_time chrono system thread REQUIRED)
 
+FIND_PACKAGE(Threads)
+
 include(cmake/set_default_build_to_release.cmake)
 include(cmake/set_default_flags.cmake)
 include(cmake/enable_code_coverage_report.cmake)
@@ -65,7 +67,7 @@ target_link_libraries(${PROJECT_NAME}
     # put ControlSystemAdapter public since implicit dep DeviceAccess must be public
     PUBLIC ChimeraTK::ChimeraTK-ControlSystemAdapter
     PUBLIC ${Boost_LIBRARIES}
-    PRIVATE pthread PkgConfig::LibXML++ PkgConfig::glib ${HDF5_LIBRARIES})
+    PRIVATE Threads::Threads PkgConfig::LibXML++ PkgConfig::glib ${HDF5_LIBRARIES})
 
 # do not remove runtime path of the library when installing
 set_property(TARGET ${PROJECT_NAME} PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
