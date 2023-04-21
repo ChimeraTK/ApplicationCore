@@ -299,12 +299,16 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
   app.testModule.consumingPush = {&app.testModule, app.testModule.constant(T(66)), "", ""};
   app.testModule.consumingPoll = {&app.testModule, app.testModule.constant(T(77)), "", ""};
 
+  // test a second accessor of a different type but defining the constant with the same type as before
+  ctk::ScalarPollInput<std::string> myStringConstant{&app.testModule, app.testModule.constant(T(66)), "", ""};
+
   ctk::TestFacility tf{app, false};
   tf.runApplication();
   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
   BOOST_TEST(app.testModule.consumingPush == 66);
   BOOST_TEST(app.testModule.consumingPoll == 77);
+  BOOST_TEST(boost::starts_with(std::string(myStringConstant), "66")); // might be 66 or 66.000000
 
   BOOST_TEST(app.testModule.consumingPush.readNonBlocking() == false);
 

@@ -188,7 +188,14 @@ namespace ChimeraTK {
 
   template<typename T>
   std::string EntityOwner::constant(T value) {
-    return namePrefixConstant + userTypeToUserType<std::string>(value);
+    // Make sure every constant has its unique name to avoid differently typed inputs to be connected to the same
+    // constant. Note that the template type argument T may not match the expected type by the application, since the
+    // type of the constant is determined by the input accessor, not by the type of the value argument of this function.
+    // We hence need to use both the type name and a unique counter as part of the name. The unique counter lives inside
+    // this template function and hence counts for each type T separately!
+    static std::atomic<uint64_t> uid(0);
+    return namePrefixConstant + "/" + DataType(typeid(T)).getAsString() + "/" + std::to_string(uid++) + "/" +
+        userTypeToUserType<std::string>(value);
   }
 
   /********************************************************************************************************************/

@@ -133,7 +133,12 @@ namespace ChimeraTK {
       net.feeder =
           VariableNetworkNode{&net.consumers.front().getValueType(), true, net.consumers.front().getNumberOfElements()};
 
-      std::string stringValue = net.consumers.front().getName().substr(ApplicationModule::namePrefixConstant.length());
+      // Extract value from constant name. The format of a constant path name is:
+      // /@CONST@/<type>/<uniqueId>/<value>
+      RegisterPath name(net.consumers.front().getName());
+      auto components = name.getComponents();
+      assert(components.size() == 4);
+      std::string stringValue = components[3];
 
       callForType(net.consumers.front().getValueType(), [&](auto t) {
         using UserType = decltype(t);
