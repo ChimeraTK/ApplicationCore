@@ -102,7 +102,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void FeedingFanOut<UserType>::addSlave(
-      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode&) {
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode& node) {
     // check if array shape is compatible, unless the receiver is a trigger
     // node, so no data is expected
     if(slave->getNumberOfSamples() != 0 &&
@@ -120,12 +120,13 @@ namespace ChimeraTK {
 
     // handle return channels
     if(_withReturn) {
-      if(slave->isReadable()) {
+      if(node.getDirection().withReturn) {
         if(_hasReturnSlave) {
           throw ChimeraTK::logic_error("FeedingFanOut: Cannot add multiple slaves with return channel!");
         }
 
-        // Assert the assumption about the return channel made in the constructor
+        // These assumptions should be guaranteed by the connection making code which created the PV
+        assert(slave->isReadable());
         assert(slave->getAccessModeFlags().has(AccessMode::wait_for_new_data));
 
         _hasReturnSlave = true;
@@ -176,7 +177,7 @@ namespace ChimeraTK {
       // distribute return-channel update to the other slaves
       for(auto& slave : FanOut<UserType>::slaves) { // send out copies to slaves
         if(slave == _returnSlave) continue;
-        if(slave->getNumberOfSamples() != 0) { // do not send copy if no data is expected (e.g. trigger)
+        if(slave->getNumberOfSamples() != 0) {      // do not send copy if no data is expected (e.g. trigger)
           slave->accessChannel(0) = ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0];
         }
         slave->writeDestructively(_returnSlave->getVersionNumber());
