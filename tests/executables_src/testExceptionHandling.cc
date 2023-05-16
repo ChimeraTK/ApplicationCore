@@ -128,7 +128,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_2_push, Fixture) {
   // initialize to known value in deviceBackend register
   write(exceptionDummyRegister, 101);
   ctk::VersionNumber versionNumberBeforeRuntimeError = {};
-  deviceBackend->triggerInterrupt(1, 0);
+  deviceBackend->triggerInterrupt(1);
   pushVariable.read();
 
   // Modify the validity flag of the application buffer (see note above in poll-type test)
@@ -141,7 +141,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_2_push, Fixture) {
   deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 11);
-  deviceBackend->triggerInterrupt(1, 0);
+  deviceBackend->triggerInterrupt(1);
 
   // This read should be skipped but obtain a new version number
   pushVariable.read();
@@ -204,7 +204,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_3_TriggerFanOut, Fixture) {
   triggeredInput.readLatest(); // empty queue (initial value)
 
   write(exceptionDummy2Register, 666);
-  deviceBackend3->triggerInterrupt(1, 0);
+  deviceBackend3->triggerInterrupt(1);
   triggeredInput.read();
   BOOST_REQUIRE_EQUAL(triggeredInput, 666);
 
@@ -214,13 +214,13 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_3_TriggerFanOut, Fixture) {
   write(exceptionDummy2Register, 667);
 
   // Trigger readout of poll-type inside TriggerFanOut (should be skipped - VersionNumber is invisible in this context)
-  deviceBackend3->triggerInterrupt(1, 0);
+  deviceBackend3->triggerInterrupt(1);
   triggeredInput.read();
   BOOST_CHECK_EQUAL(triggeredInput, 666);
   BOOST_CHECK(triggeredInput.dataValidity() == ctk::DataValidity::faulty);
 
   // A second read should be skipped, too
-  deviceBackend3->triggerInterrupt(1, 0);
+  deviceBackend3->triggerInterrupt(1);
   triggeredInput.read();
   BOOST_CHECK_EQUAL(triggeredInput, 666);
   BOOST_CHECK(triggeredInput.dataValidity() == ctk::DataValidity::faulty);
@@ -246,7 +246,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_blocking, Fixture) {
   deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 456);
-  deviceBackend->triggerInterrupt(1, 0);
+  deviceBackend->triggerInterrupt(1);
 
   // as soon as the fault state has arrived, the operation is skipped
   pushVariable.read();
@@ -276,7 +276,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_nonBlocking, Fixture) {
   deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 123);
-  deviceBackend->triggerInterrupt(1, 0);
+  deviceBackend->triggerInterrupt(1);
 
   // as soon as the fault state has arrived, the operation is skipped
   CHECK_TIMEOUT(pushVariable.readNonBlocking() == true, 10000);
@@ -308,7 +308,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_any, Fixture) {
   deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 456);
-  deviceBackend->triggerInterrupt(1, 0);
+  deviceBackend->triggerInterrupt(1);
 
   // as soon as the fault state has arrived, the operation is skipped
   group.readAny();
@@ -338,7 +338,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_latest, Fixture) {
   deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 234);
-  deviceBackend->triggerInterrupt(1, 0);
+  deviceBackend->triggerInterrupt(1);
 
   // as soon as the fault state has arrived, the operation is skipped
   CHECK_TIMEOUT(pushVariable.readLatest() == true, 10000);
@@ -370,7 +370,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_ThFO, Fixture) {
   deviceBackend2->throwExceptionOpen = true;
   deviceBackend2->throwExceptionRead = true;
   write(exceptionDummy2Register, 345);
-  deviceBackend2->triggerInterrupt(1, 0);
+  deviceBackend2->triggerInterrupt(1);
 
   // as soon as the fault state has arrived, the operation is skipped
   pushVariable3.read();
@@ -403,7 +403,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_TrFO, Fixture) {
   // initialize to known value in deviceBackend register
   write(exceptionDummy2Register, 668);
   ctk::VersionNumber versionBeforeException = {};
-  deviceBackend3->triggerInterrupt(1, 0);
+  deviceBackend3->triggerInterrupt(1);
   triggeredInput.read();
 
   // breaking the device and modify value
@@ -438,7 +438,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_1_nonBlocking, Fixture) {
   deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 100);
-  deviceBackend->triggerInterrupt(1, 0);
+  deviceBackend->triggerInterrupt(1);
 
   // perform first skipped operation
   pushVariable.read();
@@ -471,7 +471,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_1_latest, Fixture) {
   deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 100);
-  deviceBackend->triggerInterrupt(1, 0);
+  deviceBackend->triggerInterrupt(1);
 
   // perform first skipped operation
   pushVariable.read();
@@ -502,13 +502,13 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_2, Fixture) {
   deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 100);
-  deviceBackend->triggerInterrupt(1, 0);
+  deviceBackend->triggerInterrupt(1);
 
   // perform first skipped operation
   pushVariable.read();
 
   // subsequent read operations should be frozen
-  deviceBackend->triggerInterrupt(1, 0);
+  deviceBackend->triggerInterrupt(1);
   auto f = std::async(std::launch::async, [&]() { pushVariable.read(); });
   BOOST_CHECK(f.wait_for(std::chrono::milliseconds(100)) == std::future_status::timeout);
 
@@ -531,14 +531,14 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_4_3, Fixture) {
 
   // Normal behaviour
   write(exceptionDummyRegister, 66);
-  deviceBackend->triggerInterrupt(1, 0);
+  deviceBackend->triggerInterrupt(1);
   pushVariable.read();
 
   // Change value while in exception state
   deviceBackend->throwExceptionOpen = true;
   deviceBackend->throwExceptionRead = true;
   write(exceptionDummyRegister, 77);
-  deviceBackend->triggerInterrupt(1, 0);
+  deviceBackend->triggerInterrupt(1);
 
   pushVariable.read();
   BOOST_CHECK_EQUAL(pushVariable, 66);
@@ -596,7 +596,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_6, Fixture) {
 
   // Write both variables once (without error state)
   write(exceptionDummyRegister, 66);
-  deviceBackend->triggerInterrupt(1, 0);
+  deviceBackend->triggerInterrupt(1);
   pushVariable.read();
   BOOST_CHECK_EQUAL(pushVariable, 66);
 
@@ -907,7 +907,7 @@ BOOST_FIXTURE_TEST_CASE(B_4_1, Fixture_secondDeviceBroken) {
 
   // verify the 3 ApplicationModules work
   write(exceptionDummyRegister, 101);
-  deviceBackend->triggerInterrupt(1, 0);
+  deviceBackend->triggerInterrupt(1);
   pushVariable.read();
   BOOST_CHECK_EQUAL(pushVariable, 101);
 

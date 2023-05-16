@@ -878,7 +878,7 @@ BOOST_AUTO_TEST_CASE(testD6_c_InitialValue) {
   ChimeraTK::Device dev;
   dev.open(Test6_c_DummyApplication::ExceptionDummyCDD1);
   dev.write<int>("REG1/DUMMY_WRITEABLE", 99);
-  dev.getVoidRegisterAccessor("/DUMMY_INTERRUPT_1_3").write();
+  dev.getVoidRegisterAccessor("/DUMMY_INTERRUPT_3").write();
   d.application.readerModule.p.get_future().wait();
   BOOST_CHECK(d.application.readerModule.enteredTheMainLoop == true);
   BOOST_TEST(d.pushVariable == 99);

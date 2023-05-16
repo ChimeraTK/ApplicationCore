@@ -14,7 +14,7 @@ option(BUILD_TESTS "Build tests." ON)
 FIND_PACKAGE(ChimeraTK-ControlSystemAdapter 02.06 REQUIRED)
 
 # Find the DeviceAccess
-FIND_PACKAGE(ChimeraTK-DeviceAccess 03.09 REQUIRED)
+FIND_PACKAGE(ChimeraTK-DeviceAccess 03.10 REQUIRED)
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)

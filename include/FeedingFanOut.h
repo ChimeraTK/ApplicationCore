@@ -177,7 +177,7 @@ namespace ChimeraTK {
       // distribute return-channel update to the other slaves
       for(auto& slave : FanOut<UserType>::slaves) { // send out copies to slaves
         if(slave == _returnSlave) continue;
-        if(slave->getNumberOfSamples() != 0) {      // do not send copy if no data is expected (e.g. trigger)
+        if(slave->getNumberOfSamples() != 0) { // do not send copy if no data is expected (e.g. trigger)
           slave->accessChannel(0) = ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0];
         }
         slave->writeDestructively(_returnSlave->getVersionNumber());

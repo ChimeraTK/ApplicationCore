@@ -235,7 +235,7 @@ fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers,
     status2.replace(testFacitiy.getScalar<int>(ChimeraTK::RegisterPath("/Devices") / dm2 / "status"));
 
     ChimeraTK::Device dev(DummyApplication::ExceptionDummyCDD1);
-    interrupt.replace(dev.getVoidRegisterAccessor("DUMMY_INTERRUPT_1_0"));
+    interrupt.replace(dev.getVoidRegisterAccessor("DUMMY_INTERRUPT_1"));
 
     // wait until all modules have been properly started, to ensure the initial value propagation is complete
     application.group1.pollModule.p.get_future().wait();
