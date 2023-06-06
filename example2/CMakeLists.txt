@@ -12,7 +12,6 @@ set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
-include(cmake/add_dependency.cmake)
 include(cmake/set_default_build_to_release.cmake)
 include(cmake/set_default_flags.cmake)
 
@@ -27,14 +26,12 @@ AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR} demo_sources)
 
 # The server proper. It depends on application core and the control system adapter implementation.
 add_executable(${PROJECT_NAME} ${demo_sources})
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${Adapter_LINK_FLAGS}")
-target_link_libraries(${PROJECT_NAME} PRIVATE ChimeraTK::ChimeraTK-ApplicationCore ${Adapter_LIBRARIES} )
+target_link_libraries(${PROJECT_NAME} PRIVATE ChimeraTK::ChimeraTK-ApplicationCore ChimeraTK::SelectedAdapter)
 
 # We compile the same sources with the GENERATE_XML flag to get an xml generator.
 # This one does not depent on a control system adapter implementation.
 add_executable(${PROJECT_NAME}-xmlGenerator ${demo_sources})
 target_compile_options(${PROJECT_NAME}-xmlGenerator PRIVATE "-DGENERATE_XML")
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${Adapter_LINK_FLAGS}")
 target_link_libraries(${PROJECT_NAME}-xmlGenerator PRIVATE ChimeraTK::ChimeraTK-ApplicationCore)
 
 # copy the (test) config files and the test simulation to the build directory for tests
