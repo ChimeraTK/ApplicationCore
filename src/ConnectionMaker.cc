@@ -66,8 +66,10 @@ namespace ChimeraTK {
       }
       else {
         if(*net.valueType != node.getValueType() && node.getValueType() != typeid(AnyType)) {
-          throw ChimeraTK::logic_error("Variable network " + proxy.getFullyQualifiedPath() +
-              " contains nodes with different types: " + net.valueType->name() + " != " + node.getValueType().name());
+          throw ChimeraTK::logic_error("Variable network " + proxy.getFullyQualifiedPath()
+                                       + " contains nodes with different types: "
+                                       + boost::core::demangle(net.valueType->name()) + " != "
+                                       + boost::core::demangle(node.getValueType().name()));
         }
       }
 
