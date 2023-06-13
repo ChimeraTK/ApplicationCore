@@ -1103,3 +1103,73 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
 }
 
 /*********************************************************************************************************************/
+
+struct TestModule3 : ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+  ctk::ScalarOutput<int> o1{this, "o1", "", ""};
+  ctk::ArrayOutput<int> o2{this, "o2", "", 2, ""};
+  void mainLoop() override {}
+};
+
+/*********************************************************************************************************************/
+
+struct TestApplication5 : ctk::Application {
+  TestApplication5() : Application("testSuite") {}
+  ~TestApplication5() override { shutdown(); }
+
+  TestModule3 a{this, "A", ""};
+};
+
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testWriteIfDifferent) {
+  std::cout << "testWriteIfDifferent" << std::endl;
+
+  TestApplication5 app;
+  ctk::TestFacility test{app, false};
+
+  auto o1 = test.getScalar<int>("/A/o1");
+  auto o2 = test.getArray<int>("/A/o2");
+
+  test.runApplication();
+
+  // initialise in defined conditions
+  app.a.o1 = 42;
+  app.a.o1.write();
+  BOOST_TEST(o1.readLatest());
+  BOOST_TEST(o1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_TEST(int(o1) == 42);
+
+  app.a.o2 = {48, 59};
+  app.a.o2.write();
+  BOOST_TEST(o2.readLatest());
+  BOOST_TEST(o2.dataValidity() == ctk::DataValidity::ok);
+  BOOST_TEST(std::vector<int>(o2) == std::vector<int>({48, 59}));
+
+  // set module to faulty and write same value with writeIfDifferent again: faulty flag should be propagated
+  app.a.incrementDataFaultCounter();
+  app.a.o1.writeIfDifferent(42);
+  BOOST_TEST(o1.readNonBlocking());
+  BOOST_TEST(o1.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_TEST(int(o1) == 42);
+
+  // repeat with array
+  app.a.o2.writeIfDifferent({48, 59});
+  BOOST_TEST(o2.readNonBlocking());
+  BOOST_TEST(o2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_TEST(std::vector<int>(o2) == std::vector<int>({48, 59}));
+
+  // repeat with ok validity
+  app.a.decrementDataFaultCounter();
+  app.a.o1.writeIfDifferent(42);
+  BOOST_TEST(o1.readNonBlocking());
+  BOOST_TEST(o1.dataValidity() == ctk::DataValidity::ok);
+  BOOST_TEST(int(o1) == 42);
+
+  app.a.o2.writeIfDifferent({48, 59});
+  BOOST_TEST(o2.readNonBlocking());
+  BOOST_TEST(o2.dataValidity() == ctk::DataValidity::ok);
+  BOOST_TEST(std::vector<int>(o2) == std::vector<int>({48, 59}));
+}
+
+/*********************************************************************************************************************/
