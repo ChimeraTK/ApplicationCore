@@ -117,7 +117,8 @@ namespace ChimeraTK {
     ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
         const std::unordered_set<std::string>& tags = {});
 
-    [[deprecated]] ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
+    [[deprecated("Use constructor without hierarchy modifier and a qualified path "
+                 "instead")]] ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
         HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags = {});
 
     ~ConfigReader() override;

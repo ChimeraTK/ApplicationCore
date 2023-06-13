@@ -42,7 +42,7 @@ namespace ChimeraTK {
    *
    * Deprecated, do not use in new code.
    */
-  enum class HierarchyModifier {
+  enum class [[deprecated("Use a qualified name instead")]] HierarchyModifier {
     none,     ///< No modification is performed
     hideThis, ///< The hierarchy level at which this flag is specified is hidden. Everything below this level is moved
     ///< exactly one level up. The structure below this level is kept.
