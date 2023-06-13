@@ -21,20 +21,26 @@ namespace ChimeraTK {
    */
   template<typename TRIGGERTYPE = int32_t>
   struct DataLossCounter : ApplicationModule {
+    DataLossCounter(ModuleGroup* owner, const std::string& name, const std::string& description,
+        const std::string& pathToTrigger, const std::unordered_set<std::string>& tags = {})
+    : ApplicationModule(owner, name, description, tags), directTrigger(this, pathToTrigger, ""),
+      trigger(directTrigger) {}
+
     /**
      *  Construct a DataLossCounter object.
      *
      *  pathToTrigger is a qualified name of the trigger source. It should start with "/" or ".." to denote an absolute
      *  resp. relative path. Note that relative paths are relative to the DataLossCounter itself.
      */
-    DataLossCounter(EntityOwner* owner, const std::string& name, const std::string& description,
-        const std::string& pathToTrigger, HierarchyModifier hierarchyModifier = HierarchyModifier::none,
-        const std::unordered_set<std::string>& tags = {})
-    : ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger),
-      trigger(triggerGroup.trigger) {}
+    [[deprecated("Use constructor without explicit hierarchy and qualified path instead")]] DataLossCounter(
+        EntityOwner* owner, const std::string& name, const std::string& description, const std::string& pathToTrigger,
+        HierarchyModifier hierarchyModifier = HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
+    : ApplicationModule(owner, name, description, hierarchyModifier, tags), directTrigger(this, pathToTrigger, ""),
+      trigger(directTrigger) {}
 
     /// Deprecated form of the constructor for backwards compatibility only.
-    [[deprecated]] DataLossCounter(EntityOwner* owner, const std::string& name, const std::string& description,
+    [[deprecated("Use constructor without explicit hierarchy and qualified path instead")]] DataLossCounter(
+        EntityOwner* owner, const std::string& name, const std::string& description,
         HierarchyModifier hierarchyModifier = HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
     : ApplicationModule(owner, name, description, hierarchyModifier, tags),
       triggerGroup_compat(this, "TriggerGroup", "", HierarchyModifier::hideThis), trigger(triggerGroup_compat.trigger) {
@@ -42,15 +48,7 @@ namespace ChimeraTK {
 
     DataLossCounter() {}
 
-    struct TriggerGroup : HierarchyModifyingGroup {
-      TriggerGroup(EntityOwner* owner, const std::string& pathToTrigger)
-      : HierarchyModifyingGroup(owner, HierarchyModifyingGroup::getPathName(pathToTrigger), ""),
-        trigger{this, HierarchyModifyingGroup::getUnqualifiedName(pathToTrigger), "", "Trigger input"} {}
-
-      TriggerGroup() {}
-
-      ScalarPushInput<TRIGGERTYPE> trigger;
-    } triggerGroup;
+    ScalarPushInput<TRIGGERTYPE> directTrigger;
 
     struct TriggerGroup_compat : VariableGroup {
       using VariableGroup::VariableGroup;
