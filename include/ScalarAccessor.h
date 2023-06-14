@@ -38,7 +38,7 @@ namespace ChimeraTK {
 
     bool write(ChimeraTK::VersionNumber versionNumber) = delete;
     bool writeDestructively(ChimeraTK::VersionNumber versionNumber) = delete;
-    void writeIfDifferent(UserType newValue, VersionNumber versionNumber) = delete;
+    void writeIfDifferent(UserType newValue, VersionNumber versionNumber, DataValidity validity) = delete;
 
     bool write();
 
@@ -159,7 +159,8 @@ namespace ChimeraTK {
   template<typename UserType>
   void ScalarAccessor<UserType>::writeIfDifferent(UserType newValue) {
     auto versionNumber = this->getOwner()->getCurrentVersionNumber();
-    ChimeraTK::ScalarRegisterAccessor<UserType>::writeIfDifferent(newValue, versionNumber);
+    ChimeraTK::ScalarRegisterAccessor<UserType>::writeIfDifferent(
+        newValue, versionNumber, this->getOwner()->getDataValidity());
   }
 
   /********************************************************************************************************************/

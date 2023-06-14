@@ -37,7 +37,8 @@ namespace ChimeraTK {
 
     bool write(ChimeraTK::VersionNumber versionNumber) = delete;
     bool writeDestructively(ChimeraTK::VersionNumber versionNumber) = delete;
-    void writeIfDifferent(const std::vector<UserType>& newValue, VersionNumber versionNumber) = delete;
+    void writeIfDifferent(
+        const std::vector<UserType>& newValue, VersionNumber versionNumber, DataValidity validity) = delete;
 
     bool write();
 
@@ -160,7 +161,8 @@ namespace ChimeraTK {
   template<typename UserType>
   void ArrayAccessor<UserType>::writeIfDifferent(const std::vector<UserType>& newValue) {
     auto versionNumber = this->getOwner()->getCurrentVersionNumber();
-    ChimeraTK::OneDRegisterAccessor<UserType>::writeIfDifferent(newValue, versionNumber);
+    ChimeraTK::OneDRegisterAccessor<UserType>::writeIfDifferent(
+        newValue, versionNumber, this->getOwner()->getDataValidity());
   }
 
   /********************************************************************************************************************/
