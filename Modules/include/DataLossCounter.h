@@ -23,7 +23,7 @@ namespace ChimeraTK {
   struct DataLossCounter : ApplicationModule {
     DataLossCounter(ModuleGroup* owner, const std::string& name, const std::string& description,
         const std::string& pathToTrigger, const std::unordered_set<std::string>& tags = {})
-    : ApplicationModule(owner, name, description, tags), directTrigger(this, pathToTrigger, ""),
+    : ApplicationModule(owner, name, description, tags), directTrigger(this, pathToTrigger, "", "Trigger Input"),
       trigger(directTrigger) {}
 
     /**
@@ -35,8 +35,8 @@ namespace ChimeraTK {
     [[deprecated("Use constructor without explicit hierarchy and qualified path instead")]] DataLossCounter(
         EntityOwner* owner, const std::string& name, const std::string& description, const std::string& pathToTrigger,
         HierarchyModifier hierarchyModifier = HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
-    : ApplicationModule(owner, name, description, hierarchyModifier, tags), directTrigger(this, pathToTrigger, ""),
-      trigger(directTrigger) {}
+    : ApplicationModule(owner, name, description, hierarchyModifier, tags),
+      directTrigger(this, pathToTrigger, "", "Trigger Input"), trigger(directTrigger) {}
 
     /// Deprecated form of the constructor for backwards compatibility only.
     [[deprecated("Use constructor without explicit hierarchy and qualified path instead")]] DataLossCounter(
