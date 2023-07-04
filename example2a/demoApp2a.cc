@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
+
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/ConfigReader.h>
 #include <ChimeraTK/ApplicationCore/EnableXMLGenerator.h>
@@ -9,12 +10,12 @@ namespace ctk = ChimeraTK;
 
 struct Controller : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
-  ctk::ScalarPollInput<double> sp{this, "temperatureSetpoint", "degC", "Description", {"CS"}};
-  ctk::ScalarPushInput<double> rb{this, "temperatureReadback", "degC", "...", {"DEV", "CS"}};
-  ctk::ScalarOutput<double> cur{this, "heatingCurrent", "mA", "...", {"DEV"}};
+  ctk::ScalarPollInput<float> sp{this, "temperatureSetpoint", "degC", "Description"};
+  ctk::ScalarPushInput<float> rb{this, "/heater/temperatureReadback", "degC", "..."};
+  ctk::ScalarOutput<float> cur{this, "/heater/heatingCurrent", "mA", "..."};
 
-  void mainLoop() {
-    const double gain = 100.0;
+  void mainLoop() final {
+    const float gain = 100.0F;
     while(true) {
       readAll(); // waits until rb updated, then reads sp
 
@@ -26,12 +27,12 @@ struct Controller : public ctk::ApplicationModule {
 
 struct Automation : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
-  ctk::ScalarPollInput<double> opSp{this, "operatorSetpoint", "degC", "...", {"CS"}};
-  ctk::ScalarOutput<double> actSp{this, "temperatureSetpoint", "degC", "...", {"Controller"}};
+  ctk::ScalarPollInput<float> opSp{this, "operatorSetpoint", "degC", "..."};
+  ctk::ScalarOutput<float> actSp{this, "/Controller/temperatureSetpoint", "degC", "..."};
   ctk::ScalarPushInput<uint64_t> trigger{this, "/Timer/tick", "", "..."};
 
-  void mainLoop() {
-    const double maxStep = 0.1;
+  void mainLoop() final {
+    const float maxStep = 0.1F;
     while(true) {
       readAll(); // waits until trigger received, then read opSp
       actSp += std::max(std::min(opSp - actSp, maxStep), -maxStep);
@@ -40,15 +41,13 @@ struct Automation : public ctk::ApplicationModule {
   }
 };
 
-struct ExampleApp : public ctk::Application {
+struct ExampleApp final : public ctk::Application {
   ExampleApp() : Application("exampleApp2a") {
     if(config.get<int>("enableAutomation")) {
       automation = Automation(this, "Automation", "Slow setpoint ramping algorithm");
-      // automation.findTag("Controller").connectTo(controller);
-      // timer.tick >> automation.trigger;
     }
   }
-  ~ExampleApp() { shutdown(); }
+  ~ExampleApp() final { shutdown(); }
 
   ctk::SetDMapFilePath dmapPath{"example2.dmap"};
 
@@ -62,24 +61,5 @@ struct ExampleApp : public ctk::Application {
   ctk::DeviceModule oven{this, "oven", "/Timer/tick"};
 
   Automation automation;
-
-  // ctk::ControlSystemModule cs;
-  // void defineConnections();
 };
 static ExampleApp theExampleApp;
-
-/*
-void ExampleApp::defineConnections() {
-  ChimeraTK::setDMapFilePath("example2.dmap");
-
-  config.connectTo(cs["Configuration"]);
-  if(config.get<int>("enableAutomation")) {
-    automation = Automation(this, "Automation", "Slow setpoint ramping algorithm");
-    automation.findTag("Controller").connectTo(controller);
-    timer.tick >> automation.trigger;
-  }
-
-  controller.findTag("DEV").connectTo(oven["heater"], timer.tick);
-  findTag("CS").connectTo(cs);
-}
-*/
