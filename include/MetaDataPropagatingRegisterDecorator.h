@@ -57,6 +57,8 @@ namespace ChimeraTK {
     void doPostRead(TransferType type, bool hasNewData) override;
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
+    DataValidity getTargetValidity() const { return _target->dataValidity(); }
+
    protected:
     EntityOwner* _owner;
 

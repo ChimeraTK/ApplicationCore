@@ -158,9 +158,23 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ScalarAccessor<UserType>::writeIfDifferent(UserType newValue) {
-    auto versionNumber = this->getOwner()->getCurrentVersionNumber();
-    ChimeraTK::ScalarRegisterAccessor<UserType>::writeIfDifferent(
-        newValue, versionNumber, this->getOwner()->getDataValidity());
+    // Need to get to the MetaDataPropagatingRegisterDecorator to obtain the last written data validity for this PV.
+    // The dynamic_cast is ok, since the MetaDataPropagatingRegisterDecorator is always the outermost accessor, cf.
+    // the data validity propagation specification, Section 2.5.1.
+    auto* targetMetaDataPropagatingDecorator =
+        dynamic_cast<MetaDataPropagatingRegisterDecorator<UserType>*>(this->get());
+    assert(targetMetaDataPropagatingDecorator != nullptr);
+
+    // In contrast to ScalarRegisterAccessor::writeIfDifferent(), we must not set the data validity on the target
+    // accessor, since that would be interpreted by the MetaDataPropagatingRegisterDecorator as an application-induced
+    // forced fault state. This would result in invalidity lock-ups if this happens in a circular network. Hence the
+    // comparison of the data validity must also be done against the validity of the decorator's target accessor which
+    // corresponds to the last written data validity for this PV.
+    if(this->get()->accessData(0, 0) != newValue || this->getVersionNumber() == VersionNumber(nullptr) ||
+        targetMetaDataPropagatingDecorator->getTargetValidity() != this->getOwner()->getDataValidity()) {
+      operator=(newValue);
+      this->write();
+    }
   }
 
   /********************************************************************************************************************/
