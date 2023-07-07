@@ -241,7 +241,7 @@ namespace ChimeraTK {
     friend class TestFacility; // needs access to testableMode variables
 
     template<typename UserType>
-    friend class DebugPrintAccessorDecorator;          // needs access to the idMap
+    friend class DebugPrintAccessorDecorator; // needs access to the idMap
     template<typename UserType>
     friend class MetaDataPropagatingRegisterDecorator; // needs to access circularNetworkInvalidityCounters
     friend class ApplicationModule;                    // needs to access circularNetworkInvalidityCounters
