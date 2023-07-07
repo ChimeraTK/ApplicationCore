@@ -161,8 +161,13 @@ namespace ChimeraTK {
   template<typename UserType>
   void ArrayAccessor<UserType>::writeIfDifferent(const std::vector<UserType>& newValue) {
     auto versionNumber = this->getOwner()->getCurrentVersionNumber();
-    ChimeraTK::OneDRegisterAccessor<UserType>::writeIfDifferent(
-        newValue, versionNumber, this->getOwner()->getDataValidity());
+
+    if(!std::equal(newValue.begin(), newValue.end(), this->get()->accessChannel(0).begin()) ||
+        this->getVersionNumber() == VersionNumber(nullptr) ||
+        this->dataValidity() != this->getOwner()->getDataValidity()) {
+      operator=(newValue);
+      this->write();
+    }
   }
 
   /********************************************************************************************************************/
