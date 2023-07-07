@@ -4,6 +4,7 @@
 
 #include "Flags.h"
 #include "VariableNetworkNode.h"
+#include <unordered_set>
 
 #include <list>
 #include <string>
@@ -140,7 +141,7 @@ namespace ChimeraTK {
     /** Get the ID of the circular dependency network (0 if none). This information is only available after
      *  the Application has finalised all connections.
      */
-    virtual size_t getCircularNetworkHash() = 0;
+    virtual size_t getCircularNetworkHash() const = 0;
 
     /** Check whether this module has declared that it reached the testable mode. */
     bool hasReachedTestableMode();

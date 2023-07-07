@@ -107,7 +107,7 @@ namespace ChimeraTK {
 
     std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override;
 
-    size_t getCircularNetworkHash() override { return _owner->getCircularNetworkHash(); }
+    size_t getCircularNetworkHash() const override { return _owner->getCircularNetworkHash(); }
 
     /**
      *  Find ApplicationModule owner. If "this" is an ApplicationModule, "this" is returned. If "this" is a

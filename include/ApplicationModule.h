@@ -86,11 +86,13 @@ namespace ChimeraTK {
     void incrementDataFaultCounter() override;
     void decrementDataFaultCounter() override;
 
+    size_t getDataFaultCounter() const { return dataFaultCounter; }
+
     void setCurrentVersionNumber(VersionNumber versionNumber) override;
 
     std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override;
 
-    size_t getCircularNetworkHash() override;
+    size_t getCircularNetworkHash() const override;
 
     /** Set the ID of the circular dependency network. This function can be called multiple times and throws if the
      *  value is not identical.

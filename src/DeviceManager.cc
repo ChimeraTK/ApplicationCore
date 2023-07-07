@@ -383,7 +383,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  size_t DeviceManager::getCircularNetworkHash() {
+  size_t DeviceManager::getCircularNetworkHash() const {
     return 0; // The device module is never part of a circular network
   }
 

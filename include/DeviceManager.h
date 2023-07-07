@@ -111,7 +111,7 @@ namespace ChimeraTK {
 
     std::list<EntityOwner*> getInputModulesRecursively(std::list<EntityOwner*> startList) override;
 
-    size_t getCircularNetworkHash() override;
+    size_t getCircularNetworkHash() const override;
 
     /**
      * Return associated device alias resp. URI
