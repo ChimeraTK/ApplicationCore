@@ -158,8 +158,11 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ScalarAccessor<UserType>::writeIfDifferent(UserType newValue) {
+    auto* targetMetaDataPropagatingDecorator =
+        dynamic_cast<MetaDataPropagatingRegisterDecorator<UserType>*>(this->get());
+    assert(targetMetaDataPropagatingDecorator != nullptr);
     if(this->get()->accessData(0, 0) != newValue || this->getVersionNumber() == VersionNumber(nullptr) ||
-        this->dataValidity() != this->getOwner()->getDataValidity()) {
+        targetMetaDataPropagatingDecorator->getTargetValidity() != this->getOwner()->getDataValidity()) {
       operator=(newValue);
       this->write();
     }

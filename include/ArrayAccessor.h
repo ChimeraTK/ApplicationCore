@@ -160,9 +160,12 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ArrayAccessor<UserType>::writeIfDifferent(const std::vector<UserType>& newValue) {
+    auto* targetMetaDataPropagatingDecorator =
+        dynamic_cast<MetaDataPropagatingRegisterDecorator<UserType>*>(this->get());
+    assert(targetMetaDataPropagatingDecorator != nullptr);
     if(!std::equal(newValue.begin(), newValue.end(), this->get()->accessChannel(0).begin()) ||
         this->getVersionNumber() == VersionNumber(nullptr) ||
-        this->dataValidity() != this->getOwner()->getDataValidity()) {
+        targetMetaDataPropagatingDecorator->getTargetValidity() != this->getOwner()->getDataValidity()) {
       operator=(newValue);
       this->write();
     }
