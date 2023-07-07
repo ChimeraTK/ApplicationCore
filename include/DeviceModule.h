@@ -102,9 +102,9 @@ namespace ChimeraTK {
    */
   class ConnectingDeviceModule : public DeviceModule {
    public:
-    [[deprecated("Use DeviceModule instead")]] ConnectingDeviceModule(ModuleGroup* owner, const std::string& deviceAliasOrCDD,
-        const std::string& triggerPath = {}, std::function<void(ChimeraTK::Device&)> initialisationHandler = nullptr,
-        const std::string& pathInDevice = "/")
+    [[deprecated("Use DeviceModule instead")]] ConnectingDeviceModule(ModuleGroup* owner,
+        const std::string& deviceAliasOrCDD, const std::string& triggerPath = {},
+        std::function<void(ChimeraTK::Device&)> initialisationHandler = nullptr, const std::string& pathInDevice = "/")
     : DeviceModule(owner, deviceAliasOrCDD, triggerPath, std::move(initialisationHandler), pathInDevice) {}
 
     using DeviceModule::DeviceModule;
