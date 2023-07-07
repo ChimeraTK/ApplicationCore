@@ -26,7 +26,17 @@ namespace ChimeraTK {
       auto validity = module.getDataValidity();
       // print, if validity is faulty
       if(validity == DataValidity::faulty) {
-        std::cout << "Module " << module.getQualifiedName() << " has DataValidity::faulty" << std::endl;
+        std::cout << "Module " << module.getQualifiedName()
+                  << " has DataValidity::faulty (count: " << module.getDataFaultCounter() << ")";
+
+        auto hash = module.getCircularNetworkHash();
+        if(hash != 0) {
+          std::cout << " (in circular network " << hash << " with invalidity count "
+                    << Application::getInstance().getCircularNetworkInvalidityCounter(hash) << ")";
+        }
+
+        std::cout << std::endl;
+
         // dispatch to all accessors of the module
         for(auto& accessor : module.getAccessorListRecursive()) {
           dispatch(accessor);

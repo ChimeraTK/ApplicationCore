@@ -66,10 +66,9 @@ namespace ChimeraTK {
       }
       else {
         if(*net.valueType != node.getValueType() && node.getValueType() != typeid(AnyType)) {
-          throw ChimeraTK::logic_error("Variable network " + proxy.getFullyQualifiedPath()
-                                       + " contains nodes with different types: "
-                                       + boost::core::demangle(net.valueType->name()) + " != "
-                                       + boost::core::demangle(node.getValueType().name()));
+          throw ChimeraTK::logic_error("Variable network " + proxy.getFullyQualifiedPath() +
+              " contains nodes with different types: " + boost::core::demangle(net.valueType->name()) +
+              " != " + boost::core::demangle(node.getValueType().name()));
         }
       }
 
@@ -283,6 +282,9 @@ namespace ChimeraTK {
         auto circularNetworkHash = boost::hash_range(circularNetwork.begin(), circularNetwork.end());
         _app.circularDependencyNetworks[circularNetworkHash] = circularNetwork;
         _app.circularNetworkInvalidityCounters[circularNetworkHash] = 0;
+
+        debug("    Circular network detected: " + proxy.getFullyQualifiedPath() + " is part of " +
+            std::to_string(circularNetworkHash));
       }
     }
   }

@@ -41,7 +41,7 @@ namespace ChimeraTK {
     void incrementDataFaultCounter() override { throw; }
     void decrementDataFaultCounter() override { throw; }
     std::list<EntityOwner*> getInputModulesRecursively([[maybe_unused]] std::list<EntityOwner*> startList) override;
-    size_t getCircularNetworkHash() override;
+    size_t getCircularNetworkHash() const override;
   };
 
   /********************************************************************************************************************/
@@ -56,7 +56,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  inline size_t InternalModule::getCircularNetworkHash() {
+  inline size_t InternalModule::getCircularNetworkHash() const {
     throw ChimeraTK::logic_error("getCircularNetworkHash() called on an InternalModule (ThreadedFanout or "
                                  "TriggerFanout). This is probably "
                                  "caused by incorrect ownership of variables/accessors or VariableGroups.");

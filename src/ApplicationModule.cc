@@ -224,7 +224,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  size_t ApplicationModule::getCircularNetworkHash() {
+  size_t ApplicationModule::getCircularNetworkHash() const {
     return _circularNetworkHash;
   }
 

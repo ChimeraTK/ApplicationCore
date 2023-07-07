@@ -157,6 +157,10 @@ namespace ChimeraTK {
      */
     VersionNumber getStartVersion() const { return _startVersion; }
 
+    size_t getCircularNetworkInvalidityCounter(size_t circularNetworkHash) const {
+      return circularNetworkInvalidityCounters.at(circularNetworkHash);
+    }
+
    protected:
     friend class Module;
     friend class VariableNetwork;
@@ -237,7 +241,7 @@ namespace ChimeraTK {
     friend class TestFacility; // needs access to testableMode variables
 
     template<typename UserType>
-    friend class DebugPrintAccessorDecorator; // needs access to the idMap
+    friend class DebugPrintAccessorDecorator;          // needs access to the idMap
     template<typename UserType>
     friend class MetaDataPropagatingRegisterDecorator; // needs to access circularNetworkInvalidityCounters
     friend class ApplicationModule;                    // needs to access circularNetworkInvalidityCounters
@@ -267,7 +271,7 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("getInputModulesRecursively() called on the application. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
-    size_t getCircularNetworkHash() override {
+    size_t getCircularNetworkHash() const override {
       throw ChimeraTK::logic_error("getCircularNetworkHash() called on the application. This is probably "
                                    "caused by incorrect ownership of variables/accessors or VariableGroups.");
     }
