@@ -158,8 +158,6 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ScalarAccessor<UserType>::writeIfDifferent(UserType newValue) {
-    auto versionNumber = this->getOwner()->getCurrentVersionNumber();
-
     if(this->get()->accessData(0, 0) != newValue || this->getVersionNumber() == VersionNumber(nullptr) ||
         this->dataValidity() != this->getOwner()->getDataValidity()) {
       operator=(newValue);
