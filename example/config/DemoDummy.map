@@ -1,4 +1,10 @@
-# name                    nr of elements       address          size           bar    width   fracbits    signed   
-setpointTable             16384                0                65536          0      32      0           0
-feedforwardTable          16384                0                65536          1      32      0           0
-probeSignal               16384                0                65536          2      32      0           0
+# name                    nr of elements   address  size   bar    width   fracbits    signed    R/W
+HEATER.MODE               1                0        4      0      2       0           0         RW
+HEATER.CURRENT_SET        1                4        4      0      32      16          0         RW
+HEATER.CURRENT_READBACK   1                8        4      0      32      16          0         RO
+SENSORS.TEMPERATURE1      1                16       4      0      32      16          0         RO
+SENSORS.TEMPERATURE2      1                20       4      0      32      16          0         RO
+SENSORS.TEMPERATURE3      1                24       4      0      32      16          0         RO
+SENSORS.TEMPERATURE4      1                28       4      0      32      16          0         RO
+BOARD.RESET_N             1                32       4      0      1       0           0         RW
+BOARD.GPIO_OUT0           1                36       4      0      1       0           0         RW

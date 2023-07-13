@@ -1,9 +1,9 @@
 # Note: This CMakeLists.txt is a minimal complete example how to use the
 # *installed* application core library. It is not included from the main CMakeLists.txt
 # which is used to build ApplicationCore itself.
-PROJECT(demo_example)
+project(demo_example)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.16)
+cmake_minimum_required(VERSION 3.16)
 
 # Use the project template to get the settings required for an application core project
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
@@ -17,30 +17,39 @@ include(cmake/set_default_flags.cmake)
 
 # Add the dependencies. We need ApplicationCore and a control system adapter implementation.
 find_package(ChimeraTK-ApplicationCore 03.00 REQUIRED)
-#FIXME: Make the adapter configurable via command line parameter
-find_package(ChimeraTK-ControlSystemAdapter-DoocsAdapter 00.10 REQUIRED)
 
-AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR} demo_sources)
+# Choose control system adapater implementation to link against based on the ADAPTER cmake argument. When not
+# specifying this at the cmake command line, a list of possible options will be presented.
+include(cmake/set_control_system_adapter.cmake)
 
-# The server proper. It depends on application core and the control system adapter implementation.
-add_executable(${PROJECT_NAME} ${demo_sources})
-target_link_libraries(${PROJECT_NAME} 
-    PRIVATE ChimeraTK::ChimeraTK-ApplicationCore ChimeraTK::ChimeraTK-ControlSystemAdapter-DoocsAdapter )
+aux_source_directory(${CMAKE_SOURCE_DIR}/src sources)
+aux_source_directory(${CMAKE_SOURCE_DIR}/include headers)
+aux_source_directory(${CMAKE_SOURCE_DIR}/src_factory factory)
 
-# We compile the same sources with the GENERATE_XML flag to get an xml generator.
-# This one does not depent on a control system adapter implementation.
-add_executable(${PROJECT_NAME}-xmlGenerator ${demo_sources})
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
+# Server library links all ApplicationModules and ApplicationCore
+add_library(${PROJECT_NAME}lib ${sources} ${headers})
+target_link_libraries(${PROJECT_NAME}lib ChimeraTK::ChimeraTK-ApplicationCore)
+
+# Server executable: link the server library with the application factory and the chose control system adapter
+add_executable(${PROJECT_NAME} ${factory})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}lib ChimeraTK::SelectedAdapter)
+
+# XML generator executable: generate XML application description. Links the server library with the application
+# factory, but sets a special C++ preprocessor symbol to put ApplicationCore into the XML generation mode.
+add_executable(${PROJECT_NAME}-xmlGenerator ${factory})
 target_compile_options(${PROJECT_NAME}-xmlGenerator PRIVATE "-DGENERATE_XML")
-target_link_libraries(${PROJECT_NAME}-xmlGenerator PRIVATE ChimeraTK::ChimeraTK-ApplicationCore)
+target_link_libraries(${PROJECT_NAME}-xmlGenerator PRIVATE ${PROJECT_NAME}lib)
 
 # copy the (test) config files to the build directory for tests
-FILE( COPY config/ DESTINATION ${PROJECT_BINARY_DIR})
+file(COPY config/ DESTINATION ${PROJECT_BINARY_DIR})
 
 # Tests:
 # There are no dedicated tests for this demo. But we run the xml generator to
 # check that the variable household can successfully be initialised.
 # The test will fail if the xml generator crashes, just a smoke test.
-ENABLE_TESTING()
+enable_testing()
 add_test(${PROJECT_NAME}-xmlGenerator ${PROJECT_NAME}-xmlGenerator)
 
 # Installation:
@@ -50,5 +59,6 @@ if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/export/doocs/server")
 else()
   install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}-xmlGenerator RUNTIME DESTINATION bin)
 endif()
+
 # Do not install the config. It is only a test config.
 # The real config will come from a config generator and usually depends on the instance.

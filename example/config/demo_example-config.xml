@@ -1,0 +1,16 @@
+<configuration>
+
+  <module name="Configuration">
+    <variable name="enableSetpointRamping" type="boolean" value="true"/>
+    <variable name="heaterMode" type="uint8" value="2"/>
+  </module>
+
+  <module name="Information">
+    <variable name="ovenName" type="string" value="Cookie Oven 42"/>
+  </module>
+
+  <module name="Timer">
+    <variable name="period" type="uint32" value="500"/>
+  </module>
+
+</configuration>

@@ -1,0 +1,2 @@
+device    (sharedMemoryDummy:0?map=DemoDummy.map)
+oven      (logicalNameMap?map=oven.xlmap)
