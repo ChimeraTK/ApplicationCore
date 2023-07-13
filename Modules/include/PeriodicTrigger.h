@@ -40,6 +40,8 @@ namespace ChimeraTK {
       tick(this, tickName, "", "Timer tick. Counts the trigger number starting from 0."),
       defaultPeriod_(defaultPeriod) {}
 
+    PeriodicTrigger() {}
+
     [[deprecated("Use PeriodicTrigger without hierarchy modifier and a qualified path "
                  "instead")]] PeriodicTrigger(ModuleGroup* owner, const std::string& name,
         const std::string& description, const uint32_t defaultPeriod, HierarchyModifier hierarchyModifier,
