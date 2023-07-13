@@ -1,1 +1,0 @@
-../This_project_uses_the_project-template.txt

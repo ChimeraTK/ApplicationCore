@@ -1,0 +1,57 @@
+<logicalNameMap>
+
+  <module name="Configuration">
+
+    <redirectedRegister name="heaterMode">
+      <targetDevice>device</targetDevice>
+      <targetRegister>HEATER.MODE</targetRegister>
+    </redirectedRegister>
+
+    <redirectedRegister name="lightOn">
+      <targetDevice>device</targetDevice>
+      <targetRegister>BOARD.GPIO_OUT0</targetRegister>
+    </redirectedRegister>
+
+  </module>
+
+  <module name="ControlUnit">
+    <module name="Controller">
+
+      <redirectedRegister name="heatingCurrent">
+        <targetDevice>device</targetDevice>
+        <targetRegister>HEATER.CURRENT_SET</targetRegister>
+      </redirectedRegister>
+
+      <redirectedRegister name="temperatureReadback">
+        <targetDevice>device</targetDevice>
+        <targetRegister>SENSORS.TEMPERATURE1</targetRegister>
+      </redirectedRegister>
+
+    </module>
+  </module>
+
+  <module name="Monitoring">
+
+    <redirectedRegister name="heatingCurrent">
+      <targetDevice>device</targetDevice>
+      <targetRegister>HEATER.CURRENT_READBACK</targetRegister>
+    </redirectedRegister>
+
+    <redirectedRegister name="temperatureOvenTop">
+      <targetDevice>device</targetDevice>
+      <targetRegister>SENSORS.TEMPERATURE2</targetRegister>
+    </redirectedRegister>
+
+    <redirectedRegister name="temperatureOvenBottom">
+      <targetDevice>device</targetDevice>
+      <targetRegister>SENSORS.TEMPERATURE3</targetRegister>
+    </redirectedRegister>
+
+    <redirectedRegister name="temperatureOutside">
+      <targetDevice>device</targetDevice>
+      <targetRegister>SENSORS.TEMPERATURE4</targetRegister>
+    </redirectedRegister>
+
+  </module>
+
+</logicalNameMap>

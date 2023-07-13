@@ -1,5 +1,0 @@
-# name                            nr of elements       address          size           bar    width   fracbits    signed    R/W
-Heater.temperatureReadback        1                    0                4              0      32      16          0         RO
-Heater.heatingCurrent             1                    4                4              0      32      16          0         RW
-Heater.supplyVoltages             4                    8                16             0      32      16          0         RO
-

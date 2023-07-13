@@ -1,4 +1,0 @@
-<configuration>
-  <variable name="enableAutomation" type="int32" value="1"/>
-</configuration>
-

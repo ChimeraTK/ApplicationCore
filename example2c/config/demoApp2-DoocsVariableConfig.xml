@@ -1,5 +1,0 @@
-<device_server>
-  <location name="Bakery">
-    <import>/</import>
-  </location>
-</device_server>

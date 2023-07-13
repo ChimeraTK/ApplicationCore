@@ -1,3 +1,0 @@
-oven_raw  (sharedMemoryDummy?map=oven.map)
-oven      (logicalNameMap?map=oven.xlmap)
-
