@@ -1,0 +1,70 @@
+/**
+\page example Example: Basic structure of an Application
+
+This example shows the basic structure of an Application written with ApplicationCore. The full example project can be found in the "example" subdirectory. Please refer to the \ref conceptualOverview for detail explanation.
+
+The directory structure looks like this:
+
+- CMakeLists.txt - cmake project configuration
+- include/... - Header files for the ApplicationModule and the Application implementations
+- src/... - Source files for the ApplicationModule and the Application implementations
+- src_factory/... - Source file for creating the instance of the ApplicationFactory
+- config/... - Configuration files needed for testing and demo execution
+- cmake/... - These files are coming from the project template and must not be altered
+- All other files in project root - These files are coming from the project template and must not be altered
+
+\tableofcontents
+
+\section example_include include
+
+\subsection example_include_SetpointRamp_h include/SetpointRamp.h
+\include example/include/SetpointRamp.h
+
+\subsection example_include_AverageCurrent_h include/AverageCurrent.h
+\include example/include/AverageCurrent.h
+
+\subsection example_include_Controller_h include/Controller.h
+\include example/include/Controller.h
+
+\subsection example_include_ExampleApp_h include/ExampleApp.h
+\include example/include/ExampleApp.h
+
+\section example_src src
+
+\subsection example_src_SetpointRamp_cc src/AutomSetpointRampation.cc
+\include example/src/SetpointRamp.cc
+
+\subsection example_src_AverageCurrent_cc src/AverageCurrent.cc
+\include example/src/AverageCurrent.cc
+
+\subsection example_src_Controller_cc src/AutomatiControlleron.cc
+\include example/src/Controller.cc
+
+\subsection example_src_ExampleApp_cc src/ExampleApp.cc
+\include example/src/ExampleApp.cc
+
+\section example_src_factory src_factory
+
+\subsection example_src_factrory_FactoryInstance.cc src_factory/FactoryInstance.cc
+\include example/src_factory/FactoryInstance.cc
+
+\section example_config config
+
+\subsection example_config_demo_example-config.xml config/demo_example-config.xml
+\include example/config/demo_example-config.xml
+
+\subsection example_config_demo_example-DoocsVariableConfig.xml config/demo_example-DoocsVariableConfig.xml
+\include example/config/demo_example-DoocsVariableConfig.xml
+
+\subsection example_config_demo_example_conf config/demo_example.conf
+\include example/config/demo_example.conf
+
+\subsection example_config_demo_example_dmap config/demo_example.dmap
+\include example/config/demo_example.dmap
+
+\subsection example_config_DemoDummy_map config/DemoDummy.map
+\include example/config/DemoDummy.map
+
+\subsection example_config_oven_xlmap config/oven.xlmap
+\include example/config/oven.xlmap
+*/

@@ -12,10 +12,7 @@ Module documentation:
 - \subpage configreader
 
 Examples:
-\li \ref example1 
-\li \ref example2
-\li \ref example2a
-\li \ref example3
+\li \ref example
 \li \ref statusmonitordoc
 
 Technical specifications:
