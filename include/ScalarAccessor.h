@@ -39,12 +39,15 @@ namespace ChimeraTK {
     bool write(ChimeraTK::VersionNumber versionNumber) = delete;
     bool writeDestructively(ChimeraTK::VersionNumber versionNumber) = delete;
     void writeIfDifferent(UserType newValue, VersionNumber versionNumber, DataValidity validity) = delete;
+    void setAndWrite(UserType newValue, VersionNumber versionNumber) = delete;
 
     bool write();
 
     bool writeDestructively();
 
     void writeIfDifferent(UserType newValue);
+
+    void setAndWrite(UserType newValue);
 
    protected:
     friend class InversionOfControlAccessor<ScalarAccessor<UserType>>;
@@ -172,9 +175,16 @@ namespace ChimeraTK {
     // corresponds to the last written data validity for this PV.
     if(this->get()->accessData(0, 0) != newValue || this->getVersionNumber() == VersionNumber(nullptr) ||
         targetMetaDataPropagatingDecorator->getTargetValidity() != this->getOwner()->getDataValidity()) {
-      operator=(newValue);
-      this->write();
+      setAndWrite(newValue);
     }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void ScalarAccessor<UserType>::setAndWrite(UserType newValue) {
+    operator=(newValue);
+    this->write();
   }
 
   /********************************************************************************************************************/

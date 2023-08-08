@@ -39,12 +39,15 @@ namespace ChimeraTK {
     bool writeDestructively(ChimeraTK::VersionNumber versionNumber) = delete;
     void writeIfDifferent(
         const std::vector<UserType>& newValue, VersionNumber versionNumber, DataValidity validity) = delete;
+    void setAndWrite(const std::vector<UserType>& newValue, VersionNumber versionNumber) = delete;
 
     bool write();
 
     bool writeDestructively();
 
     void writeIfDifferent(const std::vector<UserType>& newValue);
+
+    void setAndWrite(const std::vector<UserType>& newValue);
 
    protected:
     friend class InversionOfControlAccessor<ArrayAccessor<UserType>>;
@@ -175,9 +178,16 @@ namespace ChimeraTK {
     if(!std::equal(newValue.begin(), newValue.end(), this->get()->accessChannel(0).begin()) ||
         this->getVersionNumber() == VersionNumber(nullptr) ||
         targetMetaDataPropagatingDecorator->getTargetValidity() != this->getOwner()->getDataValidity()) {
-      operator=(newValue);
-      this->write();
+      setAndWrite(newValue);
     }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void ArrayAccessor<UserType>::setAndWrite(const std::vector<UserType>& newValue) {
+    operator=(newValue);
+    this->write();
   }
 
   /********************************************************************************************************************/
