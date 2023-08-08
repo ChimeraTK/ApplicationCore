@@ -125,6 +125,79 @@ BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeReadLatest) {
   BOOST_CHECK(application.group1.pushModule.getCurrentVersionNumber() == moduleVersion);
 }
 
+BOOST_AUTO_TEST_SUITE_END()
+
+/*********************************************************************************************************************/
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_SUITE()
+
+struct ThePushModule : ChimeraTK::ApplicationModule {
+  using ChimeraTK::ApplicationModule::ApplicationModule;
+
+  ChimeraTK::ScalarPushInput<int> pushInput{this, "/theVariable", "", ""};
+
+  std::promise<void> p;
+  void mainLoop() override { p.set_value(); }
+};
+
+struct TheOutputModule : ChimeraTK::ApplicationModule {
+  using ChimeraTK::ApplicationModule::ApplicationModule;
+
+  ChimeraTK::ScalarOutput<int> output{this, "/theVariable", "", ""};
+
+  void prepare() { output.write(); }
+
+  std::promise<void> p;
+  void mainLoop() override { p.set_value(); }
+};
+
+struct TheTestApplication : ChimeraTK::Application {
+  using ChimeraTK::Application::Application;
+  ~TheTestApplication() override { shutdown(); }
+
+  ThePushModule pm{this, "pm", ""};
+  TheOutputModule om{this, "om", ""};
+};
+
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(versionPropagation_testSetAndWrite) {
+  std::cout << "versionPropagation_testSetAndWrite" << std::endl;
+  TheTestApplication app("app");
+  ChimeraTK::TestFacility test(app, false);
+  test.runApplication();
+  app.pm.p.get_future().wait();
+  app.om.p.get_future().wait();
+
+  ChimeraTK::VersionNumber theVersion;
+  app.om.setCurrentVersionNumber(theVersion);
+  app.om.output.setAndWrite(42);
+
+  app.pm.pushInput.read();
+
+  BOOST_CHECK(app.pm.getCurrentVersionNumber() == theVersion);
+}
+
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(versionPropagation_testWriteIfDifferent) {
+  std::cout << "versionPropagation_testWriteIfDifferent" << std::endl;
+  TheTestApplication app("app");
+  ChimeraTK::TestFacility test(app, false);
+  test.runApplication();
+  app.pm.p.get_future().wait();
+  app.om.p.get_future().wait();
+
+  ChimeraTK::VersionNumber theVersion;
+  app.om.setCurrentVersionNumber(theVersion);
+  app.om.output.writeIfDifferent(42);
+
+  app.pm.pushInput.read();
+
+  BOOST_CHECK(app.pm.getCurrentVersionNumber() == theVersion);
+}
+
 /*********************************************************************************************************************/
 
 BOOST_AUTO_TEST_SUITE_END()
