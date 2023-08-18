@@ -13,3 +13,5 @@
 #include "StatusAccessor.h"
 #include "VariableGroup.h"
 #include "VoidAccessor.h"
+
+#include <ChimeraTK/ControlSystemAdapter/ApplicationFactory.h>
