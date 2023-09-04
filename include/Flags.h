@@ -42,7 +42,13 @@ namespace ChimeraTK {
    *
    * Deprecated, do not use in new code.
    */
+#ifndef CHIMERATK_INSIDE_APPLICATION_CORE
   enum class [[deprecated("Use a qualified name instead")]] HierarchyModifier{
+#else
+  // Do not declare deprecated while compiling ApplicationCore itself. It will generate a ton of warnings for the
+  // also deprecated constructors. Having those trigger a warning in the calling code should be enough
+  enum class HierarchyModifier{
+#endif
       none,     ///< No modification is performed
       hideThis, ///< The hierarchy level at which this flag is specified is hidden. Everything below this level is moved
       ///< exactly one level up. The structure below this level is kept.
