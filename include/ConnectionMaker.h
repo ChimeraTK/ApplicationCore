@@ -96,7 +96,7 @@ namespace ChimeraTK {
     void connect();
 
    private:
-    std::set<Model::ProcessVariableProxy, ProcessVariableComperator> triggers;
+    std::set<Model::ProcessVariableProxy, ProcessVariableComperator> _triggers;
 
     void connectNetwork(Model::ProcessVariableProxy& proxy);
 

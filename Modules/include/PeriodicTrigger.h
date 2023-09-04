@@ -38,9 +38,9 @@ namespace ChimeraTK {
     : ApplicationModule(owner, name, description, tags),
       period(this, periodName, "ms", "period in milliseconds. The trigger is sent once per the specified duration."),
       tick(this, tickName, "", "Timer tick. Counts the trigger number starting from 0."),
-      defaultPeriod_(defaultPeriod) {}
+      _defaultPeriod(defaultPeriod) {}
 
-    PeriodicTrigger() {}
+    PeriodicTrigger() = default;
 
     [[deprecated("Use PeriodicTrigger without hierarchy modifier and a qualified path "
                  "instead")]] PeriodicTrigger(ModuleGroup* owner, const std::string& name,
@@ -76,7 +76,7 @@ namespace ChimeraTK {
         if(period == 0) {
           // set receiving end of timeout. Will only be overwritten if there is
           // new data.
-          period = defaultPeriod_;
+          period = _defaultPeriod;
         }
         t += std::chrono::milliseconds(static_cast<uint32_t>(period));
         boost::this_thread::interruption_point();
@@ -87,6 +87,6 @@ namespace ChimeraTK {
     }
 
    private:
-    uint32_t defaultPeriod_;
+    uint32_t _defaultPeriod{};
   };
 } // namespace ChimeraTK

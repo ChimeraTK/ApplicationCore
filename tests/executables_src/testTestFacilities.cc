@@ -179,7 +179,7 @@ struct PollingThroughFanoutsModule : ctk::ApplicationModule {
   ctk::ScalarOutput<int> out1{this, "out1", "", ""};
   ctk::ScalarOutput<int> out2{this, "out2", "", ""};
 
-  std::mutex m_forChecking;
+  std::mutex mForChecking;
   bool hasRead{false};
 
   void prepare() override { writeAll(); }
@@ -190,7 +190,7 @@ struct PollingThroughFanoutsModule : ctk::ApplicationModule {
     while(true) {
       push1.read();
 
-      std::unique_lock<std::mutex> lock(m_forChecking);
+      std::unique_lock<std::mutex> lock(mForChecking);
       hasRead = true;
       poll1.read();
       poll2.read();
@@ -751,8 +751,8 @@ BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
     app.m2.poll2 = {&app.m2, "/m1/out1", "", ""};
     app.m2.push1 = {&app.m2, "/m1/out2", "", ""};
 
-    std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
-    std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
+    std::unique_lock<std::mutex> lk1(app.m1.mForChecking, std::defer_lock);
+    std::unique_lock<std::mutex> lk2(app.m2.mForChecking, std::defer_lock);
 
     ctk::TestFacility test{app};
 
@@ -797,8 +797,8 @@ BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
     app.m2.push1 = {&app.m2, "/REG1", "", ""};
     // app.dev("REG1") >> app.m1.poll1 >> app.m2.push1;
 
-    std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
-    std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
+    std::unique_lock<std::mutex> lk1(app.m1.mForChecking, std::defer_lock);
+    std::unique_lock<std::mutex> lk2(app.m2.mForChecking, std::defer_lock);
 
     ctk::Device dev(dummySdm);
     auto reg1 = dev.getScalarRegisterAccessor<int>("REG1.DUMMY_WRITEABLE");
@@ -835,8 +835,8 @@ BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
     app.m1.push1 = {&app.m1, "/m2/out2", "", ""};
     std::cout << " HIER 3" << std::endl;
 
-    std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
-    std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
+    std::unique_lock<std::mutex> lk1(app.m1.mForChecking, std::defer_lock);
+    std::unique_lock<std::mutex> lk2(app.m2.mForChecking, std::defer_lock);
 
     ctk::TestFacility test{app};
 
@@ -955,8 +955,8 @@ BOOST_AUTO_TEST_CASE(testInitialValues) {
   TestInitialApplication app;
   // app.findTag(".*").connectTo(app.cs);
 
-  std::unique_lock<std::mutex> lk1(app.m1.m_forChecking, std::defer_lock);
-  std::unique_lock<std::mutex> lk2(app.m2.m_forChecking, std::defer_lock);
+  std::unique_lock<std::mutex> lk1(app.m1.mForChecking, std::defer_lock);
+  std::unique_lock<std::mutex> lk2(app.m2.mForChecking, std::defer_lock);
 
   ctk::TestFacility test{app};
 

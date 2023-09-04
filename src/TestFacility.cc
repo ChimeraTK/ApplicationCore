@@ -10,28 +10,32 @@ namespace ChimeraTK {
   TestFacility::TestFacility(bool enableTestableMode) : TestFacility(Application::getInstance(), enableTestableMode) {}
 
   /********************************************************************************************************************/
-  TestFacility::TestFacility(Application& application, bool enableTestableMode) : app(application) {
+  TestFacility::TestFacility(Application& application, bool enableTestableMode) : _app(application) {
     auto pvManagers = createPVManager();
-    pvManager = pvManagers.first;
-    app.setPVManager(pvManagers.second);
-    if(enableTestableMode) app.enableTestableMode();
-    app.initialise();
+    _pvManager = pvManagers.first;
+    _app.setPVManager(pvManagers.second);
+    if(enableTestableMode) {
+      _app.enableTestableMode();
+    }
+    _app.initialise();
   }
 
   /********************************************************************************************************************/
 
   void TestFacility::runApplication() const {
-    app.testFacilityRunApplicationCalled = true;
+    _app._testFacilityRunApplicationCalled = true;
 
     // send default values for all control system variables
-    for(auto& pv : pvManager->getAllProcessVariables()) {
+    for(auto& pv : _pvManager->getAllProcessVariables()) {
       callForType(pv->getValueType(), [&pv, this](auto arg) {
         using T = decltype(arg);
 
         // Applies only to writeable variables.
         // @todo FIXME It should also NOT apply for application-to-controlsystem variables with a return channel,
         // despite being writeable here!
-        if(!pv->isWriteable()) return;
+        if(!pv->isWriteable()) {
+          return;
+        }
 
         // Safety check against incorrect usage
         if(pv->getVersionNumber() != VersionNumber(nullptr)) {
@@ -45,7 +49,7 @@ namespace ChimeraTK {
 
         // If default value has been stored, copy the default value to the PV.
         if constexpr(!std::is_same<T, ChimeraTK::Void>::value) {
-          auto table = boost::fusion::at_key<T>(defaults.table);
+          auto table = boost::fusion::at_key<T>(_defaults.table);
           if(table.find(pv->getName()) != table.end()) {
             /// Since pv_casted is the undecorated PV (lacking the TestableModeAccessorDecorator), we need to copy the
             /// value also to the decorator. We still have to write through the undecorated PV, otherwise the tests are
@@ -70,21 +74,23 @@ namespace ChimeraTK {
       });
     }
     // start the application
-    app.run();
+    _app.run();
     // set thread name
     Application::registerThread("TestThread");
     // make sure all initial values have been propagated when in testable mode
-    if(app.getTestableMode().enabled) {
+    if(_app.getTestableMode()._enabled) {
       // call stepApplication() only in testable mode and only if the queues are not empty
-      if(app.getTestableMode().counter != 0 || app.getTestableMode().deviceInitialisationCounter != 0) {
+      if(_app.getTestableMode()._counter != 0 || _app.getTestableMode()._deviceInitialisationCounter != 0) {
         stepApplication();
       }
     }
 
     // receive all initial values for the control system variables
-    if(app.getTestableMode().enabled) {
-      for(auto& pv : pvManager->getAllProcessVariables()) {
-        if(!pv->isReadable()) continue;
+    if(_app.getTestableMode()._enabled) {
+      for(auto& pv : _pvManager->getAllProcessVariables()) {
+        if(!pv->isReadable()) {
+          continue;
+        }
         callForTypeNoVoid(pv->getValueType(), [&](auto t) {
           using UserType = decltype(t);
           this->getArray<UserType>(pv->getName()).readNonBlocking();
@@ -96,13 +102,13 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   bool TestFacility::canStepApplication() const {
-    return app.getTestableMode().canStep();
+    return _app.getTestableMode().canStep();
   }
 
   /********************************************************************************************************************/
 
   void TestFacility::stepApplication(bool waitForDeviceInitialisation) const {
-    app.getTestableMode().step(waitForDeviceInitialisation);
+    _app.getTestableMode().step(waitForDeviceInitialisation);
   }
 
   /********************************************************************************************************************/

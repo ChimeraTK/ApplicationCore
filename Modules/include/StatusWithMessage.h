@@ -12,6 +12,8 @@
 #include <ChimeraTK/ForwardDeclarations.h>
 #include <ChimeraTK/RegisterPath.h>
 
+#include <utility>
+
 namespace ChimeraTK {
 
   /**
@@ -19,12 +21,12 @@ namespace ChimeraTK {
    *  Convenience methods ensure that status and message are updated consistently.
    */
   struct StatusWithMessage : VariableGroup {
-    StatusWithMessage(VariableGroup* owner, std::string qualifiedStatusVariableName,
+    StatusWithMessage(VariableGroup* owner, const std::string& qualifiedStatusVariableName,
         const std::string& description = "", const std::unordered_set<std::string>& tags = {})
     : VariableGroup(owner, Utilities::getPathName(qualifiedStatusVariableName), description, tags),
       _status(this, Utilities::getUnqualifiedName(qualifiedStatusVariableName), description),
       _message(this, Utilities::getUnqualifiedName(qualifiedStatusVariableName) + "_message", "", "status message") {}
-    StatusWithMessage() {}
+    StatusWithMessage() = default;
 
     /// to be use only for status != OK
     void write(StatusOutput::Status status, std::string message) {

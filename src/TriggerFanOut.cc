@@ -5,13 +5,15 @@
 
 #include "DeviceManager.h"
 
+#include <utility>
+
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
   TriggerFanOut::TriggerFanOut(
-      const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl, DeviceManager& deviceModule)
-  : externalTrigger(externalTriggerImpl), _deviceModule(deviceModule) {}
+      boost::shared_ptr<ChimeraTK::TransferElement> externalTriggerImpl, DeviceManager& deviceModule)
+  : _externalTrigger(std::move(externalTriggerImpl)), _deviceModule(deviceModule) {}
 
   /********************************************************************************************************************/
 
@@ -31,8 +33,8 @@ namespace ChimeraTK {
   void TriggerFanOut::deactivate() {
     if(_thread.joinable()) {
       _thread.interrupt();
-      if(externalTrigger->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
-        externalTrigger->interrupt();
+      if(_externalTrigger->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
+        _externalTrigger->interrupt();
       }
       _thread.join();
     }
@@ -43,8 +45,8 @@ namespace ChimeraTK {
 
   namespace {
     struct SendDataToConsumers {
-      SendDataToConsumers(VersionNumber version, DataValidity triggerValidity)
-      : _version(version), _triggerValidity(triggerValidity) {}
+      SendDataToConsumers(VersionNumber theVersion, DataValidity initialTriggerValidity)
+      : version(theVersion), triggerValidity(initialTriggerValidity) {}
 
       template<typename PAIR>
       void operator()(PAIR& pair) const {
@@ -55,28 +57,30 @@ namespace ChimeraTK {
         for(auto& network : theMap) {
           auto feeder = network.first;
           auto fanOut = network.second;
-          fanOut->setDataValidity((_triggerValidity == DataValidity::ok && feeder->dataValidity() == DataValidity::ok) ?
+          fanOut->setDataValidity((triggerValidity == DataValidity::ok && feeder->dataValidity() == DataValidity::ok) ?
                   DataValidity::ok :
                   DataValidity::faulty);
           fanOut->accessChannel(0).swap(feeder->accessChannel(0));
           // don't use write destructively. In case of an exception we still need the data for the next read (see
           // Exception Handling spec B.2.2.6)
-          bool dataLoss = fanOut->write(_version);
-          if(dataLoss) Application::incrementDataLossCounter(fanOut->getName());
+          bool dataLoss = fanOut->write(version);
+          if(dataLoss) {
+            Application::incrementDataLossCounter(fanOut->getName());
+          }
           // swap the data back to the feeder so we have a valid copy there.
           fanOut->accessChannel(0).swap(feeder->accessChannel(0));
         }
       }
 
-      VersionNumber _version;
-      DataValidity _triggerValidity;
+      VersionNumber version;
+      DataValidity triggerValidity;
     };
   } // namespace
 
   /********************************************************************************************************************/
 
   void TriggerFanOut::run() {
-    Application::registerThread("TrFO" + externalTrigger->getName());
+    Application::registerThread("TrFO" + _externalTrigger->getName());
     Application::getInstance().getTestableMode().lock("start");
     _testableModeReached = true;
 
@@ -84,8 +88,8 @@ namespace ChimeraTK {
 
     // Wait for the initial value of the trigger. There always will be one, and if we don't read it here we would
     // trigger the loop twice.
-    externalTrigger->read();
-    version = externalTrigger->getVersionNumber();
+    _externalTrigger->read();
+    version = _externalTrigger->getVersionNumber();
 
     // Wait until the device has been initialised for the first time. This means it
     // has been opened, and the check in TransferGroup::read() will not throw a logic_error
@@ -93,25 +97,25 @@ namespace ChimeraTK {
     // But we have to increase the testable mode counter because we don't want to fall out of testable mode at this
     // point already.
     if(Application::getInstance().getTestableMode().isEnabled()) {
-      ++Application::getInstance().getTestableMode().deviceInitialisationCounter;
+      ++Application::getInstance().getTestableMode()._deviceInitialisationCounter;
     }
     Application::getInstance().getTestableMode().unlock("WaitInitialValueLock");
     (void)_deviceModule.waitForInitialValues();
     Application::getInstance().getTestableMode().lock("Enter while loop");
     if(Application::getInstance().getTestableMode().isEnabled()) {
-      --Application::getInstance().getTestableMode().deviceInitialisationCounter;
+      --Application::getInstance().getTestableMode()._deviceInitialisationCounter;
     }
 
     while(true) {
-      transferGroup.read();
+      _transferGroup.read();
       // send the version number to the consumers
-      boost::fusion::for_each(fanOutMap.table, SendDataToConsumers(version, externalTrigger->dataValidity()));
+      boost::fusion::for_each(_fanOutMap.table, SendDataToConsumers(version, _externalTrigger->dataValidity()));
 
       // wait for external trigger
       boost::this_thread::interruption_point();
-      externalTrigger->read();
+      _externalTrigger->read();
       boost::this_thread::interruption_point();
-      version = externalTrigger->getVersionNumber();
+      version = _externalTrigger->getVersionNumber();
     }
   }
 

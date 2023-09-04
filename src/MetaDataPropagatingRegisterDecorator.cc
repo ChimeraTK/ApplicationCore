@@ -19,22 +19,22 @@ namespace ChimeraTK {
     }
 
     // Check if the data validity flag changed. If yes, propagate this information to the owning module and the application
-    if(_dataValidity != lastValidity) {
+    if(_dataValidity != _lastValidity) {
       if(_dataValidity == DataValidity::faulty) { // data validity changes to faulty
         _owner->incrementDataFaultCounter();
         // external inpput in a circular dependency network
         if(_owner->getCircularNetworkHash() && !_isCircularInput) {
-          ++(Application::getInstance().circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
+          ++(Application::getInstance()._circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
         }
       }
       else { // data validity changed to OK
         _owner->decrementDataFaultCounter();
         // external inpput in a circular dependency network
         if(_owner->getCircularNetworkHash() && !_isCircularInput) {
-          --(Application::getInstance().circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
+          --(Application::getInstance()._circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
         }
       }
-      lastValidity = _dataValidity;
+      _lastValidity = _dataValidity;
     }
   }
 
@@ -43,16 +43,16 @@ namespace ChimeraTK {
     // We cannot use NDRegisterAccessorDecorator<T> here because we need a different implementation of setting the
     // target data validity. So we have a complete implemetation here.
 
-    if(_owner->getCircularNetworkHash() && _dataValidity != lastValidity) {
+    if(_owner->getCircularNetworkHash() && _dataValidity != _lastValidity) {
       // In circular dependency networks an output which actively has DataValidity::faulty set by the user logic is handled
       // as if an external input was invalid -> increase or decrease the network's invalidity counter accordingly
       if(_dataValidity == DataValidity::faulty) { // data validity changes to faulty
-        ++(Application::getInstance().circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
+        ++(Application::getInstance()._circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
       }
       else {
-        --(Application::getInstance().circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
+        --(Application::getInstance()._circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
       }
-      lastValidity = _dataValidity;
+      _lastValidity = _dataValidity;
     }
 
     // Now propagate the flag and the data to the target and perform the write

@@ -12,18 +12,17 @@
 
 #include <boost/container_hash/hash.hpp>
 
+#include <utility>
+
 namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode::VariableNetworkNode(const VariableNetworkNode& other) : pdata(other.pdata) {}
+  VariableNetworkNode::VariableNetworkNode(const VariableNetworkNode& other) = default;
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode& VariableNetworkNode::operator=(const VariableNetworkNode& rightHandSide) {
-    pdata = rightHandSide.pdata;
-    return *this;
-  }
+  VariableNetworkNode& VariableNetworkNode::operator=(const VariableNetworkNode& rightHandSide) = default;
 
   /*********************************************************************************************************************/
 
@@ -39,7 +38,7 @@ namespace ChimeraTK {
     pdata->mode = mode;
     pdata->direction = direction;
     pdata->valueType = valueType;
-    pdata->unit = unit;
+    pdata->unit = std::move(unit);
     pdata->nElements = nElements;
     pdata->description = description;
     pdata->tags = tags;
@@ -64,7 +63,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(
-      std::string pubName, VariableDirection dir, const std::type_info& valTyp, size_t nElements)
+      const std::string& pubName, VariableDirection dir, const std::type_info& valTyp, size_t nElements)
   : pdata(boost::make_shared<VariableNetworkNode_data>()) {
     pdata->name = pubName;
     pdata->type = NodeType::ControlSystem;
@@ -106,7 +105,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  VariableNetworkNode::VariableNetworkNode(boost::shared_ptr<VariableNetworkNode_data> _pdata) : pdata(_pdata) {}
+  VariableNetworkNode::VariableNetworkNode(boost::shared_ptr<VariableNetworkNode_data> _pdata)
+  : pdata(std::move(std::move(_pdata))) {}
 
   /*********************************************************************************************************************/
 
@@ -140,7 +140,9 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   bool VariableNetworkNode::operator<(const VariableNetworkNode& other) const {
-    if(pdata->type == NodeType::invalid && other.pdata->type == NodeType::invalid) return false;
+    if(pdata->type == NodeType::invalid && other.pdata->type == NodeType::invalid) {
+      return false;
+    }
     return (other.pdata < pdata);
   }
 
@@ -169,7 +171,9 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   NodeType VariableNetworkNode::getType() const {
-    if(!pdata) return NodeType::invalid;
+    if(!pdata) {
+      return NodeType::invalid;
+    }
     return pdata->type;
   }
 
@@ -217,7 +221,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  VariableNetworkNode VariableNetworkNode::getNodeToTrigger() {
+  VariableNetworkNode VariableNetworkNode::getNodeToTrigger() const {
     assert(pdata->nodeToTrigger.getType() != NodeType::invalid);
     return pdata->nodeToTrigger;
   }
@@ -245,7 +249,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::setNumberOfElements(size_t nElements) {
+  void VariableNetworkNode::setNumberOfElements(size_t nElements) const {
     pdata->nElements = nElements;
   }
 
@@ -264,7 +268,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void VariableNetworkNode::setMetaData(
-      const std::string& name, const std::string& unit, const std::string& description) {
+      const std::string& name, const std::string& unit, const std::string& description) const {
     if(getType() != NodeType::Application) {
       throw ChimeraTK::logic_error("Calling VariableNetworkNode::updateMetaData() is not allowed for "
                                    "non-application type nodes.");
@@ -288,10 +292,10 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::addTag(const std::string& tag) {
+  void VariableNetworkNode::addTag(const std::string& tag) const {
     pdata->tags.insert(tag);
-    if(pdata->_model.isValid()) {
-      pdata->_model.addTag(tag);
+    if(pdata->model.isValid()) {
+      pdata->model.addTag(tag);
     }
   }
 
@@ -303,7 +307,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  std::list<EntityOwner*> VariableNetworkNode::scanForCircularDepencency() {
+  std::list<EntityOwner*> VariableNetworkNode::scanForCircularDepencency() const {
     // We are starting a new scan. Reset the indicator for already found circular dependencies.
     detail::CircularDependencyDetectionRecursionStopper::startNewScan();
 
@@ -339,7 +343,7 @@ namespace ChimeraTK {
       // Remember that we are part of a circle, and of which circle
       pdata->circularNetworkHash = boost::hash_range(inputModuleList.begin(), inputModuleList.end());
       // we already did the assertion that the owning module is an application module above, so we can static cast here
-      auto* applicationModule = static_cast<ApplicationModule*>(owningModule);
+      auto* applicationModule = dynamic_cast<ApplicationModule*>(owningModule);
       applicationModule->setCircularNetworkHash(pdata->circularNetworkHash);
 
       // Find the MetaDataPropagatingRegisterDecorator which is involved and set the _isCirularInput flag
@@ -367,7 +371,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::setAppAccessorPointer(ChimeraTK::TransferElementAbstractor* accessor) {
+  void VariableNetworkNode::setAppAccessorPointer(ChimeraTK::TransferElementAbstractor* accessor) const {
     assert(getType() == NodeType::Application || getType() == NodeType::invalid);
     pdata->appNode = accessor;
   }
@@ -399,13 +403,13 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   Model::ProcessVariableProxy VariableNetworkNode::getModel() const {
-    return pdata->_model;
+    return pdata->model;
   }
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::setModel(Model::ProcessVariableProxy model) {
-    pdata->_model = std::move(model);
+  void VariableNetworkNode::setModel(Model::ProcessVariableProxy model) const {
+    pdata->model = std::move(model);
   }
 
   /********************************************************************************************************************/

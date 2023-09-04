@@ -18,7 +18,7 @@
 
 #define CHECK_EQUAL_TIMEOUT(left, right, maxMilliseconds)                                                              \
   {                                                                                                                    \
-    CHECK_TIMEOUT(left == right, maxMilliseconds);                                                                     \
+    CHECK_TIMEOUT((left) == (right), maxMilliseconds);                                                                 \
     BOOST_CHECK_EQUAL(left, right);                                                                                    \
   }                                                                                                                    \
   (void)0

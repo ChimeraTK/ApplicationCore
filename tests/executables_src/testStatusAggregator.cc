@@ -22,15 +22,15 @@ struct StatusGenerator : ctk::ApplicationModule {
 
   StatusGenerator(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
       const std::unordered_set<std::string>& tags = {},
-      ctk::StatusOutput::Status initialValue = ctk::StatusOutput::Status::OFF)
-  : ApplicationModule(owner, name, description, tags), _initialValue(initialValue) {}
+      ctk::StatusOutput::Status initialStatus = ctk::StatusOutput::Status::OFF)
+  : ApplicationModule(owner, name, description, tags), initialValue(initialStatus) {}
 
   ctk::StatusOutput status{this, getName(), ""};
 
-  ctk::StatusOutput::Status _initialValue;
+  ctk::StatusOutput::Status initialValue;
 
   void prepare() override {
-    status = _initialValue;
+    status = initialValue;
     status.write();
   }
   void mainLoop() override {}
@@ -101,14 +101,14 @@ BOOST_AUTO_TEST_CASE(testSingleNoTags) {
 /**********************************************************************************************************************/
 
 struct TestPrioApplication : ctk::Application {
-  explicit TestPrioApplication(ctk::StatusOutput::Status initialValue)
-  : Application("testApp"), _initialValue(initialValue) {}
+  explicit TestPrioApplication(ctk::StatusOutput::Status theInitialValue)
+  : Application("testApp"), initialValue(theInitialValue) {}
   ~TestPrioApplication() override { shutdown(); }
 
-  ctk::StatusOutput::Status _initialValue;
+  ctk::StatusOutput::Status initialValue;
 
-  StatusGenerator s1{this, "sg1/internal", "Status 1", {}, _initialValue};
-  StatusGenerator s2{this, "sg2/external", "Status 2", {}, _initialValue};
+  StatusGenerator s1{this, "sg1/internal", "Status 1", {}, initialValue};
+  StatusGenerator s2{this, "sg2/external", "Status 2", {}, initialValue};
 
   ctk::StatusAggregator aggregator;
 };

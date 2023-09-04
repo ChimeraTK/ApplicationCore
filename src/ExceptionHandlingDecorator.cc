@@ -12,10 +12,10 @@ namespace ChimeraTK {
 
   template<typename UserType>
   ExceptionHandlingDecorator<UserType>::ExceptionHandlingDecorator(
-      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, VariableNetworkNode networkNode)
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, const VariableNetworkNode& networkNode)
   : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), _direction(networkNode.getDirection()) {
-    auto deviceAlias = networkNode.getDeviceAlias();
-    auto registerName = networkNode.getRegisterName();
+    const auto& deviceAlias = networkNode.getDeviceAlias();
+    const auto& registerName = networkNode.getRegisterName();
 
     assert(Application::getInstance()._deviceManagerMap.count(deviceAlias) != 0);
     auto deviceManager = Application::getInstance()._deviceManagerMap[deviceAlias];
@@ -23,7 +23,7 @@ namespace ChimeraTK {
 
     // Consuming from the network means writing to the device what you consumed.
     if(_direction.dir == VariableDirection::consuming) {
-      deviceManager->_writeRegisterPaths.push_back(registerName);
+      deviceManager->_writeRegisterPaths.emplace_back(registerName);
 
       // writeable registers get a recoveryAccessor
       // Notice: There will be write-accessors without recovery accessors in future (intentionally turned off by the
@@ -48,7 +48,7 @@ namespace ChimeraTK {
       }
     }
     else if(_direction.dir == VariableDirection::feeding) {
-      deviceManager->_readRegisterPaths.push_back(registerName);
+      deviceManager->_readRegisterPaths.emplace_back(registerName);
     }
     else {
       throw ChimeraTK::logic_error("Invalid variable direction in " + networkNode.getRegisterName());
@@ -197,8 +197,9 @@ namespace ChimeraTK {
 
     // only replace the user buffer if there really is new data
     if(hasNewData) {
-      for(size_t i = 0; i < buffer_2D.size(); ++i)
+      for(size_t i = 0; i < buffer_2D.size(); ++i) {
         buffer_2D[i].swap(this->_target->accessChannel(static_cast<unsigned int>(i)));
+      }
     }
     assert(_activeException == nullptr);
   }

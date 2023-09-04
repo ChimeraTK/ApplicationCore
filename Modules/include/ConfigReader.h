@@ -77,6 +77,7 @@
 #include <ChimeraTK/SupportedUserTypes.h>
 
 #include <map>
+#include <utility>
 
 namespace ChimeraTK {
 
@@ -156,21 +157,21 @@ namespace ChimeraTK {
     /** Class holding the value and the accessor for one configuration variable */
     template<typename T>
     struct Var {
-      Var(Module* owner, const std::string& name, const T& value)
-      : _accessor(owner, name, "unknown", "Configuration variable"), _value(value) {}
+      Var(Module* owner, const std::string& name, T theValue)
+      : accessor(owner, name, "unknown", "Configuration variable"), value(std::move(theValue)) {}
 
-      ScalarOutput<T> _accessor;
-      T _value;
+      ScalarOutput<T> accessor;
+      T value;
     };
 
     /** Class holding the values and the accessor for one configuration array */
     template<typename T>
     struct Array {
-      Array(Module* owner, const std::string& name, const std::vector<T>& value)
-      : _accessor(owner, name, "unknown", value.size(), "Configuration array"), _value(value) {}
+      Array(Module* owner, const std::string& name, const std::vector<T>& theValue)
+      : accessor(owner, name, "unknown", theValue.size(), "Configuration array"), value(theValue) {}
 
-      ArrayOutput<T> _accessor;
-      std::vector<T> _value;
+      ArrayOutput<T> accessor;
+      std::vector<T> value;
     };
 
     /** Create an instance of Var<T> and place it on the variableMap */
@@ -195,7 +196,7 @@ namespace ChimeraTK {
     using MapOfVar = std::unordered_map<std::string, Var<T>>;
 
     /** Type-depending map of vectors of variables */
-    ChimeraTK::TemplateUserTypeMapNoVoid<MapOfVar> variableMap;
+    ChimeraTK::TemplateUserTypeMapNoVoid<MapOfVar> _variableMap;
 
     /** Define type for map of std::string to Array, so we can put it into the
      * TemplateUserTypeMap */
@@ -203,19 +204,19 @@ namespace ChimeraTK {
     using MapOfArray = std::unordered_map<std::string, Array<T>>;
 
     /** Type-depending map of vectors of arrays */
-    ChimeraTK::TemplateUserTypeMapNoVoid<MapOfArray> arrayMap;
+    ChimeraTK::TemplateUserTypeMapNoVoid<MapOfArray> _arrayMap;
 
     /** Map assigning string type identifyers to C++ types */
-    ChimeraTK::SingleTypeUserTypeMapNoVoid<const char*> typeMap{"int8", "uint8", "int16", "uint16", "int32", "uint32",
+    ChimeraTK::SingleTypeUserTypeMapNoVoid<const char*> _typeMap{"int8", "uint8", "int16", "uint16", "int32", "uint32",
         "int64", "uint64", "float", "double", "string", "boolean"};
 
     /** Implementation of get() which can be overloaded for scalars and vectors.
      * The second argument is a dummy only to distinguish the two overloaded
      * functions. */
     template<typename T>
-    const T& get_impl(const std::string& variableName, T*) const;
+    const T& getImpl(const std::string& variableName, T*) const;
     template<typename T>
-    const std::vector<T>& get_impl(const std::string& variableName, std::vector<T>*) const;
+    const std::vector<T>& getImpl(const std::string& variableName, std::vector<T>*) const;
 
     friend struct FunctorFill;
     friend struct ArrayFunctorFill;
@@ -231,7 +232,7 @@ namespace ChimeraTK {
   const T& ConfigReader::get(const std::string& variableName, const T& defaultValue) const {
     /// FIXME: Do not implement with try-catch.
     try {
-      return get_impl(variableName, static_cast<T*>(nullptr));
+      return getImpl(variableName, static_cast<T*>(nullptr));
     }
     catch(ChimeraTK::logic_error&) {
       return defaultValue;
@@ -243,25 +244,25 @@ namespace ChimeraTK {
 
   template<typename T>
   const T& ConfigReader::get(const std::string& variableName) const {
-    return get_impl(variableName, static_cast<T*>(nullptr));
+    return getImpl(variableName, static_cast<T*>(nullptr));
   }
 
   /*********************************************************************************************************************/
   /*********************************************************************************************************************/
 
   template<typename T>
-  const T& ConfigReader::get_impl(const std::string& variableName, T*) const {
-    checkVariable(variableName, boost::fusion::at_key<T>(typeMap));
-    return boost::fusion::at_key<T>(variableMap.table).at(variableName)._value;
+  const T& ConfigReader::getImpl(const std::string& variableName, T*) const {
+    checkVariable(variableName, boost::fusion::at_key<T>(_typeMap));
+    return boost::fusion::at_key<T>(_variableMap.table).at(variableName).value;
   }
 
   /*********************************************************************************************************************/
   /*********************************************************************************************************************/
 
   template<typename T>
-  const std::vector<T>& ConfigReader::get_impl(const std::string& variableName, std::vector<T>*) const {
-    checkArray(variableName, boost::fusion::at_key<T>(typeMap));
-    return boost::fusion::at_key<T>(arrayMap.table).at(variableName)._value;
+  const std::vector<T>& ConfigReader::getImpl(const std::string& variableName, std::vector<T>*) const {
+    checkArray(variableName, boost::fusion::at_key<T>(_typeMap));
+    return boost::fusion::at_key<T>(_arrayMap.table).at(variableName).value;
   }
 
 } // namespace ChimeraTK

@@ -54,7 +54,7 @@ namespace ChimeraTK {
     StatusOutput status;
 
    protected:
-    DataValidity lastStatusValidity = DataValidity::ok;
+    DataValidity _lastStatusValidity = DataValidity::ok;
     void setStatus(StatusOutput::Status newStatus);
   };
 
@@ -92,7 +92,7 @@ namespace ChimeraTK {
      */
 
     /** This is where state evaluation is done */
-    void mainLoop();
+    void mainLoop() override;
   };
 
   /*******************************************************************************************************************/
@@ -124,7 +124,7 @@ namespace ChimeraTK {
     ScalarPushInput<T> faultThreshold;
 
     /** This is where state evaluation is done */
-    void mainLoop();
+    void mainLoop() override;
   };
 
   /*******************************************************************************************************************/
@@ -170,7 +170,7 @@ namespace ChimeraTK {
     ScalarPushInput<T> faultUpperThreshold;
 
     /** This is where state evaluation is done */
-    void mainLoop();
+    void mainLoop() override;
   };
 
   /*******************************************************************************************************************/
@@ -227,7 +227,7 @@ namespace ChimeraTK {
     ScalarPushInput<T> requiredValue;
 
     /** This is where state evaluation is done */
-    void mainLoop();
+    void mainLoop() override;
   };
 
   /*******************************************************************************************************************/

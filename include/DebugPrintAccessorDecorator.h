@@ -17,7 +17,7 @@ namespace ChimeraTK {
   class DebugPrintAccessorDecorator : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
    public:
     DebugPrintAccessorDecorator(
-        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, const std::string& fullyQualifiedName);
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, std::string fullyQualifiedName);
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override;
 

@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "UserInputValidator.h"
 
+#include <utility>
+
 namespace ChimeraTK {
 
   /*********************************************************************************************************************/
@@ -13,12 +15,16 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   bool UserInputValidator::validate(const ChimeraTK::TransferElementID& change) {
-    if(!change.isValid()) return validateAll();
-    if(!_validatorMap.count(change)) return false;
+    if(!change.isValid()) {
+      return validateAll();
+    }
+    if(!_validatorMap.count(change)) {
+      return false;
+    }
 
-    for(auto validator : _validatorMap.at(change)) {
-      if(!validator->_isValidFunction()) {
-        _errorFunction(validator->_errorMessage);
+    for(auto* validator : _validatorMap.at(change)) {
+      if(!validator->isValidFunction()) {
+        _errorFunction(validator->errorMessage);
         _variableMap.at(change)->reject();
         return true;
       }
@@ -40,8 +46,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  UserInputValidator::Validator::Validator(const std::function<bool(void)>& isValidFunction, std::string errorMessage)
-  : _isValidFunction(isValidFunction), _errorMessage(errorMessage) {}
+  UserInputValidator::Validator::Validator(std::function<bool(void)> isValidTest, std::string initialErrorMessage)
+  : isValidFunction(std::move(isValidTest)), errorMessage(std::move(std::move(initialErrorMessage))) {}
 
   /*********************************************************************************************************************/
 

@@ -99,7 +99,7 @@ namespace ChimeraTK {
     /**
      * Get the TestableMode control object of this application
      */
-    detail::TestableMode& getTestableMode() { return testableMode; }
+    detail::TestableMode& getTestableMode() { return _testableMode; }
 
     /**
      * Register the thread in the application system and give it a name. This should be done for all threads used by the
@@ -110,7 +110,7 @@ namespace ChimeraTK {
     /**
      * Enable debug output for the ConnectionMaker.
      */
-    void debugMakeConnections() { enableDebugMakeConnections = true; }
+    void debugMakeConnections() { _enableDebugMakeConnections = true; }
 
     ModuleType getModuleType() const override { return ModuleType::ModuleGroup; }
 
@@ -121,14 +121,16 @@ namespace ChimeraTK {
     /**
      * Enable debug output for a given variable.
      */
-    void enableVariableDebugging(const VariableNetworkNode& node) { debugMode_variableList.insert(node.getUniqueId()); }
+    void enableVariableDebugging(const VariableNetworkNode& node) {
+      _debugMode_variableList.insert(node.getUniqueId());
+    }
 
     /**
      * Enable debug output for lost data. This will print to stdout every time data is lost in internal queues as it is
      * counted with the DataLossCounter module. Do not enable in production environments. Do not call after
      * initialisation phase of application.
      */
-    void enableDebugDataLoss() { debugDataLoss = true; }
+    void enableDebugDataLoss() { _debugDataLoss = true; }
 
     /**
      * Increment counter for how many write() operations have overwritten unread data. This function is normally not
@@ -149,7 +151,7 @@ namespace ChimeraTK {
     /**
      * Get the current LifeCycleState of the application.
      */
-    LifeCycleState getLifeCycleState() const { return lifeCycleState; }
+    LifeCycleState getLifeCycleState() const { return _lifeCycleState; }
 
     /**
      * Return the start version. The start version is the VersionNumber which all modules have initially (before
@@ -158,7 +160,7 @@ namespace ChimeraTK {
     VersionNumber getStartVersion() const { return _startVersion; }
 
     size_t getCircularNetworkInvalidityCounter(size_t circularNetworkHash) const {
-      return circularNetworkInvalidityCounters.at(circularNetworkHash);
+      return _circularNetworkInvalidityCounters.at(circularNetworkHash);
     }
 
    protected:
@@ -183,47 +185,47 @@ namespace ChimeraTK {
     Model::RootProxy _model;
 
     /** Helper class to create connections */
-    ConnectionMaker cm{*this};
+    ConnectionMaker _cm{*this};
 
     /** List of InternalModules */
-    std::list<boost::shared_ptr<InternalModule>> internalModuleList;
+    std::list<boost::shared_ptr<InternalModule>> _internalModuleList;
 
     /** Map of DeviceManagers. The alias name resp. CDD is the key.*/
     std::map<std::string, boost::shared_ptr<DeviceManager>> _deviceManagerMap;
 
     /** Flag which is set by the TestFacility in runApplication() at the beginning. This is used to make sure
      *  runApplication() is called by the TestFacility and not manually. */
-    bool testFacilityRunApplicationCalled{false};
+    bool _testFacilityRunApplicationCalled{false};
 
     /** Flag whether initialise() has been called already, to make sure it doesn't get called twice. */
-    bool initialiseCalled{false};
+    bool _initialiseCalled{false};
 
     /** Flag whether run() has been called already, to make sure it doesn't get called twice. */
-    bool runCalled{false};
+    bool _runCalled{false};
 
     /** Flag if debug output is enabled for creation of the variable connections */
-    bool enableDebugMakeConnections{false};
+    bool _enableDebugMakeConnections{false};
 
     /** Map from ProcessArray uniqueId to the variable ID for control system
      * variables. This is required for the TestFacility. */
-    std::map<size_t, size_t> pvIdMap;
+    std::map<size_t, size_t> _pvIdMap;
 
-    detail::CircularDependencyDetector circularDependencyDetector;
-    detail::TestableMode testableMode;
+    detail::CircularDependencyDetector _circularDependencyDetector;
+    detail::TestableMode _testableMode;
 
     /** List of variables for which debug output was requested via
      * enableVariableDebugging(). Stored is the unique id of the
      * VariableNetworkNode.*/
-    std::unordered_set<const void*> debugMode_variableList;
+    std::unordered_set<const void*> _debugMode_variableList;
 
     /** Counter for how many write() operations have overwritten unread data */
-    std::atomic<size_t> dataLossCounter{0};
+    std::atomic<size_t> _dataLossCounter{0};
 
     /** Flag whether to debug data loss (as counted with the data loss counter). */
-    bool debugDataLoss{false};
+    bool _debugDataLoss{false};
 
     /** Life-cycle state of the application */
-    std::atomic<LifeCycleState> lifeCycleState{LifeCycleState::initialisation};
+    std::atomic<LifeCycleState> _lifeCycleState{LifeCycleState::initialisation};
 
     /** Version number used at application start, e.g. to propagate initial values */
     VersionNumber _startVersion;
@@ -232,11 +234,11 @@ namespace ChimeraTK {
      *  The key is the hash of network which serves as a unique identifier.
      *   The invalidity counter is atomic so it can be accessed from all modules in the network.
      */
-    std::map<size_t, std::atomic<uint64_t>> circularNetworkInvalidityCounters;
+    std::map<size_t, std::atomic<uint64_t>> _circularNetworkInvalidityCounters;
 
     /** The networks of circular dependencies, reachable by their hash, which serves as unique ID
      */
-    std::map<size_t, std::list<EntityOwner*>> circularDependencyNetworks;
+    std::map<size_t, std::list<EntityOwner*>> _circularDependencyNetworks;
 
     friend class TestFacility; // needs access to testableMode variables
 

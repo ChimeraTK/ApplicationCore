@@ -79,14 +79,14 @@ namespace ChimeraTK {
 
     ModuleType getModuleType() const override { return ModuleType::ApplicationModule; }
 
-    VersionNumber getCurrentVersionNumber() const override { return currentVersionNumber; }
+    VersionNumber getCurrentVersionNumber() const override { return _currentVersionNumber; }
 
     DataValidity getDataValidity() const override;
 
     void incrementDataFaultCounter() override;
     void decrementDataFaultCounter() override;
 
-    size_t getDataFaultCounter() const { return dataFaultCounter; }
+    size_t getDataFaultCounter() const { return _dataFaultCounter; }
 
     void setCurrentVersionNumber(VersionNumber versionNumber) override;
 
@@ -110,17 +110,17 @@ namespace ChimeraTK {
     void mainLoopWrapper();
 
     /** The thread executing mainLoop() */
-    boost::thread moduleThread;
+    boost::thread _moduleThread;
 
     /** Version number of last push-type read operation - will be passed on to any
      * write operations */
-    VersionNumber currentVersionNumber{nullptr};
+    VersionNumber _currentVersionNumber{nullptr};
 
     /**
      *  Number of inputs which report DataValidity::faulty.
      *  This is atomic to allow the InvalidityTracer module to access this information.
      */
-    std::atomic<size_t> dataFaultCounter{0};
+    std::atomic<size_t> _dataFaultCounter{0};
 
     /**
      *  Unique ID for the circular dependency network. 0 if the EntityOwner is not in a circular dependency network.

@@ -28,15 +28,17 @@ namespace ChimeraTK {
    */
   class PushableStream {
    public:
-    PushableStream(std::ostream& stream) : _streamStack{stream} {}
-    virtual ~PushableStream() {}
+    explicit PushableStream(std::ostream& stream) : _streamStack{stream} {}
+    virtual ~PushableStream() = default;
 
-    void pushStream(std::ostream& stream) { _streamStack.push_back(stream); }
+    void pushStream(std::ostream& stream) { _streamStack.emplace_back(stream); }
 
     std::ostream& stream() { return _streamStack.back().get(); }
 
     void popStream() {
-      if(_streamStack.size() == 1) return;
+      if(_streamStack.size() == 1) {
+        return;
+      }
 
       _streamStack.pop_back();
     }
@@ -64,8 +66,8 @@ namespace ChimeraTK {
      * textual connection dumper. We are using newlines for Graphviz, and space
      * for textual
      */
-    VariableNetworkNodeDumpingVisitor(std::ostream& stream, const std::string& separator);
-    virtual ~VariableNetworkNodeDumpingVisitor() override {}
+    VariableNetworkNodeDumpingVisitor(std::ostream& stream, std::string separator);
+    ~VariableNetworkNodeDumpingVisitor() override = default;
 
     /**
      * @brief dispatch

@@ -27,7 +27,7 @@ namespace ChimeraTK {
     StatusAccessor(Module* owner, const std::string& name, const std::string& description,
         const std::unordered_set<std::string>& tags = {})
     : ACCESSOR(owner, name, "", description, tags) {}
-    StatusAccessor() {}
+    StatusAccessor() = default;
 
     using ACCESSOR::ACCESSOR;
 
@@ -35,9 +35,13 @@ namespace ChimeraTK {
     constexpr static auto tagStatusOutput = "_ChimeraTK_StatusOutput_statusOutput";
 
     /** Implicit type conversion to user type T to access the value. */
+    // We want tihs to be implicit, disable the linting here
+    // NOLINTNEXTLINE(google-explicit-constructor)
     operator Status&() { return *reinterpret_cast<Status*>(&ACCESSOR::get()->accessData(0, 0)); }
 
     /** Implicit type conversion to user type T to access the const value. */
+    // We want tihs to be implicit, disable the linting here
+    // NOLINTNEXTLINE(google-explicit-constructor)
     operator const Status&() const { return *reinterpret_cast<Status*>(&ACCESSOR::get()->accessData(0, 0)); }
 
     /** Assignment operator, assigns the first element. */
@@ -63,7 +67,7 @@ namespace ChimeraTK {
     : StatusAccessor<ScalarOutput<int32_t>>(owner, name, "", description, tags) {
       addTag(tagStatusOutput);
     }
-    StatusOutput() {}
+    StatusOutput() = default;
     using StatusAccessor<ScalarOutput<int32_t>>::operator=;
 
     void writeIfDifferent(Status newValue) { ScalarOutput<int32_t>::writeIfDifferent(static_cast<int32_t>(newValue)); };

@@ -28,12 +28,12 @@ struct TestModule : ctk::ApplicationModule {
       theConfigReader = &appConfig();
     }
     catch(ctk::logic_error&) {
-      appConfig_has_thrown = true;
+      appConfigHasThrown = true;
     }
   }
 
   ctk::ConfigReader* theConfigReader; // just to compare if the correct instance is returned
-  bool appConfig_has_thrown{false};
+  bool appConfigHasThrown{false};
 
   ctk::ScalarPushInput<int8_t> var8{this, "var8", "MV/m", "Desc"};
   ctk::ScalarPushInput<uint8_t> var8u{this, "var8u", "MV/m", "Desc"};
@@ -85,7 +85,7 @@ struct TestModule : ctk::ApplicationModule {
 
   std::atomic<bool> done{false};
 
-  void mainLoop() {
+  void mainLoop() override {
     // values should be available right away
     BOOST_CHECK_EQUAL((int8_t)var8, -123);
     BOOST_CHECK_EQUAL((uint8_t)var8u, 34);
@@ -100,10 +100,14 @@ struct TestModule : ctk::ApplicationModule {
     BOOST_CHECK_EQUAL((std::string)varString, "My dear mister singing club!");
 
     BOOST_CHECK_EQUAL(intArray.getNElements(), 10);
-    for(size_t i = 0; i < 10; ++i) BOOST_CHECK_EQUAL(intArray[i], 10 - i);
+    for(size_t i = 0; i < 10; ++i) {
+      BOOST_CHECK_EQUAL(intArray[i], 10 - i);
+    }
 
     BOOST_CHECK_EQUAL(stringArray.getNElements(), 8);
-    for(size_t i = 0; i < 8; ++i) BOOST_CHECK_EQUAL(stringArray[i], "Hallo" + std::to_string(i + 1));
+    for(size_t i = 0; i < 8; ++i) {
+      BOOST_CHECK_EQUAL(stringArray[i], "Hallo" + std::to_string(i + 1));
+    }
 
     BOOST_CHECK_EQUAL((int16_t)module1.var16, -567);
     BOOST_CHECK_EQUAL((uint16_t)module1.var16u, 678);
@@ -112,10 +116,14 @@ struct TestModule : ctk::ApplicationModule {
     BOOST_CHECK_EQUAL((uint32_t)module1.submodule.var32u, 234567);
 
     BOOST_CHECK_EQUAL(module1.submodule.intArray.getNElements(), 10);
-    for(size_t i = 0; i < 10; ++i) BOOST_CHECK_EQUAL(module1.submodule.intArray[i], 10 - i);
+    for(size_t i = 0; i < 10; ++i) {
+      BOOST_CHECK_EQUAL(module1.submodule.intArray[i], 10 - i);
+    }
 
     BOOST_CHECK_EQUAL(module1.submodule.stringArray.getNElements(), 8);
-    for(size_t i = 0; i < 8; ++i) BOOST_CHECK_EQUAL(module1.submodule.stringArray[i], "Hallo" + std::to_string(i + 1));
+    for(size_t i = 0; i < 8; ++i) {
+      BOOST_CHECK_EQUAL(module1.submodule.stringArray[i], "Hallo" + std::to_string(i + 1));
+    }
 
     // no further update shall be received
     usleep(1000000); // 1 second
@@ -150,7 +158,7 @@ struct TestModule : ctk::ApplicationModule {
 
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("TestApplication") {}
-  ~TestApplication() { shutdown(); }
+  ~TestApplication() override { shutdown(); }
 
   ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
   TestModule testModule{this, "config", "The test module"};
@@ -161,7 +169,7 @@ struct TestApplication : public ctk::Application {
 
 struct TestApplicationTwoConfigs : public ctk::Application {
   TestApplicationTwoConfigs() : Application("TestApplicationTwoConfigs") {}
-  ~TestApplicationTwoConfigs() { shutdown(); }
+  ~TestApplicationTwoConfigs() override { shutdown(); }
 
   ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
   ctk::ConfigReader config2{this, "config2", "validConfig.xml"};
@@ -173,7 +181,7 @@ struct TestApplicationTwoConfigs : public ctk::Application {
 
 struct TestApplicationNoConfigs : public ctk::Application {
   TestApplicationNoConfigs() : Application("TestApplicationTwoConfigs") {}
-  ~TestApplicationNoConfigs() { shutdown(); }
+  ~TestApplicationNoConfigs() override { shutdown(); }
 
   TestModule testModule{this, "TestModule", "The test module"};
 };
@@ -183,7 +191,7 @@ struct TestApplicationNoConfigs : public ctk::Application {
 
 struct TestApplicationWithDevice : public ctk::Application {
   TestApplicationWithDevice() : Application("TestApplicationWithDevice") {}
-  ~TestApplicationWithDevice() { shutdown(); }
+  ~TestApplicationWithDevice() override { shutdown(); }
 
   ctk::ConfigReader config{this, ".", "validConfig.xml", {"MyTAG"}};
   ctk::DeviceModule device{this, cdd};
@@ -197,7 +205,7 @@ BOOST_AUTO_TEST_CASE(testConfigReader) {
   std::cout << "==> testConfigReader" << std::endl;
 
   TestApplication app;
-  BOOST_CHECK(!app.testModule.appConfig_has_thrown);
+  BOOST_CHECK(!app.testModule.appConfigHasThrown);
   BOOST_CHECK(&(app.config) == app.testModule.theConfigReader);
 
   // check if values are already accessible
@@ -215,11 +223,15 @@ BOOST_AUTO_TEST_CASE(testConfigReader) {
 
   std::vector<int> arrayValue = app.config.get<std::vector<int>>("intArray");
   BOOST_CHECK_EQUAL(arrayValue.size(), 10);
-  for(size_t i = 0; i < 10; ++i) BOOST_CHECK_EQUAL(arrayValue[i], 10 - i);
+  for(size_t i = 0; i < 10; ++i) {
+    BOOST_CHECK_EQUAL(arrayValue[i], 10 - i);
+  }
 
   std::vector<std::string> arrayValueString = app.config.get<std::vector<std::string>>("stringArray");
   BOOST_CHECK_EQUAL(arrayValueString.size(), 8);
-  for(size_t i = 0; i < 8; ++i) BOOST_CHECK_EQUAL(arrayValueString[i], "Hallo" + std::to_string(i + 1));
+  for(size_t i = 0; i < 8; ++i) {
+    BOOST_CHECK_EQUAL(arrayValueString[i], "Hallo" + std::to_string(i + 1));
+  }
 
   BOOST_CHECK_EQUAL(app.config.get<int16_t>("module1/var16"), -567);
   BOOST_CHECK_EQUAL(app.config.get<uint16_t>("module1/var16u"), 678);
@@ -230,11 +242,15 @@ BOOST_AUTO_TEST_CASE(testConfigReader) {
 
   arrayValue = app.config.get<std::vector<int>>("module1/submodule/intArray");
   BOOST_CHECK_EQUAL(arrayValue.size(), 10);
-  for(size_t i = 0; i < 10; ++i) BOOST_CHECK_EQUAL(arrayValue[i], 10 - i);
+  for(size_t i = 0; i < 10; ++i) {
+    BOOST_CHECK_EQUAL(arrayValue[i], 10 - i);
+  }
 
   arrayValueString = app.config.get<std::vector<std::string>>("module1/submodule/stringArray");
   BOOST_CHECK_EQUAL(arrayValueString.size(), 8);
-  for(size_t i = 0; i < 8; ++i) BOOST_CHECK_EQUAL(arrayValueString[i], "Hallo" + std::to_string(i + 1));
+  for(size_t i = 0; i < 8; ++i) {
+    BOOST_CHECK_EQUAL(arrayValueString[i], "Hallo" + std::to_string(i + 1));
+  }
 
   // app.config.virtualise().dump();
   // app.config.connectTo(app.testModule);
@@ -244,7 +260,9 @@ BOOST_AUTO_TEST_CASE(testConfigReader) {
   tf.runApplication();
 
   // wait until tests in TestModule::mainLoop() are complete
-  while(app.testModule.done == false) usleep(10000);
+  while(!app.testModule.done) {
+    usleep(10000);
+  }
 }
 
 /*********************************************************************************************************************/
@@ -253,11 +271,11 @@ BOOST_AUTO_TEST_CASE(testExceptions) {
   std::cout << "==> testExceptions" << std::endl;
   {
     TestApplicationTwoConfigs app;
-    BOOST_CHECK(app.testModule.appConfig_has_thrown);
+    BOOST_CHECK(app.testModule.appConfigHasThrown);
   }
   {
     TestApplicationNoConfigs app;
-    BOOST_CHECK(app.testModule.appConfig_has_thrown);
+    BOOST_CHECK(app.testModule.appConfigHasThrown);
   }
   {
     TestApplication app;

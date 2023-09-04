@@ -82,9 +82,13 @@ namespace ChimeraTK {
       auto dm = _dm.lock();
       if(dm) {
         for(const auto& reg : dm->getDevice().getRegisterCatalogue()) {
-          if(reg.getNumberOfDimensions() > 1) continue;
+          if(reg.getNumberOfDimensions() > 1) {
+            continue;
+          }
           std::string registerName = reg.getRegisterName();
-          if(!boost::starts_with(registerName, _pathInDevice)) continue;
+          if(!boost::starts_with(registerName, _pathInDevice)) {
+            continue;
+          }
 
           neighbourDirectory.visitByPath(registerName, [&](auto proxy) {
             if constexpr(isVariable(proxy)) {
@@ -104,7 +108,9 @@ namespace ChimeraTK {
 
     _model = std::move(other._model);
     other._model = {};
-    if(_model.isValid()) _model.informMove(*this);
+    if(_model.isValid()) {
+      _model.informMove(*this);
+    }
     ModuleGroup::operator=(std::move(other));
     return *this;
   }

@@ -12,24 +12,34 @@ namespace ChimeraTK {
   Module::Module(EntityOwner* owner, const std::string& name, const std::string& description,
       const std::unordered_set<std::string>& tags)
   : EntityOwner(name, description, tags), _owner(owner) {
-    if(_owner != nullptr) _owner->registerModule(this);
+    if(_owner != nullptr) {
+      _owner->registerModule(this);
+    }
   }
 
   /*********************************************************************************************************************/
 
   Module::~Module() {
-    if(_owner != nullptr) _owner->unregisterModule(this);
+    if(_owner != nullptr) {
+      _owner->unregisterModule(this);
+    }
   }
 
   /*********************************************************************************************************************/
 
   Module& Module::operator=(Module&& other) noexcept {
-    if(_owner != nullptr) _owner->unregisterModule(this);
-    if(other._owner != nullptr) other._owner->unregisterModule(&other);
+    if(_owner != nullptr) {
+      _owner->unregisterModule(this);
+    }
+    if(other._owner != nullptr) {
+      other._owner->unregisterModule(&other);
+    }
     _owner = other._owner;
     other._owner = nullptr;
     EntityOwner::operator=(std::move(other));
-    if(_owner != nullptr) _owner->registerModule(this, false);
+    if(_owner != nullptr) {
+      _owner->registerModule(this, false);
+    }
     return *this;
   }
   /*********************************************************************************************************************/
@@ -46,7 +56,9 @@ namespace ChimeraTK {
     // put push-type transfer elements into a ReadAnyGroup
     ChimeraTK::ReadAnyGroup group;
     for(auto& accessor : recursiveAccessorList) {
-      if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
+      if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) {
+        continue;
+      }
       group.add(accessor.getAppAccessorNoType());
     }
 
@@ -60,20 +72,30 @@ namespace ChimeraTK {
     auto recursiveAccessorList = getAccessorListRecursive();
     // first blockingly read all push-type variables
     for(auto& accessor : recursiveAccessorList) {
-      if(accessor.getMode() != UpdateMode::push) continue;
+      if(accessor.getMode() != UpdateMode::push) {
+        continue;
+      }
       if(includeReturnChannels) {
-        if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
+        if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) {
+          continue;
+        }
       }
       else {
-        if(accessor.getDirection().dir != VariableDirection::consuming) continue;
+        if(accessor.getDirection().dir != VariableDirection::consuming) {
+          continue;
+        }
       }
       accessor.getAppAccessorNoType().read();
     }
     // next non-blockingly read the latest values of all poll-type variables
     for(auto& accessor : recursiveAccessorList) {
-      if(accessor.getMode() == UpdateMode::push) continue;
+      if(accessor.getMode() == UpdateMode::push) {
+        continue;
+      }
       // poll-type accessors cannot have a readback channel
-      if(accessor.getDirection().dir != VariableDirection::consuming) continue;
+      if(accessor.getDirection().dir != VariableDirection::consuming) {
+        continue;
+      }
       accessor.getAppAccessorNoType().readLatest();
     }
   }
@@ -83,19 +105,29 @@ namespace ChimeraTK {
   void Module::readAllNonBlocking(bool includeReturnChannels) {
     auto recursiveAccessorList = getAccessorListRecursive();
     for(auto& accessor : recursiveAccessorList) {
-      if(accessor.getMode() != UpdateMode::push) continue;
+      if(accessor.getMode() != UpdateMode::push) {
+        continue;
+      }
       if(includeReturnChannels) {
-        if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
+        if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) {
+          continue;
+        }
       }
       else {
-        if(accessor.getDirection().dir != VariableDirection::consuming) continue;
+        if(accessor.getDirection().dir != VariableDirection::consuming) {
+          continue;
+        }
       }
       accessor.getAppAccessorNoType().readNonBlocking();
     }
     for(auto& accessor : recursiveAccessorList) {
-      if(accessor.getMode() == UpdateMode::push) continue;
+      if(accessor.getMode() == UpdateMode::push) {
+        continue;
+      }
       // poll-type accessors cannot have a readback channel
-      if(accessor.getDirection().dir != VariableDirection::consuming) continue;
+      if(accessor.getDirection().dir != VariableDirection::consuming) {
+        continue;
+      }
       accessor.getAppAccessorNoType().readLatest();
     }
   }
@@ -106,10 +138,14 @@ namespace ChimeraTK {
     auto recursiveAccessorList = getAccessorListRecursive();
     for(auto& accessor : recursiveAccessorList) {
       if(includeReturnChannels) {
-        if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) continue;
+        if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, false}) {
+          continue;
+        }
       }
       else {
-        if(accessor.getDirection().dir != VariableDirection::consuming) continue;
+        if(accessor.getDirection().dir != VariableDirection::consuming) {
+          continue;
+        }
       }
       accessor.getAppAccessorNoType().readLatest();
     }
@@ -122,10 +158,14 @@ namespace ChimeraTK {
     auto recursiveAccessorList = getAccessorListRecursive();
     for(auto& accessor : recursiveAccessorList) {
       if(includeReturnChannels) {
-        if(accessor.getDirection() == VariableDirection{VariableDirection::consuming, false}) continue;
+        if(accessor.getDirection() == VariableDirection{VariableDirection::consuming, false}) {
+          continue;
+        }
       }
       else {
-        if(accessor.getDirection().dir != VariableDirection::feeding) continue;
+        if(accessor.getDirection().dir != VariableDirection::feeding) {
+          continue;
+        }
       }
       accessor.getAppAccessorNoType().write(versionNumber);
     }
@@ -138,10 +178,14 @@ namespace ChimeraTK {
     auto recursiveAccessorList = getAccessorListRecursive();
     for(auto& accessor : recursiveAccessorList) {
       if(includeReturnChannels) {
-        if(accessor.getDirection() == VariableDirection{VariableDirection::consuming, false}) continue;
+        if(accessor.getDirection() == VariableDirection{VariableDirection::consuming, false}) {
+          continue;
+        }
       }
       else {
-        if(accessor.getDirection().dir != VariableDirection::feeding) continue;
+        if(accessor.getDirection().dir != VariableDirection::feeding) {
+          continue;
+        }
       }
       accessor.getAppAccessorNoType().writeDestructively(versionNumber);
     }
@@ -155,7 +199,7 @@ namespace ChimeraTK {
       assert(ret != nullptr);
       return ret;
     }
-    else if(getModuleType() == ModuleType::Device) {
+    if(getModuleType() == ModuleType::Device) {
       auto* ret = dynamic_cast<DeviceModule*>(this);
       assert(ret != nullptr);
       return ret;
@@ -180,17 +224,25 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   std::string Module::getFullDescription() const {
-    if(_owner == nullptr) return _description;
+    if(_owner == nullptr) {
+      return _description;
+    }
     auto ownerDescription = _owner->getFullDescription();
-    if(ownerDescription == "") return _description;
-    if(_description == "") return ownerDescription;
+    if(ownerDescription.empty()) {
+      return _description;
+    }
+    if(_description.empty()) {
+      return ownerDescription;
+    }
     return ownerDescription + " - " + _description;
   }
 
   /*********************************************************************************************************************/
 
   std::list<EntityOwner*> Module::getInputModulesRecursively(std::list<EntityOwner*> startList) {
-    if(_owner == nullptr) return {};
+    if(_owner == nullptr) {
+      return {};
+    }
 
     return _owner->getInputModulesRecursively(startList);
   }
@@ -201,7 +253,9 @@ namespace ChimeraTK {
     size_t nConfigReaders = 0;
     ConfigReader* instance = nullptr;
     for(auto* mod : Application::getInstance().getSubmoduleListRecursive()) {
-      if(!dynamic_cast<ConfigReader*>(mod)) continue;
+      if(!dynamic_cast<ConfigReader*>(mod)) {
+        continue;
+      }
       ++nConfigReaders;
       instance = dynamic_cast<ConfigReader*>(mod);
     }

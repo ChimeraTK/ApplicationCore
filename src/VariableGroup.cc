@@ -56,7 +56,9 @@ namespace ChimeraTK {
 
     Module::operator=(std::move(other));
 
-    if(model.isValid()) model.informMove(*this);
+    if(model.isValid()) {
+      model.informMove(*this);
+    }
     _model = model;
 
     return *this;

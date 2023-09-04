@@ -126,7 +126,7 @@ namespace ChimeraTK {
 
   void NetworkVisitor::finaliseNetwork(NetworkInformation& net) {
     // check whether this is a constant created via ApplicationModule::constant()
-    bool isConstant{net.consumers.size() > 0 &&
+    bool isConstant{!net.consumers.empty() &&
         boost::starts_with(net.consumers.front().getName(), ApplicationModule::namePrefixConstant)};
     if(isConstant) {
       assert(!net.feeder.isValid());
@@ -192,7 +192,7 @@ namespace ChimeraTK {
           }
         }
 
-        AccessModeFlags{};
+        AccessModeFlags give_me_a_name;
         this->createProcessVariable<UserType>(net.feeder, net.valueLength, net.unit, net.description, flags);
       }
     });
@@ -202,7 +202,9 @@ namespace ChimeraTK {
 
   template<typename... Args>
   void NetworkVisitor::debug(Args&&... args) {
-    if(not _debugConnections) return;
+    if(not _debugConnections) {
+      return;
+    }
 
     // FIXME: Use the proper logging mechanism once in place
     // https://redmine.msktools.desy.de/issues/8305
@@ -280,8 +282,8 @@ namespace ChimeraTK {
       auto circularNetwork = node.scanForCircularDepencency();
       if(not circularNetwork.empty()) {
         auto circularNetworkHash = boost::hash_range(circularNetwork.begin(), circularNetwork.end());
-        _app.circularDependencyNetworks[circularNetworkHash] = circularNetwork;
-        _app.circularNetworkInvalidityCounters[circularNetworkHash] = 0;
+        _app._circularDependencyNetworks[circularNetworkHash] = circularNetwork;
+        _app._circularNetworkInvalidityCounters[circularNetworkHash] = 0;
 
         debug("    Circular network detected: " + proxy.getFullyQualifiedPath() + " is part of " +
             std::to_string(circularNetworkHash));
@@ -302,15 +304,17 @@ namespace ChimeraTK {
     // Collect all triggers, add a TriggerReceiver placeholder for every device associated with that trigger
     auto triggerCollector = [&](auto proxy) {
       auto trigger = proxy.getTrigger();
-      if(not trigger.isValid()) return;
+      if(not trigger.isValid()) {
+        return;
+      }
 
-      triggers.insert(trigger);
+      _triggers.insert(trigger);
       proxy.addVariable(trigger, VariableNetworkNode(proxy.getAliasOrCdd(), 0));
     };
     _app.getModel().visit(triggerCollector, Model::depthFirstSearch, Model::keepDeviceModules);
 
     debug("    Finalising trigger networks");
-    for(auto trigger : triggers) {
+    for(auto trigger : _triggers) {
       auto info = checkAndFinaliseNetwork(trigger);
       _triggerNetworks.insert(trigger.getFullyQualifiedPath());
       _networks.insert({trigger.getFullyQualifiedPath(), info});
@@ -342,7 +346,7 @@ namespace ChimeraTK {
     // of the model!
 
     debug("  Connecting trigger networks");
-    for(auto trigger : triggers) {
+    for(auto trigger : _triggers) {
       connectNetwork(trigger);
     }
 
@@ -407,7 +411,7 @@ namespace ChimeraTK {
           // create the trigger fan out and store it in the map and the internalModuleList
           auto triggerFanOut =
               boost::make_shared<TriggerFanOut>(feedingImpl, *_app.getDeviceManager(consumer.getDeviceAlias()));
-          _app.internalModuleList.push_back(triggerFanOut);
+          _app._internalModuleList.push_back(triggerFanOut);
           net.triggerImpl[consumer.getDeviceAlias()] = triggerFanOut;
         } break;
         default:
@@ -418,7 +422,7 @@ namespace ChimeraTK {
         assert(consumingImpl != nullptr);
         auto consumerImplPair = ConsumerImplementationPairs<UserType>{{consumingImpl, consumer}};
         auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, consumerImplPair);
-        _app.internalModuleList.push_back(fanOut);
+        _app._internalModuleList.push_back(fanOut);
       }
     });
   }
@@ -482,7 +486,7 @@ namespace ChimeraTK {
           threadedFanOut =
               boost::make_shared<ThreadedFanOutWithReturn<UserType>>(feedingImpl, consumerImplementationPairs);
         }
-        _app.internalModuleList.push_back(threadedFanOut);
+        _app._internalModuleList.push_back(threadedFanOut);
         fanOut = threadedFanOut;
       }
       else {
@@ -541,7 +545,7 @@ namespace ChimeraTK {
       // Wrap push-type CS->App PVs in testable mode decorator
       if(flags.has(AccessMode::wait_for_new_data)) {
         auto varId = detail::TestableMode::getNextVariableId();
-        _app.pvIdMap[pv->getUniqueId()] = varId;
+        _app._pvIdMap[pv->getUniqueId()] = varId;
         pvImpl = _app.getTestableMode().decorate<UserType>(
             pvImpl, detail::TestableMode::DecoratorType::READ, "ControlSystem:" + node.getPublicName(), varId);
       }
@@ -550,7 +554,7 @@ namespace ChimeraTK {
     else if(dir == SynchronizationDirection::bidirectional) {
       // App->CS PVs are only wrapped into testablemode decorator if they are bidirectional
       auto varId = detail::TestableMode::getNextVariableId();
-      _app.pvIdMap[pv->getUniqueId()] = varId;
+      _app._pvIdMap[pv->getUniqueId()] = varId;
       pvImpl = _app.getTestableMode().decorate<UserType>(
           pvImpl, detail::TestableMode::DecoratorType::READ, "ControlSystem:" + node.getPublicName());
     }
@@ -581,7 +585,9 @@ namespace ChimeraTK {
     // use wait_for_new_data mode if push update mode was requested
     // Feeding to the network means reading from a device to feed it into the network.
     AccessModeFlags flags{};
-    if(mode == UpdateMode::push && direction.dir == VariableDirection::feeding) flags = {AccessMode::wait_for_new_data};
+    if(mode == UpdateMode::push && direction.dir == VariableDirection::feeding) {
+      flags = {AccessMode::wait_for_new_data};
+    }
 
     // obtain the register accessor from the device
     auto accessor = dev->getRegisterAccessor<UserType>(registerName, nElements, 0, flags);
@@ -633,7 +639,7 @@ namespace ChimeraTK {
 
         auto triggerFanOut = boost::make_shared<TriggerFanOut>(
             triggerConnection.second, *_app.getDeviceManager(consumer.getDeviceAlias()));
-        _app.internalModuleList.push_back(triggerFanOut);
+        _app._internalModuleList.push_back(triggerFanOut);
         net.triggerImpl[consumer.getDeviceAlias()] = triggerFanOut;
 
         pair = std::make_pair(triggerConnection.first, consumer);
@@ -660,10 +666,14 @@ namespace ChimeraTK {
     assert(not name.empty());
     AccessModeFlags flags = {};
     if(consumer.isValid()) {
-      if(consumer.getMode() == UpdateMode::push) flags = {AccessMode::wait_for_new_data};
+      if(consumer.getMode() == UpdateMode::push) {
+        flags = {AccessMode::wait_for_new_data};
+      }
     }
     else {
-      if(node.getMode() == UpdateMode::push) flags = {AccessMode::wait_for_new_data};
+      if(node.getMode() == UpdateMode::push) {
+        flags = {AccessMode::wait_for_new_data};
+      }
     }
 
     // create the ProcessArray for the proper UserType
@@ -690,8 +700,8 @@ namespace ChimeraTK {
     }
 
     // if debug mode was requested for either node, decorate both accessors
-    if(_app.debugMode_variableList.count(node.getUniqueId()) ||
-        (consumer.getType() != NodeType::invalid && _app.debugMode_variableList.count(consumer.getUniqueId()))) {
+    if(_app._debugMode_variableList.count(node.getUniqueId()) ||
+        (consumer.getType() != NodeType::invalid && _app._debugMode_variableList.count(consumer.getUniqueId()))) {
       if(consumer.getType() != NodeType::invalid) {
         assert(node.getDirection().dir == VariableDirection::feeding);
         assert(consumer.getDirection().dir == VariableDirection::consuming);
@@ -767,7 +777,7 @@ namespace ChimeraTK {
             // create the trigger fan out and store it in the map and the internalModuleList
             auto triggerFanOut =
                 boost::make_shared<TriggerFanOut>(consumingImpl, *_app.getDeviceManager(consumer.getDeviceAlias()));
-            _app.internalModuleList.push_back(triggerFanOut);
+            _app._internalModuleList.emplace_back(triggerFanOut);
             net.triggerImpl[consumer.getDeviceAlias()] = triggerFanOut;
           }
 

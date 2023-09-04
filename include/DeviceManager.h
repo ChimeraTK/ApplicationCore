@@ -22,7 +22,7 @@ namespace ChimeraTK {
     /**
      * Create DeviceManager which handles device exceptions and performs the recovery.
      */
-    DeviceManager(Application* application, const std::string& deviceAliasOrCDD);
+    DeviceManager(Application* application, const std::string& deviceAliasOrURI);
 
     // Move constructor/assignment is not used since DeviceManagers are stored as shared_ptr only.
     DeviceManager(DeviceManager&& other) = delete;

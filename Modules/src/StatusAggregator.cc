@@ -4,16 +4,17 @@
 
 #include <list>
 #include <regex>
+#include <utility>
 
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
   StatusAggregator::StatusAggregator(ModuleGroup* owner, const std::string& name, const std::string& description,
-      PriorityMode mode, const std::unordered_set<std::string>& tagsToAggregate,
+      PriorityMode mode, std::unordered_set<std::string> tagsToAggregate,
       const std::unordered_set<std::string>& outputTags)
   : ApplicationModule(owner, ".", description, outputTags), _output(this, name), _mode(mode),
-    _tagsToAggregate(tagsToAggregate) {
+    _tagsToAggregate(std::move(tagsToAggregate)) {
     // check maximum size of tagsToAggregate
     if(_tagsToAggregate.size() > 1) {
       throw ChimeraTK::logic_error("StatusAggregator: List of tagsToAggregate must contain at most one tag.");
@@ -38,9 +39,11 @@ namespace ChimeraTK {
 
     auto scanModel = [&](auto proxy) {
       if constexpr(ChimeraTK::Model::isApplicationModule(proxy)) {
-        StatusAggregator* staAggPtr = dynamic_cast<StatusAggregator*>(&proxy.getApplicationModule());
+        auto* staAggPtr = dynamic_cast<StatusAggregator*>(&proxy.getApplicationModule());
         if(staAggPtr != nullptr) {
-          if(staAggPtr == this) return;
+          if(staAggPtr == this) {
+            return;
+          }
 
           if(_tagsToAggregate == staAggPtr->_tagsToAggregate) {
             inputPathsSet.insert(staAggPtr->_output._status.getModel().getFullyQualifiedPath());
@@ -59,7 +62,7 @@ namespace ChimeraTK {
       if constexpr(ChimeraTK::Model::isVariable(proxy)) {
         // check whether its not output of this (current) StatusAggregator. 'Current' StatusAggregator output is also
         // visible in the scanned model and should be ignored
-        if(proxy.getFullyQualifiedPath().compare(_output._status.getModel().getFullyQualifiedPath()) == 0) {
+        if(proxy.getFullyQualifiedPath() == _output._status.getModel().getFullyQualifiedPath()) {
           return;
         }
 
@@ -84,15 +87,16 @@ namespace ChimeraTK {
     model.visit(scanModel, ChimeraTK::Model::keepApplicationModules || ChimeraTK::Model::keepProcessVariables,
         ChimeraTK::Model::breadthFirstSearch, ChimeraTK::Model::keepOwnership);
 
-    for(auto& pathToBeRemoved : anotherStatusAgregatorInputSet) {
+    for(const auto& pathToBeRemoved : anotherStatusAgregatorInputSet) {
       inputPathsSet.erase(pathToBeRemoved);
     }
 
-    for(auto& pathToBeAggregated : inputPathsSet) {
+    for(const auto& pathToBeAggregated : inputPathsSet) {
       _inputs.emplace_back(
           this, pathToBeAggregated, pathToBeAggregated, std::unordered_set<std::string>{tagInternalVars});
-      if(!statusToMessagePathsMap[pathToBeAggregated].empty())
+      if(!statusToMessagePathsMap[pathToBeAggregated].empty()) {
         _inputs.back().setMessageSource(statusToMessagePathsMap[pathToBeAggregated]);
+      }
     }
   }
 
@@ -116,7 +120,9 @@ namespace ChimeraTK {
     std::map<TransferElementID, StatusWithMessageInput*> inputsMap;
     for(auto& x : _inputs) {
       inputsMap[x._status.getId()] = &x;
-      if(x.hasMessageSource) inputsMap[x._message.getId()] = &x;
+      if(x.hasMessageSource) {
+        inputsMap[x._message.getId()] = &x;
+      }
     }
 
     auto rag = readAnyGroup();
@@ -177,12 +183,14 @@ namespace ChimeraTK {
       auto change = rag.readAny();
       auto f = inputsMap.find(change);
       if(f != inputsMap.end()) {
-        auto varPair = f->second;
-        if(!varPair->update(change)) goto waitForChange; // inputs not in consistent state yet
+        auto* varPair = f->second;
+        if(!varPair->update(change)) {
+          goto waitForChange; // inputs not in consistent state yet
+        }
       }
 
       // handle request for debug info
-      if(change == debug.getId()) {
+      if(change == _debug.getId()) {
         static std::mutex debugMutex; // all aggregators trigger at the same time => lock for clean output
         std::unique_lock<std::mutex> lk(debugMutex);
 

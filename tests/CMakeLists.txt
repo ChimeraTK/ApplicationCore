@@ -11,6 +11,7 @@ foreach( testExecutableSrcFile ${testExecutables})
   target_compile_definitions(${executableName} PRIVATE CHIMERATK_INSIDE_APPLICATION_CORE)
   target_link_libraries(${executableName} 
     PRIVATE ${PROJECT_NAME} ChimeraTK::ChimeraTK-ControlSystemAdapter PkgConfig::LibXML++ ${HDF5_LIBRARIES})
+    target_compile_definitions(${executableName} PRIVATE CHIMERATK_INSIDE_APPLICATION_CORE)
   add_test(${executableName} ${executableName})
 endforeach( testExecutableSrcFile )
 

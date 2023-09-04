@@ -296,7 +296,7 @@ struct TestModule2 : public ctk::ApplicationModule {
   ctk::ScalarOutput<int> actuator{this, "actuator", "MV/m", "Description"};
   ctk::ScalarPollInput<int> readback{this, "readBack", "MV/m", "Description"};
 
-  void mainLoop() {}
+  void mainLoop() override {}
 };
 
 struct Deeper : ctk::ApplicationModule {
@@ -311,7 +311,7 @@ struct Deeper : ctk::ApplicationModule {
     ctk::ScalarOutput<int> also{this, "also", "MV/m", "Description", {"ALSO"}};
   } hierarchies{this, "hierarchies", ""};
 
-  void mainLoop() {}
+  void mainLoop() override {}
 };
 
 struct Deeper2 : ctk::ModuleGroup {

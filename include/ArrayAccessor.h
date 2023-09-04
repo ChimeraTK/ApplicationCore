@@ -30,10 +30,10 @@ namespace ChimeraTK {
     using ChimeraTK::OneDRegisterAccessor<UserType>::operator=;
 
     /** Move constructor */
-    ArrayAccessor(ArrayAccessor<UserType>&& other);
+    ArrayAccessor(ArrayAccessor<UserType>&& other) noexcept;
 
     /** Move assignment */
-    ArrayAccessor<UserType>& operator=(ArrayAccessor<UserType>&& other);
+    ArrayAccessor<UserType>& operator=(ArrayAccessor<UserType>&& other) noexcept;
 
     bool write(ChimeraTK::VersionNumber versionNumber) = delete;
     bool writeDestructively(ChimeraTK::VersionNumber versionNumber) = delete;
@@ -57,7 +57,7 @@ namespace ChimeraTK {
         const std::unordered_set<std::string>& tags = {});
 
     /** Default constructor creates a dysfunctional accessor (to be assigned with a real accessor later) */
-    ArrayAccessor() {}
+    ArrayAccessor() = default;
   };
 
   /********************************************************************************************************************/
@@ -125,14 +125,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  ArrayAccessor<UserType>::ArrayAccessor(ArrayAccessor<UserType>&& other) {
+  ArrayAccessor<UserType>::ArrayAccessor(ArrayAccessor<UserType>&& other) noexcept {
     InversionOfControlAccessor<ArrayAccessor<UserType>>::replace(std::move(other));
   }
 
   /********************************************************************************************************************/
 
   template<typename UserType>
-  ArrayAccessor<UserType>& ArrayAccessor<UserType>::operator=(ArrayAccessor<UserType>&& other) {
+  ArrayAccessor<UserType>& ArrayAccessor<UserType>::operator=(ArrayAccessor<UserType>&& other) noexcept {
     // Having a move-assignment operator is required to use the move-assignment
     // operator of a module containing an accessor.
     InversionOfControlAccessor<ArrayAccessor<UserType>>::replace(std::move(other));
@@ -145,7 +145,9 @@ namespace ChimeraTK {
   bool ArrayAccessor<UserType>::write() {
     auto versionNumber = this->getOwner()->getCurrentVersionNumber();
     bool dataLoss = ChimeraTK::OneDRegisterAccessor<UserType>::write(versionNumber);
-    if(dataLoss) Application::incrementDataLossCounter(this->node.getQualifiedName());
+    if(dataLoss) {
+      Application::incrementDataLossCounter(this->_node.getQualifiedName());
+    }
     return dataLoss;
   }
 
@@ -155,7 +157,9 @@ namespace ChimeraTK {
   bool ArrayAccessor<UserType>::writeDestructively() {
     auto versionNumber = this->getOwner()->getCurrentVersionNumber();
     bool dataLoss = ChimeraTK::OneDRegisterAccessor<UserType>::writeDestructively(versionNumber);
-    if(dataLoss) Application::incrementDataLossCounter(this->node.getQualifiedName());
+    if(dataLoss) {
+      Application::incrementDataLossCounter(this->node.getQualifiedName());
+    }
     return dataLoss;
   }
 

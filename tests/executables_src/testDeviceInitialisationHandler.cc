@@ -226,8 +226,9 @@ BOOST_AUTO_TEST_CASE(testInitialisationException) {
       test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD, false) / "status"),
       1, 10000);
   // First we see the message from the failing write
-  BOOST_CHECK(test.readScalar<std::string>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD, false) /
-                  "status_message") != "");
+  BOOST_CHECK(!test.readScalar<std::string>(
+                       ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD, false) / "status_message")
+                   .empty());
   dummyBackend->throwExceptionWrite = false;
   // Afterwards we see a message from the failing initialisation (which we can now distinguish from the original write
   // exception because write does not throw any more)

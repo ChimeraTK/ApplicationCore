@@ -68,15 +68,15 @@ struct OneModuleApp : public ctk::Application {
 /* Application with a vector of modules */
 
 struct VectorOfModulesApp : public ctk::Application {
-  explicit VectorOfModulesApp(size_t nInstances) : Application("myApp"), _nInstances(nInstances) {
-    for(size_t i = 0; i < _nInstances; ++i) {
+  explicit VectorOfModulesApp(size_t numberOfInstances) : Application("myApp"), nInstances(numberOfInstances) {
+    for(size_t i = 0; i < numberOfInstances; ++i) {
       std::string moduleName = "testModule_" + std::to_string(i) + "_instance";
       vectorOfTestModule.emplace_back(this, moduleName, "Description");
     }
   }
   ~VectorOfModulesApp() override { shutdown(); }
 
-  size_t _nInstances;
+  size_t nInstances;
   std::vector<TestModule> vectorOfTestModule;
 };
 
@@ -145,19 +145,19 @@ struct VectorModuleGroup : public ctk::ModuleGroup {
  * containing a vector of variable groups */
 
 struct VectorOfEverythingApp : public ctk::Application {
-  explicit VectorOfEverythingApp(size_t nInstances) : Application("myApp"), _nInstances(nInstances) {
-    for(size_t i = 0; i < _nInstances; ++i) {
+  explicit VectorOfEverythingApp(size_t numberOfInstances) : Application("myApp"), nInstances(numberOfInstances) {
+    for(size_t i = 0; i < nInstances; ++i) {
       std::string name = "testModule_" + std::to_string(i) + "_instance";
-      vectorOfVectorModuleGroup.emplace_back(this, name, "Description", _nInstances);
+      vectorOfVectorModuleGroup.emplace_back(this, name, "Description", nInstances);
       BOOST_CHECK(vectorOfVectorModuleGroup.back().getModel().isValid());
     }
-    for(size_t i = 0; i < _nInstances; ++i) {
+    for(size_t i = 0; i < nInstances; ++i) {
       BOOST_CHECK(vectorOfVectorModuleGroup[i].getModel().isValid());
     }
   }
   ~VectorOfEverythingApp() override { shutdown(); }
 
-  size_t _nInstances;
+  size_t nInstances;
   std::vector<VectorModuleGroup> vectorOfVectorModuleGroup;
 };
 
@@ -353,8 +353,12 @@ BOOST_AUTO_TEST_CASE(test_getSubmoduleList) {
     size_t foundSomeGroup = 0;
     size_t foundAnotherGroup = 0;
     for(const auto* mod : list) {
-      if(mod == &(app.testModule.someGroup)) foundSomeGroup++;
-      if(mod == &(app.testModule.anotherGroup)) foundAnotherGroup++;
+      if(mod == &(app.testModule.someGroup)) {
+        foundSomeGroup++;
+      }
+      if(mod == &(app.testModule.anotherGroup)) {
+        foundAnotherGroup++;
+      }
     }
     BOOST_CHECK(foundSomeGroup == 1);
     BOOST_CHECK(foundAnotherGroup == 1);
@@ -367,9 +371,15 @@ BOOST_AUTO_TEST_CASE(test_getSubmoduleList) {
     size_t foundSomeGroup = 0;
     size_t foundAnotherGroup = 0;
     for(const auto* mod : list) {
-      if(mod == &(app.testModule)) foundTestModule++;
-      if(mod == &(app.testModule.someGroup)) foundSomeGroup++;
-      if(mod == &(app.testModule.anotherGroup)) foundAnotherGroup++;
+      if(mod == &(app.testModule)) {
+        foundTestModule++;
+      }
+      if(mod == &(app.testModule.someGroup)) {
+        foundSomeGroup++;
+      }
+      if(mod == &(app.testModule.anotherGroup)) {
+        foundAnotherGroup++;
+      }
     }
     BOOST_CHECK(foundTestModule == 1);
     BOOST_CHECK(foundSomeGroup == 1);
@@ -383,8 +393,12 @@ BOOST_AUTO_TEST_CASE(test_getSubmoduleList) {
     size_t foundSomeGroup = 0;
     size_t foundAnotherGroup = 0;
     for(const auto* mod : list) {
-      if(mod == &(app.testModule.someGroup)) foundSomeGroup++;
-      if(mod == &(app.testModule.anotherGroup)) foundAnotherGroup++;
+      if(mod == &(app.testModule.someGroup)) {
+        foundSomeGroup++;
+      }
+      if(mod == &(app.testModule.anotherGroup)) {
+        foundAnotherGroup++;
+      }
     }
     BOOST_CHECK(foundSomeGroup == 1);
     BOOST_CHECK(foundAnotherGroup == 1);
@@ -408,8 +422,12 @@ BOOST_AUTO_TEST_CASE(test_getAccessorList) {
     size_t foundSomeInput = 0;
     size_t foundSomeOutput = 0;
     for(const auto& var : list) {
-      if(var == ctk::VariableNetworkNode(app.testModule.someInput)) foundSomeInput++;
-      if(var == ctk::VariableNetworkNode(app.testModule.someOutput)) foundSomeOutput++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someInput)) {
+        foundSomeInput++;
+      }
+      if(var == ctk::VariableNetworkNode(app.testModule.someOutput)) {
+        foundSomeOutput++;
+      }
     }
     BOOST_CHECK(foundSomeInput == 1);
     BOOST_CHECK(foundSomeOutput == 1);
@@ -422,8 +440,12 @@ BOOST_AUTO_TEST_CASE(test_getAccessorList) {
     size_t foundInGroup = 0;
     size_t foundAlsoInGroup = 0;
     for(const auto& var : list) {
-      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.inGroup)) foundInGroup++;
-      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.alsoInGroup)) foundAlsoInGroup++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.inGroup)) {
+        foundInGroup++;
+      }
+      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.alsoInGroup)) {
+        foundAlsoInGroup++;
+      }
     }
     BOOST_CHECK(foundInGroup == 1);
     BOOST_CHECK(foundAlsoInGroup == 1);
@@ -438,11 +460,21 @@ BOOST_AUTO_TEST_CASE(test_getAccessorList) {
     size_t foundAlsoInGroup = 0;
     size_t foundFoo = 0;
     for(const auto& var : list) {
-      if(var == ctk::VariableNetworkNode(app.testModule.someInput)) foundSomeInput++;
-      if(var == ctk::VariableNetworkNode(app.testModule.someOutput)) foundSomeOutput++;
-      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.inGroup)) foundInGroup++;
-      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.alsoInGroup)) foundAlsoInGroup++;
-      if(var == ctk::VariableNetworkNode(app.testModule.anotherGroup.foo)) foundFoo++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someInput)) {
+        foundSomeInput++;
+      }
+      if(var == ctk::VariableNetworkNode(app.testModule.someOutput)) {
+        foundSomeOutput++;
+      }
+      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.inGroup)) {
+        foundInGroup++;
+      }
+      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.alsoInGroup)) {
+        foundAlsoInGroup++;
+      }
+      if(var == ctk::VariableNetworkNode(app.testModule.anotherGroup.foo)) {
+        foundFoo++;
+      }
     }
     BOOST_CHECK(foundSomeInput == 1);
     BOOST_CHECK(foundSomeOutput == 1);
@@ -460,11 +492,21 @@ BOOST_AUTO_TEST_CASE(test_getAccessorList) {
     size_t foundAlsoInGroup = 0;
     size_t foundFoo = 0;
     for(const auto& var : list) {
-      if(var == ctk::VariableNetworkNode(app.testModule.someInput)) foundSomeInput++;
-      if(var == ctk::VariableNetworkNode(app.testModule.someOutput)) foundSomeOutput++;
-      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.inGroup)) foundInGroup++;
-      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.alsoInGroup)) foundAlsoInGroup++;
-      if(var == ctk::VariableNetworkNode(app.testModule.anotherGroup.foo)) foundFoo++;
+      if(var == ctk::VariableNetworkNode(app.testModule.someInput)) {
+        foundSomeInput++;
+      }
+      if(var == ctk::VariableNetworkNode(app.testModule.someOutput)) {
+        foundSomeOutput++;
+      }
+      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.inGroup)) {
+        foundInGroup++;
+      }
+      if(var == ctk::VariableNetworkNode(app.testModule.someGroup.alsoInGroup)) {
+        foundAlsoInGroup++;
+      }
+      if(var == ctk::VariableNetworkNode(app.testModule.anotherGroup.foo)) {
+        foundFoo++;
+      }
     }
     BOOST_CHECK(foundSomeInput == 1);
     BOOST_CHECK(foundSomeOutput == 1);
@@ -478,7 +520,9 @@ BOOST_AUTO_TEST_CASE(test_getAccessorList) {
     BOOST_CHECK(list.size() == 1);
     size_t foundFoo = 0;
     for(const auto& var : list) {
-      if(var == ctk::VariableNetworkNode(app.testModule.anotherGroup.foo)) foundFoo++;
+      if(var == ctk::VariableNetworkNode(app.testModule.anotherGroup.foo)) {
+        foundFoo++;
+      }
     }
     BOOST_CHECK(foundFoo == 1);
   }
@@ -540,8 +584,12 @@ BOOST_AUTO_TEST_CASE(testVectorOfApplicationModule) {
     size_t foundSomeInput = 0;
     size_t foundSomeOutput = 0;
     for(auto& acc : accList) {
-      if(acc == ctk::VariableNetworkNode(app.vectorOfTestModule[i].someInput)) foundSomeInput++;
-      if(acc == ctk::VariableNetworkNode(app.vectorOfTestModule[i].someOutput)) foundSomeOutput++;
+      if(acc == ctk::VariableNetworkNode(app.vectorOfTestModule[i].someInput)) {
+        foundSomeInput++;
+      }
+      if(acc == ctk::VariableNetworkNode(app.vectorOfTestModule[i].someOutput)) {
+        foundSomeOutput++;
+      }
     }
     BOOST_TEST(foundSomeInput == 1);
     BOOST_TEST(foundSomeOutput == 1);
@@ -552,8 +600,12 @@ BOOST_AUTO_TEST_CASE(testVectorOfApplicationModule) {
     size_t foundSomeGroup = 0;
     size_t foundAnotherGroup = 0;
     for(const auto* mod : modList) {
-      if(mod == &(app.vectorOfTestModule[i].someGroup)) foundSomeGroup++;
-      if(mod == &(app.vectorOfTestModule[i].anotherGroup)) foundAnotherGroup++;
+      if(mod == &(app.vectorOfTestModule[i].someGroup)) {
+        foundSomeGroup++;
+      }
+      if(mod == &(app.vectorOfTestModule[i].anotherGroup)) {
+        foundAnotherGroup++;
+      }
     }
     BOOST_TEST(foundSomeGroup == 1);
     BOOST_TEST(foundAnotherGroup == 1);
@@ -564,10 +616,14 @@ BOOST_AUTO_TEST_CASE(testVectorOfApplicationModule) {
     std::list<ctk::Module*> list = app.getSubmoduleList();
     BOOST_TEST(list.size() == nInstances);
     std::map<size_t, size_t> instancesFound;
-    for(size_t i = 0; i < nInstances; ++i) instancesFound[i] = 0;
+    for(size_t i = 0; i < nInstances; ++i) {
+      instancesFound[i] = 0;
+    }
     for(const auto* mod : list) {
       for(size_t i = 0; i < nInstances; ++i) {
-        if(mod == &(app.vectorOfTestModule[i])) instancesFound[i]++;
+        if(mod == &(app.vectorOfTestModule[i])) {
+          instancesFound[i]++;
+        }
       }
     }
     for(size_t i = 0; i < nInstances; ++i) {
@@ -587,9 +643,15 @@ BOOST_AUTO_TEST_CASE(testVectorOfApplicationModule) {
     }
     for(const auto* mod : list) {
       for(size_t i = 0; i < nInstances; ++i) {
-        if(mod == &(app.vectorOfTestModule[i])) instancesFound[i]++;
-        if(mod == &(app.vectorOfTestModule[i].someGroup)) instancesSomeGroupFound[i]++;
-        if(mod == &(app.vectorOfTestModule[i].anotherGroup)) instancesAnotherGroupFound[i]++;
+        if(mod == &(app.vectorOfTestModule[i])) {
+          instancesFound[i]++;
+        }
+        if(mod == &(app.vectorOfTestModule[i].someGroup)) {
+          instancesSomeGroupFound[i]++;
+        }
+        if(mod == &(app.vectorOfTestModule[i].anotherGroup)) {
+          instancesAnotherGroupFound[i]++;
+        }
       }
     }
     for(size_t i = 0; i < nInstances; ++i) {
@@ -643,13 +705,19 @@ BOOST_AUTO_TEST_CASE(testVectorsOfAllModules) {
     std::list<ctk::Module*> list = app.getSubmoduleList();
     BOOST_CHECK(list.size() == nInstances);
     std::map<size_t, size_t> found;
-    for(size_t i = 0; i < nInstances; ++i) found[i] = 0;
+    for(size_t i = 0; i < nInstances; ++i) {
+      found[i] = 0;
+    }
     for(const auto* mod : list) {
       for(size_t i = 0; i < nInstances; ++i) {
-        if(mod == &(app.vectorOfVectorModuleGroup[i])) found[i]++;
+        if(mod == &(app.vectorOfVectorModuleGroup[i])) {
+          found[i]++;
+        }
       }
     }
-    for(size_t i = 0; i < nInstances; ++i) BOOST_CHECK(found[i] == 1);
+    for(size_t i = 0; i < nInstances; ++i) {
+      BOOST_CHECK(found[i] == 1);
+    }
   }
 
   { // checks on second hierarchy level (each module group has the list of modules)
@@ -658,13 +726,19 @@ BOOST_AUTO_TEST_CASE(testVectorsOfAllModules) {
       BOOST_CHECK(list.size() == nInstances);
 
       std::map<size_t, size_t> found;
-      for(size_t k = 0; k < nInstances; ++k) found[k] = 0;
+      for(size_t k = 0; k < nInstances; ++k) {
+        found[k] = 0;
+      }
       for(const auto* mod : list) {
         for(size_t k = 0; k < nInstances; ++k) {
-          if(mod == &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k])) found[k]++;
+          if(mod == &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k])) {
+            found[k]++;
+          }
         }
       }
-      for(size_t k = 0; k < nInstances; ++k) BOOST_CHECK(found[k] == 1);
+      for(size_t k = 0; k < nInstances; ++k) {
+        BOOST_CHECK(found[k] == 1);
+      }
     }
   }
 
@@ -678,10 +752,12 @@ BOOST_AUTO_TEST_CASE(testVectorsOfAllModules) {
         size_t someInputFound = 0;
         size_t someOutputFound = 0;
         for(const auto& acc : accList) {
-          if(acc == ctk::VariableNetworkNode(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someInput))
+          if(acc == ctk::VariableNetworkNode(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someInput)) {
             someInputFound++;
-          if(acc == ctk::VariableNetworkNode(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someOutput))
+          }
+          if(acc == ctk::VariableNetworkNode(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].someOutput)) {
             someOutputFound++;
+          }
         }
         BOOST_CHECK_EQUAL(someInputFound, 1);
         BOOST_CHECK_EQUAL(someOutputFound, 1);
@@ -691,7 +767,9 @@ BOOST_AUTO_TEST_CASE(testVectorsOfAllModules) {
         BOOST_CHECK_EQUAL(modList.size(), nInstances + 1);
 
         std::map<size_t, size_t> someGroupFound;
-        for(size_t m = 0; m < nInstances; ++m) someGroupFound[m] = 0;
+        for(size_t m = 0; m < nInstances; ++m) {
+          someGroupFound[m] = 0;
+        }
         size_t anotherGroupFound = 0;
         for(const auto* mod : modList) {
           for(size_t m = 0; m < nInstances; ++m) {
@@ -699,7 +777,9 @@ BOOST_AUTO_TEST_CASE(testVectorsOfAllModules) {
               someGroupFound[m]++;
             }
           }
-          if(mod == &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].anotherGroup)) anotherGroupFound++;
+          if(mod == &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].anotherGroup)) {
+            anotherGroupFound++;
+          }
         }
         for(size_t m = 0; m < nInstances; ++m) {
           BOOST_CHECK_EQUAL(someGroupFound[m], 1);
@@ -934,8 +1014,12 @@ BOOST_AUTO_TEST_CASE(test_moveAssignmentOperator) {
   bool modGroupInstanceToAssignLater_found = false;
   bool modInstanceToAssignLater_found = false;
   for(const auto* mod : list) {
-    if(mod == &(app.modGroupInstanceToAssignLater)) modGroupInstanceToAssignLater_found = true;
-    if(mod == &(app.modInstanceToAssignLater)) modInstanceToAssignLater_found = true;
+    if(mod == &(app.modGroupInstanceToAssignLater)) {
+      modGroupInstanceToAssignLater_found = true;
+    }
+    if(mod == &(app.modInstanceToAssignLater)) {
+      modInstanceToAssignLater_found = true;
+    }
   }
 
   BOOST_CHECK(modGroupInstanceToAssignLater_found);

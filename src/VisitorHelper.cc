@@ -4,7 +4,7 @@
 
 #include "VariableNetworkNode.h"
 
-namespace ChimeraTK { namespace detail {
+namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
@@ -28,4 +28,4 @@ namespace ChimeraTK { namespace detail {
 
   /********************************************************************************************************************/
 
-}} // namespace ChimeraTK::detail
+} // namespace ChimeraTK::detail

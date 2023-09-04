@@ -16,10 +16,10 @@ namespace ChimeraTK {
   }
 
   static std::unique_ptr<xmlpp::DomParser> createDomParser(const std::string& fileName);
-  static std::string root(std::string flattened_name);
-  static std::string branchWithoutRoot(std::string flattened_name);
-  static std::string branch(std::string flattened_name);
-  static std::string leaf(std::string flattened_name);
+  static std::string root(const std::string& flattened_name);
+  static std::string branchWithoutRoot(const std::string& flattened_name);
+  static std::string branch(const std::string& flattened_name);
+  static std::string leaf(const std::string& flattened_name);
 
   struct Variable {
     std::string name;
@@ -37,13 +37,13 @@ namespace ChimeraTK {
   using ArrayList = std::vector<Array>;
 
   class ConfigParser {
-    std::string fileName_{};
-    std::unique_ptr<xmlpp::DomParser> parser_{};
+    std::string _fileName{};
+    std::unique_ptr<xmlpp::DomParser> _parser{};
     std::unique_ptr<VariableList> variableList_{};
     std::unique_ptr<ArrayList> arrayList_{};
 
    public:
-    ConfigParser(const std::string& fileName) : fileName_(fileName), parser_(createDomParser(fileName)) {}
+    explicit ConfigParser(const std::string& fileName) : _fileName(fileName), _parser(createDomParser(fileName)) {}
 
     std::unique_ptr<VariableList> getVariableList();
     std::unique_ptr<ArrayList> getArrayList();
@@ -55,7 +55,7 @@ namespace ChimeraTK {
     bool isVariable(const xmlpp::Element* element);
     bool isArray(const xmlpp::Element* element);
     bool isModule(const xmlpp::Element* element);
-    Variable parseVariable(const xmlpp::Element* element);
+    static Variable parseVariable(const xmlpp::Element* element);
     Array parseArray(const xmlpp::Element* element);
     void parseModule(const xmlpp::Element* element, std::string parent_name);
 
@@ -67,19 +67,19 @@ namespace ChimeraTK {
    public:
     // Note: This has hideThis as default modifier, because we want the level of
     // the ModuleTree to vanish in its owner.
-    ModuleTree(VariableGroup* owner, std::string name, std::string description)
+    ModuleTree(VariableGroup* owner, const std::string& name, const std::string& description)
     : VariableGroup{owner, name, description} {}
 
-    ChimeraTK::Module* lookup(std::string flattened_module_name);
+    ChimeraTK::Module* lookup(const std::string& flattened_module_name);
 
    private:
-    void addChildNode(std::string name) {
+    void addChildNode(const std::string& name) {
       if(_children.find(name) == _children.end()) {
         _children[name] = std::make_unique<ModuleTree>(this, name, "");
       }
     }
 
-    ChimeraTK::ModuleTree* get(std::string flattened_name);
+    ChimeraTK::ModuleTree* get(const std::string& flattened_name);
 
     std::unordered_map<std::string, std::unique_ptr<ModuleTree>> _children;
   };
@@ -88,92 +88,96 @@ namespace ChimeraTK {
 
   /** Functor to fill variableMap */
   struct FunctorFill {
-    FunctorFill(ConfigReader* owner, const std::string& type, const std::string& name, const std::string& value,
-        bool& processed)
-    : _owner(owner), _type(type), _name(name), _value(value), _processed(processed) {
-      _processed = false;
+    FunctorFill(ConfigReader* theOwner, const std::string& theType, const std::string& theName,
+        const std::string& theValue, bool& isProcessed)
+    : owner(theOwner), type(theType), name(theName), value(theValue), processed(isProcessed) {
+      processed = false;
     }
 
     template<typename PAIR>
     void operator()(PAIR&) const {
       // extract the user type from the pair
-      typedef typename PAIR::first_type T;
+      using T = typename PAIR::first_type;
 
       // skip this type, if not matching the type string in the config file
-      if(_type != boost::fusion::at_key<T>(_owner->typeMap)) return;
+      if(type != boost::fusion::at_key<T>(owner->_typeMap)) {
+        return;
+      }
 
-      _owner->createVar<T>(_name, _value);
-      _processed = true;
+      owner->createVar<T>(name, value);
+      processed = true;
     }
 
-    ConfigReader* _owner;
-    const std::string &_type, &_name, &_value;
-    bool& _processed; // must be a non-const reference, since we want to return
-                      // this to the caller
+    ConfigReader* owner;
+    const std::string &type, &name, &value;
+    bool& processed; // must be a non-const reference, since we want to return
+                     // this to the caller
   };
 
   /*********************************************************************************************************************/
 
   /** Functor to fill variableMap for arrays */
   struct ArrayFunctorFill {
-    ArrayFunctorFill(ConfigReader* owner, const std::string& type, const std::string& name,
-        const std::map<size_t, std::string>& values, bool& processed)
-    : _owner(owner), _type(type), _name(name), _values(values), _processed(processed) {
-      _processed = false;
+    ArrayFunctorFill(ConfigReader* theOwner, const std::string& theType, const std::string& theName,
+        const std::map<size_t, std::string>& theValues, bool& isProcessed)
+    : owner(theOwner), type(theType), name(theName), values(theValues), processed(isProcessed) {
+      processed = false;
     }
 
     template<typename PAIR>
     void operator()(PAIR&) const {
       // extract the user type from the pair
-      typedef typename PAIR::first_type T;
+      using T = typename PAIR::first_type;
 
       // skip this type, if not matching the type string in the config file
-      if(_type != boost::fusion::at_key<T>(_owner->typeMap)) return;
+      if(type != boost::fusion::at_key<T>(owner->_typeMap)) {
+        return;
+      }
 
-      _owner->createArray<T>(_name, _values);
-      _processed = true;
+      owner->createArray<T>(name, values);
+      processed = true;
     }
 
-    ConfigReader* _owner;
-    const std::string &_type, &_name;
-    const std::map<size_t, std::string>& _values;
-    bool& _processed; // must be a non-const reference, since we want to return
-                      // this to the caller
+    ConfigReader* owner;
+    const std::string &type, &name;
+    const std::map<size_t, std::string>& values;
+    bool& processed; // must be a non-const reference, since we want to return
+                     // this to the caller
   };
 
   /*********************************************************************************************************************/
 
   struct FunctorGetTypeForName {
-    FunctorGetTypeForName(const ConfigReader* owner, std::string const& name, std::string& type)
-    : _owner(owner), _name(name), _type(type) {}
+    FunctorGetTypeForName(const ConfigReader* theOwner, std::string const& theName, std::string& theType)
+    : owner(theOwner), name(theName), type(theType) {}
 
     template<typename PAIR>
     bool operator()(PAIR const& pair) const {
       // extract the user type from the pair
-      typedef typename PAIR::first_type T;
+      using T = typename PAIR::first_type;
 
-      size_t numberOfMatches{pair.second.count(_name)};
+      size_t numberOfMatches{pair.second.count(name)};
       assert(numberOfMatches <= 1);
       bool hasMatch{numberOfMatches == 1};
 
       if(hasMatch) {
-        _type = boost::fusion::at_key<T>(_owner->typeMap);
+        type = boost::fusion::at_key<T>(owner->_typeMap);
       }
 
       return hasMatch;
     }
 
-    const ConfigReader* _owner;
-    const std::string& _name;
-    std::string& _type;
+    const ConfigReader* owner;
+    const std::string& name;
+    std::string& type;
   };
 
   /*********************************************************************************************************************/
 
   void ConfigReader::checkVariable(std::string const& name, std::string const& typeOfThis) const {
-    std::string typeOfVar{""};
+    std::string typeOfVar;
 
-    bool varExists = boost::fusion::any(variableMap.table, FunctorGetTypeForName{this, name, typeOfVar});
+    bool varExists = boost::fusion::any(_variableMap.table, FunctorGetTypeForName{this, name, typeOfVar});
 
     if(!varExists) {
       auto msg = "ConfigReader: Cannot find a scalar configuration variable of the name '" + name +
@@ -193,9 +197,9 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void ConfigReader::checkArray(std::string const& name, std::string const& typeOfThis) const {
-    std::string typeOfVar{""};
+    std::string typeOfVar;
 
-    bool varExists = boost::fusion::any(arrayMap.table, FunctorGetTypeForName{this, name, typeOfVar});
+    bool varExists = boost::fusion::any(_arrayMap.table, FunctorGetTypeForName{this, name, typeOfVar});
 
     if(!varExists) {
       throw(ChimeraTK::logic_error("ConfigReader: Cannot find a array "
@@ -218,10 +222,10 @@ namespace ChimeraTK {
 
     auto moduleName = branch(name);
     auto varName = leaf(name);
-    auto varOwner = _moduleTree->lookup(moduleName);
+    auto* varOwner = _moduleTree->lookup(moduleName);
 
     // place the variable onto the vector
-    std::unordered_map<std::string, ConfigReader::Var<T>>& theMap = boost::fusion::at_key<T>(variableMap.table);
+    std::unordered_map<std::string, ConfigReader::Var<T>>& theMap = boost::fusion::at_key<T>(_variableMap.table);
     theMap.emplace(std::make_pair(name, ConfigReader::Var<T>(varOwner, varName, convertedValue)));
   }
 
@@ -234,17 +238,17 @@ namespace ChimeraTK {
     std::vector<T> Tvalues;
 
     size_t expectedIndex = 0;
-    for(auto it = values.begin(); it != values.end(); ++it) {
+    for(const auto& value : values) {
       // check index (std::map should be ordered by the index)
-      if(it->first != expectedIndex) {
-        parsingError("Array index " + std::to_string(expectedIndex) + " not found, but " + std::to_string(it->first) +
+      if(value.first != expectedIndex) {
+        parsingError("Array index " + std::to_string(expectedIndex) + " not found, but " + std::to_string(value.first) +
             " was. "
             "Sparse arrays are not supported!");
       }
       ++expectedIndex;
 
       // convert value into user type
-      T convertedValue = ChimeraTK::userTypeToUserType<T>(it->second);
+      T convertedValue = ChimeraTK::userTypeToUserType<T>(value.second);
 
       // store value in vector
       Tvalues.push_back(convertedValue);
@@ -252,10 +256,10 @@ namespace ChimeraTK {
 
     auto moduleName = branch(name);
     auto arrayName = leaf(name);
-    auto arrayOwner = _moduleTree->lookup(moduleName);
+    auto* arrayOwner = _moduleTree->lookup(moduleName);
 
     // place the variable onto the vector
-    std::unordered_map<std::string, ConfigReader::Array<T>>& theMap = boost::fusion::at_key<T>(arrayMap.table);
+    std::unordered_map<std::string, ConfigReader::Array<T>>& theMap = boost::fusion::at_key<T>(_arrayMap.table);
     theMap.emplace(std::make_pair(name, ConfigReader::Array<T>(arrayOwner, arrayName, Tvalues)));
   }
 
@@ -283,15 +287,19 @@ namespace ChimeraTK {
   void ConfigReader::construct(const std::string& fileName) {
     auto fillVariableMap = [this](const Variable& var) {
       bool processed{false};
-      boost::fusion::for_each(variableMap.table, FunctorFill(this, var.type, var.name, var.value, processed));
-      if(!processed) parsingError("Incorrect value '" + var.type + "' for attribute 'type' of the 'variable' tag.");
+      boost::fusion::for_each(_variableMap.table, FunctorFill(this, var.type, var.name, var.value, processed));
+      if(!processed) {
+        parsingError("Incorrect value '" + var.type + "' for attribute 'type' of the 'variable' tag.");
+      }
     };
 
     auto fillArrayMap = [this](const ChimeraTK::Array& arr) {
       // create accessor and store array value in map using functor
       bool processed{false};
-      boost::fusion::for_each(arrayMap.table, ArrayFunctorFill(this, arr.type, arr.name, arr.values, processed));
-      if(!processed) parsingError("Incorrect value '" + arr.type + "' for attribute 'type' of the 'variable' tag.");
+      boost::fusion::for_each(_arrayMap.table, ArrayFunctorFill(this, arr.type, arr.name, arr.values, processed));
+      if(!processed) {
+        parsingError("Incorrect value '" + arr.type + "' for attribute 'type' of the 'variable' tag.");
+      }
     };
 
     auto parser = ConfigParser(fileName);
@@ -318,62 +326,62 @@ namespace ChimeraTK {
 
   /** Functor to set values to the scalar accessors */
   struct FunctorSetValues {
-    FunctorSetValues(ConfigReader* owner) : _owner(owner) {}
+    explicit FunctorSetValues(ConfigReader* theOwner) : owner(theOwner) {}
 
     template<typename PAIR>
     void operator()(PAIR&) const {
       // get user type and vector
-      typedef typename PAIR::first_type T;
+      using T = typename PAIR::first_type;
       std::unordered_map<std::string, ConfigReader::Var<T>>& theMap =
-          boost::fusion::at_key<T>(_owner->variableMap.table);
+          boost::fusion::at_key<T>(owner->_variableMap.table);
 
       // iterate vector and set values
       for(auto& pair : theMap) {
         auto& var = pair.second;
-        var._accessor = var._value;
-        var._accessor.write();
+        var.accessor = var.value;
+        var.accessor.write();
       }
     }
 
-    ConfigReader* _owner;
+    ConfigReader* owner;
   };
 
   /*********************************************************************************************************************/
 
   /** Functor to set values to the array accessors */
   struct FunctorSetValuesArray {
-    FunctorSetValuesArray(ConfigReader* owner) : _owner(owner) {}
+    explicit FunctorSetValuesArray(ConfigReader* theOwner) : owner(theOwner) {}
 
     template<typename PAIR>
     void operator()(PAIR&) const {
       // get user type and vector
-      typedef typename PAIR::first_type T;
+      using T = typename PAIR::first_type;
       std::unordered_map<std::string, ConfigReader::Array<T>>& theMap =
-          boost::fusion::at_key<T>(_owner->arrayMap.table);
+          boost::fusion::at_key<T>(owner->_arrayMap.table);
 
       // iterate vector and set values
       for(auto& pair : theMap) {
         auto& var = pair.second;
-        var._accessor = var._value;
-        var._accessor.write();
+        var.accessor = var.value;
+        var.accessor.write();
       }
     }
 
-    ConfigReader* _owner;
+    ConfigReader* owner;
   };
 
   /*********************************************************************************************************************/
 
   void ConfigReader::prepare() {
-    boost::fusion::for_each(variableMap.table, FunctorSetValues(this));
-    boost::fusion::for_each(arrayMap.table, FunctorSetValuesArray(this));
+    boost::fusion::for_each(_variableMap.table, FunctorSetValues(this));
+    boost::fusion::for_each(_arrayMap.table, FunctorSetValuesArray(this));
   }
 
   /*********************************************************************************************************************/
 
-  ChimeraTK::Module* ModuleTree::lookup(std::string flattened_module_name) {
+  ChimeraTK::Module* ModuleTree::lookup(const std::string& flattened_module_name) {
     // Root node, return pointer to the ConfigReader
-    if(flattened_module_name == "") {
+    if(flattened_module_name.empty()) {
       return dynamic_cast<Module*>(_owner);
     }
     // else look up the tree
@@ -382,7 +390,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  ChimeraTK::ModuleTree* ModuleTree::get(std::string flattened_name) {
+  ChimeraTK::ModuleTree* ModuleTree::get(const std::string& flattened_name) {
     auto root_name = root(flattened_name);
     auto remaining_branch_name = branchWithoutRoot(flattened_name);
 
@@ -393,7 +401,7 @@ namespace ChimeraTK {
       addChildNode(root_name);
     }
 
-    if(remaining_branch_name != "") {
+    if(!remaining_branch_name.empty()) {
       module = _children[root_name]->get(remaining_branch_name);
     }
     else {
@@ -424,7 +432,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>> ConfigParser::parse() {
-    const auto root = getRootNode(*parser_);
+    auto* const root = getRootNode(*_parser);
     if(root->get_name() != "configuration") {
       error("Expected 'configuration' tag instead of: " + root->get_name());
     }
@@ -433,8 +441,8 @@ namespace ChimeraTK {
     variableList_ = std::make_unique<VariableList>();
     arrayList_ = std::make_unique<ArrayList>();
 
-    const xmlpp::Element* element = dynamic_cast<const xmlpp::Element*>(root);
-    std::string parent_module_name = "";
+    const auto* element = dynamic_cast<const xmlpp::Element*>(root);
+    std::string parent_module_name;
     parseModule(element, parent_module_name);
 
     return std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>>{
@@ -456,7 +464,7 @@ namespace ChimeraTK {
       if(!element) {
         continue; // ignore if not an element (e.g. comment)
       }
-      else if(isVariable(element)) {
+      if(isVariable(element)) {
         variableList_->emplace_back(prefix(parent_name, parseVariable(element)));
       }
       else if(isArray(element)) {
@@ -492,7 +500,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   xmlpp::Element* ConfigParser::getRootNode(xmlpp::DomParser& parser) {
-    auto root = parser.get_document()->get_root_node();
+    auto* root = parser.get_document()->get_root_node();
     if(root->get_name() != "configuration") {
       error("Expected 'configuration' tag instead of: " + root->get_name());
     }
@@ -502,7 +510,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void ConfigParser::error(const std::string& message) {
-    throw ChimeraTK::logic_error("ConfigReader: Error parsing the config file '" + fileName_ + "': " + message);
+    throw ChimeraTK::logic_error("ConfigReader: Error parsing the config file '" + _fileName + "': " + message);
   }
 
   /*********************************************************************************************************************/
@@ -518,9 +526,7 @@ namespace ChimeraTK {
       }
       return true;
     }
-    else {
-      return false;
-    }
+    return false;
   }
 
   /*********************************************************************************************************************/
@@ -536,9 +542,7 @@ namespace ChimeraTK {
       }
       return true;
     }
-    else {
-      return false;
-    }
+    return false;
   }
 
   /*********************************************************************************************************************/
@@ -550,9 +554,7 @@ namespace ChimeraTK {
       }
       return true;
     }
-    else {
-      return false;
-    }
+    return false;
   }
 
   /*********************************************************************************************************************/
@@ -562,13 +564,15 @@ namespace ChimeraTK {
     std::map<size_t, std::string> values;
 
     for(const auto& valueChild : element->get_children()) {
-      const xmlpp::Element* valueElement = dynamic_cast<const xmlpp::Element*>(valueChild);
-      if(!valueElement) continue; // ignore comments etc.
+      const auto* valueElement = dynamic_cast<const xmlpp::Element*>(valueChild);
+      if(!valueElement) {
+        continue; // ignore comments etc.
+      }
       validateValueNode(valueElement);
       valueFound = true;
 
-      auto index = valueElement->get_attribute("i");
-      auto value = valueElement->get_attribute("v");
+      auto* index = valueElement->get_attribute("i");
+      auto* value = valueElement->get_attribute("v");
 
       // get index as number and store value as a string
       size_t intIndex;
@@ -614,7 +618,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  std::string root(std::string flattened_name) {
+  std::string root(const std::string& flattened_name) {
     auto pos = flattened_name.find_first_of('/');
     pos = (pos == std::string::npos) ? flattened_name.size() : pos;
     return flattened_name.substr(0, pos);
@@ -622,7 +626,7 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  std::string branchWithoutRoot(std::string flattened_name) {
+  std::string branchWithoutRoot(const std::string& flattened_name) {
     auto pos = flattened_name.find_first_of('/');
     pos = (pos == std::string::npos) ? flattened_name.size() : pos + 1;
     return flattened_name.substr(pos, flattened_name.size());
@@ -630,14 +634,14 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  std::string branch(std::string flattened_name) {
+  std::string branch(const std::string& flattened_name) {
     auto pos = flattened_name.find_last_of('/');
     pos = (pos == std::string::npos) ? 0 : pos;
     return flattened_name.substr(0, pos);
   }
 
   /*********************************************************************************************************************/
-  std::string leaf(std::string flattened_name) {
+  std::string leaf(const std::string& flattened_name) {
     auto pos = flattened_name.find_last_of('/');
     return flattened_name.substr(pos + 1, flattened_name.size());
   }

@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstantInitValueAtDevice8biii, INPUT_TYPE, Te
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct PushModuleD9_1 : ChimeraTK::ApplicationModule {
+struct PushModuleD91 : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
   ChimeraTK::ScalarPushInput<int> pushInput{this, "/REG1", "", ""};
   std::promise<void> p;
@@ -238,7 +238,7 @@ struct PushModuleD9_1 : ChimeraTK::ApplicationModule {
     p.set_value();
   }
 };
-struct PushModuleD9_2 : ChimeraTK::ApplicationModule {
+struct PushModuleD92 : ChimeraTK::ApplicationModule {
   using ChimeraTK::ApplicationModule::ApplicationModule;
   ChimeraTK::ScalarPushInput<int> pushInput{this, "/REG2", "", ""};
   std::promise<void> p;
@@ -254,8 +254,8 @@ struct PushD9DummyApplication : ChimeraTK::Application {
   PushD9DummyApplication() : Application("DummyApplication") {}
   ~PushD9DummyApplication() override { shutdown(); }
 
-  PushModuleD9_1 pushModuleD9_1{this, "PushModule1", ""};
-  PushModuleD9_2 pushModuleD9_2{this, "PushModule2", ""};
+  PushModuleD91 pushModuleD91{this, "PushModule1", ""};
+  PushModuleD92 pushModuleD92{this, "PushModule2", ""};
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 };
@@ -270,8 +270,8 @@ struct D9InitialValueEceptionDummy {
   PushD9DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPushInput<int>& pushVariable1{application.pushModuleD9_1.pushInput};
-  ChimeraTK::ScalarPushInput<int>& pushVariable2{application.pushModuleD9_2.pushInput};
+  ChimeraTK::ScalarPushInput<int>& pushVariable1{application.pushModuleD91.pushInput};
+  ChimeraTK::ScalarPushInput<int>& pushVariable2{application.pushModuleD92.pushInput};
 };
 
 /**
@@ -285,8 +285,8 @@ BOOST_AUTO_TEST_CASE(testPushInitValueAtDeviceD9) {
     D9InitialValueEceptionDummy dummyToStopTimeUntilOpen;
     start = std::chrono::steady_clock::now();
     dummyToStopTimeUntilOpen.application.run();
-    dummyToStopTimeUntilOpen.application.pushModuleD9_1.p.get_future().wait();
-    dummyToStopTimeUntilOpen.application.pushModuleD9_2.p.get_future().wait();
+    dummyToStopTimeUntilOpen.application.pushModuleD91.p.get_future().wait();
+    dummyToStopTimeUntilOpen.application.pushModuleD92.p.get_future().wait();
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     end = std::chrono::steady_clock::now();
   }
@@ -295,13 +295,13 @@ BOOST_AUTO_TEST_CASE(testPushInitValueAtDeviceD9) {
     d.deviceBackend->throwExceptionOpen = true;
     BOOST_CHECK_THROW(d.deviceBackend->open(), std::exception);
     d.application.run();
-    BOOST_CHECK(d.application.pushModuleD9_1.enteredTheMainLoop == false);
+    BOOST_CHECK(d.application.pushModuleD91.enteredTheMainLoop == false);
     std::this_thread::sleep_for(2 * (end - start));
-    BOOST_CHECK(d.application.pushModuleD9_1.enteredTheMainLoop == false);
+    BOOST_CHECK(d.application.pushModuleD91.enteredTheMainLoop == false);
     BOOST_CHECK(d.pushVariable1.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
     d.deviceBackend->throwExceptionOpen = false;
-    d.application.pushModuleD9_1.p.get_future().wait();
-    BOOST_CHECK(d.application.pushModuleD9_1.enteredTheMainLoop == true);
+    d.application.pushModuleD91.p.get_future().wait();
+    BOOST_CHECK(d.application.pushModuleD91.enteredTheMainLoop == true);
     BOOST_CHECK(d.pushVariable1.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
   }
 }
@@ -324,8 +324,8 @@ struct TriggerFanOutD9DummyApplication : ChimeraTK::Application {
   TriggerFanOutD9DummyApplication() : Application("DummyApplication") {}
   ~TriggerFanOutD9DummyApplication() override { shutdown(); }
 
-  PushModuleD9_1 pushModuleD9_1{this, "PushModule1", ""};
-  PushModuleD9_2 pushModuleD9_2{this, "PushModule2", ""};
+  PushModuleD91 pushModuleD91{this, "PushModule1", ""};
+  PushModuleD92 pushModuleD92{this, "PushModule2", ""};
   TriggerModule triggerModule{this, "TriggerModule", ""};
 
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1, "/TRIG1/PUSH_OUT"};
@@ -341,8 +341,8 @@ struct TriggerFanOutInitialValueEceptionDummy {
   TriggerFanOutD9DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
-  ChimeraTK::ScalarPushInput<int>& pushVariable1{application.pushModuleD9_1.pushInput};
-  ChimeraTK::ScalarPushInput<int>& pushVariable2{application.pushModuleD9_2.pushInput};
+  ChimeraTK::ScalarPushInput<int>& pushVariable1{application.pushModuleD91.pushInput};
+  ChimeraTK::ScalarPushInput<int>& pushVariable2{application.pushModuleD92.pushInput};
 };
 
 /**
@@ -357,8 +357,8 @@ BOOST_AUTO_TEST_CASE(testTriggerFanOutInitValueAtDeviceD9) {
     start = std::chrono::steady_clock::now();
     dummyToStopTimeUntilOpen.application.run();
     dummyToStopTimeUntilOpen.application.triggerModule.trigger.write();
-    dummyToStopTimeUntilOpen.application.pushModuleD9_1.p.get_future().wait();
-    dummyToStopTimeUntilOpen.application.pushModuleD9_2.p.get_future().wait();
+    dummyToStopTimeUntilOpen.application.pushModuleD91.p.get_future().wait();
+    dummyToStopTimeUntilOpen.application.pushModuleD92.p.get_future().wait();
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     end = std::chrono::steady_clock::now();
   }
@@ -367,14 +367,14 @@ BOOST_AUTO_TEST_CASE(testTriggerFanOutInitValueAtDeviceD9) {
     d.deviceBackend->throwExceptionOpen = true;
     BOOST_CHECK_THROW(d.deviceBackend->open(), std::exception);
     d.application.run();
-    BOOST_CHECK(d.application.pushModuleD9_1.enteredTheMainLoop == false);
+    BOOST_CHECK(d.application.pushModuleD91.enteredTheMainLoop == false);
     std::this_thread::sleep_for(2 * (end - start));
-    BOOST_CHECK(d.application.pushModuleD9_1.enteredTheMainLoop == false);
+    BOOST_CHECK(d.application.pushModuleD91.enteredTheMainLoop == false);
     BOOST_CHECK(d.pushVariable1.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
     d.deviceBackend->throwExceptionOpen = false;
     d.application.triggerModule.trigger.write();
-    d.application.pushModuleD9_1.p.get_future().wait();
-    BOOST_CHECK(d.application.pushModuleD9_1.enteredTheMainLoop == true);
+    d.application.pushModuleD91.p.get_future().wait();
+    BOOST_CHECK(d.application.pushModuleD91.enteredTheMainLoop == true);
     BOOST_CHECK(d.pushVariable1.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
   }
 }
@@ -606,11 +606,11 @@ BOOST_AUTO_TEST_CASE(testD7_2_InitialValue) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Test6_a1_DummyApplication : ChimeraTK::Application {
+struct Test6A1DummyApplication : ChimeraTK::Application {
   // This application connects the CS to the device and and the input of the readerModule
   constexpr static const char* CDD = "(dummy:1?map=test.map)";
-  Test6_a1_DummyApplication() : Application("DummyApplication") {}
-  ~Test6_a1_DummyApplication() override { shutdown(); }
+  Test6A1DummyApplication() : Application("DummyApplication") {}
+  ~Test6A1DummyApplication() override { shutdown(); }
 
   struct : NotifyingModule {
     using NotifyingModule::NotifyingModule;
@@ -621,11 +621,11 @@ struct Test6_a1_DummyApplication : ChimeraTK::Application {
   ChimeraTK::DeviceModule device{this, CDD};
 };
 
-struct Test6_a1_InitialValueEceptionDummy {
-  Test6_a1_InitialValueEceptionDummy() = default;
-  ~Test6_a1_InitialValueEceptionDummy() = default;
+struct Test6A1InitialValueEceptionDummy {
+  Test6A1InitialValueEceptionDummy() = default;
+  ~Test6A1InitialValueEceptionDummy() = default;
 
-  Test6_a1_DummyApplication application;
+  Test6A1DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg1};
 };
@@ -637,12 +637,12 @@ struct Test6_a1_InitialValueEceptionDummy {
 
 BOOST_AUTO_TEST_CASE(testD6_a1_InitialValue) {
   std::cout << "===   testD6_a1_InitialValue   === " << std::endl;
-  Test6_a1_InitialValueEceptionDummy d;
+  Test6A1InitialValueEceptionDummy d;
   d.application.run();
   BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   d.testFacitiy.writeScalar<int>("REG1", 27);
   ChimeraTK::Device dev;
-  dev.open(Test6_a1_DummyApplication::CDD);
+  dev.open(Test6A1DummyApplication::CDD);
   CHECK_TIMEOUT(dev.read<int>("REG1") == 27, 1000000);
   // wait until the main loop has been entered. then we know the version number of the inputs must not be 0.
   // FIXME: I think this does not belong into this test....
@@ -651,11 +651,11 @@ BOOST_AUTO_TEST_CASE(testD6_a1_InitialValue) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-struct Test6_a2_DummyApplication : ChimeraTK::Application {
+struct Test6A2DummyApplication : ChimeraTK::Application {
   constexpr static const char* CDD1 = "(dummy:1?map=one-register.map)";
   constexpr static const char* CDD2 = "(dummy:2?map=test-ro.map)";
-  Test6_a2_DummyApplication() : Application("DummyApplication") {}
-  ~Test6_a2_DummyApplication() override { shutdown(); }
+  Test6A2DummyApplication() : Application("DummyApplication") {}
+  ~Test6A2DummyApplication() override { shutdown(); }
 
   struct : NotifyingModule {
     using NotifyingModule::NotifyingModule;
@@ -667,11 +667,11 @@ struct Test6_a2_DummyApplication : ChimeraTK::Application {
   ChimeraTK::DeviceModule device2{this, CDD2, "/TRIG1/PUSH_OUT"};
 };
 
-struct Test6_a2_InitialValueEceptionDummy {
-  Test6_a2_InitialValueEceptionDummy() = default;
-  ~Test6_a2_InitialValueEceptionDummy() = default;
+struct Test6A2InitialValueEceptionDummy {
+  Test6A2InitialValueEceptionDummy() = default;
+  ~Test6A2InitialValueEceptionDummy() = default;
 
-  Test6_a2_DummyApplication application;
+  Test6A2DummyApplication application;
   ChimeraTK::TestFacility testFacility{application, false};
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg1};
 };
@@ -687,17 +687,17 @@ struct Test6_a2_InitialValueEceptionDummy {
 BOOST_AUTO_TEST_CASE(testD6_a2_InitialValue) {
   std::cout << "===   testD6_a2_InitialValue   === " << std::endl;
 
-  Test6_a2_InitialValueEceptionDummy d;
+  Test6A2InitialValueEceptionDummy d;
 
   ChimeraTK::Device dev2;
-  dev2.open(Test6_a2_DummyApplication::CDD2);
+  dev2.open(Test6A2DummyApplication::CDD2);
   dev2.write<int>("REG1/DUMMY_WRITEABLE", 99); // value now in in dev2
 
   d.application.run();
   // no trigger yet and the value is not on dev1 yet
   BOOST_CHECK(d.pushVariable.getVersionNumber() == ctk::VersionNumber(std::nullptr_t()));
   ChimeraTK::Device dev;
-  dev.open(Test6_a2_DummyApplication::CDD1);
+  dev.open(Test6A2DummyApplication::CDD1);
   BOOST_CHECK(dev.read<int>("REG1") != 99);
 
   // send the trigger and check that the data arrives on the device
@@ -708,11 +708,11 @@ BOOST_AUTO_TEST_CASE(testD6_a2_InitialValue) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Test6_a3_DummyApplication : ChimeraTK::Application {
+struct Test6A3DummyApplication : ChimeraTK::Application {
   constexpr static const char* CDD1 = "(dummy:1?map=one-register.map)";
   constexpr static const char* CDD2 = "(dummy:2?map=test-async.map)";
-  Test6_a3_DummyApplication() : Application("DummyApplication") {}
-  ~Test6_a3_DummyApplication() override { shutdown(); }
+  Test6A3DummyApplication() : Application("DummyApplication") {}
+  ~Test6A3DummyApplication() override { shutdown(); }
 
   struct : NotifyingModule {
     using NotifyingModule::NotifyingModule;
@@ -723,11 +723,11 @@ struct Test6_a3_DummyApplication : ChimeraTK::Application {
   ChimeraTK::DeviceModule device2{this, CDD2};
 };
 
-struct Test6_a3_InitialValueEceptionDummy {
-  Test6_a3_InitialValueEceptionDummy() = default;
-  ~Test6_a3_InitialValueEceptionDummy() = default;
+struct Test6A3InitialValueEceptionDummy {
+  Test6A3InitialValueEceptionDummy() = default;
+  ~Test6A3InitialValueEceptionDummy() = default;
 
-  Test6_a3_DummyApplication application;
+  Test6A3DummyApplication application;
   ChimeraTK::TestFacility testFacility{application, false};
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg1};
 };
@@ -739,16 +739,16 @@ struct Test6_a3_InitialValueEceptionDummy {
 BOOST_AUTO_TEST_CASE(testD6_a3_InitialValue) {
   std::cout << "===   testD6_a3_InitialValue   === " << std::endl;
 
-  Test6_a3_InitialValueEceptionDummy d;
+  Test6A3InitialValueEceptionDummy d;
 
   ChimeraTK::Device dev2;
-  dev2.open(Test6_a3_DummyApplication::CDD2);
+  dev2.open(Test6A3DummyApplication::CDD2);
   dev2.write<int>("REG1/DUMMY_WRITEABLE", 99);
 
   d.application.run();
 
   ChimeraTK::Device dev;
-  dev.open(Test6_a3_DummyApplication::CDD1);
+  dev.open(Test6A3DummyApplication::CDD1);
   CHECK_TIMEOUT(dev.read<int>("REG1") == 99, 1000000);
   d.application.readerModule.p.get_future().wait();
   BOOST_CHECK(d.pushVariable.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
@@ -756,9 +756,9 @@ BOOST_AUTO_TEST_CASE(testD6_a3_InitialValue) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Test6_a4_DummyApplication : ChimeraTK::Application {
-  Test6_a4_DummyApplication() : Application("DummyApplication") {}
-  ~Test6_a4_DummyApplication() override { shutdown(); }
+struct Test6A4DummyApplication : ChimeraTK::Application {
+  Test6A4DummyApplication() : Application("DummyApplication") {}
+  ~Test6A4DummyApplication() override { shutdown(); }
 
   struct : NotifyingModule {
     using NotifyingModule::NotifyingModule;
@@ -768,11 +768,11 @@ struct Test6_a4_DummyApplication : ChimeraTK::Application {
   WriterModule writerModule{this, "WriterModule", ""};
 };
 
-struct Test6_a4_InitialValueEceptionDummy {
-  Test6_a4_InitialValueEceptionDummy() {}
-  ~Test6_a4_InitialValueEceptionDummy() {}
+struct Test6A4InitialValueEceptionDummy {
+  Test6A4InitialValueEceptionDummy() = default;
+  ~Test6A4InitialValueEceptionDummy() = default;
 
-  Test6_a4_DummyApplication application;
+  Test6A4DummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg1};
 };
@@ -784,7 +784,7 @@ struct Test6_a4_InitialValueEceptionDummy {
 BOOST_AUTO_TEST_CASE(testD6_a4_InitialValue) {
   std::cout << "===   testD6_a4_InitialValue   === " << std::endl;
 
-  Test6_a4_InitialValueEceptionDummy d;
+  Test6A4InitialValueEceptionDummy d;
 
   d.application.run();
   d.application.readerModule.p.get_future().wait();
@@ -801,20 +801,20 @@ struct PollModule : NotifyingModule {
   ChimeraTK::ScalarPollInput<int> pollInput{this, "/REG1", "", ""};
 };
 
-struct Test6_b_DummyApplication : ChimeraTK::Application {
+struct Test6BDummyApplication : ChimeraTK::Application {
   constexpr static const char* CDD = "(dummy?map=test-ro.map)";
-  Test6_b_DummyApplication() : Application("DummyApplication") {}
-  ~Test6_b_DummyApplication() override { shutdown(); }
+  Test6BDummyApplication() : Application("DummyApplication") {}
+  ~Test6BDummyApplication() override { shutdown(); }
 
   PollModule pollModule{this, "PollModule", ""};
   ChimeraTK::DeviceModule device{this, CDD};
 };
 
-struct Test6_b_InitialValueEceptionDummy {
-  Test6_b_InitialValueEceptionDummy() = default;
-  ~Test6_b_InitialValueEceptionDummy() = default;
+struct Test6BInitialValueEceptionDummy {
+  Test6BInitialValueEceptionDummy() = default;
+  ~Test6BInitialValueEceptionDummy() = default;
 
-  Test6_b_DummyApplication application;
+  Test6BDummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarPollInput<int>& pollVariable{application.pollModule.pollInput};
 };
@@ -827,12 +827,12 @@ struct Test6_b_InitialValueEceptionDummy {
 BOOST_AUTO_TEST_CASE(testD6_b_InitialValue) {
   std::cout << "===   testD6_b_InitialValue   === " << std::endl;
 
-  Test6_b_InitialValueEceptionDummy d;
+  Test6BInitialValueEceptionDummy d;
 
   d.application.run();
 
   ChimeraTK::Device dev;
-  dev.open(Test6_b_DummyApplication::CDD);
+  dev.open(Test6BDummyApplication::CDD);
   dev.write<int>("REG1/DUMMY_WRITEABLE", 99);
   d.application.pollModule.p.get_future().wait();
   BOOST_CHECK(d.application.pollModule.enteredTheMainLoop == true);
@@ -842,10 +842,10 @@ BOOST_AUTO_TEST_CASE(testD6_b_InitialValue) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct Test6_c_DummyApplication : ChimeraTK::Application {
+struct Test6CDummyApplication : ChimeraTK::Application {
   constexpr static const char* ExceptionDummyCDD1 = "(dummy:1?map=test-async.map)";
-  Test6_c_DummyApplication() : Application("DummyApplication") {}
-  ~Test6_c_DummyApplication() override { shutdown(); }
+  Test6CDummyApplication() : Application("DummyApplication") {}
+  ~Test6CDummyApplication() override { shutdown(); }
 
   struct : NotifyingModule {
     using NotifyingModule::NotifyingModule;
@@ -855,11 +855,11 @@ struct Test6_c_DummyApplication : ChimeraTK::Application {
   ChimeraTK::DeviceModule device{this, ExceptionDummyCDD1};
 };
 
-struct Test6_c_InitialValueEceptionDummy {
-  Test6_c_InitialValueEceptionDummy() = default;
-  ~Test6_c_InitialValueEceptionDummy() = default;
+struct Test6CInitialValueEceptionDummy {
+  Test6CInitialValueEceptionDummy() = default;
+  ~Test6CInitialValueEceptionDummy() = default;
 
-  Test6_c_DummyApplication application;
+  Test6CDummyApplication application;
   ChimeraTK::TestFacility testFacitiy{application, false};
   ChimeraTK::ScalarRegisterAccessor<int> exceptionDummyRegister;
   ChimeraTK::ScalarPushInput<int>& pushVariable{application.readerModule.reg1};
@@ -871,12 +871,12 @@ struct Test6_c_InitialValueEceptionDummy {
 BOOST_AUTO_TEST_CASE(testD6_c_InitialValue) {
   std::cout << "===   testD6_c_InitialValue   === " << std::endl;
 
-  Test6_c_InitialValueEceptionDummy d;
+  Test6CInitialValueEceptionDummy d;
 
   d.application.run();
 
   ChimeraTK::Device dev;
-  dev.open(Test6_c_DummyApplication::ExceptionDummyCDD1);
+  dev.open(Test6CDummyApplication::ExceptionDummyCDD1);
   dev.write<int>("REG1/DUMMY_WRITEABLE", 99);
   dev.getVoidRegisterAccessor("/DUMMY_INTERRUPT_3").write();
   d.application.readerModule.p.get_future().wait();

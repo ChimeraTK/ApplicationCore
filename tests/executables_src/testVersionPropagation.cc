@@ -15,7 +15,7 @@
 #include <future>
 
 namespace ctk = ChimeraTK;
-using Fixture = fixture_with_poll_and_push_input<false>;
+using Fixture = FixtureWithPollAndPushInput<false>;
 
 BOOST_FIXTURE_TEST_SUITE(versionPropagation, Fixture)
 
@@ -146,7 +146,7 @@ struct TheOutputModule : ChimeraTK::ApplicationModule {
 
   ChimeraTK::ScalarOutput<int> output{this, "/theVariable", "", ""};
 
-  void prepare() { output.write(); }
+  void prepare() override { output.write(); }
 
   std::promise<void> p;
   void mainLoop() override { p.set_value(); }

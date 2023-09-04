@@ -55,7 +55,9 @@ struct TestApplication : public ctk::Application {
     } extraHierarchy{this, "ExtraHierarchy", "Extra depth"};
 
     void mainLoop() override {
-      if(getAccessorListRecursive().empty()) return;
+      if(getAccessorListRecursive().empty()) {
+        return;
+      }
       assert(getAccessorListRecursive().size() == 1);
       while(true) {
         readAll();
@@ -234,9 +236,9 @@ BOOST_AUTO_TEST_CASE(MoveToRootFromHidden) {
 
 /*********************************************************************************************************************/
 
-struct TestApplication_empty : public ctk::Application {
-  TestApplication_empty() : Application("testSuite") {}
-  ~TestApplication_empty() override { shutdown(); }
+struct TestApplicationEmpty : public ctk::Application {
+  TestApplicationEmpty() : Application("testSuite") {}
+  ~TestApplicationEmpty() override { shutdown(); }
 
   struct TestModule : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -248,7 +250,7 @@ struct TestApplication_empty : public ctk::Application {
 
 BOOST_AUTO_TEST_CASE(bad_path_exception) {
   std::cout << "*** bad_path_exception" << std::endl;
-  TestApplication_empty app;
+  TestApplicationEmpty app;
   BOOST_CHECK_THROW(TestGroup tg(&app.testModule, "/../cannot/work", "This is not allowed"), ctk::logic_error);
   BOOST_CHECK_THROW(TestGroup tg(&app.testModule, "/..", "This is not allowed either"), ctk::logic_error);
   BOOST_CHECK_THROW(

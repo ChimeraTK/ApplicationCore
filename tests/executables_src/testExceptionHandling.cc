@@ -26,9 +26,9 @@
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
-using Fixture = fixture_with_poll_and_push_input<false>;
-using Fixture_initHandlers = fixture_with_poll_and_push_input<false, true>;
-using Fixture_secondDeviceBroken = fixture_with_poll_and_push_input<false, false, true>;
+using Fixture = FixtureWithPollAndPushInput<false>;
+using Fixture_initHandlers = FixtureWithPollAndPushInput<false, true>;
+using Fixture_secondDeviceBroken = FixtureWithPollAndPushInput<false, false, true>;
 
 /*
  * This test suite checks behavior on a device related runtime error.
