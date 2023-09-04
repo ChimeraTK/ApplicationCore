@@ -69,6 +69,7 @@ namespace ChimeraTK {
 
     /// Application model proxy representing this module
     Model::ModuleGroupProxy _model;
+    friend class ChimeraTK::Model::Impl;
   };
 
 } /* namespace ChimeraTK */

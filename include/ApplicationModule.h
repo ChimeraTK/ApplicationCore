@@ -135,6 +135,7 @@ namespace ChimeraTK {
     detail::CircularDependencyDetectionRecursionStopper _recursionStopper;
 
     ChimeraTK::Model::ApplicationModuleProxy _model;
+    friend class ChimeraTK::Model::Impl;
   };
 
   /*********************************************************************************************************************/

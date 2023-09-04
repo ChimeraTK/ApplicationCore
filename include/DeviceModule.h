@@ -78,6 +78,7 @@ namespace ChimeraTK {
     boost::weak_ptr<DeviceManager> _dm;
 
     Model::DeviceModuleProxy _model;
+    friend class ChimeraTK::Model::Impl;
 
     std::string _triggerPath;
 

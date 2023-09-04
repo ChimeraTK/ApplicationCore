@@ -29,8 +29,12 @@ using test_types = boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t,
 template<typename T>
 struct TestModule : public ctk::ApplicationModule {
   TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
-      const std::unordered_set<std::string>& tags = {})
-  : ApplicationModule(owner, name, description, tags), mainLoopStarted(2) {}
+      const std::unordered_set<std::string>& tags = {}, bool unregister = false)
+  : ApplicationModule(owner, name, description, tags), mainLoopStarted(2) {
+    if(unregister) {
+      owner->unregisterModule(this);
+    }
+  }
 
   ctk::ScalarOutput<T> feedingPush;
   ctk::ScalarPushInput<T> consumingPush;
@@ -66,8 +70,6 @@ template<typename T>
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() override { shutdown(); }
-
-  void defineConnections() {} // the setup is done in the tests
 
   TestModule<T> testModule{this, "testModule", "The test module"};
 };
@@ -331,6 +333,86 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
   app.testModule.consumingPoll = 0;
   app.testModule.consumingPoll.read();
   BOOST_TEST(app.testModule.consumingPoll == 77);
+}
+
+/*********************************************************************************************************************/
+/*********************************************************************************************************************/
+
+struct SelfUnregisteringModule : public ctk::ApplicationModule {
+  SelfUnregisteringModule(
+      ctk::ModuleGroup* owner, const std::string& name, const std::string& description, bool unregister = false)
+  : ApplicationModule(owner, name, description) {
+    if(unregister) {
+      disable();
+    }
+  }
+
+  ctk::ScalarOutput<int> out{this, "out", "", "Some output"};
+  ctk::ScalarPushInput<int> in{this, "in", "", "Some input"};
+
+  void mainLoop() override {
+    while(true) {
+      out = 1 + in;
+      writeAll();
+      readAll();
+    }
+  }
+};
+
+/*********************************************************************************************************************/
+
+struct TestAppSelfUnregisteringModule : public ctk::Application {
+  TestAppSelfUnregisteringModule() : Application("SelfUnregisteringModuleApp") {}
+  ~TestAppSelfUnregisteringModule() override { shutdown(); }
+
+  SelfUnregisteringModule a{this, "a", "First test module which stays"};
+  SelfUnregisteringModule b{this, "b", "The test module which unregisters itself", true};
+  SelfUnregisteringModule c{this, "c", "Another test module which stays"};
+};
+
+/*********************************************************************************************************************/
+/* test case for EntityOwner::constant() */
+
+BOOST_AUTO_TEST_CASE(testSelfUnregisteringModule) {
+  std::cout << "*** testSelfUnregisteringModule" << std::endl;
+
+  TestAppSelfUnregisteringModule app;
+  app.debugMakeConnections();
+
+  ctk::TestFacility tf{app};
+
+  auto& pvm = *tf.getPvManager();
+  BOOST_TEST(pvm.hasProcessVariable("a/out"));
+  BOOST_TEST(pvm.hasProcessVariable("a/in"));
+  BOOST_TEST(!pvm.hasProcessVariable("b/out"));
+  BOOST_TEST(!pvm.hasProcessVariable("b/in"));
+  BOOST_TEST(pvm.hasProcessVariable("c/out"));
+  BOOST_TEST(pvm.hasProcessVariable("c/in"));
+
+  auto aout = tf.getScalar<int>("a/out");
+  auto ain = tf.getScalar<int>("a/in");
+  auto cout = tf.getScalar<int>("c/out");
+  auto cin = tf.getScalar<int>("c/in");
+
+  tf.setScalarDefault("a/in", 1000);
+  tf.setScalarDefault("c/in", 2000);
+
+  tf.runApplication();
+
+  BOOST_TEST(aout == 1001);
+  BOOST_TEST(cout == 2001);
+
+  ain.setAndWrite(42);
+  tf.stepApplication();
+  BOOST_TEST(aout.readNonBlocking());
+  BOOST_TEST(!cout.readNonBlocking());
+  BOOST_TEST(aout == 43);
+
+  cin.setAndWrite(120);
+  tf.stepApplication();
+  BOOST_TEST(!aout.readNonBlocking());
+  BOOST_TEST(cout.readNonBlocking());
+  BOOST_TEST(cout == 121);
 }
 
 /*********************************************************************************************************************/

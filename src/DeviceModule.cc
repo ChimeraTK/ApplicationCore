@@ -92,10 +92,12 @@ namespace ChimeraTK {
               continue;
             }
 
+            // find the right PV in the model
             neighbourDirectory.visitByPath(registerName, [&](auto proxy) {
               if constexpr(isVariable(proxy)) {
                 assert(proxy.isValid());
 
+                // find the right node (belonging to our device) to remove
                 for(auto& proxyNode : proxy.getNodes()) {
                   if(proxyNode.getType() == NodeType::Device && proxyNode.getDeviceAlias() == getDeviceAliasOrURI()) {
                     proxy.removeNode(proxyNode);

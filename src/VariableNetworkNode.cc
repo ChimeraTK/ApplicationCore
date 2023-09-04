@@ -311,6 +311,12 @@ namespace ChimeraTK {
     // We are starting a new scan. Reset the indicator for already found circular dependencies.
     detail::CircularDependencyDetectionRecursionStopper::startNewScan();
 
+    if(getType() != NodeType::Application && getType() != NodeType::TriggerReceiver &&
+        getType() != NodeType::TriggerProvider) {
+      assert(getType() == NodeType::ControlSystem || getType() == NodeType::Device || getType() == NodeType::Constant);
+      return {};
+    }
+
     if(!getModel().isValid()) {
       return {};
     }

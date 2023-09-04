@@ -111,14 +111,14 @@ namespace ChimeraTK {
   void InversionOfControlAccessor<Derived>::replace(Derived&& other) {
     assert(static_cast<Derived*>(this)->_impl == nullptr && other._impl == nullptr);
 
+    // remove accessor from owning module
+    if(getOwner() != nullptr) {
+      getOwner()->unregisterAccessor(_node);
+    }
+
     // remove node from model
     if(getModel().isValid()) {
       getModel().removeNode(_node);
-    }
-
-    // remove accessor from owning module
-    if(_node.getType() == NodeType::Application) {
-      getOwner()->unregisterAccessor(_node);
     }
 
     // transfer the node
@@ -176,8 +176,6 @@ namespace ChimeraTK {
 
       auto dir = neighbourDir.addDirectoryRecursive(Utilities::getPathName(name));
       auto var = dir.addVariable(Utilities::getUnqualifiedName(name));
-
-      _node.setModel(var);
 
       model.addVariable(var, _node);
     };

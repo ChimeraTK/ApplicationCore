@@ -77,7 +77,7 @@ namespace ChimeraTK {
      */
     void generateXML();
 
-     /**
+    /**
      * Instead of running the application, just initialise it and output the published variables to a DOT file.
      */
     void generateDOT();

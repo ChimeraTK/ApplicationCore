@@ -123,9 +123,16 @@ namespace ChimeraTK {
      *  ChimeraTK::logic_error is thrown.
      *  Note: This function is expensive. It should be called only during the constructor of the ApplicationModule and
      *  the obtained configuration values should be stored for later use in member variables.
-     *  Beware that the ConfigReader instance can obly be found if it has been constructed before calling this function.
+     *  Beware that the ConfigReader instance can only be found if it has been constructed before calling this function.
      *  Hence, the Application should have the ConfigReader as its first member. */
     static ConfigReader& appConfig();
+
+    /**
+     * Disable the module such that it is not part of the Application. This function can be called in the constructor,
+     * e.g. if the module should be disabled based on the configuration (c.f. ConfigReader). The module will then behave
+     * like if it were default-constructed.
+     */
+    void disable();
 
    protected:
     /** Owner of this instance */

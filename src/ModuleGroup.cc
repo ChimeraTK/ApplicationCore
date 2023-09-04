@@ -3,6 +3,7 @@
 #include "ModuleGroup.h"
 
 #include "ApplicationModule.h"
+#include "DeviceModule.h"
 
 namespace ChimeraTK {
 
@@ -73,16 +74,22 @@ namespace ChimeraTK {
       auto* mg = dynamic_cast<ModuleGroup*>(module);
       if(mg) {
         _model.remove(*mg);
+        return;
       }
-      else {
-        auto* am = dynamic_cast<ApplicationModule*>(module);
-        if(!am) {
-          // ModuleGroups own either other ModuleGroups or ApplicationModules, but during destruction unregisterModule
-          // is called from the base class destructor where the dynamic_cast already fails.
-          return;
-        }
+      auto* am = dynamic_cast<ApplicationModule*>(module);
+      if(am) {
         _model.remove(*am);
+        return;
       }
+      auto* dm = dynamic_cast<DeviceModule*>(module);
+      if(dm) {
+        _model.remove(*dm);
+        return;
+      }
+
+      // ModuleGroups own either other ModuleGroups or ApplicationModules, but during destruction unregisterModule
+      // is called from the base class destructor where the dynamic_cast already fails.
+      return;
     }
   }
 

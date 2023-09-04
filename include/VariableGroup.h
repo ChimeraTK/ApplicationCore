@@ -74,6 +74,7 @@ namespace ChimeraTK {
 
    protected:
     ChimeraTK::Model::VariableGroupProxy _model;
+    friend class ChimeraTK::Model::Impl;
 
    private:
     friend class ApplicationModule;
