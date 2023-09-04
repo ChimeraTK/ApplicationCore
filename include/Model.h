@@ -12,6 +12,7 @@
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/transpose_graph.hpp>
 
+#include <map>
 #include <memory>
 #include <utility>
 
@@ -22,6 +23,7 @@ namespace ChimeraTK {
   class VariableGroup;
   class VariableNetworkNode;
   class DeviceModule;
+  class Module;
 
   template<typename T>
   class InversionOfControlAccessor;
@@ -43,11 +45,19 @@ namespace ChimeraTK::Model {
   class DirectoryProxy;
   class Impl;
 
-  // Note: This is effectively a forward-declaration. The type must match the type Graph::vertex_descriptor which is
-  // only known below. It will be re-aliased below so we get an error if the type mismatches.
+  namespace detail {
+    // Define how the boost::adjacency_list is supposed to store edges and vertices internally
+    using OutEdgeListType = boost::multisetS;
+    using VertexListType = boost::listS;
+  } // namespace detail
+
+  // Note: This is effectively a forward-declaration. The type must match the type Graph::vertex_descriptor for the
+  // used Graph type which is only known below. It will be re-aliased below so we get an error if the type mismatches.
   // This trick is necessary to break the otherwise circular dependency of the VertexProperties class using the Vertex
   // definition, while the VertexProperties class is necessary to define the Graph bringing the vertex_descriptor.
-  using Vertex = size_t;
+  // Since the Vertex type will not depend on the VertexProperties, this is not expected to go wrong.
+  using Vertex =
+      boost::adjacency_list<detail::OutEdgeListType, detail::VertexListType, boost::bidirectionalS>::vertex_descriptor;
 
   /********************************************************************************************************************/
 
@@ -157,7 +167,9 @@ namespace ChimeraTK::Model {
      * Check if the model is valid. Default-constructed modules and their sub-modules will not have a valid model. If
      * the model is not valid, no functions other than isValid() may be called.
      */
-    [[nodiscard]] bool isValid() const { return _d != nullptr; }
+    [[nodiscard]] bool isValid() const;
+
+    [[nodiscard]] bool operator==(const Proxy& other) const;
 
    protected:
     friend class Impl;
@@ -170,10 +182,11 @@ namespace ChimeraTK::Model {
     friend class DirectoryProxy;
     friend struct VertexProperties;
 
-    Proxy(Model::Vertex vertex, const std::shared_ptr<Impl>& impl);
-
     /// Struct holding the data for the proxy classes
     struct ProxyData;
+
+    // Proxy(Model::Vertex vertex, const std::shared_ptr<Impl>& impl);
+    explicit Proxy(std::shared_ptr<ProxyData> data);
 
     std::shared_ptr<ProxyData> _d;
   };
@@ -229,6 +242,12 @@ namespace ChimeraTK::Model {
      */
     explicit operator Model::DirectoryProxy();
 
+    /**
+     * Create RootProxy assuming the application has been created already (i.e. the root vertex already exists and the
+     * RootProxy has been created before).
+     */
+    static RootProxy makeRootProxy(const std::shared_ptr<Impl>& impl);
+
    private:
     using Proxy::Proxy;
     friend class Proxy;
@@ -278,7 +297,7 @@ namespace ChimeraTK::Model {
     [[nodiscard]] ApplicationModule& getApplicationModule() const;
 
     VariableGroupProxy add(VariableGroup& module);
-    void addVariable(const ProcessVariableProxy& variable, const VariableNetworkNode& node);
+    void addVariable(ProcessVariableProxy& variable, VariableNetworkNode& node);
     void remove(VariableGroup& module);
 
     /**
@@ -309,7 +328,7 @@ namespace ChimeraTK::Model {
     [[nodiscard]] ApplicationModuleProxy getOwningModule() const;
 
     VariableGroupProxy add(VariableGroup& module);
-    void addVariable(const ProcessVariableProxy& variable, const VariableNetworkNode& node);
+    void addVariable(ProcessVariableProxy& variable, VariableNetworkNode& node);
     void remove(VariableGroup& module);
 
    private:
@@ -332,7 +351,7 @@ namespace ChimeraTK::Model {
     /// i.e. Proxy::isValid() will return false.
     [[nodiscard]] ProcessVariableProxy getTrigger() const;
 
-    void addVariable(const ProcessVariableProxy& variable, const VariableNetworkNode& node);
+    void addVariable(ProcessVariableProxy& variable, VariableNetworkNode& node);
 
    private:
     using Proxy::Proxy;
@@ -379,12 +398,13 @@ namespace ChimeraTK::Model {
     /// Add tag to this PV. Used by VariableNetworkNode to update the model when tags are added to PVs.
     void addTag(const std::string& tag);
 
-    /// Remove VariableNetworkNode from the list of nodes
+    /// Remove VariableNetworkNode from the list of nodes. Note: Will invalidate return value of getNodes()!
     void removeNode(const VariableNetworkNode& node);
 
     friend class ChimeraTK::VariableNetworkNode;
     friend class ChimeraTK::DeviceModule;
     friend class ChimeraTK::Model::Impl;
+    friend class ChimeraTK::Module;
 
     template<typename T>
     friend class ChimeraTK::InversionOfControlAccessor;
@@ -469,6 +489,11 @@ namespace ChimeraTK::Model {
       std::string name;
     };
 
+    // The actual properties struct is stored in a std::variant as it depends on the vertex type
+    std::variant<InvalidProperties, RootProperties, ModuleGroupProperties, ApplicationModuleProperties,
+        VariableGroupProperties, DeviceModuleProperties, ProcessVariableProperties, DirectoryProperties>
+        p;
+
     // Call the visitor and pass the Properties struct matching the current vertex type. The return value of the
     // visitor will be passed through.
     template<typename VISITOR>
@@ -480,10 +505,6 @@ namespace ChimeraTK::Model {
     typename std::invoke_result<VISITOR, ApplicationModuleProxy>::type visitProxy(
         VISITOR visitor, Vertex vertex, const std::shared_ptr<Impl>& impl) const;
 
-    std::variant<InvalidProperties, RootProperties, ModuleGroupProperties, ApplicationModuleProperties,
-        VariableGroupProperties, DeviceModuleProperties, ProcessVariableProperties, DirectoryProperties>
-        p;
-
     VertexProperties() = default;
     VertexProperties(const VertexProperties& other) = default;
     VertexProperties& operator=(const VertexProperties& other) {
@@ -492,6 +513,21 @@ namespace ChimeraTK::Model {
       new(this) VertexProperties(other);
       return *this;
     }
+
+    // Make proxy object for the given vertex or return existing proxy from weak pointer.
+    // Note: No checks are made that the given vertex is the right one. Also it is not checked whether the proxy type
+    // is correct, which is used in cases where the vertex can have multiple roles (e.g. root vertex can be RootProxy,
+    // ModuleGroupProxy and DirectoryProxy).
+    template<typename PROXY>
+    PROXY makeProxy(Vertex vertex, const std::shared_ptr<Impl>& impl) const;
+
+   private:
+    // (Weak) pointer to Proxy, stored here (with the vertex) to make sure we use the same Proxy instance whenever
+    // we refer to this vertex. Since the VertexProperties are stored inside the Graph and the Proxy contains a
+    // shared pointer to the Graph, the pointer has to be weak to avoid a shared pointer loop.
+    // This pointer is basically used as a cache for visitProxy() resp. makeProxy(), which needs to be a const
+    // function. Hence this member variable must be made mutable.
+    mutable std::weak_ptr<Proxy::ProxyData> _proxy;
   };
 
   /******************************************************************************************************************/
@@ -596,8 +632,8 @@ namespace ChimeraTK::Model {
   /**
    * Graph type for the model
    */
-  using Graph =
-      boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, VertexProperties, EdgeProperties>;
+  using Graph = boost::adjacency_list<detail::OutEdgeListType, detail::VertexListType, boost::bidirectionalS,
+      VertexProperties, EdgeProperties>;
 
   using Vertex = Graph::vertex_descriptor;
 
@@ -1266,15 +1302,15 @@ namespace ChimeraTK::Model {
     PROXY genericAdd(Model::Vertex owner, MODULE& module);
 
     // convenience functions just redirecting to generic_remove.
-    void remove(Model::Vertex owner, ModuleGroup& module);
-    void remove(Model::Vertex owner, ApplicationModule& module);
-    void remove(Model::Vertex owner, VariableGroup& module);
-    void remove(Model::Vertex owner, DeviceModule& module);
+    void remove(ModuleGroup& module);
+    void remove(ApplicationModule& module);
+    void remove(VariableGroup& module);
+    void remove(DeviceModule& module);
 
     // Common implementation to remove any object (ModuleGroup, ApplicationModule, VariableGroup or DeviceModule).
-    // For ProcessVariables, remove the node from the ProcessVariable instead.
+    // Do not use for ProcessVariables, remove the node from the ProcessVariable instead.
     template<typename MODULE>
-    void genericRemove(Model::Vertex owner, MODULE& module);
+    void genericRemove(MODULE& module);
 
     // Add variable to parent directory if not yet existing. The corresponding proxy is returned even if the variable
     // existed before.
@@ -1292,7 +1328,7 @@ namespace ChimeraTK::Model {
     // module can be either a ApplicationModuleProxy or a VariableGroupProxy. In case of a VariableGroupProxy, the
     // pvAccess-typed edge will connect to the ApplicationModule owning the VariableGroup.
     template<typename PROXY>
-    void addVariableNode(PROXY module, const ProcessVariableProxy& variable, const VariableNetworkNode& node);
+    void addVariableNode(PROXY module, ProcessVariableProxy& variable, VariableNetworkNode& node);
 
     template<typename... Args>
     constexpr auto getFilteredGraph(Args... config) const;
@@ -1320,6 +1356,8 @@ namespace ChimeraTK::Model {
   struct Proxy::ProxyData {
     Model::Vertex vertex{};
     std::shared_ptr<Impl> impl;
+    ProxyData() = default;
+    ProxyData(Model::Vertex v, std::shared_ptr<Impl> i) : vertex(v), impl(std::move(i)) {}
   };
 
   /********************************************************************************************************************/
@@ -1524,10 +1562,22 @@ namespace ChimeraTK::Model {
       };
       auto visitorObject = visitorObjectFactory();
 
-      // Somehow the named-parameter overload of depth_first_search does not work here, so we have to provide
-      // a color map explicitly...
-      std::vector<boost::default_color_type> colors(boost::num_vertices(filteredGraph));
-      boost::iterator_property_map color_map(colors.begin(), boost::get(boost::vertex_index, filteredGraph));
+      // Prepare a color_map for use with depth_first_search resp. breadth_first_search algorithms.
+      //
+      // Default color_map works only for boost::vecS for the vertex container, but we are using boost::listS.
+      // BOOST documentation is minimalistic in this point. The following solution has been found "experimentally".
+      //
+      // The color_map is used by the algorithms (boost::depth_first_search and boost::breadth_first_search) to
+      // keep track of seen vertices. It is used to store a value of the type boost::default_color_type for each
+      // vertex, so the map key needs to be some kind of identifier for the vertex.
+      //
+      // The default color_map uses the vertex index as a key, which is not possible, because there is no vertex
+      // index when using boost::listS. The color_map argument has follow the concept "read/write property map".
+      // associative_property_map implements this concept and can use a std::map as a basis.
+      //
+      // The type of the map key (Vertex) was found out more or less by trial and error.
+      std::map<Vertex, boost::default_color_type> colors;
+      boost::associative_property_map color_map(colors);
 
       // The try-catch block is just a trick to terminate the search operation early (when stopVertex hs finished)
       try {
@@ -1596,8 +1646,7 @@ namespace ChimeraTK::Model {
       path = path.substr(1);
 
       // delegate to root proxy
-      RootProxy root(*(boost::vertices(_graph).first), shared_from_this());
-      return root.visitByPath(path, visitor);
+      return RootProxy::makeRootProxy(shared_from_this()).visitByPath(path, visitor);
     }
 
     // first component is a child
@@ -1722,7 +1771,16 @@ namespace ChimeraTK::Model {
       out << "]";
     };
 
-    boost::write_graphviz(of, filteredGraph, vertexPropWriter, edgePropWriter);
+    // Generate a vertex id map. write_graphviz will use those ids as node ids in the generated graphviz code.
+    std::map<Vertex, size_t> vertex_ids;
+    for(auto u : boost::make_iterator_range(vertices(filteredGraph))) {
+      vertex_ids[u] = vertex_ids.size();
+    }
+
+    // Note that all 3 writers have to be specified to  pass the vertex id map, otherwise very weired error messages
+    // will occur.
+    boost::write_graphviz(of, filteredGraph, vertexPropWriter, edgePropWriter, boost::default_writer(),
+        boost::make_assoc_property_map(vertex_ids));
   }
 
   /********************************************************************************************************************/
@@ -1800,36 +1858,48 @@ namespace ChimeraTK::Model {
 
   /********************************************************************************************************************/
 
+  template<typename PROXY>
+  PROXY VertexProperties::makeProxy(Vertex vertex, const std::shared_ptr<Impl>& impl) const {
+    auto proxyShared = _proxy.lock();
+    if(!proxyShared) {
+      proxyShared = std::make_shared<Proxy::ProxyData>(vertex, impl);
+      _proxy = proxyShared;
+    }
+    return PROXY(proxyShared);
+  }
+
+  /********************************************************************************************************************/
+
   template<typename VISITOR>
   typename std::invoke_result<VISITOR, ApplicationModuleProxy>::type VertexProperties::visitProxy(
       VISITOR visitor, Vertex vertex, const std::shared_ptr<Impl>& impl) const {
     switch(type) {
       case Type::root: {
-        return visitor(RootProxy(vertex, impl));
+        return visitor(makeProxy<RootProxy>(vertex, impl));
         break;
       }
       case Type::moduleGroup: {
-        return visitor(ModuleGroupProxy(vertex, impl));
+        return visitor(makeProxy<ModuleGroupProxy>(vertex, impl));
         break;
       }
       case Type::applicationModule: {
-        return visitor(ApplicationModuleProxy(vertex, impl));
+        return visitor(makeProxy<ApplicationModuleProxy>(vertex, impl));
         break;
       }
       case Type::variableGroup: {
-        return visitor(VariableGroupProxy(vertex, impl));
+        return visitor(makeProxy<VariableGroupProxy>(vertex, impl));
         break;
       }
       case Type::deviceModule: {
-        return visitor(DeviceModuleProxy(vertex, impl));
+        return visitor(makeProxy<DeviceModuleProxy>(vertex, impl));
         break;
       }
       case Type::processVariable: {
-        return visitor(ProcessVariableProxy(vertex, impl));
+        return visitor(makeProxy<ProcessVariableProxy>(vertex, impl));
         break;
       }
       case Type::directory: {
-        return visitor(DirectoryProxy(vertex, impl));
+        return visitor(makeProxy<DirectoryProxy>(vertex, impl));
         break;
       }
       case Type::invalid: {

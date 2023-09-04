@@ -42,7 +42,8 @@ namespace ChimeraTK {
       }
 
       triggers.insert(trigger);
-      proxy.addVariable(trigger, VariableNetworkNode(proxy.getAliasOrCdd(), 0));
+      VariableNetworkNode placeholder(proxy.getAliasOrCdd(), 0);
+      proxy.addVariable(trigger, placeholder);
     };
     _app.getModel().visit(triggerCollector, Model::depthFirstSearch, Model::keepDeviceModules);
 

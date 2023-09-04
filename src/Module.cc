@@ -268,6 +268,26 @@ namespace ChimeraTK {
     }
     return *instance;
   }
+
+  /*********************************************************************************************************************/
+
+  void Module::disable() {
+    for(const auto& acc : getAccessorList()) {
+      auto m = acc.getModel();
+      if(m.isValid()) {
+        m.removeNode(acc);
+      }
+    }
+
+    for(auto* submod : getSubmoduleList()) {
+      submod->disable();
+    }
+
+    if(_owner) {
+      _owner->unregisterModule(this);
+    }
+  }
+
   /*********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

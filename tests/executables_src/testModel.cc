@@ -71,6 +71,7 @@ struct TestApplication : ctk::Application {
 
   TestModuleGroup deeperHierarchies{this, "Deeper/hierarchies", "The test module group", {"A"}};
   MyModule myModule{this, "MyModule", "ApplicationModule directly owned by app"};
+  MyModule myModule2{this, "Deeper/MyModule", "Additional "};
   ctk::DeviceModule dev{this, "Dummy0", "/somepath/dummyTrigger"}; // test2.map
 };
 
@@ -472,7 +473,7 @@ BOOST_AUTO_TEST_CASE(testAdjacentOut) {
       }
       else if constexpr(ChimeraTK::Model::isApplicationModule(proxy)) {
         const auto& name = proxy.getName();
-        BOOST_CHECK(name == "MyModule" || name == "/Devices/Dummy0");
+        BOOST_CHECK(name == "MyModule" || name == "Deeper/MyModule" || name == "/Devices/Dummy0");
       }
       else if constexpr(ChimeraTK::Model::isRoot(proxy)) {
         // Root is its own neighbouring directory
@@ -484,7 +485,7 @@ BOOST_AUTO_TEST_CASE(testAdjacentOut) {
 
     app.getModel().visit(checker, ChimeraTK::Model::adjacentOutSearch);
 
-    BOOST_TEST(foundElements == 9);
+    BOOST_TEST(foundElements == 10);
   }
 
   // Check on MyModule application module
@@ -578,33 +579,39 @@ BOOST_AUTO_TEST_CASE(testDepthFirstSearch) {
 
   std::vector<std::string> pvNames;
 
-  auto pvNamesFiller = [&](auto proxy) { pvNames.push_back(proxy.getName()); };
+  auto pvNamesFiller = [&](auto proxy) { pvNames.push_back(proxy.getFullyQualifiedPath()); };
 
-  app.getModel().visit(pvNamesFiller, ChimeraTK::Model::depthFirstSearch, ChimeraTK::Model::keepProcessVariables,
+  app.getModel().visit(pvNamesFiller, ChimeraTK::Model::depthFirstSearch, ChimeraTK::Model::keepDirectories,
       ChimeraTK::Model::keepParenthood);
 
-  BOOST_TEST(pvNames.size() == 8);
+  BOOST_TEST(pvNames.size() == 10);
 
-  // All PVs have been found
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "also") != pvNames.end());
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "tests") != pvNames.end());
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "readBack") != pvNames.end());
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "dummyTrigger") != pvNames.end());
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "actuator") != pvNames.end());
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "status") != pvNames.end());
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "status_message") != pvNames.end());
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "deviceBecameFunctional") != pvNames.end());
-
-  // Check ordering: deeper hierarchies in same branch are found later
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "also") < std::find(pvNames.begin(), pvNames.end(), "tests"));
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "deviceBecameFunctional") <
-      std::find(pvNames.begin(), pvNames.end(), "status"));
+  // All directories have been found
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/Deeper") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/Deeper/hierarchies") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/Deeper/hierarchies/need") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/Deeper/MyModule") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/Deeper/MyModule/pointlessVariableGroup") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/somepath") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/MyModule") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/MyModule/pointlessVariableGroup") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/Devices") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/Devices/Dummy0") != pvNames.end());
 
   // Check ordering: depth first, not breadth first
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "also") <
-      std::find(pvNames.begin(), pvNames.end(), "deviceBecameFunctional"));
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "tests") <
-      std::find(pvNames.begin(), pvNames.end(), "deviceBecameFunctional"));
+  // Note: The ordering on a single hierarchy is not strictly defined, hence we need to make the test insensitive
+  // to allowed reordering. Hence we have two allowed cases:
+  //  1) /Deeper/hierarchies is found before /Deeper/MyModule
+  //  2) /Deeper/MyModule is found before /Deeper/hierarchies
+  // In case 1), /Deeper/hierarchies/need needs to be found before /Deeper/MyModule
+  // In case 2), /Deeper/MyModule/pointlessVariableGroup needs to be found before /Deeper/hierarchies
+  auto deeperHierarchies = std::find(pvNames.begin(), pvNames.end(), "/Deeper/hierarchies");
+  auto deeperHierarchiesNeed = std::find(pvNames.begin(), pvNames.end(), "/Deeper/hierarchies/need");
+  auto deeperMyModule = std::find(pvNames.begin(), pvNames.end(), "/Deeper/MyModule");
+  auto deeperMyModulePVG = std::find(pvNames.begin(), pvNames.end(), "/Deeper/MyModule/pointlessVariableGroup");
+
+  BOOST_CHECK((deeperHierarchies < deeperMyModule && deeperHierarchiesNeed < deeperMyModule) ||
+      (deeperMyModule < deeperHierarchies && deeperMyModulePVG < deeperHierarchies));
 }
 
 /*********************************************************************************************************************/
@@ -614,33 +621,35 @@ BOOST_AUTO_TEST_CASE(testBreadthFirstSearch) {
 
   std::vector<std::string> pvNames;
 
-  auto pvNamesFiller = [&](auto proxy) { pvNames.push_back(proxy.getName()); };
+  auto pvNamesFiller = [&](auto proxy) { pvNames.push_back(proxy.getFullyQualifiedPath()); };
 
-  app.getModel().visit(pvNamesFiller, ChimeraTK::Model::breadthFirstSearch, ChimeraTK::Model::keepProcessVariables,
+  app.getModel().visit(pvNamesFiller, ChimeraTK::Model::breadthFirstSearch, ChimeraTK::Model::keepDirectories,
       ChimeraTK::Model::keepParenthood);
 
-  BOOST_TEST(pvNames.size() == 8);
+  BOOST_TEST(pvNames.size() == 10);
 
-  // All PVs have been found
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "also") != pvNames.end());
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "tests") != pvNames.end());
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "readBack") != pvNames.end());
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "dummyTrigger") != pvNames.end());
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "actuator") != pvNames.end());
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "status") != pvNames.end());
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "status_message") != pvNames.end());
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "deviceBecameFunctional") != pvNames.end());
-
-  // Check ordering: deeper hierarchies in same branch are found later
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "also") < std::find(pvNames.begin(), pvNames.end(), "tests"));
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "deviceBecameFunctional") <
-      std::find(pvNames.begin(), pvNames.end(), "status"));
+  // All directories have been found
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/Deeper") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/Deeper/hierarchies") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/Deeper/hierarchies/need") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/Deeper/MyModule") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/Deeper/MyModule/pointlessVariableGroup") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/somepath") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/MyModule") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/MyModule/pointlessVariableGroup") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/Devices") != pvNames.end());
+  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "/Devices/Dummy0") != pvNames.end());
 
   // Check ordering: breadth first, not depth first
-  BOOST_CHECK(
-      std::find(pvNames.begin(), pvNames.end(), "dummyTrigger") < std::find(pvNames.begin(), pvNames.end(), "also"));
-  BOOST_CHECK(std::find(pvNames.begin(), pvNames.end(), "actuator") <
-      std::find(pvNames.begin(), pvNames.end(), "deviceBecameFunctional"));
+  auto deeperHierarchies = std::find(pvNames.begin(), pvNames.end(), "/Deeper/hierarchies");
+  auto deeperHierarchiesNeed = std::find(pvNames.begin(), pvNames.end(), "/Deeper/hierarchies/need");
+  auto deeperMyModule = std::find(pvNames.begin(), pvNames.end(), "/Deeper/MyModule");
+  auto deeperMyModulePVG = std::find(pvNames.begin(), pvNames.end(), "/Deeper/MyModule/pointlessVariableGroup");
+
+  BOOST_CHECK(deeperHierarchies < deeperHierarchiesNeed);
+  BOOST_CHECK(deeperMyModule < deeperHierarchiesNeed);
+  BOOST_CHECK(deeperHierarchies < deeperMyModulePVG);
+  BOOST_CHECK(deeperMyModule < deeperMyModulePVG);
 }
 
 /*********************************************************************************************************************/
@@ -1203,13 +1212,14 @@ BOOST_AUTO_TEST_CASE(testKeepTag) {
     auto checker = [&](auto proxy) {
       ++foundElements;
       BOOST_CHECK(proxy.getFullyQualifiedPath() == "/MyModule/actuator" ||
+          proxy.getFullyQualifiedPath() == "/Deeper/MyModule/actuator" ||
           proxy.getFullyQualifiedPath() == "/Deeper/hierarchies/need/tests");
     };
 
     app.getModel().visit(checker, ChimeraTK::Model::keepTag("B"), ChimeraTK::Model::depthFirstSearch,
         ChimeraTK::Model::keepProcessVariables);
 
-    BOOST_TEST(foundElements == 2);
+    BOOST_TEST(foundElements == 3);
   }
 }
 
@@ -1253,7 +1263,7 @@ BOOST_AUTO_TEST_CASE(testContinueSearchDisjunctTrees) {
   // disjuct parts
   app.getModel().visit(countHits, ChimeraTK::Model::depthFirstSearch, ChimeraTK::Model::keepPvAccess,
       ChimeraTK::Model::keepProcessVariables, ChimeraTK::Model::continueSearchDisjunctTrees);
-  BOOST_TEST(hits == 8);
+  BOOST_TEST(hits == 10);
 }
 
 /*********************************************************************************************************************/
@@ -1751,11 +1761,11 @@ BOOST_AUTO_TEST_CASE(testReturnVariableGroup) {
 
   {
     ChimeraTK::Model::VariableGroupProxy rv =
-        app.deeperHierarchies.testModule.need.tests.getModel().visit(ChimeraTK::Model::returnVariableGroup,
+        app.myModule2.pointlessVariableGroup.readBack.getModel().visit(ChimeraTK::Model::returnVariableGroup,
             ChimeraTK::Model::getOwner, ChimeraTK::Model::returnFirstHit(ChimeraTK::Model::VariableGroupProxy{}));
 
     BOOST_TEST(rv.isValid());
-    BOOST_TEST(rv.getName() == "need");
+    BOOST_TEST(rv.getName() == "pointlessVariableGroup");
   }
 }
 
@@ -1790,3 +1800,37 @@ BOOST_AUTO_TEST_CASE(testReturnDirectory) {
 }
 
 /*********************************************************************************************************************/
+
+struct RogueModule : ctk::ApplicationModule {
+  ctk::ScalarPushInput<int> var{this, "trigger", "", ""};
+
+  // This module has a push input and creates a temporary input in its constructor with the same name
+  // The second one is never used and thrown away immediately. This is the smallest possible reproduction
+  // for redmine issue 11105
+  RogueModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
+      const std::unordered_set<std::string>& tags = {})
+  : ctk::ApplicationModule(owner, name, description, tags) {
+    auto v = ctk::ScalarPushInput<int>{this, "trigger", "", ""};
+  }
+
+  void mainLoop() override {}
+};
+
+struct TestApplication2 : ctk::Application {
+  TestApplication2() : Application("testSuite") {}
+  ctk::SetDMapFilePath dmap{"test.dmap"};
+
+  ~TestApplication2() override { shutdown(); }
+
+  RogueModule myModule{this, "MyModule", "ApplicationModule directly owned by app"};
+};
+
+/*********************************************************************************************************************/
+BOOST_AUTO_TEST_CASE(testMassCreationOfUnusedAcecssors) {
+  TestApplication2 app;
+  ChimeraTK::Model::ProcessVariableProxy rv = app.myModule.getModel().visit(ChimeraTK::Model::returnProcessVariable,
+      ChimeraTK::Model::ownedVariables, ChimeraTK::Model::returnFirstHit(ChimeraTK::Model::ProcessVariableProxy{}));
+
+  BOOST_TEST(rv.isValid());
+  BOOST_TEST(rv.getName() == "trigger");
+}

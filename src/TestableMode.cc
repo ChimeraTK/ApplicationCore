@@ -78,7 +78,7 @@ namespace ChimeraTK::detail {
     // obtain the lock
     auto lastSeen_lastOwner = _lastMutexOwner;
   repeatTryLock:
-    auto success = getLockObject().try_lock_for(std::chrono::seconds(300));
+    auto success = getLockObject().try_lock_for(std::chrono::seconds(30));
     if(!success) {
       auto currentLastOwner = _lastMutexOwner;
       if(currentLastOwner != lastSeen_lastOwner) {
