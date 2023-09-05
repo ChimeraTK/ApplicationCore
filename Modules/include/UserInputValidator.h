@@ -169,7 +169,7 @@ namespace ChimeraTK {
 
     // Represents a validation condition
     struct Validator {
-      explicit Validator(std::function<bool(void)> isValidFunction, std::string errorMessage);
+      explicit Validator(std::function<bool(void)> isValidTest, std::string errorMessage);
       Validator() = delete;
       Validator(const Validator& other) = default;
 

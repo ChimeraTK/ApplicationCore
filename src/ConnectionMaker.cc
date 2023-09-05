@@ -431,7 +431,7 @@ namespace ChimeraTK {
 
   void ConnectionMaker::makeFanOutConnectionForFeederWithImplementation(
       NetworkInformation& net, const Model::DeviceModuleProxy& device, const Model::ProcessVariableProxy& trigger) {
-    // TODO: needs sanity check?
+    // TODO needs sanity check?
     auto feederTrigger = !net.useExternalTrigger && net.feeder.getMode() == UpdateMode::push;
     assert(feederTrigger || net.useExternalTrigger || net.numberOfPollingConsumers == 1);
 

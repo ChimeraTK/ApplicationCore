@@ -43,7 +43,7 @@ namespace ChimeraTK {
 
     /** Convert into VariableNetworkNode */
     explicit operator VariableNetworkNode() { return _node; }
-    explicit operator const VariableNetworkNode() const { return _node; }
+    explicit operator VariableNetworkNode() const { return _node; }
 
     /** Replace with other accessor */
     void replace(Derived&& other);

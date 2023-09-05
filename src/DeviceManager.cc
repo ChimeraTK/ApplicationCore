@@ -420,12 +420,7 @@ namespace ChimeraTK {
       // try joining the thread
       while(!_moduleThread.try_join_for(boost::chrono::milliseconds(10))) {
         // send boost interrupted exception through the _errorQueue
-        try {
-          throw boost::thread_interrupted();
-        }
-        catch(boost::thread_interrupted&) {
-          _errorQueue.push_exception(std::current_exception());
-        }
+        _errorQueue.push_exception(std::make_exception_ptr(boost::thread_interrupted()));
 
         // it may not suffice to send the exception once, as the exception might get overwritten in the queue, thus we
         // repeat this until the thread was joined.

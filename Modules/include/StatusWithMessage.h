@@ -32,7 +32,7 @@ namespace ChimeraTK {
     void write(StatusOutput::Status status, std::string message) {
       assert(status != StatusOutput::Status::OK);
       _status = status;
-      _message = message;
+      _message = std::move(message);
       writeAll();
     }
     void writeOk() {

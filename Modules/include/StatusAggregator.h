@@ -96,7 +96,7 @@ namespace ChimeraTK {
     std::vector<StatusWithMessageInput> _inputs;
 
     /// Priority mode used in aggregation
-    PriorityMode _mode;
+    PriorityMode _mode{PriorityMode::fwok};
 
     /// List of tags to aggregate
     std::unordered_set<std::string> _tagsToAggregate;

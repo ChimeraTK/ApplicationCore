@@ -9,10 +9,10 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "check_timeout.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
+#include "check_timeout.h"
 
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
@@ -439,7 +439,7 @@ BOOST_AUTO_TEST_CASE(testDev2CSAppTrigger) {
   BOOST_TEST(rb == 12);
 }
 
-constexpr char dummySdm[] = "(TestTransferGroupDummy?map=test_readonly.map)";
+constexpr std::string_view dummySdm{"(TestTransferGroupDummy?map=test_readonly.map)"};
 
 // list of user types the accessors are tested with
 using test_types = boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double>;
@@ -450,7 +450,10 @@ class TestTransferGroupDummy : public ChimeraTK::DummyBackend {
  public:
   explicit TestTransferGroupDummy(const std::string& mapFileName) : DummyBackend(mapFileName) {}
 
-  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
+  // FIXME: This depends on the API from DeviceAccess. If this linter warning is fixed, code will not compile anymore
+  // NOLINTNEXTLINE(performance-unnecessary-value-param)
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string,
+                                                         std::map<std::string, std::string> parameters) {
     return boost::shared_ptr<DeviceBackend>(new TestTransferGroupDummy(parameters["map"]));
   }
 
@@ -509,7 +512,7 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {
     ChimeraTK::BackendFactory::getInstance().registerBackendType(
         "TestTransferGroupDummy", &TestTransferGroupDummy::createInstance);
-    dev2 = {this, dummySdm, "/testModule/theTrigger"};
+    dev2 = {this, dummySdm.data(), "/testModule/theTrigger"};
   }
   ~TestApplication() override { shutdown(); }
 
@@ -534,9 +537,9 @@ BOOST_AUTO_TEST_CASE(testTriggerTransferGroup) {
   app.setPVManager(pvManagers.second);
 
   ChimeraTK::Device dev;
-  dev.open(dummySdm);
+  dev.open(dummySdm.data());
   auto backend = boost::dynamic_pointer_cast<TestTransferGroupDummy>(
-      ChimeraTK::BackendFactory::getInstance().createBackend(dummySdm));
+      ChimeraTK::BackendFactory::getInstance().createBackend(dummySdm.data()));
   BOOST_CHECK(backend != nullptr);
 
   app.initialise();

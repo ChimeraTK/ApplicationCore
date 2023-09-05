@@ -35,13 +35,13 @@ namespace ChimeraTK {
     constexpr static auto tagStatusOutput = "_ChimeraTK_StatusOutput_statusOutput";
 
     /** Implicit type conversion to user type T to access the value. */
-    // We want tihs to be implicit, disable the linting here
-    // NOLINTNEXTLINE(google-explicit-constructor)
+    // We want thhs to be implicit, disable the linting here, also need reinterpret cast for now
+    // NOLINTNEXTLINE(google-explicit-constructor,cppcoreguidelines-pro-type-reinterpret-cast)
     operator Status&() { return *reinterpret_cast<Status*>(&ACCESSOR::get()->accessData(0, 0)); }
 
     /** Implicit type conversion to user type T to access the const value. */
-    // We want tihs to be implicit, disable the linting here
-    // NOLINTNEXTLINE(google-explicit-constructor)
+    // We want this to be implicit, disable the linting here, also need reinterpret cast for now
+    // NOLINTNEXTLINE(google-explicit-constructor,cppcoreguidelines-pro-type-reinterpret-cast)
     operator const Status&() const { return *reinterpret_cast<Status*>(&ACCESSOR::get()->accessData(0, 0)); }
 
     /** Assignment operator, assigns the first element. */

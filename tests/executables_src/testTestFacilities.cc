@@ -9,8 +9,8 @@
 #include "ApplicationModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
-#include "TestableMode.h"
 #include "TestFacility.h"
+#include "TestableMode.h"
 #include "VariableGroup.h"
 
 #include <ChimeraTK/Device.h>
@@ -35,7 +35,7 @@ namespace ctk = ChimeraTK;
     }                                                                                                                  \
   }
 
-constexpr char dummySdm[] = "(dummy?map=test_readonly.map)";
+constexpr std::string_view dummySdm{"(dummy?map=test_readonly.map)"};
 
 /*********************************************************************************************************************/
 /* the BlockingReadTestModule blockingly reads its input in the main loop and writes the result to its output */
@@ -517,7 +517,7 @@ struct TestWithTriggerApplication : public ctk::Application {
   TestWithTriggerApplication() : Application("testApplication") {}
   ~TestWithTriggerApplication() override { shutdown(); }
 
-  ctk::DeviceModule dev{this, dummySdm, "/trigger"};
+  ctk::DeviceModule dev{this, dummySdm.data(), "/trigger"};
   BlockingReadTestModule blockingReadTestModule{this, "blockingReadTestModule", "Module for testing blocking read"};
   ReadAnyTestModule readAnyTestModule{this, "readAnyTestModule", "Module for testing readAny()"};
 };
@@ -532,7 +532,7 @@ BOOST_AUTO_TEST_CASE(testWithTrigger) {
 
   ctk::TestFacility test{app};
   ctk::Device dev;
-  dev.open(dummySdm);
+  dev.open(dummySdm.data());
   auto valueFromBlocking = test.getScalar<int32_t>("/blockingReadTestModule/someOutput");
   auto index = test.getScalar<uint32_t>("/readAnyTestModule/index");
   auto trigger = test.getVoid("/trigger");
@@ -729,7 +729,7 @@ struct TestPollingThroughFanOutsApplication : public ctk::Application {
   TestPollingThroughFanOutsApplication() : Application("AnotherTestApplication") {}
   ~TestPollingThroughFanOutsApplication() override { shutdown(); }
 
-  ctk::DeviceModule dev{this, dummySdm, "/fakeTriggerToSatisfyUnusedRegister"};
+  ctk::DeviceModule dev{this, dummySdm.data(), "/fakeTriggerToSatisfyUnusedRegister"};
   PollingThroughFanoutsModule m1{this, "m1", ""};
   PollingThroughFanoutsModule m2{this, "m2", ""};
 };
@@ -800,7 +800,7 @@ BOOST_AUTO_TEST_CASE(testPollingThroughFanOuts) {
     std::unique_lock<std::mutex> lk1(app.m1.mForChecking, std::defer_lock);
     std::unique_lock<std::mutex> lk2(app.m2.mForChecking, std::defer_lock);
 
-    ctk::Device dev(dummySdm);
+    ctk::Device dev(dummySdm.data());
     auto reg1 = dev.getScalarRegisterAccessor<int>("REG1.DUMMY_WRITEABLE");
 
     ctk::TestFacility test{app};
@@ -887,7 +887,7 @@ struct TestDeviceApplication : public ctk::Application {
   TestDeviceApplication() : Application("testApplication") {}
   ~TestDeviceApplication() override { shutdown(); }
 
-  ctk::DeviceModule dev{this, dummySdm, "/fakeTriggerToSatisfyUnusedRegister"};
+  ctk::DeviceModule dev{this, dummySdm.data(), "/fakeTriggerToSatisfyUnusedRegister"};
   PollingReadModule pollingReadModule{this, "pollingReadModule", "Module for testing poll-type transfers"};
 };
 
@@ -905,7 +905,7 @@ BOOST_AUTO_TEST_CASE(testDevice) {
   auto push2 = test.getScalar<int32_t>("/pollingReadModule/push2");
   auto valuePoll = test.getScalar<int32_t>("/pollingReadModule/valuePoll");
 
-  ctk::Device dev(dummySdm);
+  ctk::Device dev(dummySdm.data());
   auto r1 = dev.getScalarRegisterAccessor<int32_t>("/REG1.DUMMY_WRITEABLE");
 
   test.runApplication();

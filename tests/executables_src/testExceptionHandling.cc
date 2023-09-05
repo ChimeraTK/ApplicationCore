@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #define BOOST_TEST_MODULE testExceptionHandling
 
-#include "check_timeout.h"
 #include "DeviceModule.h"
-#include "fixtures.h"
 #include "ScalarAccessor.h"
+#include "check_timeout.h"
+#include "fixtures.h"
 
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/Device.h>
@@ -76,7 +76,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_1, Fixture) {
  * "The DataValidity::faulty flag resulting from the fault state is propagated once, even if the variable had the a
  * DataValidity::faulty flag already set previously for another reason."
  *
- * TODO: Set previous fault flag through Backend, and test inside TriggerFanOut (the latter needs the first)
+ * TODO Set previous fault flag through Backend, and test inside TriggerFanOut (the latter needs the first)
  */
 
 BOOST_FIXTURE_TEST_CASE(B_2_2_2_poll, Fixture) {
@@ -118,7 +118,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_2_poll, Fixture) {
  * "The DataValidity::faulty flag resulting from the fault state is propagated once, even if the variable had the a
  * DataValidity::faulty flag already set previously for another reason."
  *
- * TODO: Set previous fault flag through Backend, and test inside ThreadedFanOut and TriggerFanOut (as trigger).
+ * TODO Set previous fault flag through Backend, and test inside ThreadedFanOut and TriggerFanOut (as trigger).
  */
 
 BOOST_FIXTURE_TEST_CASE(B_2_2_2_push, Fixture) {

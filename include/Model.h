@@ -472,7 +472,7 @@ namespace ChimeraTK::Model {
     // Call the visitor and pass the Properties struct matching the current vertex type. The return value of the
     // visitor will be passed through.
     template<typename VISITOR>
-    typename std::invoke_result<VISITOR, ApplicationModuleProperties&>::type visit(VISITOR visitor) const;
+     [[nodiscard]] typename std::invoke_result<VISITOR, ApplicationModuleProperties&>::type visit(VISITOR visitor) const;
 
     // Call the visitor and pass a Proxy matching the current vertex type.The return value of the visitor
     // will be passed through.
@@ -860,7 +860,7 @@ namespace ChimeraTK::Model {
 
   /******************************************************************************************************************/
 
-  // TODO: This _should_ be fine since it is not possible to use those templates
+  // FIXME: This _should_ be fine since it is not possible to use those templates
   // in different compilation units. This is the recommended work-around from the GCC manpage
   // GCC will complain about base class using internal linkage because of the base class depending
   // on the type of lambdas which get a different symbol for every compilation unit they are used in
@@ -893,17 +893,17 @@ namespace ChimeraTK::Model {
     };
 
     /******************************************************************************************************************/
-    constexpr auto keepModuleGroups = ObjecttypeFilter<VertexProperties::Type::moduleGroup, ModuleGroupProxy>();
-    constexpr auto keepApplicationModules =
-        ObjecttypeFilter<VertexProperties::Type::applicationModule, ApplicationModuleProxy>();
-    constexpr auto keepVariableGroups = ObjecttypeFilter<VertexProperties::Type::variableGroup, VariableGroupProxy>();
-    constexpr auto keepDeviceModules = ObjecttypeFilter<VertexProperties::Type::deviceModule, DeviceModuleProxy>();
-    constexpr auto keepProcessVariables =
-        ObjecttypeFilter<VertexProperties::Type::processVariable, ProcessVariableProxy>();
-    constexpr auto keepDirectories = ObjecttypeFilter<VertexProperties::Type::directory, DirectoryProxy>();
   } // namespace
 
   /******************************************************************************************************************/
+  constexpr static auto keepModuleGroups = ObjecttypeFilter<VertexProperties::Type::moduleGroup, ModuleGroupProxy>();
+  constexpr static auto keepApplicationModules =
+      ObjecttypeFilter<VertexProperties::Type::applicationModule, ApplicationModuleProxy>();
+  constexpr static auto keepVariableGroups = ObjecttypeFilter<VertexProperties::Type::variableGroup, VariableGroupProxy>();
+  constexpr static auto keepDeviceModules = ObjecttypeFilter<VertexProperties::Type::deviceModule, DeviceModuleProxy>();
+  constexpr static auto keepProcessVariables =
+      ObjecttypeFilter<VertexProperties::Type::processVariable, ProcessVariableProxy>();
+  constexpr static auto keepDirectories = ObjecttypeFilter<VertexProperties::Type::directory, DirectoryProxy>();
 
   namespace detail {
     /**
@@ -1410,7 +1410,7 @@ namespace ChimeraTK::Model {
       auto getReturnValue() { return _rv.get(); }
 
       // This exception is just used to trick the boost::depth_first_search() to stop.
-      class StopException {};
+      class StopException : public std::exception {};
 
      protected:
       VISITOR& _visitor;

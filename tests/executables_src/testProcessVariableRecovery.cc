@@ -5,10 +5,10 @@
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
-#include "check_timeout.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
+#include "check_timeout.h"
 
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
@@ -25,7 +25,7 @@
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
-static constexpr char deviceCDD[] = "(ExceptionDummy?map=test5.map)";
+static constexpr std::string_view deviceCDD{"(ExceptionDummy?map=test5.map)"};
 
 /* The test module is writing to the device. It is the "module under test".
  * This is the one whose variables are to be recovered. It is not the place the the
@@ -66,7 +66,7 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() override { shutdown(); }
 
-  ctk::DeviceModule dev{this, deviceCDD, "/deviceTrigger"};
+  ctk::DeviceModule dev{this, deviceCDD.data(), "/deviceTrigger"};
   TestModule module{this, "TEST", "The test module"};
 };
 
@@ -79,7 +79,7 @@ struct ReadOnlyTestApplication : public ctk::Application {
   ReadOnlyTestApplication() : Application("ReadOnlytestApp") {}
   ~ReadOnlyTestApplication() override { shutdown(); }
 
-  ctk::DeviceModule dev{this, deviceCDD, "/weNowNeedATriggerHere"};
+  ctk::DeviceModule dev{this, deviceCDD.data(), "/weNowNeedATriggerHere"};
 
   struct TestModule : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -153,13 +153,13 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   app.module.mainLoopStarted.wait();
 
   ctk::Device dummy;
-  dummy.open(deviceCDD);
+  dummy.open(deviceCDD.data());
 
   // wait for the device to be opened successfully so the access to the dummy does not throw
   // (as they use the same backend it now throws if there has been an exception somewhere else)
-  CHECK_EQUAL_TIMEOUT(
-      test.readScalar<int32_t>(std::string("/Devices/") + ctk::Utilities::stripName(deviceCDD, false) + "/status"), 0,
-      10000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(
+                          std::string("/Devices/") + ctk::Utilities::stripName(deviceCDD.data(), false) + "/status"),
+      0, 10000);
 
   // Check that the initial values are there.
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_SCALAR2"), 42, 10000);
@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1", 1, 3)[0], 100, 10000);
 
   auto dummyBackend =
-      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
+      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD.data()));
 
   // Set the device to throw.
   dummyBackend->throwExceptionOpen = true;
@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
 
   // Verify that the device is in error state.
   CHECK_EQUAL_TIMEOUT(
-      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD, false) / "status"),
+      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD.data(), false) / "status"),
       1, 10000);
 
   // Set device back to normal.
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   dummyBackend->throwExceptionOpen = false;
   // Verify if the device is ready.
   CHECK_EQUAL_TIMEOUT(
-      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD, false) / "status"),
+      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD.data(), false) / "status"),
       0, 10000);
 
   // Device should have the correct values now. Notice that we did not trigger the writer module!

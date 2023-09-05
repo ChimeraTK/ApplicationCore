@@ -32,7 +32,7 @@ namespace ChimeraTK {
      * to allow constructor inheritance of modules owning other modules. This
      * constructor will not actually be called then. See this bug report:
      * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */
-    Module() {}
+    Module() = default;
 
     /** Destructor */
     ~Module() override;

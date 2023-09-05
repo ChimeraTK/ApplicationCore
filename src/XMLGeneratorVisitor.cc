@@ -10,11 +10,11 @@
 
 #include <ChimeraTK/RegisterPath.h>
 
-#include <cassert>
 #include <ConnectionMaker.h>
+#include <cassert>
 
 namespace detail {
-  static constexpr char AC_NAMESPACE_URL[] = "https://github.com/ChimeraTK/ApplicationCore";
+  static constexpr std::string_view AC_NAMESPACE_URL{"https://github.com/ChimeraTK/ApplicationCore"};
 } // namespace detail
 
 /********************************************************************************************************************/
@@ -26,7 +26,7 @@ namespace ChimeraTK {
 
   XMLGenerator::XMLGenerator(Application& app)
   : NetworkVisitor{app}, _doc{std::make_shared<xmlpp::Document>()}, _rootElement{_doc->create_root_node(
-                                                                        "application", ::detail::AC_NAMESPACE_URL)} {}
+                                                                        "application", ::detail::AC_NAMESPACE_URL.data())} {}
   /********************************************************************************************************************/
 
   void XMLGenerator::run() {
@@ -142,7 +142,7 @@ namespace ChimeraTK {
 
     // the namespace map is needed to properly refer to elements with an xpath
     // expression in xmlpp::Element::find()
-    xmlpp::Node::PrefixNsMap nsMap{{"ac", ::detail::AC_NAMESPACE_URL}};
+    xmlpp::Node::PrefixNsMap nsMap{{"ac", ::detail::AC_NAMESPACE_URL.data()}};
 
     // go through each directory path component
     xmlpp::Element* current = _rootElement;

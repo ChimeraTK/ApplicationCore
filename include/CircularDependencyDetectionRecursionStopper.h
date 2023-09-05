@@ -30,7 +30,7 @@ namespace ChimeraTK::detail {
    public:
     static void startNewScan();
     void setRecursionDetected();
-    bool recursionDetected() const;
+    [[nodiscard]] bool recursionDetected() const;
   };
 
 } // namespace ChimeraTK::detail

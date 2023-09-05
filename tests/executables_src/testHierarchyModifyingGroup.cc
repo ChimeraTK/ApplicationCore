@@ -26,7 +26,7 @@ namespace ctk = ChimeraTK;
 /**
  * This test checks use of relative paths in modules at the example of a VariableGroup.
  *
- * TODO:
+ * TODO
  * - Rename this test source file
  * - Add checks for relative paths in ModuleGroups and ApplicationModules
  * - Add checks for relative paths in accessors

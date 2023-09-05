@@ -76,8 +76,10 @@ namespace ChimeraTK {
      * argument tags is omitted, the tags will not be changed. To clear the
      *  tags, an empty set can be passed. */
     void setMetaData(const std::string& name, const std::string& unit, const std::string& description) const;
-    void setMetaData(const std::string& name, const std::string& unit, const std::string& description,
-        const std::unordered_set<std::string>& tags);
+    void setMetaData(const std::string& name,
+                     const std::string& unit,
+                     const std::string& description,
+                     const std::unordered_set<std::string>& tags) const;
 
     /** Clear the owner network of this node. */
     void clearOwner();
@@ -113,7 +115,7 @@ namespace ChimeraTK {
     /** Scan the networks and set the isCircularInput() flags if circular dependencies are detected.
      *  Must only be called on consuming nodes.
      */
-    std::list<EntityOwner*> scanForCircularDepencency() const;
+    [[nodiscard]] std::list<EntityOwner*> scanForCircularDepencency() const;
 
     /** Get the unique ID of the circular network. It is 0 if the node is not part of a circular network.*/
     [[nodiscard]] size_t getCircularNetworkHash() const;
@@ -129,7 +131,7 @@ namespace ChimeraTK {
     [[nodiscard]] std::string getQualifiedName() const;
     [[nodiscard]] const std::string& getUnit() const;
     [[nodiscard]] const std::string& getDescription() const;
-    VariableNetworkNode getNodeToTrigger() const;
+    [[nodiscard]] VariableNetworkNode getNodeToTrigger() const;
     [[nodiscard]] const std::string& getPublicName() const;
     [[nodiscard]] const std::string& getDeviceAlias() const;
     [[nodiscard]] const std::string& getRegisterName() const;

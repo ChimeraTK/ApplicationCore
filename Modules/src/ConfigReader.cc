@@ -39,10 +39,10 @@ namespace ChimeraTK {
   class ConfigParser {
     std::string _fileName{};
     std::unique_ptr<xmlpp::DomParser> _parser{};
-    std::unique_ptr<VariableList> variableList_{};
-    std::unique_ptr<ArrayList> arrayList_{};
+    std::unique_ptr<VariableList> _variableList{};
+    std::unique_ptr<ArrayList> _arrayList{};
 
-   public:
+  public:
     explicit ConfigParser(const std::string& fileName) : _fileName(fileName), _parser(createDomParser(fileName)) {}
 
     std::unique_ptr<VariableList> getVariableList();
@@ -414,19 +414,19 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   std::unique_ptr<VariableList> ConfigParser::getVariableList() {
-    if(variableList_ == nullptr) {
-      std::tie(variableList_, arrayList_) = parse();
+    if (_variableList == nullptr) {
+      std::tie(_variableList, _arrayList) = parse();
     }
-    return std::move(variableList_);
+    return std::move(_variableList);
   }
 
   /*********************************************************************************************************************/
 
   std::unique_ptr<ArrayList> ConfigParser::getArrayList() {
-    if(arrayList_ != nullptr) {
-      std::tie(variableList_, arrayList_) = parse();
+    if (_arrayList != nullptr) {
+      std::tie(_variableList, _arrayList) = parse();
     }
-    return std::move(arrayList_);
+    return std::move(_arrayList);
   }
 
   /*********************************************************************************************************************/
@@ -438,15 +438,15 @@ namespace ChimeraTK {
     }
 
     // start with clean lists: parseModule accumulates elements into these.
-    variableList_ = std::make_unique<VariableList>();
-    arrayList_ = std::make_unique<ArrayList>();
+    _variableList = std::make_unique<VariableList>();
+    _arrayList = std::make_unique<ArrayList>();
 
     const auto* element = dynamic_cast<const xmlpp::Element*>(root);
     std::string parent_module_name;
     parseModule(element, parent_module_name);
 
-    return std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>>{
-        std::move(variableList_), std::move(arrayList_)};
+    return std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>>{std::move(_variableList),
+                                                                                 std::move(_arrayList)};
   }
 
   /*********************************************************************************************************************/
@@ -465,10 +465,10 @@ namespace ChimeraTK {
         continue; // ignore if not an element (e.g. comment)
       }
       if(isVariable(element)) {
-        variableList_->emplace_back(prefix(parent_name, parseVariable(element)));
+        _variableList->emplace_back(prefix(parent_name, parseVariable(element)));
       }
       else if(isArray(element)) {
-        arrayList_->emplace_back(prefix(parent_name, parseArray(element)));
+        _arrayList->emplace_back(prefix(parent_name, parseArray(element)));
       }
       else if(isModule(element)) {
         parseModule(element, parent_name);

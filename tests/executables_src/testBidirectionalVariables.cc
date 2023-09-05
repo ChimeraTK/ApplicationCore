@@ -6,9 +6,9 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "check_timeout.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
+#include "check_timeout.h"
 
 #include <ChimeraTK/BackendFactory.h>
 

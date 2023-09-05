@@ -4,10 +4,10 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "check_timeout.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
+#include "check_timeout.h"
 
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/Device.h>
@@ -15,10 +15,10 @@
 
 #include <boost/mpl/list.hpp>
 
+#include <VoidAccessor.h>
 #include <chrono>
 #include <functional>
 #include <future>
-#include <VoidAccessor.h>
 
 #define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>

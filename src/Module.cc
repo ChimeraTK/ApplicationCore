@@ -204,21 +204,19 @@ namespace ChimeraTK {
       assert(ret != nullptr);
       return ret;
     }
-    else if(getModuleType() == ModuleType::VariableGroup) {
+    if (getModuleType() == ModuleType::VariableGroup) {
       auto* owningModule = dynamic_cast<Module*>(getOwner());
       assert(owningModule != nullptr);
       return owningModule->findApplicationModule();
     }
-    else {
-      throw ChimeraTK::logic_error(
-          "EntityOwner::findApplicationModule() called on neither an ApplicationModule nor a VariableGroup.");
-    }
+    throw ChimeraTK::logic_error(
+        "EntityOwner::findApplicationModule() called on neither an ApplicationModule nor a VariableGroup.");
   }
 
-  /*********************************************************************************************************************/
+    /*********************************************************************************************************************/
 
-  std::string Module::getQualifiedName() const {
-    return ((_owner != nullptr) ? _owner->getQualifiedName() : "") + "/" + _name;
+    std::string Module::getQualifiedName() const {
+      return ((_owner != nullptr) ? _owner->getQualifiedName() : "") + "/" + _name;
   }
 
   /*********************************************************************************************************************/
