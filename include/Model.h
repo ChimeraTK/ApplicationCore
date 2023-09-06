@@ -839,8 +839,8 @@ namespace ChimeraTK::Model {
   /******************************************************************************************************************/
 
   template<EdgeProperties::Type RELATIONSHIP>
-  [[maybe_unused]] static constexpr auto relationshipFilter = EdgeFilter(
-      [](const EdgeProperties& e) -> bool { return e.type == RELATIONSHIP; });
+  [[maybe_unused]] static constexpr auto relationshipFilter =
+      EdgeFilter([](const EdgeProperties& e) -> bool { return e.type == RELATIONSHIP; });
 
   /******************************************************************************************************************/
 
@@ -860,43 +860,48 @@ namespace ChimeraTK::Model {
 
   /******************************************************************************************************************/
 
-  template<VertexProperties::Type OBJECTTYPE, typename PROXYTYPE>
-  struct ObjecttypeFilter : VertexFilter<decltype(detail::objecttypeFilterFunctor<OBJECTTYPE>)> {
-    constexpr ObjecttypeFilter()
-    : VertexFilter<decltype(detail::objecttypeFilterFunctor<OBJECTTYPE>)>(detail::objecttypeFilterFunctor<OBJECTTYPE>) {
-    }
+  // TODO: This _should_ be fine since it is not possible to use those templates
+  // in different compilation units. This is the recommended work-around from the GCC manpage
+  // GCC will complain about base class using internal linkage because of the base class depending
+  // on the type of lambdas which get a different symbol for every compilation unit they are used in
+  // NOLINTNEXTLINE(google-build-namespaces)
+  namespace {
+    template<VertexProperties::Type OBJECTTYPE, typename PROXYTYPE>
+    struct ObjecttypeFilter : VertexFilter<decltype(detail::objecttypeFilterFunctor<OBJECTTYPE>)> {
+      constexpr ObjecttypeFilter()
+      : VertexFilter<decltype(detail::objecttypeFilterFunctor<OBJECTTYPE>)>(
+            detail::objecttypeFilterFunctor<OBJECTTYPE>) {}
 
-    template<typename FILTER_RHS>
-    constexpr auto operator||(const FILTER_RHS& rhs) const {
-      static_assert(std::is_base_of<PropertyFilterTag<VertexProperties>, FILTER_RHS>::value,
-          "Logical OR operator || cannot be used on different filter types.");
-      return OrSet(*this, rhs);
-    }
+      template<typename FILTER_RHS>
+      constexpr auto operator||(const FILTER_RHS& rhs) const {
+        static_assert(std::is_base_of<PropertyFilterTag<VertexProperties>, FILTER_RHS>::value,
+            "Logical OR operator || cannot be used on different filter types.");
+        return OrSet(*this, rhs);
+      }
 
-    template<typename FILTER_RHS>
-    constexpr auto operator&&(const FILTER_RHS& rhs) const {
-      static_assert(std::is_base_of<PropertyFilterTag<VertexProperties>, FILTER_RHS>::value,
-          "Logical AND operator && cannot be used on different filter types.");
-      return AndSet(*this, rhs);
-    }
+      template<typename FILTER_RHS>
+      constexpr auto operator&&(const FILTER_RHS& rhs) const {
+        static_assert(std::is_base_of<PropertyFilterTag<VertexProperties>, FILTER_RHS>::value,
+            "Logical AND operator && cannot be used on different filter types.");
+        return AndSet(*this, rhs);
+      }
 
-    template<typename PROXY>
-    [[nodiscard]] constexpr bool constevalObjecttype() const {
-      return std::is_same<PROXY, PROXYTYPE>::value;
-    }
-  };
+      template<typename PROXY>
+      [[nodiscard]] constexpr bool constevalObjecttype() const {
+        return std::is_same<PROXY, PROXYTYPE>::value;
+      }
+    };
 
-  /******************************************************************************************************************/
-
-  static constexpr auto keepModuleGroups = ObjecttypeFilter<VertexProperties::Type::moduleGroup, ModuleGroupProxy>();
-  static constexpr auto keepApplicationModules =
-      ObjecttypeFilter<VertexProperties::Type::applicationModule, ApplicationModuleProxy>();
-  static constexpr auto keepVariableGroups =
-      ObjecttypeFilter<VertexProperties::Type::variableGroup, VariableGroupProxy>();
-  static constexpr auto keepDeviceModules = ObjecttypeFilter<VertexProperties::Type::deviceModule, DeviceModuleProxy>();
-  static constexpr auto keepProcessVariables =
-      ObjecttypeFilter<VertexProperties::Type::processVariable, ProcessVariableProxy>();
-  static constexpr auto keepDirectories = ObjecttypeFilter<VertexProperties::Type::directory, DirectoryProxy>();
+    /******************************************************************************************************************/
+    constexpr auto keepModuleGroups = ObjecttypeFilter<VertexProperties::Type::moduleGroup, ModuleGroupProxy>();
+    constexpr auto keepApplicationModules =
+        ObjecttypeFilter<VertexProperties::Type::applicationModule, ApplicationModuleProxy>();
+    constexpr auto keepVariableGroups = ObjecttypeFilter<VertexProperties::Type::variableGroup, VariableGroupProxy>();
+    constexpr auto keepDeviceModules = ObjecttypeFilter<VertexProperties::Type::deviceModule, DeviceModuleProxy>();
+    constexpr auto keepProcessVariables =
+        ObjecttypeFilter<VertexProperties::Type::processVariable, ProcessVariableProxy>();
+    constexpr auto keepDirectories = ObjecttypeFilter<VertexProperties::Type::directory, DirectoryProxy>();
+  } // namespace
 
   /******************************************************************************************************************/
 
