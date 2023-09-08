@@ -40,7 +40,12 @@ namespace ChimeraTK {
       _message = "";
       writeAll();
     }
+
+    // FIXME: This needs additional modification in ControlSystemAdapter if changed
+    // https://redmine.msktools.desy.de/issues/12241
+    // NOLINTNEXTLINE(readability-identifier-naming)
     StatusOutput _status;
+    // NOLINTNEXTLINE(readability-identifier-naming)
     ScalarOutput<std::string> _message;
   };
 
@@ -50,7 +55,11 @@ namespace ChimeraTK {
    *  If instantiated without message, the message is generated automatically from the status.
    */
   struct StatusWithMessageInput : StatusWithMessageReaderBase<StatusWithMessageInput>, public VariableGroup {
+    // TODO: This needs additional modification in ControlSystemAdapter if changed
+    // https://redmine.msktools.desy.de/issues/12241
+    // NOLINTNEXTLINE(readability-identifier-naming)
     StatusPushInput _status;
+    // NOLINTNEXTLINE(readability-identifier-naming)
     ScalarPushInput<std::string> _message; // left uninitialized, if no message source provided
 
     /// Construct StatusWithMessageInput which reads only status, not message
