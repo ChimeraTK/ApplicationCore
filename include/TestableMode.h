@@ -117,8 +117,12 @@ namespace ChimeraTK::detail {
           boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, bool handleRead, bool handleWrite,
           size_t variableIdRead, size_t variableIdWrite);
 
+      // FIXME: https://redmine.msktools.desy.de/issues/12242
+      // NOLINTNEXTLINE(google-default-arguments)
       bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber = {}) override;
 
+      // FIXME: https://redmine.msktools.desy.de/issues/12242
+      // NOLINTNEXTLINE(google-default-arguments)
       bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override;
 
       void doReadTransferSynchronously() override { _target->readTransfer(); }
@@ -362,6 +366,8 @@ namespace ChimeraTK::detail {
   /********************************************************************************************************************/
 
   template<typename UserType>
+  // FIXME: https://redmine.msktools.desy.de/issues/12242
+  // NOLINTNEXTLINE(google-default-arguments)
   bool TestableMode::AccessorDecorator<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
     if(!_handleWrite) {
       return _target->writeTransfer(versionNumber);
@@ -372,6 +378,8 @@ namespace ChimeraTK::detail {
   /********************************************************************************************************************/
 
   template<typename UserType>
+  // FIXME: https://redmine.msktools.desy.de/issues/12242
+  // NOLINTNEXTLINE(google-default-arguments)
   bool TestableMode::AccessorDecorator<UserType>::doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
     if(!_handleWrite) {
       return _target->writeTransferDestructively(versionNumber);

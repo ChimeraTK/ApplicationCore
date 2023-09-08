@@ -31,6 +31,8 @@ namespace ChimeraTK {
 
     void doPostRead(TransferType /*type*/, bool updateUserBuffer) override;
 
+    // FIXME: https://redmine.msktools.desy.de/issues/12242
+    // NOLINTNEXTLINE(google-default-arguments)
     bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/ = {}) override { return false; }
 
     [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const>&) const override {

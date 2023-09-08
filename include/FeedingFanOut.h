@@ -44,6 +44,8 @@ namespace ChimeraTK {
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override;
 
+    // FIXME: https://redmine.msktools.desy.de/issues/12242
+    // NOLINTNEXTLINE(google-default-arguments)
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override;
 
     void doPostWrite(TransferType, VersionNumber) override;
@@ -258,6 +260,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
+  // FIXME: https://redmine.msktools.desy.de/issues/12242
+  // NOLINTNEXTLINE(google-default-arguments)
   bool FeedingFanOut<UserType>::doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
     if(this->_disabled) {
       return false;
