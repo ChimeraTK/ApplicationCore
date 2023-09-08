@@ -78,7 +78,7 @@ namespace ChimeraTK {
     // call the interrut sequences of the fan out (interrupts for fan input and all outputs), and the ndRegisterAccessor
     FanOut<UserType>::interrupt();
     if(this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
-      ChimeraTK::NDRegisterAccessor<UserType>::interrupt();
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::interrupt();
     }
   }
 
