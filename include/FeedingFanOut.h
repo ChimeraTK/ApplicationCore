@@ -75,6 +75,9 @@ namespace ChimeraTK {
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _returnSlave;
 
     /// DataValidity to attach to the data
+   private:
+    void addSlaveImpl(
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode& node);
   };
 
   /********************************************************************************************************************/
@@ -96,7 +99,7 @@ namespace ChimeraTK {
     // Add the consuming accessors
     // TODO FanOut constructors and addSlave should get refactoring
     for(auto el : consumerImplementationPairs) {
-      addSlave(el.first, el.second);
+      addSlaveImpl(el.first, el.second);
     }
   }
 
@@ -104,6 +107,14 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void FeedingFanOut<UserType>::addSlave(
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode& node) {
+    addSlaveImpl(slave, node);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void FeedingFanOut<UserType>::addSlaveImpl(
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode& node) {
     // check if array shape is compatible, unless the receiver is a trigger
     // node, so no data is expected
