@@ -72,6 +72,9 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   DirectoryProxy RootProxy::addDirectoryRecursive(const std::string& name) {
+    // The analyzer assumes that m_Size can be modified in boost::is_any_of so that there could be a mismatch between
+    // creating a dynamic entry and not freeing it later if m_size suddenly is different from what it was
+    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
     return _d->impl->addDirectoryRecursive(_d->vertex, name);
   }
 
@@ -723,6 +726,9 @@ namespace ChimeraTK::Model {
   DirectoryProxy Impl::addDirectoryRecursive(Vertex parent, const std::string& qualifiedPath) {
     // separate the path into components
     std::vector<std::string> components;
+    // The analyzer assumes that m_Size can be modified in boost::is_any_of so that there could be a mismatch between
+    // creating a dynamic entry and not freeing it later if m_size suddenly is different from what it was
+    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
     boost::split(components, qualifiedPath, boost::is_any_of("/"));
 
     // Start at the parent
