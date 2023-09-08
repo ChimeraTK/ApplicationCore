@@ -34,6 +34,8 @@ namespace ChimeraTK {
     if(_thread.joinable()) {
       _thread.interrupt();
       if(_externalTrigger->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
+        // If this ever throws, this will be an implementation bug, that needs fixing
+        // NOLINTNEXTLINE(bugprone-exception-escape)
         _externalTrigger->interrupt();
       }
       _thread.join();
