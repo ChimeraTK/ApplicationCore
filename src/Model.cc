@@ -359,12 +359,17 @@ namespace ChimeraTK::Model {
     assert(node.getType() == NodeType::Application || node.getType() == NodeType::Device);
 
     // remove node from the list of nodes in the PV's vertex properties
-    auto& nodes = std::get<VertexProperties::ProcessVariableProperties>(_d->impl->_graph[_d->vertex].p).nodes;
-    auto it = std::find(nodes.begin(), nodes.end(), node);
-    if(it == nodes.end()) {
-      return;
+    try {
+      auto& nodes = std::get<VertexProperties::ProcessVariableProperties>(_d->impl->_graph[_d->vertex].p).nodes;
+      auto it = std::find(nodes.begin(), nodes.end(), node);
+      if(it == nodes.end()) {
+        return;
+      }
+      nodes.erase(it);
     }
-    nodes.erase(it);
+    catch(std::bad_variant_access&) {
+      assert(false);
+    }
 
     // remove model relationships between PV and module
     if(node.getType() == NodeType::Application) {
