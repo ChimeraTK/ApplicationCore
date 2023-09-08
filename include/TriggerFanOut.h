@@ -27,7 +27,7 @@ namespace ChimeraTK {
 
     void activate() override;
 
-    void deactivate() override;
+    void deactivate() final;
 
     /** Add a new network the TriggerFanOut. The network is defined by its feeding node. */
     template<typename UserType>
