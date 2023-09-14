@@ -104,12 +104,17 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ThreadedFanOut<UserType>::deactivate() {
-    if(_thread.joinable()) {
-      _thread.interrupt();
-      FanOut<UserType>::interrupt();
-      _thread.join();
+    try {
+      if(_thread.joinable()) {
+        _thread.interrupt();
+        FanOut<UserType>::interrupt();
+        _thread.join();
+      }
+      assert(!_thread.joinable());
     }
-    assert(!_thread.joinable());
+    catch(boost::thread_resource_error& e) {
+      assert(false);
+    }
   }
 
   /********************************************************************************************************************/
