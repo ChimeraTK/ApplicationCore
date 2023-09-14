@@ -9,8 +9,8 @@
 #include "ApplicationModule.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
-#include "TestFacility.h"
 #include "TestableMode.h"
+#include "TestFacility.h"
 #include "VariableGroup.h"
 
 #include <ChimeraTK/Device.h>

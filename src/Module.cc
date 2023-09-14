@@ -204,7 +204,7 @@ namespace ChimeraTK {
       assert(ret != nullptr);
       return ret;
     }
-    if (getModuleType() == ModuleType::VariableGroup) {
+    if(getModuleType() == ModuleType::VariableGroup) {
       auto* owningModule = dynamic_cast<Module*>(getOwner());
       assert(owningModule != nullptr);
       return owningModule->findApplicationModule();
@@ -213,10 +213,10 @@ namespace ChimeraTK {
         "EntityOwner::findApplicationModule() called on neither an ApplicationModule nor a VariableGroup.");
   }
 
-    /*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
-    std::string Module::getQualifiedName() const {
-      return ((_owner != nullptr) ? _owner->getQualifiedName() : "") + "/" + _name;
+  std::string Module::getQualifiedName() const {
+    return ((_owner != nullptr) ? _owner->getQualifiedName() : "") + "/" + _name;
   }
 
   /*********************************************************************************************************************/

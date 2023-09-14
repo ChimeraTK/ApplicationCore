@@ -9,10 +9,10 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
+#include "check_timeout.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
-#include "check_timeout.h"
 
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
@@ -452,8 +452,7 @@ class TestTransferGroupDummy : public ChimeraTK::DummyBackend {
 
   // FIXME: This depends on the API from DeviceAccess. If this linter warning is fixed, code will not compile anymore
   // NOLINTNEXTLINE(performance-unnecessary-value-param)
-  static boost::shared_ptr<DeviceBackend> createInstance(std::string,
-                                                         std::map<std::string, std::string> parameters) {
+  static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
     return boost::shared_ptr<DeviceBackend>(new TestTransferGroupDummy(parameters["map"]));
   }
 

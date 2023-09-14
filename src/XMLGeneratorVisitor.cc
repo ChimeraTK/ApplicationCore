@@ -10,8 +10,8 @@
 
 #include <ChimeraTK/RegisterPath.h>
 
-#include <ConnectionMaker.h>
 #include <cassert>
+#include <ConnectionMaker.h>
 
 namespace detail {
   static constexpr std::string_view AC_NAMESPACE_URL{"https://github.com/ChimeraTK/ApplicationCore"};
@@ -25,8 +25,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   XMLGenerator::XMLGenerator(Application& app)
-  : NetworkVisitor{app}, _doc{std::make_shared<xmlpp::Document>()}, _rootElement{_doc->create_root_node(
-                                                                        "application", ::detail::AC_NAMESPACE_URL.data())} {}
+  : NetworkVisitor{app}, _doc{std::make_shared<xmlpp::Document>()}, _rootElement{_doc->create_root_node("application",
+                                                                        ::detail::AC_NAMESPACE_URL.data())} {}
   /********************************************************************************************************************/
 
   void XMLGenerator::run() {

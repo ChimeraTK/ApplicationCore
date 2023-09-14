@@ -281,10 +281,8 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  void VariableNetworkNode::setMetaData(const std::string& name,
-                                        const std::string& unit,
-                                        const std::string& description,
-                                        const std::unordered_set<std::string>& tags) const {
+  void VariableNetworkNode::setMetaData(const std::string& name, const std::string& unit,
+      const std::string& description, const std::unordered_set<std::string>& tags) const {
     if(getType() == NodeType::invalid) {
       return;
     }

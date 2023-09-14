@@ -4,11 +4,11 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
+#include "check_timeout.h"
 #include "DeviceModule.h"
 #include "PeriodicTrigger.h"
 #include "TestFacility.h"
 #include "VariableGroup.h"
-#include "check_timeout.h"
 
 #include <ChimeraTK/DummyRegisterAccessor.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
@@ -119,7 +119,8 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
     test.runApplication();
 
     CHECK_EQUAL_TIMEOUT(
-        test.readScalar<int>("Devices/" + ctk::Utilities::stripName(ExceptionDummyCDD1.data(), false) + "/status"), 1, 10000);
+        test.readScalar<int>("Devices/" + ctk::Utilities::stripName(ExceptionDummyCDD1.data(), false) + "/status"), 1,
+        10000);
 
     // Trigger and check
     app.trigger.sendTrigger();

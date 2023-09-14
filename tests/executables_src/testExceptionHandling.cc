@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #define BOOST_TEST_MODULE testExceptionHandling
 
-#include "DeviceModule.h"
-#include "ScalarAccessor.h"
 #include "check_timeout.h"
+#include "DeviceModule.h"
 #include "fixtures.h"
+#include "ScalarAccessor.h"
 
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/Device.h>

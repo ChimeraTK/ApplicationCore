@@ -76,10 +76,8 @@ namespace ChimeraTK {
      * argument tags is omitted, the tags will not be changed. To clear the
      *  tags, an empty set can be passed. */
     void setMetaData(const std::string& name, const std::string& unit, const std::string& description) const;
-    void setMetaData(const std::string& name,
-                     const std::string& unit,
-                     const std::string& description,
-                     const std::unordered_set<std::string>& tags) const;
+    void setMetaData(const std::string& name, const std::string& unit, const std::string& description,
+        const std::unordered_set<std::string>& tags) const;
 
     /** Clear the owner network of this node. */
     void clearOwner();

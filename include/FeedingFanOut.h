@@ -76,8 +76,7 @@ namespace ChimeraTK {
 
     /// DataValidity to attach to the data
    private:
-    void addSlaveImpl(
-        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode& node);
+    void addSlaveImpl(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode& node);
   };
 
   /********************************************************************************************************************/

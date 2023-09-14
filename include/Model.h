@@ -472,7 +472,7 @@ namespace ChimeraTK::Model {
     // Call the visitor and pass the Properties struct matching the current vertex type. The return value of the
     // visitor will be passed through.
     template<typename VISITOR>
-     [[nodiscard]] typename std::invoke_result<VISITOR, ApplicationModuleProperties&>::type visit(VISITOR visitor) const;
+    [[nodiscard]] typename std::invoke_result<VISITOR, ApplicationModuleProperties&>::type visit(VISITOR visitor) const;
 
     // Call the visitor and pass a Proxy matching the current vertex type.The return value of the visitor
     // will be passed through.
@@ -839,8 +839,8 @@ namespace ChimeraTK::Model {
   /******************************************************************************************************************/
 
   template<EdgeProperties::Type RELATIONSHIP>
-  [[maybe_unused]] static constexpr auto relationshipFilter =
-      EdgeFilter([](const EdgeProperties& e) -> bool { return e.type == RELATIONSHIP; });
+  [[maybe_unused]] static constexpr auto relationshipFilter = EdgeFilter(
+      [](const EdgeProperties& e) -> bool { return e.type == RELATIONSHIP; });
 
   /******************************************************************************************************************/
 
@@ -899,7 +899,8 @@ namespace ChimeraTK::Model {
   constexpr static auto keepModuleGroups = ObjecttypeFilter<VertexProperties::Type::moduleGroup, ModuleGroupProxy>();
   constexpr static auto keepApplicationModules =
       ObjecttypeFilter<VertexProperties::Type::applicationModule, ApplicationModuleProxy>();
-  constexpr static auto keepVariableGroups = ObjecttypeFilter<VertexProperties::Type::variableGroup, VariableGroupProxy>();
+  constexpr static auto keepVariableGroups =
+      ObjecttypeFilter<VertexProperties::Type::variableGroup, VariableGroupProxy>();
   constexpr static auto keepDeviceModules = ObjecttypeFilter<VertexProperties::Type::deviceModule, DeviceModuleProxy>();
   constexpr static auto keepProcessVariables =
       ObjecttypeFilter<VertexProperties::Type::processVariable, ProcessVariableProxy>();

@@ -5,10 +5,10 @@
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
+#include "check_timeout.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
-#include "check_timeout.h"
 
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
@@ -179,8 +179,8 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1", 1, 2)[0], 100, 10000);
   CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/TEST/TO_DEV_ARRAY1", 1, 3)[0], 100, 10000);
 
-  auto dummyBackend =
-      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD.data()));
+  auto dummyBackend = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
+      ctk::BackendFactory::getInstance().createBackend(deviceCDD.data()));
 
   // Set the device to throw.
   dummyBackend->throwExceptionOpen = true;
@@ -202,8 +202,8 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   trigger2.write();
 
   // Verify that the device is in error state.
-  CHECK_EQUAL_TIMEOUT(
-      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD.data(), false) / "status"),
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") /
+                          ctk::Utilities::stripName(deviceCDD.data(), false) / "status"),
       1, 10000);
 
   // Set device back to normal.
@@ -211,8 +211,8 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   dummyBackend->throwExceptionRead = false;
   dummyBackend->throwExceptionOpen = false;
   // Verify if the device is ready.
-  CHECK_EQUAL_TIMEOUT(
-      test.readScalar<int32_t>(ctk::RegisterPath("/Devices") / ctk::Utilities::stripName(deviceCDD.data(), false) / "status"),
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") /
+                          ctk::Utilities::stripName(deviceCDD.data(), false) / "status"),
       0, 10000);
 
   // Device should have the correct values now. Notice that we did not trigger the writer module!

@@ -42,7 +42,7 @@ namespace ChimeraTK {
     std::unique_ptr<VariableList> _variableList{};
     std::unique_ptr<ArrayList> _arrayList{};
 
-  public:
+   public:
     explicit ConfigParser(const std::string& fileName) : _fileName(fileName), _parser(createDomParser(fileName)) {}
 
     std::unique_ptr<VariableList> getVariableList();
@@ -414,7 +414,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   std::unique_ptr<VariableList> ConfigParser::getVariableList() {
-    if (_variableList == nullptr) {
+    if(_variableList == nullptr) {
       std::tie(_variableList, _arrayList) = parse();
     }
     return std::move(_variableList);
@@ -423,7 +423,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   std::unique_ptr<ArrayList> ConfigParser::getArrayList() {
-    if (_arrayList != nullptr) {
+    if(_arrayList != nullptr) {
       std::tie(_variableList, _arrayList) = parse();
     }
     return std::move(_arrayList);
@@ -445,8 +445,8 @@ namespace ChimeraTK {
     std::string parent_module_name;
     parseModule(element, parent_module_name);
 
-    return std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>>{std::move(_variableList),
-                                                                                 std::move(_arrayList)};
+    return std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>>{
+        std::move(_variableList), std::move(_arrayList)};
   }
 
   /*********************************************************************************************************************/
