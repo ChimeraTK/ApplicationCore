@@ -75,34 +75,41 @@ namespace ChimeraTK {
   DeviceModule& DeviceModule::operator=(DeviceModule&& other) noexcept {
     // First clean up the model before moving the module itself.
     if(other._model.isValid()) {
-      auto neighbourDirectory = other._model.visit(
-          Model::returnDirectory, Model::getNeighbourDirectory, Model::returnFirstHit(Model::DirectoryProxy{}));
-      assert(neighbourDirectory.isValid());
+      Model::DirectoryProxy neighbourDirectory;
+      try {
+        neighbourDirectory = other._model.visit(
+            Model::returnDirectory, Model::getNeighbourDirectory, Model::returnFirstHit(Model::DirectoryProxy{}));
+        assert(neighbourDirectory.isValid());
 
-      auto dm = _dm.lock();
-      if(dm) {
-        for(const auto& reg : dm->getDevice().getRegisterCatalogue()) {
-          if(reg.getNumberOfDimensions() > 1) {
-            continue;
-          }
-          std::string registerName = reg.getRegisterName();
-          if(!boost::starts_with(registerName, _pathInDevice)) {
-            continue;
-          }
+        auto dm = _dm.lock();
+        if(dm) {
+          for(const auto& reg : dm->getDevice().getRegisterCatalogue()) {
+            if(reg.getNumberOfDimensions() > 1) {
+              continue;
+            }
+            std::string registerName = reg.getRegisterName();
+            if(!boost::starts_with(registerName, _pathInDevice)) {
+              continue;
+            }
 
-          neighbourDirectory.visitByPath(registerName, [&](auto proxy) {
-            if constexpr(isVariable(proxy)) {
-              assert(proxy.isValid());
+            neighbourDirectory.visitByPath(registerName, [&](auto proxy) {
+              if constexpr(isVariable(proxy)) {
+                assert(proxy.isValid());
 
-              for(auto& proxyNode : proxy.getNodes()) {
-                if(proxyNode.getType() == NodeType::Device && proxyNode.getDeviceAlias() == getDeviceAliasOrURI()) {
-                  proxy.removeNode(proxyNode);
-                  break;
+                for(auto& proxyNode : proxy.getNodes()) {
+                  if(proxyNode.getType() == NodeType::Device && proxyNode.getDeviceAlias() == getDeviceAliasOrURI()) {
+                    proxy.removeNode(proxyNode);
+                    break;
+                  }
                 }
               }
-            }
-          });
+            });
+          }
         }
+      }
+      catch(ChimeraTK::logic_error& e) {
+        std::cerr << e.what() << std::endl;
+        std::exit(1);
       }
     }
 

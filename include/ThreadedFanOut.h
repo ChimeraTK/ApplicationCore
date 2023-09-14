@@ -86,7 +86,13 @@ namespace ChimeraTK {
 
   template<typename UserType>
   ThreadedFanOut<UserType>::~ThreadedFanOut() {
-    deactivate();
+    try {
+      deactivate();
+    }
+    catch(ChimeraTK::logic_error& e) {
+      std::cerr << e.what() << std::endl;
+      std::exit(1);
+    }
   }
 
   /********************************************************************************************************************/
