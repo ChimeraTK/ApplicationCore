@@ -231,6 +231,13 @@ void Application::generateXML() {
 
 /*********************************************************************************************************************/
 
+void Application::generateDOT() {
+  assert(not applicationName.empty());
+  this->getModel().writeGraphViz(applicationName + ".dot");
+}
+
+/*********************************************************************************************************************/
+
 Application& Application::getInstance() {
   return dynamic_cast<Application&>(ApplicationBase::getInstance());
 }
