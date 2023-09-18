@@ -158,7 +158,7 @@ namespace ChimeraTK {
     auto versionNumber = this->getOwner()->getCurrentVersionNumber();
     bool dataLoss = ChimeraTK::OneDRegisterAccessor<UserType>::writeDestructively(versionNumber);
     if(dataLoss) {
-      Application::incrementDataLossCounter(this->node.getQualifiedName());
+      Application::incrementDataLossCounter(this->_node.getQualifiedName());
     }
     return dataLoss;
   }

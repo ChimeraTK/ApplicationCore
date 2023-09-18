@@ -221,7 +221,7 @@ namespace ChimeraTK {
           "UserInputValidator::setFallback() with scalar value called for array-typed accessor '" + accessor.getName() +
           "'.");
     }
-    pv->_lastAcceptedValue[0] = value;
+    pv->lastAcceptedValue[0] = value;
   }
 
   /*********************************************************************************************************************/

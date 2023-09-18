@@ -20,7 +20,7 @@ namespace ChimeraTK {
 
     explicit RecoveryHelper(
         boost::shared_ptr<TransferElement> a, VersionNumber v = VersionNumber(nullptr), uint64_t order = 0)
-    : accessor(std::move(std::move(a))), versionNumber(v), writeOrder(order) {}
+    : accessor(std::move(a)), versionNumber(v), writeOrder(order) {}
   };
 
 } // end of namespace ChimeraTK
