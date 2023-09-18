@@ -9,9 +9,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  DeviceManager::DeviceManager(Application* application, const std::string& deviceAliasOrURI)
-  : ApplicationModule(application, "/Devices/" + Utilities::stripName(deviceAliasOrURI, false), ""),
-    _device(deviceAliasOrURI), _deviceAliasOrURI(deviceAliasOrURI), _owner{application} {}
+  DeviceManager::DeviceManager(Application* application, const std::string& deviceAliasOrCDD)
+  : ApplicationModule(application, "/Devices/" + Utilities::stripName(deviceAliasOrCDD, false), ""),
+    _device(deviceAliasOrCDD), _deviceAliasOrCDD(deviceAliasOrCDD), _owner{application} {}
 
   /*********************************************************************************************************************/
 
@@ -105,7 +105,7 @@ namespace ChimeraTK {
       }
 
       // create node and add to list
-      rv.emplace_back(reg.getRegisterName(), _deviceAliasOrURI, reg.getRegisterName(), updateMode, direction, *valTyp,
+      rv.emplace_back(reg.getRegisterName(), _deviceAliasOrCDD, reg.getRegisterName(), updateMode, direction, *valTyp,
           reg.getNumberOfElements());
     }
 
@@ -180,7 +180,7 @@ namespace ChimeraTK {
         catch(ChimeraTK::runtime_error& e) {
           assert(_deviceError._status != StatusOutput::Status::OK); // any error must already be reported...
           if(std::string(_deviceError._message) != e.what()) {
-            std::cerr << "Device " << _deviceAliasOrURI << " reports error: " << e.what() << std::endl;
+            std::cerr << "Device " << _deviceAliasOrCDD << " reports error: " << e.what() << std::endl;
             // set proper error message in very first attempt to open the device
             setCurrentVersionNumber({});
             _deviceError.write(StatusOutput::Status::FAULT, e.what());
@@ -224,7 +224,7 @@ namespace ChimeraTK {
         assert(_deviceError._status != StatusOutput::Status::OK); // any error must already be reported...
         // update error message, since it might have been changed...
         if(std::string(_deviceError._message) != e.what()) {
-          std::cerr << "Device " << _deviceAliasOrURI << " reports error: " << e.what() << std::endl;
+          std::cerr << "Device " << _deviceAliasOrCDD << " reports error: " << e.what() << std::endl;
           setCurrentVersionNumber({});
           _deviceError.write(StatusOutput::Status::FAULT, e.what());
         }
@@ -251,7 +251,7 @@ namespace ChimeraTK {
       catch(ChimeraTK::runtime_error& e) {
         // update error message, since it might have been changed...
         if(std::string(_deviceError._message) != e.what()) {
-          std::cerr << "Device " << _deviceAliasOrURI << " reports error: " << e.what() << std::endl;
+          std::cerr << "Device " << _deviceAliasOrCDD << " reports error: " << e.what() << std::endl;
           setCurrentVersionNumber({});
           _deviceError.write(StatusOutput::Status::FAULT, e.what());
         }
@@ -277,7 +277,7 @@ namespace ChimeraTK {
       deviceBecameFunctional.write();
 
       if(!firstSuccess) {
-        std::cerr << "Device " << _deviceAliasOrURI << " error cleared." << std::endl;
+        std::cerr << "Device " << _deviceAliasOrCDD << " error cleared." << std::endl;
       }
       firstSuccess = false;
 
@@ -316,7 +316,7 @@ namespace ChimeraTK {
       }
 
       // [ExceptionHandling Spec: C.3.3.14] report exception to the control system
-      std::cerr << "Device " << _deviceAliasOrURI << " reports error: " << error << std::endl;
+      std::cerr << "Device " << _deviceAliasOrCDD << " reports error: " << error << std::endl;
       setCurrentVersionNumber({});
       _deviceError.write(StatusOutput::Status::FAULT, error);
 

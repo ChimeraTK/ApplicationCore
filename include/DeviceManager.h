@@ -22,7 +22,7 @@ namespace ChimeraTK {
     /**
      * Create DeviceManager which handles device exceptions and performs the recovery.
      */
-    DeviceManager(Application* application, const std::string& deviceAliasOrURI);
+    DeviceManager(Application* application, const std::string& deviceAliasOrCDD);
 
     // Move constructor/assignment is not used since DeviceManagers are stored as shared_ptr only.
     DeviceManager(DeviceManager&& other) = delete;
@@ -116,7 +116,7 @@ namespace ChimeraTK {
     /**
      * Return associated device alias resp. URI
      */
-    const std::string& getDeviceAliasOrURI() const { return _deviceAliasOrURI; }
+    const std::string& getDeviceAliasOrURI() const { return _deviceAliasOrCDD; }
 
     /**
      * Create and return list of VariableNetworkNodes for all device registers
@@ -138,7 +138,7 @@ namespace ChimeraTK {
 
     Device _device;
 
-    std::string _deviceAliasOrURI;
+    std::string _deviceAliasOrCDD;
 
     Application* _owner{nullptr};
 
