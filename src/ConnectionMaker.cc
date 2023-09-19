@@ -143,7 +143,7 @@ namespace ChimeraTK {
 
       callForType(net.consumers.front().getValueType(), [&](auto t) {
         using UserType = decltype(t);
-        net.feeder.setConstantValue(userTypeToUserType<UserType>(stringValue));
+        net.feeder.setConstantValue(userTypeToUserType<UserType>(Utilities::unescapeName(stringValue)));
       });
     }
 

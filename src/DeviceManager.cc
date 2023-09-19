@@ -10,7 +10,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   DeviceManager::DeviceManager(Application* application, const std::string& deviceAliasOrCDD)
-  : ApplicationModule(application, "/Devices/" + Utilities::stripName(deviceAliasOrCDD, false), ""),
+  : ApplicationModule(application, "/Devices/" + Utilities::escapeName(deviceAliasOrCDD, false), ""),
     _device(deviceAliasOrCDD), _deviceAliasOrCDD(deviceAliasOrCDD), _owner{application} {}
 
   /*********************************************************************************************************************/

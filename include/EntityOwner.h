@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Flags.h"
+#include "Utilities.h"
 #include "VariableNetworkNode.h"
 #include <unordered_set>
 
@@ -156,7 +157,7 @@ namespace ChimeraTK {
     /**
      * Prefix for costants created by constant().
      */
-    static const std::string namePrefixConstant;
+    static constexpr std::string_view namePrefixConstant{"/@CONST@"};
 
    protected:
     /** Convert HierarchyModifier into path qualification (for backwards compatibility only!) */
@@ -200,8 +201,8 @@ namespace ChimeraTK {
     // We hence need to use both the type name and a unique counter as part of the name. The unique counter lives inside
     // this template function and hence counts for each type T separately!
     static std::atomic<uint64_t> uid(0);
-    return namePrefixConstant + "/" + DataType(typeid(T)).getAsString() + "/" + std::to_string(uid++) + "/" +
-        userTypeToUserType<std::string>(value);
+    return std::string(namePrefixConstant) + "/" + DataType(typeid(T)).getAsString() + "/" + std::to_string(uid++) +
+        "/" + Utilities::escapeName(userTypeToUserType<std::string>(value), false);
   }
 
   /********************************************************************************************************************/

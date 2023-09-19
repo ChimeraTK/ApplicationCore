@@ -25,11 +25,17 @@ namespace ChimeraTK::Utilities {
   std::string getPathName(const std::string& qualifiedName);
 
   /**
-   * Convert all characters which are not allowed in variable or module names into underscores.
-   * If allowDotsAndSlashes is true, dots and slashes will not be converted into underscores, so the resulting name can
-   * be a qualified name.
+   * Convert all characters which are not allowed in variable or module names into underscores followed by their
+   * 3-digit ascii code. An underscore will be escaped that way as well.
+   * If allowDotsAndSlashes is true, dots and slashes will not be converted, so the resulting name can be a qualified
+   * name.
    */
-  std::string stripName(const std::string& name, bool allowDotsAndSlashes);
+  std::string escapeName(const std::string& name, bool allowDotsAndSlashes);
+
+  /**
+   * Undo the escaping done by escapeName().
+   */
+  std::string unescapeName(const std::string& name_stripped);
 
   /**
    * Check given name for characters which are not allowed in variable or module names.

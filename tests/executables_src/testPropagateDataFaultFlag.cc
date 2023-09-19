@@ -577,9 +577,9 @@ struct FixtureNoTestableMode {
     device2DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD2))) {
     device1Status.replace(test.getScalar<int32_t>(ctk::RegisterPath("/Devices") /
-        ctk::Utilities::stripName(TestApplication3::ExceptionDummyCDD1, false) / "status"));
+        ctk::Utilities::escapeName(TestApplication3::ExceptionDummyCDD1, false) / "status"));
     device2Status.replace(test.getScalar<int32_t>(ctk::RegisterPath("/Devices") /
-        ctk::Utilities::stripName(TestApplication3::ExceptionDummyCDD2, false) / "status"));
+        ctk::Utilities::escapeName(TestApplication3::ExceptionDummyCDD2, false) / "status"));
 
     device1DummyBackend->open();
     device2DummyBackend->open();
@@ -866,7 +866,7 @@ BOOST_FIXTURE_TEST_CASE(testDataFlowOnDeviceException, FixtureNoTestableMode) {
   BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::faulty);
 
   auto deviceStatus = test.getScalar<int32_t>(ctk::RegisterPath("/Devices") /
-      ChimeraTK::Utilities::stripName(TestApplication3::ExceptionDummyCDD2, false) / "status");
+      ChimeraTK::Utilities::escapeName(TestApplication3::ExceptionDummyCDD2, false) / "status");
   // the device is still OK
   CHECK_EQUAL_TIMEOUT((deviceStatus.readLatest(), deviceStatus), 0, 10000);
 
@@ -1003,7 +1003,7 @@ BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
   auto result = test.getScalar<int>("module/Module3_result");
 
   auto deviceStatus = test.getScalar<int32_t>(ctk::RegisterPath("/Devices") /
-      ctk::Utilities::stripName(TestApplication3::ExceptionDummyCDD2, false) / "status");
+      ctk::Utilities::escapeName(TestApplication3::ExceptionDummyCDD2, false) / "status");
 
   pushInput = 10;
   pushInput.write();
