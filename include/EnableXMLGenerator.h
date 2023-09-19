@@ -17,6 +17,7 @@
 
 int main(int, char**) {
   ChimeraTK::Application::getInstance().generateXML();
+  ChimeraTK::Application::getInstance().generateDOT();
   return 0;
 }
 
