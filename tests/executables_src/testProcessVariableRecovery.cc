@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   // wait for the device to be opened successfully so the access to the dummy does not throw
   // (as they use the same backend it now throws if there has been an exception somewhere else)
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(
-                          std::string("/Devices/") + ctk::Utilities::stripName(deviceCDD.data(), false) + "/status"),
+                          std::string("/Devices/") + ctk::Utilities::escapeName(deviceCDD.data(), false) + "/status"),
       0, 10000);
 
   // Check that the initial values are there.
@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
 
   // Verify that the device is in error state.
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") /
-                          ctk::Utilities::stripName(deviceCDD.data(), false) / "status"),
+                          ctk::Utilities::escapeName(deviceCDD.data(), false) / "status"),
       1, 10000);
 
   // Set device back to normal.
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
   dummyBackend->throwExceptionOpen = false;
   // Verify if the device is ready.
   CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") /
-                          ctk::Utilities::stripName(deviceCDD.data(), false) / "status"),
+                          ctk::Utilities::escapeName(deviceCDD.data(), false) / "status"),
       0, 10000);
 
   // Device should have the correct values now. Notice that we did not trigger the writer module!

@@ -225,8 +225,8 @@ FixtureWithPollAndPushInput<enableTestFacility, addInitHandlers,
 
     testFacitiy.runApplication();
 
-    auto dm1 = ChimeraTK::Utilities::stripName(DummyApplication::ExceptionDummyCDD1, false);
-    auto dm2 = ChimeraTK::Utilities::stripName(DummyApplication::ExceptionDummyCDD2, false);
+    auto dm1 = ChimeraTK::Utilities::escapeName(DummyApplication::ExceptionDummyCDD1, false);
+    auto dm2 = ChimeraTK::Utilities::escapeName(DummyApplication::ExceptionDummyCDD2, false);
     status.replace(testFacitiy.getScalar<int>(ChimeraTK::RegisterPath("/Devices") / dm1 / "status"));
     message.replace(testFacitiy.getScalar<std::string>(ChimeraTK::RegisterPath("/Devices") / dm1 / "status_message"));
     deviceBecameFunctional.replace(

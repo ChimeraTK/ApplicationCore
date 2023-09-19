@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
     test.runApplication();
 
     CHECK_EQUAL_TIMEOUT(
-        test.readScalar<int>("Devices/" + ctk::Utilities::stripName(ExceptionDummyCDD1.data(), false) + "/status"), 1,
+        test.readScalar<int>("Devices/" + ctk::Utilities::escapeName(ExceptionDummyCDD1.data(), false) + "/status"), 1,
         10000);
 
     // Trigger and check
