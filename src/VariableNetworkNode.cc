@@ -106,7 +106,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(boost::shared_ptr<VariableNetworkNode_data> _pdata)
-  : pdata(std::move(std::move(_pdata))) {}
+  : pdata(std::move(_pdata)) {}
 
   /*********************************************************************************************************************/
 

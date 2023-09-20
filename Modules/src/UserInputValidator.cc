@@ -47,7 +47,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   UserInputValidator::Validator::Validator(std::function<bool(void)> isValidTest, std::string initialErrorMessage)
-  : isValidFunction(std::move(isValidTest)), errorMessage(std::move(std::move(initialErrorMessage))) {}
+  : isValidFunction(std::move(isValidTest)), errorMessage(std::move(initialErrorMessage)) {}
 
   /*********************************************************************************************************************/
 
