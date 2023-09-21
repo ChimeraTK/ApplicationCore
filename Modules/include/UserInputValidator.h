@@ -216,7 +216,7 @@ namespace ChimeraTK {
     addAccessorIfNeeded(accessor);
     auto pv = std::dynamic_pointer_cast<Variable<UserType, Accessor>>(_variableMap.at(accessor.getId()));
     assert(pv != nullptr);
-    if(pv->_lastAcceptedValue.size() != 1) {
+    if(pv->lastAcceptedValue.size() != 1) {
       throw ChimeraTK::logic_error(
           "UserInputValidator::setFallback() with scalar value called for array-typed accessor '" + accessor.getName() +
           "'.");
@@ -231,12 +231,12 @@ namespace ChimeraTK {
     addAccessorIfNeeded(accessor);
     auto pv = std::dynamic_pointer_cast<Variable<UserType, Accessor>>(_variableMap.at(accessor.getId()));
     assert(pv != nullptr);
-    if(pv->_lastAcceptedValue.size() != value.size()) {
+    if(pv->lastAcceptedValue.size() != value.size()) {
       throw ChimeraTK::logic_error(
           "UserInputValidator::setFallback() with called with mismatching array length for accessor '" +
           accessor.getName() + "'.");
     }
-    pv->_lastAcceptedValue = value;
+    pv->lastAcceptedValue = value;
   }
   /*********************************************************************************************************************/
 
