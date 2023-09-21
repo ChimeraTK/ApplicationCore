@@ -724,7 +724,9 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   ProcessVariableProxy Impl::addVariable(Vertex parent, const std::string& name) {
-    /// @todo FIXME add checks on the name: must not contain dots or slashes (must be unqualified name)!
+    if(!Utilities::checkName(name, false)) {
+      throw ChimeraTK::logic_error("Variable name '" + name + "' contains illegal characters.");
+    }
 
     // first check if variable already exists
     auto existing = visit(parent, returnProcessVariable, adjacentOutSearch, keepParenthood,
@@ -751,8 +753,10 @@ namespace ChimeraTK::Model {
 
   /********************************************************************************************************************/
 
-  DirectoryProxy Impl::addDirectory(Vertex parent, const std::string& name) { // create plain vertex first
-    /// @todo FIXME add checks on the name: must not contain dots or slashes (must be unqualified name)!
+  DirectoryProxy Impl::addDirectory(Vertex parent, const std::string& name) {
+    if(!Utilities::checkName(name, false)) {
+      throw ChimeraTK::logic_error("Variable name '" + name + "' contains illegal characters.");
+    }
 
     // first check if directory already exists
     auto existing = visit(parent, returnDirectory, adjacentOutSearch, keepParenthood, keepDirectories && keepName(name),
