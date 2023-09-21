@@ -263,3 +263,22 @@ BOOST_AUTO_TEST_CASE(testXmlGeneration) {
   BOOST_CHECK(found_multiplierU16In);
   BOOST_CHECK(found_multiplierU16Out);
 }
+
+BOOST_AUTO_TEST_CASE(testDOTGeneration) {
+  std::cout << "***************************************************************"
+               "******************************************************"
+            << std::endl;
+  std::cout << "==> tesDOTGeneration" << std::endl;
+
+  // delete DOT file if already existing
+  boost::filesystem::remove("TestAppInstance.dot");
+
+  // create app which exports some properties and generate its XML file
+  TestApp app("TestAppInstance");
+  app.generateDOT();
+
+  // check existence
+  bool found_dot{boost::filesystem::exists("TestAppInstance.dot")};
+
+  BOOST_CHECK(found_dot);
+}

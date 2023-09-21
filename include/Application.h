@@ -77,6 +77,11 @@ namespace ChimeraTK {
      */
     void generateXML();
 
+     /**
+     * Instead of running the application, just initialise it and output the published variables to a DOT file.
+     */
+    void generateDOT();
+
     /**
      * Obtain instance of the application. Will throw an exception if called before the instance has been created by the
      * control system adapter, or if the instance is not based on the Application class.
