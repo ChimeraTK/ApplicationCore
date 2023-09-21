@@ -9,10 +9,7 @@
 #include "VariableGroup.h"
 
 #define BOOST_TEST_MODULE testApplicationPVModel
-#define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
-
-#undef BOOST_NO_EXCEPTIONS
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
@@ -1802,6 +1799,20 @@ BOOST_AUTO_TEST_CASE(testReturnDirectory) {
 
 /*********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(testIllegalNames) {
+  TestApplication app;
+
+  constexpr std::string_view illegalCharsToTest = "-~!@#$%^&*()-=+{}|[]\\;':\",.<>?` ";
+
+  for(auto c : illegalCharsToTest) {
+    std::string nameToTest = "MyModule" + std::string(1, c) + "withIllegalChar";
+    BOOST_CHECK_THROW(
+        (app.myModule = MyModule(&app, nameToTest, "ApplicationModule directly owned by app")), ctk::logic_error);
+  }
+}
+
+/*********************************************************************************************************************/
+
 struct RogueModule : ctk::ApplicationModule {
   ctk::ScalarPushInput<int> var{this, "trigger", "", ""};
 
@@ -1827,6 +1838,7 @@ struct TestApplication2 : ctk::Application {
 };
 
 /*********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testMassCreationOfUnusedAcecssors) {
   TestApplication2 app;
   ChimeraTK::Model::ProcessVariableProxy rv = app.myModule.getModel().visit(ChimeraTK::Model::returnProcessVariable,
