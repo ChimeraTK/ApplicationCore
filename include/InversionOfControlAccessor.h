@@ -35,23 +35,23 @@ namespace ChimeraTK {
 
     /** Add a tag. Valid names for tags only contain alpha-numeric characters
      * (i.e. no spaces and no special characters). */
-    void addTag(const std::string& tag) { node.addTag(tag); }
+    void addTag(const std::string& tag) { _node.addTag(tag); }
 
     /** Add multiple tags. Valid names for tags only contain alpha-numeric
      * characters (i.e. no spaces and no special characters). */
     void addTags(const std::unordered_set<std::string>& tags);
 
     /** Convert into VariableNetworkNode */
-    explicit operator VariableNetworkNode() { return node; }
-    explicit operator const VariableNetworkNode() const { return node; }
+    explicit operator VariableNetworkNode() { return _node; }
+    explicit operator VariableNetworkNode() const { return _node; }
 
     /** Replace with other accessor */
     void replace(Derived&& other);
 
     /** Return the owning module */
-    [[nodiscard]] EntityOwner* getOwner() const { return node.getOwningModule(); }
+    [[nodiscard]] EntityOwner* getOwner() const { return _node.getOwningModule(); }
 
-    [[nodiscard]] Model::ProcessVariableProxy getModel() const { return node.getModel(); }
+    [[nodiscard]] Model::ProcessVariableProxy getModel() const { return _node.getModel(); }
 
    protected:
     /// complete the description with the full description from the owner
@@ -64,7 +64,7 @@ namespace ChimeraTK {
     /** Default constructor creates a dysfunctional accessor (to be assigned with a real accessor later) */
     InversionOfControlAccessor() = default;
 
-    VariableNetworkNode node;
+    VariableNetworkNode _node;
   };
 
   /********************************************************************************************************************/
@@ -73,10 +73,10 @@ namespace ChimeraTK {
   template<typename Derived>
   InversionOfControlAccessor<Derived>::~InversionOfControlAccessor() {
     if(getOwner() != nullptr) {
-      getOwner()->unregisterAccessor(node);
+      getOwner()->unregisterAccessor(_node);
     }
     if(getModel().isValid()) {
-      getModel().removeNode(node);
+      getModel().removeNode(_node);
     }
   }
 
@@ -85,7 +85,7 @@ namespace ChimeraTK {
   template<typename Derived>
   void InversionOfControlAccessor<Derived>::setMetaData(
       const std::string& name, const std::string& unit, const std::string& description) {
-    node.setMetaData(name, unit, completeDescription(getOwner(), description));
+    _node.setMetaData(name, unit, completeDescription(getOwner(), description));
   }
 
   /********************************************************************************************************************/
@@ -93,14 +93,16 @@ namespace ChimeraTK {
   template<typename Derived>
   void InversionOfControlAccessor<Derived>::setMetaData(const std::string& name, const std::string& unit,
       const std::string& description, const std::unordered_set<std::string>& tags) {
-    node.setMetaData(name, unit, completeDescription(getOwner(), description), tags);
+    _node.setMetaData(name, unit, completeDescription(getOwner(), description), tags);
   }
 
   /********************************************************************************************************************/
 
   template<typename Derived>
   void InversionOfControlAccessor<Derived>::addTags(const std::unordered_set<std::string>& tags) {
-    for(const auto& tag : tags) node.addTag(tag);
+    for(const auto& tag : tags) {
+      _node.addTag(tag);
+    }
   }
 
   /********************************************************************************************************************/
@@ -111,24 +113,24 @@ namespace ChimeraTK {
 
     // remove node from model
     if(getModel().isValid()) {
-      getModel().removeNode(node);
+      getModel().removeNode(_node);
     }
 
     // remove accessor from owning module
-    if(node.getType() == NodeType::Application) {
-      getOwner()->unregisterAccessor(node);
+    if(_node.getType() == NodeType::Application) {
+      getOwner()->unregisterAccessor(_node);
     }
 
     // transfer the node
-    node = std::move(other.node);
-    other.node = VariableNetworkNode(); // Make sure the destructor of other sees an invalid node
+    _node = std::move(other._node);
+    other._node = VariableNetworkNode(); // Make sure the destructor of other sees an invalid node
 
     // update the app accesor pointer in the node
-    if(node.getType() == NodeType::Application) {
-      node.setAppAccessorPointer(static_cast<Derived*>(this));
+    if(_node.getType() == NodeType::Application) {
+      _node.setAppAccessorPointer(static_cast<Derived*>(this));
     }
     else {
-      assert(node.getType() == NodeType::invalid);
+      assert(_node.getType() == NodeType::invalid);
     }
     // Note: the accessor is registered by the VariableNetworkNode, so we don't have to re-register.
   }
@@ -139,8 +141,12 @@ namespace ChimeraTK {
   std::string InversionOfControlAccessor<Derived>::completeDescription(
       EntityOwner* owner, const std::string& description) const {
     auto ownerDescription = owner->getFullDescription();
-    if(ownerDescription.empty()) return description;
-    if(description.empty()) return ownerDescription;
+    if(ownerDescription.empty()) {
+      return description;
+    }
+    if(description.empty()) {
+      return ownerDescription;
+    }
     return ownerDescription + " - " + description;
   }
 
@@ -150,7 +156,7 @@ namespace ChimeraTK {
   InversionOfControlAccessor<Derived>::InversionOfControlAccessor(Module* owner, const std::string& name,
       VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode, const std::string& description,
       const std::type_info* valueType, const std::unordered_set<std::string>& tags)
-  : node(owner, static_cast<Derived*>(this), name, direction, unit, nElements, mode,
+  : _node(owner, static_cast<Derived*>(this), name, direction, unit, nElements, mode,
         completeDescription(owner, description), valueType, tags) {
     static_assert(std::is_base_of<InversionOfControlAccessor<Derived>, Derived>::value,
         "InversionOfControlAccessor<> must be used in a curiously recurring template pattern!");
@@ -171,9 +177,9 @@ namespace ChimeraTK {
       auto dir = neighbourDir.addDirectoryRecursive(Utilities::getPathName(name));
       auto var = dir.addVariable(Utilities::getUnqualifiedName(name));
 
-      node.setModel(var);
+      _node.setModel(var);
 
-      model.addVariable(var, node);
+      model.addVariable(var, _node);
     };
     auto* owner_am = dynamic_cast<ApplicationModule*>(owner);
     auto* owner_vg = dynamic_cast<VariableGroup*>(owner);
@@ -187,7 +193,7 @@ namespace ChimeraTK {
       throw ChimeraTK::logic_error("Hierarchy error!?");
     }
 
-    owner->registerAccessor(node);
+    owner->registerAccessor(_node);
   }
 
   /********************************************************************************************************************/

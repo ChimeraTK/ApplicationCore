@@ -54,7 +54,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   ApplicationModule& ApplicationModule::operator=(ApplicationModule&& other) noexcept {
-    assert(!moduleThread.joinable()); // if the thread is already running, moving is no longer allowed!
+    assert(!_moduleThread.joinable()); // if the thread is already running, moving is no longer allowed!
 
     // Keep the model as is (except from updating the pointers to the C++ objects). To do so, we have to hide it from
     // unregisterModule() which is executed in Module::operator=(), because it would destroy the model.
@@ -63,7 +63,9 @@ namespace ChimeraTK {
 
     VariableGroup::operator=(std::move(other));
 
-    if(model.isValid()) model.informMove(*this);
+    if(model.isValid()) {
+      model.informMove(*this);
+    }
     _model = model;
 
     return *this;
@@ -73,17 +75,17 @@ namespace ChimeraTK {
 
   void ApplicationModule::run() {
     // start the module thread
-    assert(!moduleThread.joinable());
-    moduleThread = boost::thread(&ApplicationModule::mainLoopWrapper, this);
+    assert(!_moduleThread.joinable());
+    _moduleThread = boost::thread(&ApplicationModule::mainLoopWrapper, this);
   }
 
   /*********************************************************************************************************************/
 
   void ApplicationModule::terminate() {
-    if(moduleThread.joinable()) {
-      moduleThread.interrupt();
+    if(_moduleThread.joinable()) {
+      _moduleThread.interrupt();
       // try joining the thread
-      while(!moduleThread.try_join_for(boost::chrono::milliseconds(10))) {
+      while(!_moduleThread.try_join_for(boost::chrono::milliseconds(10))) {
         // if thread is not yet joined, send interrupt() to all variables.
         for(auto& var : getAccessorListRecursive()) {
           auto el{var.getAppAccessorNoType().getHighLevelImplElement()};
@@ -96,19 +98,21 @@ namespace ChimeraTK {
         // joined.
       }
     }
-    assert(!moduleThread.joinable());
+    assert(!_moduleThread.joinable());
   }
 
   /*********************************************************************************************************************/
 
   ApplicationModule::~ApplicationModule() {
-    assert(!moduleThread.joinable());
+    assert(!_moduleThread.joinable());
   }
 
   /*********************************************************************************************************************/
 
   void ApplicationModule::setCurrentVersionNumber(VersionNumber versionNumber) {
-    if(versionNumber > currentVersionNumber) currentVersionNumber = versionNumber;
+    if(versionNumber > _currentVersionNumber) {
+      _currentVersionNumber = versionNumber;
+    }
   }
 
   /*********************************************************************************************************************/
@@ -124,14 +128,16 @@ namespace ChimeraTK {
     // layer. This is done in two steps, first for all poll-type variables and then for all push-types, because
     // poll-type reads might trigger distribution of values to push-type variables via a ConsumingFanOut.
     for(auto& variable : getAccessorListRecursive()) {
-      if(variable.getDirection().dir != VariableDirection::consuming) continue;
+      if(variable.getDirection().dir != VariableDirection::consuming) {
+        continue;
+      }
       if(variable.getMode() == UpdateMode::poll) {
         assert(!variable.getAppAccessorNoType().getHighLevelImplElement()->getAccessModeFlags().has(
             AccessMode::wait_for_new_data));
         Application::getInstance().getTestableMode().unlock("Initial value read for poll-type " + variable.getName());
-        Application::getInstance().circularDependencyDetector.registerDependencyWait(variable);
+        Application::getInstance()._circularDependencyDetector.registerDependencyWait(variable);
         variable.getAppAccessorNoType().read();
-        Application::getInstance().circularDependencyDetector.unregisterDependencyWait(variable);
+        Application::getInstance()._circularDependencyDetector.unregisterDependencyWait(variable);
         if(not Application::getInstance().getTestableMode().testLock()) {
           // The lock may have already been acquired if the above read() goes to a ConsumingFanOut, which sends out
           // the data to a slave decorated by a TestableModeAccessorDecorator. Hence we here must acquire the lock only
@@ -141,15 +147,17 @@ namespace ChimeraTK {
       }
     }
     for(auto& variable : getAccessorListRecursive()) {
-      if(variable.getDirection().dir != VariableDirection::consuming) continue;
+      if(variable.getDirection().dir != VariableDirection::consuming) {
+        continue;
+      }
       if(variable.getMode() == UpdateMode::push) {
         Application::getInstance().getTestableMode().unlock("Initial value read for push-type " + variable.getName());
-        Application::getInstance().circularDependencyDetector.registerDependencyWait(variable);
+        Application::getInstance()._circularDependencyDetector.registerDependencyWait(variable);
         // Will internally release and lock during the read, hence surround with lock/unlock
         Application::getInstance().getTestableMode().lock("Initial value read for push-type " + variable.getName());
         variable.getAppAccessorNoType().read();
         Application::getInstance().getTestableMode().unlock("Initial value read for push-type " + variable.getName());
-        Application::getInstance().circularDependencyDetector.unregisterDependencyWait(variable);
+        Application::getInstance()._circularDependencyDetector.unregisterDependencyWait(variable);
         Application::getInstance().getTestableMode().lock("Initial value read for push-type " + variable.getName());
       }
     }
@@ -165,12 +173,12 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void ApplicationModule::incrementDataFaultCounter() {
-    ++dataFaultCounter;
+    ++_dataFaultCounter;
   }
 
   void ApplicationModule::decrementDataFaultCounter() {
-    assert(dataFaultCounter > 0);
-    --dataFaultCounter;
+    assert(_dataFaultCounter > 0);
+    --_dataFaultCounter;
   }
 
   /*********************************************************************************************************************/
@@ -201,7 +209,9 @@ namespace ChimeraTK {
         startList}; // prepare the return list. Deltas from the inputs will be added to it.
     for(auto& accessor : this->getAccessorListRecursive()) {
       // not consumed from network -> not an input, just continue
-      if(accessor.getDirection().dir != VariableDirection::consuming) continue;
+      if(accessor.getDirection().dir != VariableDirection::consuming) {
+        continue;
+      }
 
       // find the feeder in the network
       auto proxy = accessor.getModel().visit(Model::returnApplicationModule, Model::keepApplicationModules,
@@ -244,12 +254,14 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   DataValidity ApplicationModule::getDataValidity() const {
-    if(dataFaultCounter == 0) return DataValidity::ok;
+    if(_dataFaultCounter == 0) {
+      return DataValidity::ok;
+    }
     if(_circularNetworkHash != 0) {
       // In a circular dependency network, internal inputs are ignored.
       // If all external inputs (including the ones from this module) are OK, the
       // data validity is set to OK.
-      if(Application::getInstance().circularNetworkInvalidityCounters[_circularNetworkHash] == 0) {
+      if(Application::getInstance()._circularNetworkInvalidityCounters[_circularNetworkHash] == 0) {
         return DataValidity::ok;
       }
     }

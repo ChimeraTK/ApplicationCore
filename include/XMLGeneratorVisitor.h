@@ -22,7 +22,7 @@ namespace ChimeraTK {
    */
   class XMLGenerator : NetworkVisitor {
    public:
-    XMLGenerator(Application& app);
+    explicit XMLGenerator(Application& app);
     ~XMLGenerator() = default;
 
     void run();
@@ -48,14 +48,14 @@ namespace ChimeraTK {
      * @param connectedModules XML node to fill
      * @param nodeList list of peer nodes
      */
-    void generatePeerList(xmlpp::Element* connectedModules, const std::list<VariableNetworkNode>& nodeList);
+    static void generatePeerList(xmlpp::Element* connectedModules, const std::list<VariableNetworkNode>& nodeList);
 
     /**
      * @brief convert std::type_info to user-readable string
      * @param type std::type_info
      * @return the string representation of type or {unknown} if not mappable
      */
-    std::string mapTypeToName(const std::type_info* type);
+    static std::string mapTypeToName(const std::type_info* type);
   };
 
   /********************************************************************************************************************/

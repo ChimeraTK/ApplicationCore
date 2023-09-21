@@ -9,8 +9,8 @@ namespace ChimeraTK {
 
   template<typename UserType>
   DebugPrintAccessorDecorator<UserType>::DebugPrintAccessorDecorator(
-      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, const std::string& fullyQualifiedName)
-  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), _fullyQualifiedName(fullyQualifiedName) {
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, std::string fullyQualifiedName)
+  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), _fullyQualifiedName(std::move(fullyQualifiedName)) {
     std::cout << "Enable debug output for variable '" << _fullyQualifiedName << "'." << std::endl;
   }
 

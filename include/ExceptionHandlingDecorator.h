@@ -20,7 +20,7 @@ namespace ChimeraTK {
      * taken from the VariableNetworkNode.
      */
     ExceptionHandlingDecorator(
-        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, VariableNetworkNode networkNode);
+        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, const VariableNetworkNode& networkNode);
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
@@ -42,7 +42,7 @@ namespace ChimeraTK {
 
     boost::weak_ptr<DeviceManager> _deviceManager;
 
-    bool previousReadFailed{true};
+    bool _previousReadFailed{true};
 
     boost::shared_ptr<RecoveryHelper> _recoveryHelper{nullptr};
     // store the recoveryAccessor separately. The RecoveryHelper only contains a pointer to TransferElement and can't be

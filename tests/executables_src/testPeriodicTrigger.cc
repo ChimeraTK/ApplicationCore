@@ -21,7 +21,7 @@ struct TestModule : public ApplicationModule {
 
 struct TestApplication : Application {
   TestApplication() : Application("myTestApp") {}
-  ~TestApplication() { shutdown(); }
+  ~TestApplication() override { shutdown(); }
 
   PeriodicTrigger p{this, "SomeTimer", "", 1000, {}, "/Config/timerPeriod", "../tickTock"};
   TestModule m{this, "SomeModule", ""};

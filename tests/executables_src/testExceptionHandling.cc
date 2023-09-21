@@ -26,9 +26,9 @@
 
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
-using Fixture = fixture_with_poll_and_push_input<false>;
-using Fixture_initHandlers = fixture_with_poll_and_push_input<false, true>;
-using Fixture_secondDeviceBroken = fixture_with_poll_and_push_input<false, false, true>;
+using Fixture = FixtureWithPollAndPushInput<false>;
+using Fixture_initHandlers = FixtureWithPollAndPushInput<false, true>;
+using Fixture_secondDeviceBroken = FixtureWithPollAndPushInput<false, false, true>;
 
 /*
  * This test suite checks behavior on a device related runtime error.
@@ -76,7 +76,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_1, Fixture) {
  * "The DataValidity::faulty flag resulting from the fault state is propagated once, even if the variable had the a
  * DataValidity::faulty flag already set previously for another reason."
  *
- * TODO: Set previous fault flag through Backend, and test inside TriggerFanOut (the latter needs the first)
+ * TODO Set previous fault flag through Backend, and test inside TriggerFanOut (the latter needs the first)
  */
 
 BOOST_FIXTURE_TEST_CASE(B_2_2_2_poll, Fixture) {
@@ -118,7 +118,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_2_poll, Fixture) {
  * "The DataValidity::faulty flag resulting from the fault state is propagated once, even if the variable had the a
  * DataValidity::faulty flag already set previously for another reason."
  *
- * TODO: Set previous fault flag through Backend, and test inside ThreadedFanOut and TriggerFanOut (as trigger).
+ * TODO Set previous fault flag through Backend, and test inside ThreadedFanOut and TriggerFanOut (as trigger).
  */
 
 BOOST_FIXTURE_TEST_CASE(B_2_2_2_push, Fixture) {

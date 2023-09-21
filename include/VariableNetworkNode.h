@@ -48,12 +48,12 @@ namespace ChimeraTK {
         const std::unordered_set<std::string>& tags = {});
 
     /** Constructor for a Device node */
-    VariableNetworkNode(const std::string& name, const std::string& deviceAlias, const std::string& registerName,
+    VariableNetworkNode(const std::string& name, const std::string& devAlias, const std::string& regName,
         UpdateMode mode, VariableDirection direction, const std::type_info& valTyp = typeid(AnyType),
         size_t nElements = 0);
 
     /** Constructor for a ControlSystem node */
-    VariableNetworkNode(std::string publicName, VariableDirection direction,
+    VariableNetworkNode(const std::string& pubName, VariableDirection direction,
         const std::type_info& valTyp = typeid(AnyType), size_t nElements = 0);
 
     /** Constructor for a constant accessor with zero value */
@@ -75,9 +75,9 @@ namespace ChimeraTK {
      * function may only be used on Application-type nodes. If the optional
      * argument tags is omitted, the tags will not be changed. To clear the
      *  tags, an empty set can be passed. */
-    void setMetaData(const std::string& name, const std::string& unit, const std::string& description);
+    void setMetaData(const std::string& name, const std::string& unit, const std::string& description) const;
     void setMetaData(const std::string& name, const std::string& unit, const std::string& description,
-        const std::unordered_set<std::string>& tags);
+        const std::unordered_set<std::string>& tags) const;
 
     /** Clear the owner network of this node. */
     void clearOwner();
@@ -91,7 +91,7 @@ namespace ChimeraTK {
     void setDirection(VariableDirection newDirection) const;
 
     /** Function checking if the node requires a fixed implementation */
-    bool hasImplementation() const;
+    [[nodiscard]] bool hasImplementation() const;
 
     /** Compare two nodes */
     bool operator==(const VariableNetworkNode& other) const;
@@ -105,42 +105,42 @@ namespace ChimeraTK {
      * names for tags only contain
      *  alpha-numeric characters (i.e. no spaces and no special characters). @todo
      * enforce this!*/
-    void addTag(const std::string& tag);
+    void addTag(const std::string& tag) const;
 
     /** Returns true if a circular dependency has been detected and the node is a consumer. */
-    bool isCircularInput() const;
+    [[nodiscard]] bool isCircularInput() const;
 
     /** Scan the networks and set the isCircularInput() flags if circular dependencies are detected.
      *  Must only be called on consuming nodes.
      */
-    std::list<EntityOwner*> scanForCircularDepencency();
+    [[nodiscard]] std::list<EntityOwner*> scanForCircularDepencency() const;
 
     /** Get the unique ID of the circular network. It is 0 if the node is not part of a circular network.*/
-    size_t getCircularNetworkHash() const;
+    [[nodiscard]] size_t getCircularNetworkHash() const;
 
     [[nodiscard]] bool isValid() const { return pdata && getType() != NodeType::invalid; }
 
     /** Getter for the properties */
-    NodeType getType() const;
-    UpdateMode getMode() const;
-    VariableDirection getDirection() const;
-    const std::type_info& getValueType() const;
-    std::string getName() const;
-    std::string getQualifiedName() const;
-    const std::string& getUnit() const;
-    const std::string& getDescription() const;
-    VariableNetworkNode getNodeToTrigger();
-    const std::string& getPublicName() const;
-    const std::string& getDeviceAlias() const;
-    const std::string& getRegisterName() const;
-    const std::unordered_set<std::string>& getTags() const;
-    void setNumberOfElements(size_t nElements);
-    size_t getNumberOfElements() const;
-    ChimeraTK::TransferElementAbstractor& getAppAccessorNoType() const;
+    [[nodiscard]] NodeType getType() const;
+    [[nodiscard]] UpdateMode getMode() const;
+    [[nodiscard]] VariableDirection getDirection() const;
+    [[nodiscard]] const std::type_info& getValueType() const;
+    [[nodiscard]] std::string getName() const;
+    [[nodiscard]] std::string getQualifiedName() const;
+    [[nodiscard]] const std::string& getUnit() const;
+    [[nodiscard]] const std::string& getDescription() const;
+    [[nodiscard]] VariableNetworkNode getNodeToTrigger() const;
+    [[nodiscard]] const std::string& getPublicName() const;
+    [[nodiscard]] const std::string& getDeviceAlias() const;
+    [[nodiscard]] const std::string& getRegisterName() const;
+    [[nodiscard]] const std::unordered_set<std::string>& getTags() const;
+    void setNumberOfElements(size_t nElements) const;
+    [[nodiscard]] size_t getNumberOfElements() const;
+    [[nodiscard]] ChimeraTK::TransferElementAbstractor& getAppAccessorNoType() const;
 
-    Model::ProcessVariableProxy getModel() const;
+    [[nodiscard]] Model::ProcessVariableProxy getModel() const;
 
-    void setModel(Model::ProcessVariableProxy model);
+    void setModel(Model::ProcessVariableProxy model) const;
 
     void setPublicName(const std::string& name) const;
 
@@ -154,12 +154,12 @@ namespace ChimeraTK {
 
     /** Return the unique ID of this node (will change every time the application
      * is started). */
-    const void* getUniqueId() const { return pdata.get(); }
+    [[nodiscard]] const void* getUniqueId() const { return pdata.get(); }
 
     /** Change pointer to the accessor. May only be used for application nodes. */
-    void setAppAccessorPointer(ChimeraTK::TransferElementAbstractor* accessor);
+    void setAppAccessorPointer(ChimeraTK::TransferElementAbstractor* accessor) const;
 
-    EntityOwner* getOwningModule() const;
+    [[nodiscard]] EntityOwner* getOwningModule() const;
 
     void setOwningModule(EntityOwner* newOwner) const;
 
@@ -182,7 +182,7 @@ namespace ChimeraTK {
    * the same instance of the data structure and thus stay consistent all the
    * time. */
   struct VariableNetworkNode_data {
-    VariableNetworkNode_data() {}
+    VariableNetworkNode_data() = default;
 
     /** Type of the node (Application, Device, ControlSystem, Trigger) */
     NodeType type{NodeType::invalid};
@@ -202,7 +202,7 @@ namespace ChimeraTK {
     std::string unit{ChimeraTK::TransferElement::unitNotSet};
 
     /** Description */
-    std::string description{""};
+    std::string description;
 
     /** Pointer to implementation if type == Application */
     ChimeraTK::TransferElementAbstractor* appNode{nullptr};
@@ -243,10 +243,10 @@ namespace ChimeraTK {
     size_t circularNetworkHash{0};
 
     /** Model representation of this variable */
-    Model::ProcessVariableProxy _model;
+    Model::ProcessVariableProxy model;
 
     /** Value in case of a constant */
-    userTypeMap _constantValue;
+    userTypeMap constantValue;
   };
 
   /********************************************************************************************************************/
@@ -277,7 +277,7 @@ namespace ChimeraTK {
   template<typename UserType>
   void VariableNetworkNode::setConstantValue(UserType value) {
     assert(pdata->type == NodeType::Constant);
-    boost::fusion::at_key<UserType>(pdata->_constantValue) = value;
+    boost::fusion::at_key<UserType>(pdata->constantValue) = value;
   }
 
   /********************************************************************************************************************/
@@ -285,7 +285,7 @@ namespace ChimeraTK {
   template<typename UserType>
   UserType VariableNetworkNode::getConstantValue() const {
     assert(pdata->type == NodeType::Constant);
-    return boost::fusion::at_key<UserType>(pdata->_constantValue);
+    return boost::fusion::at_key<UserType>(pdata->constantValue);
   }
 
   /********************************************************************************************************************/

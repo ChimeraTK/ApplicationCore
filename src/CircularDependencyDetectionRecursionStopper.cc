@@ -4,7 +4,7 @@
 
 #include <ChimeraTK/Exception.h>
 
-namespace ChimeraTK { namespace detail {
+namespace ChimeraTK::detail {
 
   size_t CircularDependencyDetectionRecursionStopper::_globalScanCounter{0};
 
@@ -14,7 +14,7 @@ namespace ChimeraTK { namespace detail {
   void CircularDependencyDetectionRecursionStopper::setRecursionDetected() {
     _localScanCounter = _globalScanCounter;
   }
-  bool CircularDependencyDetectionRecursionStopper::recursionDetected() {
+  bool CircularDependencyDetectionRecursionStopper::recursionDetected() const {
     if(_globalScanCounter == 0) {
       throw ChimeraTK::logic_error(
           "CircularDependencyDetectionRecursionStopper::recursionDetected() called without starting a scan.");
@@ -22,4 +22,4 @@ namespace ChimeraTK { namespace detail {
     return _localScanCounter == _globalScanCounter;
   }
 
-}} // namespace ChimeraTK::detail
+} // namespace ChimeraTK::detail

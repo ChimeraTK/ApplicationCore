@@ -12,6 +12,8 @@
 #include <ChimeraTK/ForwardDeclarations.h>
 #include <ChimeraTK/RegisterPath.h>
 
+#include <utility>
+
 namespace ChimeraTK {
 
   /**
@@ -19,18 +21,18 @@ namespace ChimeraTK {
    *  Convenience methods ensure that status and message are updated consistently.
    */
   struct StatusWithMessage : VariableGroup {
-    StatusWithMessage(VariableGroup* owner, std::string qualifiedStatusVariableName,
+    StatusWithMessage(VariableGroup* owner, const std::string& qualifiedStatusVariableName,
         const std::string& description = "", const std::unordered_set<std::string>& tags = {})
     : VariableGroup(owner, Utilities::getPathName(qualifiedStatusVariableName), description, tags),
       _status(this, Utilities::getUnqualifiedName(qualifiedStatusVariableName), description),
       _message(this, Utilities::getUnqualifiedName(qualifiedStatusVariableName) + "_message", "", "status message") {}
-    StatusWithMessage() {}
+    StatusWithMessage() = default;
 
     /// to be use only for status != OK
     void write(StatusOutput::Status status, std::string message) {
       assert(status != StatusOutput::Status::OK);
       _status = status;
-      _message = message;
+      _message = std::move(message);
       writeAll();
     }
     void writeOk() {
@@ -38,7 +40,12 @@ namespace ChimeraTK {
       _message = "";
       writeAll();
     }
+
+    // FIXME: This needs additional modification in ControlSystemAdapter if changed
+    // https://redmine.msktools.desy.de/issues/12241
+    // NOLINTNEXTLINE(readability-identifier-naming)
     StatusOutput _status;
+    // NOLINTNEXTLINE(readability-identifier-naming)
     ScalarOutput<std::string> _message;
   };
 
@@ -48,7 +55,11 @@ namespace ChimeraTK {
    *  If instantiated without message, the message is generated automatically from the status.
    */
   struct StatusWithMessageInput : StatusWithMessageReaderBase<StatusWithMessageInput>, public VariableGroup {
+    // TODO: This needs additional modification in ControlSystemAdapter if changed
+    // https://redmine.msktools.desy.de/issues/12241
+    // NOLINTNEXTLINE(readability-identifier-naming)
     StatusPushInput _status;
+    // NOLINTNEXTLINE(readability-identifier-naming)
     ScalarPushInput<std::string> _message; // left uninitialized, if no message source provided
 
     /// Construct StatusWithMessageInput which reads only status, not message

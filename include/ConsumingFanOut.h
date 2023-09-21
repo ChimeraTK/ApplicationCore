@@ -61,7 +61,7 @@ namespace ChimeraTK {
     // The ConsumingFanOut conceptually never has a wait_fow_new_data flags. Hence each read
     // operation returns with "new" data, even in case of an exception. So each read
     // always synchronises all slaves and pushes the content of the data buffer.
-    for(auto& slave : FanOut<UserType>::slaves) { // send out copies to slaves
+    for(auto& slave : FanOut<UserType>::_slaves) { // send out copies to slaves
       // do not send copy if no data is expected (e.g. trigger)
       if(slave->getNumberOfSamples() != 0) {
         slave->accessChannel(0) = _lastReceivedValue;
@@ -78,7 +78,7 @@ namespace ChimeraTK {
     // call the interrut sequences of the fan out (interrupts for fan input and all outputs), and the ndRegisterAccessor
     FanOut<UserType>::interrupt();
     if(this->_accessModeFlags.has(AccessMode::wait_for_new_data)) {
-      ChimeraTK::NDRegisterAccessor<UserType>::interrupt();
+      ChimeraTK::NDRegisterAccessorDecorator<UserType>::interrupt();
     }
   }
 

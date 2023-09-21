@@ -20,7 +20,7 @@ using namespace boost::unit_test_framework;
 
 namespace ctk = ChimeraTK;
 
-constexpr char ExceptionDummyCDD1[] = "(ExceptionDummy:1?map=test3.map)";
+constexpr std::string_view ExceptionDummyCDD1{"(ExceptionDummy:1?map=test3.map)"};
 
 /*********************************************************************************************************************/
 
@@ -93,7 +93,7 @@ struct TestApplication : ctk::Application {
 
   ctk::PeriodicTrigger trigger{this, "trigger", ""};
 
-  ctk::DeviceModule dev{this, ExceptionDummyCDD1, "/fakeTriggerToMakeUnusedPollRegsHappy"};
+  ctk::DeviceModule dev{this, ExceptionDummyCDD1.data(), "/fakeTriggerToMakeUnusedPollRegsHappy"};
 };
 
 /*********************************************************************************************************************/
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
     TestApplication app;
 
     boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
+        ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1.data()));
 
     ctk::TestFacility test(app, false);
 
@@ -119,7 +119,8 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
     test.runApplication();
 
     CHECK_EQUAL_TIMEOUT(
-        test.readScalar<int>("Devices/" + ctk::Utilities::stripName(ExceptionDummyCDD1, false) + "/status"), 1, 10000);
+        test.readScalar<int>("Devices/" + ctk::Utilities::stripName(ExceptionDummyCDD1.data(), false) + "/status"), 1,
+        10000);
 
     // Trigger and check
     app.trigger.sendTrigger();
@@ -139,7 +140,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
   std::cout << "testDirectConnectRead" << std::endl;
   TestApplication app;
   boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
-      ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
+      ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1.data()));
 
   app.module.vars.tick = {&app.module.vars, "/trigger/tick", "", ""};
 
@@ -179,7 +180,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectWrite) {
   std::cout << "testDirectConnectWrite" << std::endl;
   TestApplication app;
   boost::shared_ptr<ctk::ExceptionDummy> dummyBackend1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
-      ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1));
+      ChimeraTK::BackendFactory::getInstance().createBackend(ExceptionDummyCDD1.data()));
 
   app.module.readMode = 3;
 

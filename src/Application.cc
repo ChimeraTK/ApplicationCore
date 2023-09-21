@@ -44,7 +44,7 @@ Application::Application(const std::string& name) : ApplicationBase(name), Modul
 /*********************************************************************************************************************/
 
 Application::~Application() {
-  if(lifeCycleState == LifeCycleState::initialisation && !hasBeenShutdown) {
+  if(_lifeCycleState == LifeCycleState::initialisation && !hasBeenShutdown) {
     // likely an exception has been thrown in the initialisation phase, in which case we better call shutdown to prevent
     // ApplicationBase from complaining and hiding the exception
     ApplicationBase::shutdown();
@@ -54,30 +54,30 @@ Application::~Application() {
 /*********************************************************************************************************************/
 
 void Application::enableTestableMode() {
-  assert(not initialiseCalled);
-  testableMode.enable();
+  assert(not _initialiseCalled);
+  _testableMode.enable();
 }
 
 /*********************************************************************************************************************/
 
 void Application::registerThread(const std::string& name) {
-  getInstance().testableMode.setThreadName(name);
+  getInstance()._testableMode.setThreadName(name);
 }
 
 /*********************************************************************************************************************/
 
 void Application::incrementDataLossCounter(const std::string& name) {
-  if(getInstance().debugDataLoss) {
+  if(getInstance()._debugDataLoss) {
     std::cout << "Data loss in variable " << name << std::endl;
   }
-  getInstance().dataLossCounter++;
+  getInstance()._dataLossCounter++;
 }
 
 /*********************************************************************************************************************/
 
 size_t Application::getAndResetDataLossCounter() {
-  size_t counter = getInstance().dataLossCounter.load(std::memory_order_relaxed);
-  while(!getInstance().dataLossCounter.compare_exchange_weak(
+  size_t counter = getInstance()._dataLossCounter.load(std::memory_order_relaxed);
+  while(!getInstance()._dataLossCounter.compare_exchange_weak(
       counter, 0, std::memory_order_release, std::memory_order_relaxed)) {
   }
   return counter;
@@ -86,7 +86,7 @@ size_t Application::getAndResetDataLossCounter() {
 /*********************************************************************************************************************/
 
 void Application::initialise() {
-  if(initialiseCalled) {
+  if(_initialiseCalled) {
     throw ChimeraTK::logic_error("Application::initialise() was already called before.");
   }
 
@@ -94,21 +94,21 @@ void Application::initialise() {
     throw ChimeraTK::logic_error("Application::initialise() was called without an instance of ChimeraTK::PVManager.");
   }
 
-  cm.setDebugConnections(enableDebugMakeConnections);
-  cm.finalise();
+  _cm.setDebugConnections(_enableDebugMakeConnections);
+  _cm.finalise();
 
-  initialiseCalled = true;
+  _initialiseCalled = true;
 }
 
 /*********************************************************************************************************************/
 
 void Application::optimiseUnmappedVariables(const std::set<std::string>& names) {
-  if(!initialiseCalled) {
+  if(!_initialiseCalled) {
     throw ChimeraTK::logic_error(
         "Application::initialise() must be called before Application::optimiseUnmappedVariables().");
   }
 
-  cm.optimiseUnmappedVariables(names);
+  _cm.optimiseUnmappedVariables(names);
 }
 
 /*********************************************************************************************************************/
@@ -116,24 +116,26 @@ void Application::optimiseUnmappedVariables(const std::set<std::string>& names) 
 void Application::run() {
   assert(not applicationName.empty());
 
-  if(testableMode.isEnabled()) {
-    if(!testFacilityRunApplicationCalled) {
+  if(_testableMode.isEnabled()) {
+    if(!_testFacilityRunApplicationCalled) {
       throw ChimeraTK::logic_error(
           "Testable mode enabled but Application::run() called directly. Call TestFacility::runApplication() instead.");
     }
   }
 
-  if(runCalled) {
+  if(_runCalled) {
     throw ChimeraTK::logic_error("Application::run() has already been called before.");
   }
-  runCalled = true;
+  _runCalled = true;
 
   // realise the PV connections
-  cm.connect();
+  _cm.connect();
 
   // set all initial version numbers in the modules to the same value
   for(auto& module : getSubmoduleListRecursive()) {
-    if(module->getModuleType() != ModuleType::ApplicationModule) continue;
+    if(module->getModuleType() != ModuleType::ApplicationModule) {
+      continue;
+    }
     module->setCurrentVersionNumber(getStartVersion());
   }
 
@@ -143,10 +145,10 @@ void Application::run() {
   }
 
   // Switch life-cycle state to run
-  lifeCycleState = LifeCycleState::run;
+  _lifeCycleState = LifeCycleState::run;
 
   // start the necessary threads for the FanOuts etc.
-  for(auto& internalModule : internalModuleList) {
+  for(auto& internalModule : _internalModuleList) {
     internalModule->activate();
   }
 
@@ -169,7 +171,7 @@ void Application::run() {
   };
 
   if(Application::getInstance().getTestableMode().isEnabled()) {
-    for(auto& internalModule : internalModuleList) {
+    for(auto& internalModule : _internalModuleList) {
       waitForTestableMode(internalModule.get());
     }
 
@@ -179,25 +181,25 @@ void Application::run() {
   }
 
   // Launch circular dependency detector thread
-  circularDependencyDetector.startDetectBlockedModules();
+  _circularDependencyDetector.startDetectBlockedModules();
 }
 
 /*********************************************************************************************************************/
 
 void Application::shutdown() {
   // switch life-cycle state
-  lifeCycleState = LifeCycleState::shutdown;
+  _lifeCycleState = LifeCycleState::shutdown;
 
   // first allow to run the application threads again, if we are in testable
   // mode
-  if(testableMode.isEnabled() && testableMode.testLock()) {
-    testableMode.unlock("shutdown");
+  if(_testableMode.isEnabled() && _testableMode.testLock()) {
+    _testableMode.unlock("shutdown");
   }
 
   // deactivate the FanOuts first, since they have running threads inside
   // accessing the modules etc. (note: the modules are members of the
   // Application implementation and thus get destroyed after this destructor)
-  for(auto& internalModule : internalModuleList) {
+  for(auto& internalModule : _internalModuleList) {
     internalModule->deactivate();
   }
 
@@ -212,7 +214,7 @@ void Application::shutdown() {
     module->terminate();
   }
 
-  circularDependencyDetector.terminate();
+  _circularDependencyDetector.terminate();
 
   ApplicationBase::shutdown();
 }

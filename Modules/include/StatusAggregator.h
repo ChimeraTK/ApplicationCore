@@ -69,7 +69,7 @@ namespace ChimeraTK {
      *  already. Make sure all StatusOutputs to be aggregated are constructed before this aggregator.
      */
     StatusAggregator(ModuleGroup* owner, const std::string& outputName, const std::string& description,
-        PriorityMode mode = PriorityMode::fwok, const std::unordered_set<std::string>& tagsToAggregate = {},
+        PriorityMode mode = PriorityMode::fwok, std::unordered_set<std::string> tagsToAggregate = {},
         const std::unordered_set<std::string>& outputTags = {});
 
     StatusAggregator(StatusAggregator&& other) = default;
@@ -96,7 +96,7 @@ namespace ChimeraTK {
     std::vector<StatusWithMessageInput> _inputs;
 
     /// Priority mode used in aggregation
-    PriorityMode _mode;
+    PriorityMode _mode{PriorityMode::fwok};
 
     /// List of tags to aggregate
     std::unordered_set<std::string> _tagsToAggregate;
@@ -107,7 +107,7 @@ namespace ChimeraTK {
     int getPriority(StatusOutput::Status status) const;
 
     /// Allow runtime debugging
-    VoidInput debug{this, "/Debug/statusAggregators", "Print debug info for all status aggregators once."};
+    VoidInput _debug{this, "/Debug/statusAggregators", "Print debug info for all status aggregators once."};
   };
 
   /********************************************************************************************************************/

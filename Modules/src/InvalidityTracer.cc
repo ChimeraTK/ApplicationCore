@@ -48,10 +48,14 @@ namespace ChimeraTK {
 
     void InvalidityTracerVisitor::dispatch(const VariableNetworkNode& node) {
       // ignore non-application nodes
-      if(node.getType() != NodeType::Application) return;
+      if(node.getType() != NodeType::Application) {
+        return;
+      }
 
       // ignore non-inputs
-      if(node.getDirection().dir != VariableDirection::consuming) return;
+      if(node.getDirection().dir != VariableDirection::consuming) {
+        return;
+      }
 
       // get accessor and cast into right type (all application accessors must have the
       // MetaDataPropagatingRegisterDecorator).
@@ -90,7 +94,9 @@ namespace ChimeraTK {
       // dispatch to all ApplicationModules
       for(auto* module : Application::getInstance().getSubmoduleListRecursive()) {
         auto* appModule = dynamic_cast<ApplicationModule*>(module);
-        if(!appModule) continue;
+        if(!appModule) {
+          continue;
+        }
         visitor.dispatch(*appModule);
       }
 

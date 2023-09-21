@@ -21,14 +21,13 @@ namespace ChimeraTK {
    * and distributes each of them to any number of slaves. */
   class TriggerFanOut : public InternalModule {
    public:
-    TriggerFanOut(
-        const boost::shared_ptr<ChimeraTK::TransferElement>& externalTriggerImpl, DeviceManager& deviceModule);
+    TriggerFanOut(boost::shared_ptr<ChimeraTK::TransferElement> externalTriggerImpl, DeviceManager& deviceModule);
 
     ~TriggerFanOut() override;
 
     void activate() override;
 
-    void deactivate() override;
+    void deactivate() final;
 
     /** Add a new network the TriggerFanOut. The network is defined by its feeding node. */
     template<typename UserType>
@@ -41,17 +40,17 @@ namespace ChimeraTK {
 
    protected:
     /** TransferElement acting as our trigger */
-    boost::shared_ptr<ChimeraTK::TransferElement> externalTrigger;
+    boost::shared_ptr<ChimeraTK::TransferElement> _externalTrigger;
 
     /** Map of the feeding NDRegisterAccessor to the corresponding FeedingFanOut
      * for each UserType */
     template<typename UserType>
     using FanOutMap = std::map<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
         boost::shared_ptr<FeedingFanOut<UserType>>>;
-    TemplateUserTypeMap<FanOutMap> fanOutMap;
+    TemplateUserTypeMap<FanOutMap> _fanOutMap;
 
     /** TransferGroup containing all feeders NDRegisterAccessors */
-    ChimeraTK::TransferGroup transferGroup;
+    ChimeraTK::TransferGroup _transferGroup;
 
     /** Thread handling the synchronisation, if needed */
     boost::thread _thread;
@@ -75,14 +74,14 @@ namespace ChimeraTK {
     }
 
     // add feeder to TransferGroup
-    transferGroup.addAccessor(feedingNode);
+    _transferGroup.addAccessor(feedingNode);
 
     // create FeedingFanOut to distribute the read value to all consumers (even if just one)
     auto feedingFanOut = boost::make_shared<FeedingFanOut<UserType>>(feedingNode->getName(), feedingNode->getUnit(),
         feedingNode->getDescription(), feedingNode->getNumberOfSamples(),
         false, // in TriggerFanOuts we cannot have return channels
         consumerImplementationPairs);
-    boost::fusion::at_key<UserType>(fanOutMap.table)[feedingNode] = feedingFanOut;
+    boost::fusion::at_key<UserType>(_fanOutMap.table)[feedingNode] = feedingFanOut;
   }
 
   /********************************************************************************************************************/

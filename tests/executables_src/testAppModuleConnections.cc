@@ -21,7 +21,7 @@ using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
 // list of user types the accessors are tested with
-typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double> test_types;
+using test_types = boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double>;
 
 /*********************************************************************************************************************/
 /* the ApplicationModule for the test is a template of the user type */
@@ -241,28 +241,44 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoArrayAccessors, T, test_types) {
   BOOST_CHECK(app.testModule.consumingPushArray.getNElements() == 10);
 
   // single threaded test
-  for(auto& val : app.testModule.consumingPushArray) val = 0;
-  for(unsigned int i = 0; i < 10; ++i) app.testModule.feedingArray[i] = 99 + (T)i;
-  for(auto& val : app.testModule.consumingPushArray) BOOST_CHECK(val == 0);
+  for(auto& val : app.testModule.consumingPushArray) {
+    val = 0;
+  }
+  for(unsigned int i = 0; i < 10; ++i) {
+    app.testModule.feedingArray[i] = 99 + (T)i;
+  }
+  for(auto& val : app.testModule.consumingPushArray) {
+    BOOST_CHECK(val == 0);
+  }
   app.testModule.feedingArray.write();
-  for(auto& val : app.testModule.consumingPushArray) BOOST_CHECK(val == 0);
+  for(auto& val : app.testModule.consumingPushArray) {
+    BOOST_CHECK(val == 0);
+  }
   app.testModule.consumingPushArray.read();
-  for(unsigned int i = 0; i < 10; ++i) BOOST_CHECK(app.testModule.consumingPushArray[i] == 99 + (T)i);
+  for(unsigned int i = 0; i < 10; ++i) {
+    BOOST_CHECK(app.testModule.consumingPushArray[i] == 99 + (T)i);
+  }
 
   // launch read() on the consumer asynchronously and make sure it does not yet
   // receive anything
   auto futRead = std::async(std::launch::async, [&app] { app.testModule.consumingPushArray.read(); });
   BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
 
-  for(unsigned int i = 0; i < 10; ++i) BOOST_CHECK(app.testModule.consumingPushArray[i] == 99 + (T)i);
+  for(unsigned int i = 0; i < 10; ++i) {
+    BOOST_CHECK(app.testModule.consumingPushArray[i] == 99 + (T)i);
+  }
 
   // write to the feeder
-  for(unsigned int i = 0; i < 10; ++i) app.testModule.feedingArray[i] = 42 - (T)i;
+  for(unsigned int i = 0; i < 10; ++i) {
+    app.testModule.feedingArray[i] = 42 - (T)i;
+  }
   app.testModule.feedingArray.write();
 
   // check that the consumer now receives the just written value
   BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
-  for(unsigned int i = 0; i < 10; ++i) BOOST_CHECK(app.testModule.consumingPushArray[i] == 42 - (T)i);
+  for(unsigned int i = 0; i < 10; ++i) {
+    BOOST_CHECK(app.testModule.consumingPushArray[i] == 42 - (T)i);
+  }
 }
 
 /*********************************************************************************************************************/

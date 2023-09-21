@@ -439,33 +439,35 @@ BOOST_AUTO_TEST_CASE(testDev2CSAppTrigger) {
   BOOST_TEST(rb == 12);
 }
 
-constexpr char dummySdm[] = "(TestTransferGroupDummy?map=test_readonly.map)";
+constexpr std::string_view dummySdm{"(TestTransferGroupDummy?map=test_readonly.map)"};
 
 // list of user types the accessors are tested with
-typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double> test_types;
+using test_types = boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double>;
 
 /**********************************************************************************************************************/
 
 class TestTransferGroupDummy : public ChimeraTK::DummyBackend {
  public:
-  TestTransferGroupDummy(std::string mapFileName) : DummyBackend(mapFileName) {}
+  explicit TestTransferGroupDummy(const std::string& mapFileName) : DummyBackend(mapFileName) {}
 
+  // FIXME: This depends on the API from DeviceAccess. If this linter warning is fixed, code will not compile anymore
+  // NOLINTNEXTLINE(performance-unnecessary-value-param)
   static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::map<std::string, std::string> parameters) {
     return boost::shared_ptr<DeviceBackend>(new TestTransferGroupDummy(parameters["map"]));
   }
 
   void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override {
-    last_bar = bar;
-    last_address = address;
-    last_sizeInBytes = sizeInBytes;
+    lastBar = bar;
+    lastAddress = address;
+    lastSizeInBytes = sizeInBytes;
     numberOfTransfers++;
     DummyBackend::read(bar, address, data, sizeInBytes);
   }
 
   std::atomic<size_t> numberOfTransfers{0};
-  std::atomic<uint64_t> last_bar;
-  std::atomic<uint64_t> last_address;
-  std::atomic<size_t> last_sizeInBytes;
+  std::atomic<uint64_t> lastBar{};
+  std::atomic<uint64_t> lastAddress{};
+  std::atomic<size_t> lastSizeInBytes{};
 };
 
 /*********************************************************************************************************************/
@@ -509,7 +511,7 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {
     ChimeraTK::BackendFactory::getInstance().registerBackendType(
         "TestTransferGroupDummy", &TestTransferGroupDummy::createInstance);
-    dev2 = {this, dummySdm, "/testModule/theTrigger"};
+    dev2 = {this, dummySdm.data(), "/testModule/theTrigger"};
   }
   ~TestApplication() override { shutdown(); }
 
@@ -534,10 +536,10 @@ BOOST_AUTO_TEST_CASE(testTriggerTransferGroup) {
   app.setPVManager(pvManagers.second);
 
   ChimeraTK::Device dev;
-  dev.open(dummySdm);
+  dev.open(dummySdm.data());
   auto backend = boost::dynamic_pointer_cast<TestTransferGroupDummy>(
-      ChimeraTK::BackendFactory::getInstance().createBackend(dummySdm));
-  BOOST_CHECK(backend != NULL);
+      ChimeraTK::BackendFactory::getInstance().createBackend(dummySdm.data()));
+  BOOST_CHECK(backend != nullptr);
 
   app.initialise();
   app.run();
@@ -557,12 +559,12 @@ BOOST_AUTO_TEST_CASE(testTriggerTransferGroup) {
   // trigger the transfer
   app.testModule.theTrigger.write();
   CHECK_TIMEOUT(backend->numberOfTransfers == 2, 10000);
-  BOOST_TEST(backend->last_bar == 0);
-  BOOST_TEST(backend->last_address == 0);
+  BOOST_TEST(backend->lastBar == 0);
+  BOOST_TEST(backend->lastAddress == 0);
 
   // We only explicitly connect the three registers in the app, but the connection code will also connect the other
   // registers into the CS, hence we need to check for the full size
-  BOOST_TEST(backend->last_sizeInBytes == 32);
+  BOOST_TEST(backend->lastSizeInBytes == 32);
 
   // check result
   app.testModule.consumingPush.read();
@@ -580,12 +582,12 @@ BOOST_AUTO_TEST_CASE(testTriggerTransferGroup) {
   // trigger the transfer
   app.testModule.theTrigger.write();
   CHECK_TIMEOUT(backend->numberOfTransfers == 3, 10000);
-  BOOST_TEST(backend->last_bar == 0);
-  BOOST_TEST(backend->last_address == 0);
+  BOOST_TEST(backend->lastBar == 0);
+  BOOST_TEST(backend->lastAddress == 0);
 
   // We only explicitly connect the three registers in the app, but the connection code will also connect the other
   // registers into the CS, hence we need to check for the full size
-  BOOST_TEST(backend->last_sizeInBytes == 32);
+  BOOST_TEST(backend->lastSizeInBytes == 32);
 
   // check result
   app.testModule.consumingPush.read();

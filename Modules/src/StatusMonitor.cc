@@ -20,11 +20,11 @@ namespace ChimeraTK {
 
   void MonitorBase::setStatus(StatusOutput::Status newStatus) {
     // update only if status has changed, but always in case of initial value
-    if(status != newStatus || getDataValidity() != lastStatusValidity ||
+    if(status != newStatus || getDataValidity() != _lastStatusValidity ||
         status.getVersionNumber() == VersionNumber{nullptr}) {
       status = newStatus;
       status.write();
-      lastStatusValidity = getDataValidity();
+      _lastStatusValidity = getDataValidity();
     }
   }
 

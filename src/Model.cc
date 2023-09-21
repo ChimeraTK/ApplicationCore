@@ -35,14 +35,14 @@ namespace ChimeraTK::Model {
 
   RootProxy::RootProxy(ModuleGroup& app) : Proxy(0, std::make_shared<Impl>()) {
     // create root vertex
-    _d->vertex = boost::add_vertex(_d->impl->graph);
+    _d->vertex = boost::add_vertex(_d->impl->_graph);
     VertexProperties::RootProperties props{app};
-    _d->impl->graph[_d->vertex].type = VertexProperties::Type::root;
-    _d->impl->graph[_d->vertex].p.emplace<VertexProperties::RootProperties>(props);
+    _d->impl->_graph[_d->vertex].type = VertexProperties::Type::root;
+    _d->impl->_graph[_d->vertex].p.emplace<VertexProperties::RootProperties>(props);
 
     // create neighbourhood edge to itself: the root represents both the Application ModuleGroup and the directory.
-    auto neighbourhoodEdge = boost::add_edge(_d->vertex, _d->vertex, _d->impl->graph).first;
-    _d->impl->graph[neighbourhoodEdge].type = EdgeProperties::Type::neighbourhood;
+    auto neighbourhoodEdge = boost::add_edge(_d->vertex, _d->vertex, _d->impl->_graph).first;
+    _d->impl->_graph[neighbourhoodEdge].type = EdgeProperties::Type::neighbourhood;
   }
 
   /********************************************************************************************************************/
@@ -72,6 +72,9 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   DirectoryProxy RootProxy::addDirectoryRecursive(const std::string& name) {
+    // The analyzer assumes that m_Size can be modified in boost::is_any_of so that there could be a mismatch between
+    // creating a dynamic entry and not freeing it later if m_size suddenly is different from what it was
+    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
     return _d->impl->addDirectoryRecursive(_d->vertex, name);
   }
 
@@ -112,7 +115,7 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   const std::string& ModuleGroupProxy::getName() const {
-    return std::get<VertexProperties::ModuleGroupProperties>(_d->impl->graph[_d->vertex].p).name;
+    return std::get<VertexProperties::ModuleGroupProperties>(_d->impl->_graph[_d->vertex].p).name;
   }
 
   /********************************************************************************************************************/
@@ -148,7 +151,7 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   ModuleGroup& ModuleGroupProxy::getModuleGroup() const {
-    return std::get<VertexProperties::ModuleGroupProperties>(_d->impl->graph[_d->vertex].p).module;
+    return std::get<VertexProperties::ModuleGroupProperties>(_d->impl->_graph[_d->vertex].p).module;
   }
 
   /********************************************************************************************************************/
@@ -157,9 +160,9 @@ namespace ChimeraTK::Model {
     // Updating the reference works only through the constructor, hence we have to get all other data members and
     // construct a new one in the std::variant.
 
-    auto currentProps = std::get<VertexProperties::ModuleGroupProperties>(_d->impl->graph[_d->vertex].p);
+    auto currentProps = std::get<VertexProperties::ModuleGroupProperties>(_d->impl->_graph[_d->vertex].p);
 
-    _d->impl->graph[_d->vertex].p.emplace<VertexProperties::ModuleGroupProperties>(
+    _d->impl->_graph[_d->vertex].p.emplace<VertexProperties::ModuleGroupProperties>(
         VertexProperties::ModuleGroupProperties{std::move(currentProps.name), module});
   }
 
@@ -170,7 +173,7 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   const std::string& ApplicationModuleProxy::getName() const {
-    return std::get<VertexProperties::ApplicationModuleProperties>(_d->impl->graph[_d->vertex].p).name;
+    return std::get<VertexProperties::ApplicationModuleProperties>(_d->impl->_graph[_d->vertex].p).name;
   }
 
   /********************************************************************************************************************/
@@ -200,20 +203,20 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   ApplicationModule& ApplicationModuleProxy::getApplicationModule() const {
-    return std::get<VertexProperties::ApplicationModuleProperties>(_d->impl->graph[_d->vertex].p).module;
+    return std::get<VertexProperties::ApplicationModuleProperties>(_d->impl->_graph[_d->vertex].p).module;
   }
 
   /********************************************************************************************************************/
 
   void ApplicationModuleProxy::informMove(ApplicationModule& module) {
-    assert(_d->impl->graph[_d->vertex].type == VertexProperties::Type::applicationModule);
+    assert(_d->impl->_graph[_d->vertex].type == VertexProperties::Type::applicationModule);
 
     // Updating the reference works only through the constructor, hence we have to get all other data members and
     // construct a new one in the std::variant.
 
-    auto currentProps = std::get<VertexProperties::ApplicationModuleProperties>(_d->impl->graph[_d->vertex].p);
+    auto currentProps = std::get<VertexProperties::ApplicationModuleProperties>(_d->impl->_graph[_d->vertex].p);
 
-    _d->impl->graph[_d->vertex].p.emplace<VertexProperties::ApplicationModuleProperties>(
+    _d->impl->_graph[_d->vertex].p.emplace<VertexProperties::ApplicationModuleProperties>(
         VertexProperties::ApplicationModuleProperties{std::move(currentProps.name), module});
   }
 
@@ -224,7 +227,7 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   const std::string& VariableGroupProxy::getName() const {
-    return std::get<VertexProperties::VariableGroupProperties>(_d->impl->graph[_d->vertex].p).name;
+    return std::get<VertexProperties::VariableGroupProperties>(_d->impl->_graph[_d->vertex].p).name;
   }
 
   /********************************************************************************************************************/
@@ -252,17 +255,17 @@ namespace ChimeraTK::Model {
 
     do {
       // there must be exactly one owner
-      assert(boost::in_degree(currentVertex, _d->impl->ownershipView) == 1);
+      assert(boost::in_degree(currentVertex, _d->impl->_ownershipView) == 1);
 
       // Update currentVertex to the owner of the previous currentVertex.
       currentVertex =
-          boost::source(*boost::in_edges(currentVertex, _d->impl->ownershipView).first, _d->impl->ownershipView);
+          boost::source(*boost::in_edges(currentVertex, _d->impl->_ownershipView).first, _d->impl->_ownershipView);
 
       // repeat until the type of the currentVertex is no longer a VariablGroup
-    } while(_d->impl->ownershipView[currentVertex].type == VertexProperties::Type::variableGroup);
+    } while(_d->impl->_ownershipView[currentVertex].type == VertexProperties::Type::variableGroup);
 
     // The type must now be a ApplicationModule
-    assert(_d->impl->ownershipView[currentVertex].type == VertexProperties::Type::applicationModule);
+    assert(_d->impl->_ownershipView[currentVertex].type == VertexProperties::Type::applicationModule);
 
     return {currentVertex, _d->impl};
   }
@@ -270,20 +273,20 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   VariableGroup& VariableGroupProxy::getVariableGroup() const {
-    return std::get<VertexProperties::VariableGroupProperties>(_d->impl->graph[_d->vertex].p).module;
+    return std::get<VertexProperties::VariableGroupProperties>(_d->impl->_graph[_d->vertex].p).module;
   }
 
   /********************************************************************************************************************/
 
   void VariableGroupProxy::informMove(VariableGroup& group) {
-    assert(_d->impl->graph[_d->vertex].type == VertexProperties::Type::variableGroup);
+    assert(_d->impl->_graph[_d->vertex].type == VertexProperties::Type::variableGroup);
 
     // Updating the reference works only through the constructor, hence we have to get all other data members and
     // construct a new one in the std::variant.
 
-    auto currentProps = std::get<VertexProperties::VariableGroupProperties>(_d->impl->graph[_d->vertex].p);
+    auto currentProps = std::get<VertexProperties::VariableGroupProperties>(_d->impl->_graph[_d->vertex].p);
 
-    _d->impl->graph[_d->vertex].p.emplace<VertexProperties::VariableGroupProperties>(
+    _d->impl->_graph[_d->vertex].p.emplace<VertexProperties::VariableGroupProperties>(
         VertexProperties::VariableGroupProperties{std::move(currentProps.name), group});
   }
 
@@ -294,13 +297,13 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   const std::string& DeviceModuleProxy::getAliasOrCdd() const {
-    return std::get<VertexProperties::DeviceModuleProperties>(_d->impl->graph[_d->vertex].p).aliasOrCdd;
+    return std::get<VertexProperties::DeviceModuleProperties>(_d->impl->_graph[_d->vertex].p).aliasOrCdd;
   }
 
   /********************************************************************************************************************/
 
   ProcessVariableProxy DeviceModuleProxy::getTrigger() const {
-    return std::get<VertexProperties::DeviceModuleProperties>(_d->impl->graph[_d->vertex].p).trigger;
+    return std::get<VertexProperties::DeviceModuleProperties>(_d->impl->_graph[_d->vertex].p).trigger;
   }
 
   /********************************************************************************************************************/
@@ -315,9 +318,9 @@ namespace ChimeraTK::Model {
     // Updating the reference works only through the constructor, hence we have to get all other data members and
     // construct a new one in the std::variant.
 
-    auto currentProps = std::get<VertexProperties::DeviceModuleProperties>(_d->impl->graph[_d->vertex].p);
+    auto currentProps = std::get<VertexProperties::DeviceModuleProperties>(_d->impl->_graph[_d->vertex].p);
 
-    _d->impl->graph[_d->vertex].p.emplace<VertexProperties::DeviceModuleProperties>(
+    _d->impl->_graph[_d->vertex].p.emplace<VertexProperties::DeviceModuleProperties>(
         VertexProperties::DeviceModuleProperties{
             std::move(currentProps.aliasOrCdd), std::move(currentProps.trigger), module});
   }
@@ -329,25 +332,25 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   const std::string& ProcessVariableProxy::getName() const {
-    return std::get<VertexProperties::ProcessVariableProperties>(_d->impl->graph[_d->vertex].p).name;
+    return std::get<VertexProperties::ProcessVariableProperties>(_d->impl->_graph[_d->vertex].p).name;
   }
 
   /********************************************************************************************************************/
 
   const std::vector<VariableNetworkNode>& ProcessVariableProxy::getNodes() const {
-    return std::get<VertexProperties::ProcessVariableProperties>(_d->impl->graph[_d->vertex].p).nodes;
+    return std::get<VertexProperties::ProcessVariableProperties>(_d->impl->_graph[_d->vertex].p).nodes;
   }
 
   /********************************************************************************************************************/
 
   const std::unordered_set<std::string>& ProcessVariableProxy::getTags() const {
-    return std::get<VertexProperties::ProcessVariableProperties>(_d->impl->graph[_d->vertex].p).tags;
+    return std::get<VertexProperties::ProcessVariableProperties>(_d->impl->_graph[_d->vertex].p).tags;
   }
 
   /********************************************************************************************************************/
 
   void ProcessVariableProxy::addTag(const std::string& tag) {
-    std::get<VertexProperties::ProcessVariableProperties>(_d->impl->graph[_d->vertex].p).tags.insert(tag);
+    std::get<VertexProperties::ProcessVariableProperties>(_d->impl->_graph[_d->vertex].p).tags.insert(tag);
   }
 
   /********************************************************************************************************************/
@@ -356,12 +359,17 @@ namespace ChimeraTK::Model {
     assert(node.getType() == NodeType::Application || node.getType() == NodeType::Device);
 
     // remove node from the list of nodes in the PV's vertex properties
-    auto& nodes = std::get<VertexProperties::ProcessVariableProperties>(_d->impl->graph[_d->vertex].p).nodes;
-    auto it = std::find(nodes.begin(), nodes.end(), node);
-    if(it == nodes.end()) {
-      return;
+    try {
+      auto& nodes = std::get<VertexProperties::ProcessVariableProperties>(_d->impl->_graph[_d->vertex].p).nodes;
+      auto it = std::find(nodes.begin(), nodes.end(), node);
+      if(it == nodes.end()) {
+        return;
+      }
+      nodes.erase(it);
     }
-    nodes.erase(it);
+    catch(std::bad_variant_access&) {
+      assert(false);
+    }
 
     // remove model relationships between PV and module
     if(node.getType() == NodeType::Application) {
@@ -371,7 +379,7 @@ namespace ChimeraTK::Model {
       // remove ownership edge to variable group (if any)
       auto vgm = vg->getModel();
       if(vgm.isValid()) {
-        boost::remove_edge(vgm._d->vertex, _d->vertex, _d->impl->graph);
+        boost::remove_edge(vgm._d->vertex, _d->vertex, _d->impl->_graph);
       }
 
       // remove pv access edge, and along side the ownership edge if directly owned by application module
@@ -380,8 +388,8 @@ namespace ChimeraTK::Model {
       auto amm = am->getModel();
 
       assert(amm.isValid());
-      boost::remove_edge(amm._d->vertex, _d->vertex, _d->impl->graph);
-      boost::remove_edge(_d->vertex, amm._d->vertex, _d->impl->graph);
+      boost::remove_edge(amm._d->vertex, _d->vertex, _d->impl->_graph);
+      boost::remove_edge(_d->vertex, amm._d->vertex, _d->impl->_graph);
     }
     else if(node.getType() == NodeType::Device) {
       auto* dm = dynamic_cast<DeviceModule*>(node.getOwningModule());
@@ -390,19 +398,19 @@ namespace ChimeraTK::Model {
       // remove ownership edge to variable group (if any)
       auto dmm = dm->getModel();
       if(dmm.isValid()) {
-        boost::remove_edge(_d->vertex, dmm._d->vertex, _d->impl->graph);
-        boost::remove_edge(dmm._d->vertex, _d->vertex, _d->impl->graph);
+        boost::remove_edge(_d->vertex, dmm._d->vertex, _d->impl->_graph);
+        boost::remove_edge(dmm._d->vertex, _d->vertex, _d->impl->_graph);
       }
     }
 
     // if only one incoming edge exists any more, remove the entire variable. the one incoming edge is the parenthood
     // relation. ownership relations are also incoming, of which we must have zero.
-    if(boost::in_degree(_d->vertex, _d->impl->graph) <= 1 && boost::out_degree(_d->vertex, _d->impl->graph) == 0) {
+    if(boost::in_degree(_d->vertex, _d->impl->_graph) <= 1 && boost::out_degree(_d->vertex, _d->impl->_graph) == 0) {
       // Note: We cannot really remove the vertex for the variable, since boost::remove_vertex() invalidates all vertex
       // descriptors, which are the only link between the "real world" and the model.
       // Instead we completely disconnect it from the rest of the model (in particular the parent directory), so it
       // usually is no longer found.
-      clear_vertex(_d->vertex, _d->impl->graph);
+      clear_vertex(_d->vertex, _d->impl->_graph);
     }
   }
 
@@ -413,7 +421,7 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   const std::string& DirectoryProxy::getName() const {
-    return std::get<VertexProperties::DirectoryProperties>(_d->impl->graph[_d->vertex].p).name;
+    return std::get<VertexProperties::DirectoryProperties>(_d->impl->_graph[_d->vertex].p).name;
   }
 
   /********************************************************************************************************************/
@@ -441,44 +449,44 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   ModuleGroupProxy Impl::add(Vertex owner, ModuleGroup& module) {
-    return generic_add<ModuleGroupProxy, ModuleGroup, VertexProperties::ModuleGroupProperties,
+    return genericAdd<ModuleGroupProxy, ModuleGroup, VertexProperties::ModuleGroupProperties,
         VertexProperties::Type::moduleGroup>(owner, module);
   }
 
   /********************************************************************************************************************/
 
   ApplicationModuleProxy Impl::add(Vertex owner, ApplicationModule& module) {
-    return generic_add<ApplicationModuleProxy, ApplicationModule, VertexProperties::ApplicationModuleProperties,
+    return genericAdd<ApplicationModuleProxy, ApplicationModule, VertexProperties::ApplicationModuleProperties,
         VertexProperties::Type::applicationModule>(owner, module);
   }
 
   /********************************************************************************************************************/
 
   VariableGroupProxy Impl::add(Vertex owner, VariableGroup& module) {
-    return generic_add<VariableGroupProxy, VariableGroup, VertexProperties::VariableGroupProperties,
+    return genericAdd<VariableGroupProxy, VariableGroup, VertexProperties::VariableGroupProperties,
         VertexProperties::Type::variableGroup>(owner, module);
   }
 
   /********************************************************************************************************************/
 
   DeviceModuleProxy Impl::add(Vertex owner, DeviceModule& module) {
-    return generic_add<DeviceModuleProxy, DeviceModule, VertexProperties::DeviceModuleProperties,
+    return genericAdd<DeviceModuleProxy, DeviceModule, VertexProperties::DeviceModuleProperties,
         VertexProperties::Type::deviceModule>(owner, module);
   }
 
   /********************************************************************************************************************/
 
   template<typename PROXY, typename MODULE, typename PROPS, VertexProperties::Type TYPE>
-  PROXY Impl::generic_add(Vertex owner, MODULE& module) {
+  PROXY Impl::genericAdd(Vertex owner, MODULE& module) {
     auto parentDirectory = visit(owner, returnDirectory, getNeighbourDirectory, returnFirstHit(DirectoryProxy{}));
 
     // create plain vertex first
-    auto newVertex = boost::add_vertex(graph);
+    auto newVertex = boost::add_vertex(_graph);
 
     // set vertex type and type-dependent properties
-    graph[newVertex].type = TYPE;
+    _graph[newVertex].type = TYPE;
     if constexpr(!std::is_same<MODULE, DeviceModule>::value) {
-      graph[newVertex].p.emplace<PROPS>(PROPS{module.getName(), module});
+      _graph[newVertex].p.emplace<PROPS>(PROPS{module.getName(), module});
     }
     else {
       auto alias = module.getDeviceManager().getDeviceAliasOrURI();
@@ -491,16 +499,16 @@ namespace ChimeraTK::Model {
         trigger = dir.addVariable(Utilities::getUnqualifiedName(triggerPath));
 
         // connect trigger vertex with trigger edge
-        auto triggerEdge = boost::add_edge(trigger._d->vertex, newVertex, graph).first;
-        graph[triggerEdge].type = EdgeProperties::Type::trigger;
+        auto triggerEdge = boost::add_edge(trigger._d->vertex, newVertex, _graph).first;
+        _graph[triggerEdge].type = EdgeProperties::Type::trigger;
       }
 
-      graph[newVertex].p.emplace<PROPS>(PROPS{alias, trigger, module});
+      _graph[newVertex].p.emplace<PROPS>(PROPS{alias, trigger, module});
     }
 
     // connect the vertex with an ownership edge
-    auto ownershipEdge = boost::add_edge(owner, newVertex, graph).first; // .second is ignored as it cannot fail
-    graph[ownershipEdge].type = EdgeProperties::Type::ownership;
+    auto ownershipEdge = boost::add_edge(owner, newVertex, _graph).first; // .second is ignored as it cannot fail
+    _graph[ownershipEdge].type = EdgeProperties::Type::ownership;
 
     // obtain/create directory corresponding to the fully qualified path of the module
     DirectoryProxy directory;
@@ -514,8 +522,8 @@ namespace ChimeraTK::Model {
     }
 
     // connect the vertex with the directory with a neighbourhood edge
-    auto neighbourhoodEdge = boost::add_edge(newVertex, directory._d->vertex, graph).first; // dito
-    graph[neighbourhoodEdge].type = EdgeProperties::Type::neighbourhood;
+    auto neighbourhoodEdge = boost::add_edge(newVertex, directory._d->vertex, _graph).first; // dito
+    _graph[neighbourhoodEdge].type = EdgeProperties::Type::neighbourhood;
 
     return {newVertex, shared_from_this()};
   }
@@ -523,31 +531,31 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   void Impl::remove(Model::Vertex owner, ModuleGroup& module) {
-    generic_remove(owner, module);
+    genericRemove(owner, module);
   }
 
   /********************************************************************************************************************/
 
   void Impl::remove(Model::Vertex owner, ApplicationModule& module) {
-    generic_remove(owner, module);
+    genericRemove(owner, module);
   }
 
   /********************************************************************************************************************/
 
   void Impl::remove(Model::Vertex owner, VariableGroup& module) {
-    generic_remove(owner, module);
+    genericRemove(owner, module);
   }
 
   /********************************************************************************************************************/
 
   void Impl::remove(Model::Vertex owner, DeviceModule& module) {
-    generic_remove(owner, module);
+    genericRemove(owner, module);
   }
 
   /********************************************************************************************************************/
 
   template<typename MODULE>
-  void Impl::generic_remove(Model::Vertex owner, MODULE& module) {
+  void Impl::genericRemove(Model::Vertex owner, MODULE& module) {
     auto modelToRemove = module.getModel();
 
     // The model may be invalid e.g. in case of calls to unregisterModule() in move assignment operations. Nothing to be
@@ -569,13 +577,13 @@ namespace ChimeraTK::Model {
           auto vertex = proxy._d->vertex;
 
           {
-            auto [b, e] = boost::adjacent_vertices(vertex, graph);
+            auto [b, e] = boost::adjacent_vertices(vertex, _graph);
             for(auto vtx = b; vtx != e; ++vtx) {
               removeList.push_back({vertex, *vtx});
             }
           }
           {
-            auto [b, e] = boost::inv_adjacent_vertices(vertex, graph);
+            auto [b, e] = boost::inv_adjacent_vertices(vertex, _graph);
             for(auto vtx = b; vtx != e; ++vtx) {
               removeList.push_back({vertex, *vtx});
             }
@@ -591,7 +599,9 @@ namespace ChimeraTK::Model {
     modelToRemove.visit(
         [&](const ProcessVariableProxy& proxy) {
           for(const auto& node : proxy.getNodes()) {
-            if(node.getType() != NodeType::Application) continue;
+            if(node.getType() != NodeType::Application) {
+              continue;
+            }
             auto* am = dynamic_cast<VariableGroup*>(node.getOwningModule())->findApplicationModule();
             if(moduleList.count(am) == 0) {
               continue;
@@ -608,14 +618,14 @@ namespace ChimeraTK::Model {
 
     // Now execute actual removal of edges
     for(auto p : removeList) {
-      boost::remove_edge(p.first, p.second, graph);
-      boost::remove_edge(p.second, p.first, graph);
+      boost::remove_edge(p.first, p.second, _graph);
+      boost::remove_edge(p.second, p.first, _graph);
     }
 
     // Remove the ownership relationship for the module.
     auto vertexToRemove = modelToRemove._d->vertex;
-    boost::remove_edge(owner, vertexToRemove, graph);
-    boost::remove_edge(vertexToRemove, owner, graph);
+    boost::remove_edge(owner, vertexToRemove, _graph);
+    boost::remove_edge(vertexToRemove, owner, _graph);
   }
 
   /********************************************************************************************************************/
@@ -629,8 +639,8 @@ namespace ChimeraTK::Model {
     auto owningVertex = module._d->vertex;
 
     // create ownership edge
-    auto newOwnershipEdge = boost::add_edge(owningVertex, vertex, graph).first; // see above
-    graph[newOwnershipEdge].type = EdgeProperties::Type::ownership;
+    auto newOwnershipEdge = boost::add_edge(owningVertex, vertex, _graph).first; // see above
+    _graph[newOwnershipEdge].type = EdgeProperties::Type::ownership;
 
     // get accessing ApplicationModule or DeviceModule vertex
     Vertex accessingVertex;
@@ -643,7 +653,7 @@ namespace ChimeraTK::Model {
     }
 
     // add node to variable
-    auto& props = std::get<VertexProperties::ProcessVariableProperties>(graph[vertex].p);
+    auto& props = std::get<VertexProperties::ProcessVariableProperties>(_graph[vertex].p);
     props.nodes.emplace_back(node);
 
     // add tags
@@ -653,13 +663,13 @@ namespace ChimeraTK::Model {
     // connect the variable vertex with the accessing module, direction depends on access (read/write)
     Edge newEdge;
     if(node.getDirection().dir == VariableDirection::feeding) {
-      newEdge = boost::add_edge(accessingVertex, vertex, graph)
+      newEdge = boost::add_edge(accessingVertex, vertex, _graph)
                     .first; // .second is ignored: silently reject duplicates CHECKME/FIXME!
     }
     else {
-      newEdge = boost::add_edge(vertex, accessingVertex, graph).first; // see above
+      newEdge = boost::add_edge(vertex, accessingVertex, _graph).first; // see above
     }
-    graph[newEdge].type = EdgeProperties::Type::pvAccess;
+    _graph[newEdge].type = EdgeProperties::Type::pvAccess;
   }
 
   /********************************************************************************************************************/
@@ -675,16 +685,16 @@ namespace ChimeraTK::Model {
     }
 
     // create plain vertex first
-    auto newVertex = boost::add_vertex(graph);
+    auto newVertex = boost::add_vertex(_graph);
 
     // set vertex type and type-dependent properties
-    graph[newVertex].type = VertexProperties::Type::processVariable;
+    _graph[newVertex].type = VertexProperties::Type::processVariable;
     VertexProperties::ProcessVariableProperties props{name, {}, {}};
-    graph[newVertex].p.emplace<VertexProperties::ProcessVariableProperties>(props);
+    _graph[newVertex].p.emplace<VertexProperties::ProcessVariableProperties>(props);
 
     // connect the vertex with a parenthood edge
-    auto newEdge = boost::add_edge(parent, newVertex, graph).first; // .second is ignored as it cannot fail
-    graph[newEdge].type = EdgeProperties::Type::parenthood;
+    auto newEdge = boost::add_edge(parent, newVertex, _graph).first; // .second is ignored as it cannot fail
+    _graph[newEdge].type = EdgeProperties::Type::parenthood;
 
     return {newVertex, shared_from_this()};
   }
@@ -702,16 +712,16 @@ namespace ChimeraTK::Model {
     }
 
     // create plain vertex first
-    auto newVertex = boost::add_vertex(graph);
+    auto newVertex = boost::add_vertex(_graph);
 
     // set vertex type and type-dependent properties
-    graph[newVertex].type = VertexProperties::Type::directory;
+    _graph[newVertex].type = VertexProperties::Type::directory;
     VertexProperties::DirectoryProperties props{name};
-    graph[newVertex].p.emplace<VertexProperties::DirectoryProperties>(props);
+    _graph[newVertex].p.emplace<VertexProperties::DirectoryProperties>(props);
 
     // connect the vertex with an hierarchy edge
-    auto newEdge = boost::add_edge(parent, newVertex, graph).first; // .second is ignored as it cannot fail
-    graph[newEdge].type = EdgeProperties::Type::parenthood;
+    auto newEdge = boost::add_edge(parent, newVertex, _graph).first; // .second is ignored as it cannot fail
+    _graph[newEdge].type = EdgeProperties::Type::parenthood;
 
     return {newVertex, shared_from_this()};
   }
@@ -721,6 +731,9 @@ namespace ChimeraTK::Model {
   DirectoryProxy Impl::addDirectoryRecursive(Vertex parent, const std::string& qualifiedPath) {
     // separate the path into components
     std::vector<std::string> components;
+    // The analyzer assumes that m_Size can be modified in boost::is_any_of so that there could be a mismatch between
+    // creating a dynamic entry and not freeing it later if m_size suddenly is different from what it was
+    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
     boost::split(components, qualifiedPath, boost::is_any_of("/"));
 
     // Start at the parent
@@ -734,7 +747,7 @@ namespace ChimeraTK::Model {
 
       // special treatment for ".."
       if(component == "..") {
-        if(currentDirectory._d->vertex == *boost::vertices(currentDirectory._d->impl->graph).first) {
+        if(currentDirectory._d->vertex == *boost::vertices(currentDirectory._d->impl->_graph).first) {
           throw ChimeraTK::logic_error("Path component '..' at root directory level found.");
         }
         currentDirectory = currentDirectory.visit(returnDirectory, getParent, returnFirstHit(DirectoryProxy{}));
@@ -745,7 +758,7 @@ namespace ChimeraTK::Model {
       // Special treatment for an extra slash e.g. at the beginning or two consequtive slashes.
       // Since the slash is the separator, the path component is just empty.
       if(component.empty()) {
-        currentDirectory = {*(boost::vertices(graph).first), shared_from_this()}; // root directory
+        currentDirectory = {*(boost::vertices(_graph).first), shared_from_this()}; // root directory
         continue;
       }
 
@@ -760,7 +773,7 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   [[nodiscard]] std::string Impl::getFullyQualifiedPath(Vertex vertex) {
-    return graph[vertex].visit([&](auto props) -> std::string {
+    return _graph[vertex].visit([&](auto props) -> std::string {
       constexpr bool useDirectoryHierarchy = isDirectory(props) || isVariable(props);
 
       Vertex currentVertex = vertex;
@@ -773,7 +786,7 @@ namespace ChimeraTK::Model {
       }
 
       // Loop until we have found the root vertex, add all names to the path
-      while(currentVertex != *boost::vertices(graph).first) {
+      while(currentVertex != *boost::vertices(_graph).first) {
         // define vistor to be executed for the owner of currentVertex
         bool found = false;
         auto vis = [&](auto proxy) {

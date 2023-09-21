@@ -22,7 +22,7 @@ namespace ctk = ChimeraTK;
 /* Application without name */
 
 struct TestApp : public ctk::Application {
-  TestApp(const std::string& name) : ctk::Application(name) {}
+  explicit TestApp(const std::string& name) : ctk::Application(name) {}
   ~TestApp() override { shutdown(); }
 
   ctk::ConstMultiplier<double> multiplierD{this, "multiplierD", "Some module", 42};
@@ -84,11 +84,13 @@ BOOST_AUTO_TEST_CASE(testApplicationExceptions) {
 std::string getValueFromNode(const xmlpp::Node* node, const std::string& subnodeName) {
   xmlpp::Node* theChild = nullptr;
   for(const auto& child : node->get_children()) {
-    if(child->get_name() == subnodeName) theChild = child;
+    if(child->get_name() == subnodeName) {
+      theChild = child;
+    }
   }
   BOOST_REQUIRE(theChild != nullptr); // requested child tag is there
   auto subChildList = theChild->get_children();
-  if(subChildList.size() == 0) { // special case: no text in the tag -> return empty string
+  if(subChildList.empty()) { // special case: no text in the tag -> return empty string
     return "";
   }
   BOOST_REQUIRE_EQUAL(subChildList.size(),
@@ -144,7 +146,9 @@ BOOST_AUTO_TEST_CASE(testXmlGeneration) {
   for(const auto& child : root->get_children()) {
     // cast into element, ignore if not an element (e.g. comment)
     const auto* element = dynamic_cast<const xmlpp::Element*>(child);
-    if(!element) continue;
+    if(!element) {
+      continue;
+    }
 
     if(element->get_name() == "variable") {
       // obtain attributes from the element
@@ -187,7 +191,9 @@ BOOST_AUTO_TEST_CASE(testXmlGeneration) {
 
       for(const auto& subchild : child->get_children()) {
         const auto* element2 = dynamic_cast<const xmlpp::Element*>(subchild);
-        if(!element2) continue;
+        if(!element2) {
+          continue;
+        }
         BOOST_CHECK_EQUAL(element2->get_name(), "variable");
 
         // obtain attributes from the element

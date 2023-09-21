@@ -31,10 +31,10 @@ namespace ChimeraTK {
     using ChimeraTK::ScalarRegisterAccessor<UserType>::operator=;
 
     /** Move constructor */
-    ScalarAccessor(ScalarAccessor<UserType>&& other);
+    ScalarAccessor(ScalarAccessor<UserType>&& other) noexcept;
 
     /** Move assignment. */
-    ScalarAccessor<UserType>& operator=(ScalarAccessor<UserType>&& other);
+    ScalarAccessor<UserType>& operator=(ScalarAccessor<UserType>&& other) noexcept;
 
     bool write(ChimeraTK::VersionNumber versionNumber) = delete;
     bool writeDestructively(ChimeraTK::VersionNumber versionNumber) = delete;
@@ -123,14 +123,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  ScalarAccessor<UserType>::ScalarAccessor(ScalarAccessor<UserType>&& other) {
+  ScalarAccessor<UserType>::ScalarAccessor(ScalarAccessor<UserType>&& other) noexcept {
     InversionOfControlAccessor<ScalarAccessor<UserType>>::replace(std::move(other));
   }
 
   /********************************************************************************************************************/
 
   template<typename UserType>
-  ScalarAccessor<UserType>& ScalarAccessor<UserType>::operator=(ScalarAccessor<UserType>&& other) {
+  ScalarAccessor<UserType>& ScalarAccessor<UserType>::operator=(ScalarAccessor<UserType>&& other) noexcept {
     // Having a move-assignment operator is required to use the move-assignment
     // operator of a module containing an accessor.
     InversionOfControlAccessor<ScalarAccessor<UserType>>::replace(std::move(other));
@@ -143,7 +143,9 @@ namespace ChimeraTK {
   bool ScalarAccessor<UserType>::write() {
     auto versionNumber = this->getOwner()->getCurrentVersionNumber();
     bool dataLoss = ChimeraTK::ScalarRegisterAccessor<UserType>::write(versionNumber);
-    if(dataLoss) Application::incrementDataLossCounter(this->node.getQualifiedName());
+    if(dataLoss) {
+      Application::incrementDataLossCounter(this->_node.getQualifiedName());
+    }
     return dataLoss;
   }
 
@@ -153,7 +155,9 @@ namespace ChimeraTK {
   bool ScalarAccessor<UserType>::writeDestructively() {
     auto versionNumber = this->getOwner()->getCurrentVersionNumber();
     bool dataLoss = ChimeraTK::ScalarRegisterAccessor<UserType>::writeDestructively(versionNumber);
-    if(dataLoss) Application::incrementDataLossCounter(this->node.getQualifiedName());
+    if(dataLoss) {
+      Application::incrementDataLossCounter(this->_node.getQualifiedName());
+    }
     return dataLoss;
   }
 

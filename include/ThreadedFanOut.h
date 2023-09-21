@@ -22,7 +22,7 @@ namespace ChimeraTK {
     ThreadedFanOut(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl,
         ConsumerImplementationPairs<UserType> const& consumerImplementationPairs);
 
-    ~ThreadedFanOut();
+    ~ThreadedFanOut() override;
 
     void activate() override;
 
@@ -86,14 +86,22 @@ namespace ChimeraTK {
 
   template<typename UserType>
   ThreadedFanOut<UserType>::~ThreadedFanOut() {
-    deactivate();
+    try {
+      deactivate();
+    }
+    catch(ChimeraTK::logic_error& e) {
+      std::cerr << e.what() << std::endl;
+      std::exit(1);
+    }
   }
 
   /********************************************************************************************************************/
 
   template<typename UserType>
   void ThreadedFanOut<UserType>::activate() {
-    if(this->_disabled) return;
+    if(this->_disabled) {
+      return;
+    }
     assert(!_thread.joinable());
     _thread = boost::thread([this] { this->run(); });
   }
@@ -102,19 +110,24 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ThreadedFanOut<UserType>::deactivate() {
-    if(_thread.joinable()) {
-      _thread.interrupt();
-      FanOut<UserType>::interrupt();
-      _thread.join();
+    try {
+      if(_thread.joinable()) {
+        _thread.interrupt();
+        FanOut<UserType>::interrupt();
+        _thread.join();
+      }
+      assert(!_thread.joinable());
     }
-    assert(!_thread.joinable());
+    catch(boost::thread_resource_error& e) {
+      assert(false);
+    }
   }
 
   /********************************************************************************************************************/
 
   template<typename UserType>
   void ThreadedFanOut<UserType>::run() {
-    Application::registerThread("ThFO" + FanOut<UserType>::impl->getName());
+    Application::registerThread("ThFO" + FanOut<UserType>::_impl->getName());
     Application::getInstance().getTestableMode().lock("start");
     _testableModeReached = true;
 
@@ -123,20 +136,22 @@ namespace ChimeraTK {
     while(true) {
       // send out copies to slaves
       boost::this_thread::interruption_point();
-      auto validity = FanOut<UserType>::impl->dataValidity();
-      for(auto& slave : FanOut<UserType>::slaves) {
+      auto validity = FanOut<UserType>::_impl->dataValidity();
+      for(auto& slave : FanOut<UserType>::_slaves) {
         // do not send copy if no data is expected (e.g. trigger)
         if(slave->getNumberOfSamples() != 0) {
-          slave->accessChannel(0) = FanOut<UserType>::impl->accessChannel(0);
+          slave->accessChannel(0) = FanOut<UserType>::_impl->accessChannel(0);
         }
         slave->setDataValidity(validity);
         bool dataLoss = slave->writeDestructively(version);
-        if(dataLoss) Application::incrementDataLossCounter(slave->getName());
+        if(dataLoss) {
+          Application::incrementDataLossCounter(slave->getName());
+        }
       }
       // receive data
       boost::this_thread::interruption_point();
-      FanOut<UserType>::impl->read();
-      version = FanOut<UserType>::impl->getVersionNumber();
+      FanOut<UserType>::_impl->read();
+      version = FanOut<UserType>::_impl->getVersionNumber();
     }
   }
 
@@ -145,11 +160,11 @@ namespace ChimeraTK {
   template<typename UserType>
   VersionNumber ThreadedFanOut<UserType>::readInitialValues() {
     Application::getInstance().getTestableMode().unlock("readInitialValues");
-    FanOut<UserType>::impl->read();
+    FanOut<UserType>::_impl->read();
     if(!Application::getInstance().getTestableMode().testLock()) {
       Application::getInstance().getTestableMode().lock("readInitialValues");
     }
-    return FanOut<UserType>::impl->getVersionNumber();
+    return FanOut<UserType>::_impl->getVersionNumber();
   }
 
   /********************************************************************************************************************/
@@ -193,7 +208,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ThreadedFanOutWithReturn<UserType>::run() {
-    Application::registerThread("ThFO" + FanOut<UserType>::impl->getName());
+    Application::registerThread("ThFO" + FanOut<UserType>::_impl->getName());
     Application::getInstance().getTestableMode().lock("start");
     _testableModeReached = true;
 
@@ -202,18 +217,22 @@ namespace ChimeraTK {
 
     version = readInitialValues();
 
-    ReadAnyGroup group({FanOut<UserType>::impl, _returnChannelSlave});
+    ReadAnyGroup group({FanOut<UserType>::_impl, _returnChannelSlave});
     while(true) {
       // send out copies to slaves
-      for(auto& slave : FanOut<UserType>::slaves) {
+      for(auto& slave : FanOut<UserType>::_slaves) {
         // do not feed back value returnChannelSlave if it was received from it
-        if(slave->getId() == var) continue;
+        if(slave->getId() == var) {
+          continue;
+        }
         // do not send copy if no data is expected (e.g. trigger)
         if(slave->getNumberOfSamples() != 0) {
-          slave->accessChannel(0) = FanOut<UserType>::impl->accessChannel(0);
+          slave->accessChannel(0) = FanOut<UserType>::_impl->accessChannel(0);
         }
         bool dataLoss = slave->writeDestructively(version);
-        if(dataLoss) Application::incrementDataLossCounter(slave->getName());
+        if(dataLoss) {
+          Application::incrementDataLossCounter(slave->getName());
+        }
       }
       // receive data
       boost::this_thread::interruption_point();
@@ -221,14 +240,14 @@ namespace ChimeraTK {
       boost::this_thread::interruption_point();
       // if the update came through the return channel, return it to the feeder
       if(var == _returnChannelSlave->getId()) {
-        FanOut<UserType>::impl->accessChannel(0).swap(_returnChannelSlave->accessChannel(0));
+        FanOut<UserType>::_impl->accessChannel(0).swap(_returnChannelSlave->accessChannel(0));
         if(version < _returnChannelSlave->getVersionNumber()) {
           version = _returnChannelSlave->getVersionNumber();
         }
-        FanOut<UserType>::impl->write(version);
+        FanOut<UserType>::_impl->write(version);
       }
       else {
-        version = FanOut<UserType>::impl->getVersionNumber();
+        version = FanOut<UserType>::_impl->getVersionNumber();
       }
     }
   }

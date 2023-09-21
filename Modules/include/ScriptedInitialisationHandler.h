@@ -46,7 +46,7 @@ namespace ChimeraTK {
      * @param errorGracePeriod Additional time in seconds before a retry after an error.
      */
     ScriptedInitHandler(ModuleGroup* owner, const std::string& name, const std::string& description,
-        const std::string& command, DeviceModule& deviceModule, const std::string& outputName = "initScriptOutput",
+        std::string command, DeviceModule& deviceModule, std::string outputName = "initScriptOutput",
         unsigned int errorGracePeriod = 10);
     void mainLoop() override {
     } // no main loop needed. doInit() is called from the DeviceModule thread as initialisation handler

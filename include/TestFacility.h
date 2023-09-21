@@ -79,7 +79,7 @@ namespace ChimeraTK {
     /** Convenience function to write a scalar process variable in a single call
      */
     template<typename TYPE>
-    void writeScalar(const std::string& name, const TYPE value);
+    void writeScalar(const std::string& name, TYPE value);
 
     /** Convenience function to write an array process variable in a single call
      */
@@ -110,10 +110,10 @@ namespace ChimeraTK {
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> getAccessor(const ChimeraTK::RegisterPath& name) const;
 
     /** */
-    [[nodiscard]] boost::shared_ptr<ControlSystemPVManager> getPvManager() const { return pvManager; }
+    [[nodiscard]] boost::shared_ptr<ControlSystemPVManager> getPvManager() const { return _pvManager; }
 
    protected:
-    boost::shared_ptr<ControlSystemPVManager> pvManager;
+    boost::shared_ptr<ControlSystemPVManager> _pvManager;
 
     // Cache (possible decorated) accessors to avoid the need to create accessors multiple times. This would not work
     // if the accessor is decorated, since the buffer would be lost and thus the current value could no longer be
@@ -121,14 +121,14 @@ namespace ChimeraTK {
     // logical behaviour of the class, the maps are defined mutable.
     template<typename UserType>
     using AccessorMap = std::map<std::string, boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>>;
-    mutable ChimeraTK::TemplateUserTypeMap<AccessorMap> accessorMap;
+    mutable ChimeraTK::TemplateUserTypeMap<AccessorMap> _accessorMap;
 
     // default values for process variables
     template<typename UserType>
     using Defaults = std::map<std::string, std::vector<UserType>>;
-    ChimeraTK::TemplateUserTypeMap<Defaults> defaults;
+    ChimeraTK::TemplateUserTypeMap<Defaults> _defaults;
 
-    Application& app;
+    Application& _app;
   };
 
   /********************************************************************************************************************/
@@ -192,7 +192,7 @@ namespace ChimeraTK {
 
   template<typename T>
   void TestFacility::setScalarDefault(const ChimeraTK::RegisterPath& name, const T& value) {
-    if(app.testFacilityRunApplicationCalled) {
+    if(_app._testFacilityRunApplicationCalled) {
       throw ChimeraTK::logic_error("TestFacility::setScalarDefault() called after runApplication().");
     }
     std::vector<T> vv;
@@ -204,24 +204,24 @@ namespace ChimeraTK {
 
   template<typename T>
   void TestFacility::setArrayDefault(const ChimeraTK::RegisterPath& name, const std::vector<T>& value) {
-    if(app.testFacilityRunApplicationCalled) {
+    if(_app._testFacilityRunApplicationCalled) {
       throw ChimeraTK::logic_error("TestFacility::setArrayDefault() called after runApplication().");
     }
     // check if PV exists
-    if(!pvManager->hasProcessVariable(name)) {
+    if(!_pvManager->hasProcessVariable(name)) {
       throw ChimeraTK::logic_error("Process variable '" + name + "' does not exist.");
     }
 
     // check if the type is right
-    auto pv = pvManager->getProcessArray<typename detail::BoolTypeHelper<T>::type>(name);
+    auto pv = _pvManager->getProcessArray<typename detail::BoolTypeHelper<T>::type>(name);
     if(pv == nullptr) {
-      auto pvUntyped = pvManager->getProcessVariable(name);
+      auto pvUntyped = _pvManager->getProcessVariable(name);
       throw ChimeraTK::logic_error("Process variable '" + name + "' requested by the wrong type: " + typeid(T).name() +
           " != " + pvUntyped->getValueType().name());
     }
 
     // store default value in map
-    auto& tv = boost::fusion::at_key<typename detail::BoolTypeHelper<T>::type>(defaults.table)[name];
+    auto& tv = boost::fusion::at_key<typename detail::BoolTypeHelper<T>::type>(_defaults.table)[name];
     if constexpr(!std::is_same<T, bool>::value) {
       tv = value;
     }
@@ -237,28 +237,28 @@ namespace ChimeraTK {
   boost::shared_ptr<ChimeraTK::NDRegisterAccessor<T>> TestFacility::getAccessor(
       const ChimeraTK::RegisterPath& name) const {
     // check for existing accessor in cache
-    if(boost::fusion::at_key<T>(accessorMap.table).count(name) > 0) {
-      return boost::fusion::at_key<T>(accessorMap.table)[name];
+    if(boost::fusion::at_key<T>(_accessorMap.table).count(name) > 0) {
+      return boost::fusion::at_key<T>(_accessorMap.table)[name];
     }
 
     // obtain accessor from ControlSystemPVManager
-    auto pv = pvManager->getProcessArray<T>(name);
+    auto pv = _pvManager->getProcessArray<T>(name);
     if(pv == nullptr) {
       throw ChimeraTK::logic_error("Process variable '" + name + "' does not exist.");
     }
 
     // decorate with TestableModeAccessorDecorator if variable is sender and
     // receiver is not poll-type (then no entry in pvIdMapp exists), and store it in cache
-    if(auto it = app.pvIdMap.find(pv->getUniqueId()); pv->isWriteable() && it != app.pvIdMap.end()) {
-      boost::fusion::at_key<T>(accessorMap.table)[name] = app.getTestableMode().decorate<T>(
+    if(auto it = _app._pvIdMap.find(pv->getUniqueId()); pv->isWriteable() && it != _app._pvIdMap.end()) {
+      boost::fusion::at_key<T>(_accessorMap.table)[name] = _app.getTestableMode().decorate<T>(
           pv, detail::TestableMode::DecoratorType::WRITE, "ControlSystem:" + name, it->second);
     }
     else {
-      boost::fusion::at_key<T>(accessorMap.table)[name] = pv;
+      boost::fusion::at_key<T>(_accessorMap.table)[name] = pv;
     }
 
     // return the accessor as stored in the cache
-    return boost::fusion::at_key<T>(accessorMap.table)[name];
+    return boost::fusion::at_key<T>(_accessorMap.table)[name];
   }
 
   /********************************************************************************************************************/

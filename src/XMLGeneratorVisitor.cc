@@ -14,7 +14,7 @@
 #include <ConnectionMaker.h>
 
 namespace detail {
-  static constexpr char AC_NAMESPACE_URL[] = "https://github.com/ChimeraTK/ApplicationCore";
+  static constexpr std::string_view AC_NAMESPACE_URL{"https://github.com/ChimeraTK/ApplicationCore"};
 } // namespace detail
 
 /********************************************************************************************************************/
@@ -25,8 +25,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   XMLGenerator::XMLGenerator(Application& app)
-  : NetworkVisitor{app}, _doc{std::make_shared<xmlpp::Document>()}, _rootElement{_doc->create_root_node(
-                                                                        "application", ::detail::AC_NAMESPACE_URL)} {}
+  : NetworkVisitor{app}, _doc{std::make_shared<xmlpp::Document>()}, _rootElement{_doc->create_root_node("application",
+                                                                        ::detail::AC_NAMESPACE_URL.data())} {}
   /********************************************************************************************************************/
 
   void XMLGenerator::run() {
@@ -37,7 +37,9 @@ namespace ChimeraTK {
     // Collect all triggers, add a TriggerReceiver placeholder for every device associated with that trigger
     auto triggerCollector = [&](auto proxy) {
       auto trigger = proxy.getTrigger();
-      if(not trigger.isValid()) return;
+      if(not trigger.isValid()) {
+        return;
+      }
 
       triggers.insert(trigger);
       proxy.addVariable(trigger, VariableNetworkNode(proxy.getAliasOrCdd(), 0));
@@ -125,7 +127,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void XMLGenerator::generateXMLForNode(NetworkInformation& net, const VariableNetworkNode& node) {
-    if(node.getType() != NodeType::ControlSystem) return;
+    if(node.getType() != NodeType::ControlSystem) {
+      return;
+    }
     // Create the directory for the path name in the XML document with all parent
     // directories, if not yet existing: First split the publication name into
     // components and loop over each component. For each component, try to find
@@ -138,7 +142,7 @@ namespace ChimeraTK {
 
     // the namespace map is needed to properly refer to elements with an xpath
     // expression in xmlpp::Element::find()
-    xmlpp::Node::PrefixNsMap nsMap{{"ac", ::detail::AC_NAMESPACE_URL}};
+    xmlpp::Node::PrefixNsMap nsMap{{"ac", ::detail::AC_NAMESPACE_URL.data()}};
 
     // go through each directory path component
     xmlpp::Element* current = _rootElement;
@@ -210,7 +214,9 @@ namespace ChimeraTK {
   void XMLGenerator::generatePeerList(
       xmlpp::Element* connectedModules, const std::list<VariableNetworkNode>& nodeList) {
     for(const auto& peerNode : nodeList) {
-      if(peerNode.getType() == NodeType::ControlSystem) continue;
+      if(peerNode.getType() == NodeType::ControlSystem) {
+        continue;
+      }
       bool feeding = peerNode == nodeList.back();
       xmlpp::Element* peer = connectedModules->add_child("peer");
 
@@ -225,7 +231,9 @@ namespace ChimeraTK {
         auto qname = owningModule->getQualifiedName();
         // strip leading application name
         auto secondSlash = qname.find_first_of('/', 1);
-        if(secondSlash != std::string::npos) qname = qname.substr(secondSlash);
+        if(secondSlash != std::string::npos) {
+          qname = qname.substr(secondSlash);
+        }
         peer->set_attribute("name", qname);
         const auto& owningModuleRef = *owningModule; // dereferencing in separate line to avoid linter warning
         auto className = boost::core::demangle(typeid(owningModuleRef).name());

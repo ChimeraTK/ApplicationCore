@@ -100,7 +100,9 @@ namespace ChimeraTK {
   inline bool VoidAccessor::write() {
     auto versionNumber = this->getOwner()->getCurrentVersionNumber();
     bool dataLoss = ChimeraTK::VoidRegisterAccessor::write(versionNumber);
-    if(dataLoss) Application::incrementDataLossCounter(this->node.getQualifiedName());
+    if(dataLoss) {
+      Application::incrementDataLossCounter(this->_node.getQualifiedName());
+    }
     return dataLoss;
   }
 
@@ -109,7 +111,9 @@ namespace ChimeraTK {
   inline bool VoidAccessor::writeDestructively() {
     auto versionNumber = this->getOwner()->getCurrentVersionNumber();
     bool dataLoss = ChimeraTK::VoidRegisterAccessor::writeDestructively(versionNumber);
-    if(dataLoss) Application::incrementDataLossCounter(this->node.getQualifiedName());
+    if(dataLoss) {
+      Application::incrementDataLossCounter(this->_node.getQualifiedName());
+    }
     return dataLoss;
   }
 

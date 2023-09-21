@@ -24,21 +24,26 @@ namespace ChimeraTK {
   template<typename UserType>
   class ConstantAccessor : public ChimeraTK::NDRegisterAccessor<UserType> {
    public:
-    ConstantAccessor(UserType value = 0, size_t length = 1, AccessModeFlags accessModeFlags = AccessModeFlags{});
+    explicit ConstantAccessor(
+        UserType value = 0, size_t length = 1, AccessModeFlags accessModeFlags = AccessModeFlags{});
 
     void doReadTransferSynchronously() override {}
 
     void doPostRead(TransferType /*type*/, bool updateUserBuffer) override;
 
+    // FIXME: https://redmine.msktools.desy.de/issues/12242
+    // NOLINTNEXTLINE(google-default-arguments)
     bool doWriteTransfer(ChimeraTK::VersionNumber /*versionNumber*/ = {}) override { return false; }
 
-    bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const>&) const override { return false; }
+    [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<ChimeraTK::TransferElement const>&) const override {
+      return false;
+    }
 
-    bool isReadOnly() const override { return false; }
+    [[nodiscard]] bool isReadOnly() const override { return false; }
 
-    bool isReadable() const override { return true; }
+    [[nodiscard]] bool isReadable() const override { return true; }
 
-    bool isWriteable() const override { return true; }
+    [[nodiscard]] bool isWriteable() const override { return true; }
 
     std::vector<boost::shared_ptr<ChimeraTK::TransferElement>> getHardwareAccessingElements() override { return {}; }
 

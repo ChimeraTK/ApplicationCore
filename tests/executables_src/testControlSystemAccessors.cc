@@ -21,7 +21,7 @@ using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
 // list of user types the accessors are tested with
-typedef boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double> test_types;
+using test_types = boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double>;
 
 #define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
   {                                                                                                                    \
@@ -53,7 +53,7 @@ struct TestModule : public ctk::ApplicationModule {
   //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
   boost::barrier mainLoopStarted;
 
-  void mainLoop() { mainLoopStarted.wait(); }
+  void mainLoop() override { mainLoopStarted.wait(); }
 };
 
 /*********************************************************************************************************************/
@@ -64,7 +64,7 @@ struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {
     ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
   }
-  ~TestApplication() { shutdown(); }
+  ~TestApplication() override { shutdown(); }
 
   TestModule<T> testModule{this, "TestModule", "The test module"};
 };

@@ -24,12 +24,16 @@ namespace ChimeraTK::detail {
     // checking of direct circular dependencies is only done for Application-type feeders
     auto feedingModule = node.getModel().visit(Model::returnApplicationModule, Model::keepPvAccess,
         Model::keepApplicationModules, Model::adjacentInSearch, Model::returnFirstHit(Model::ApplicationModuleProxy{}));
-    if(!feedingModule.isValid()) return;
+    if(!feedingModule.isValid()) {
+      return;
+    }
     Module* dependency = &feedingModule.getApplicationModule();
 
     // If a module depends on itself, the detector would always detect a circular dependency, even if it is resolved
     // by writing initial values in prepare(). Hence we do not check anything in this case.
-    if(dependent == dependency) return;
+    if(dependent == dependency) {
+      return;
+    }
 
     // Register dependent-dependency relation in map
     _awaitedVariables[dependent] = node.getQualifiedName();
@@ -50,7 +54,9 @@ namespace ChimeraTK::detail {
           lock.lock();
           // if the module depending on an initial value for "us" is no longer waiting for us to send an initial value,
           // the circular dependency is resolved.
-          if(_waitMap.find(depdep_prev) == _waitMap.end() || _waitMap[depdep] != dependent) return;
+          if(_waitMap.find(depdep_prev) == _waitMap.end() || _waitMap[depdep] != dependent) {
+            return;
+          }
         }
 
         std::cerr << "*** Circular dependency of ApplicationModules found while waiting for initial values!"
@@ -62,7 +68,9 @@ namespace ChimeraTK::detail {
         while(_waitMap.find(depdep2) != _waitMap.end()) {
           auto waitsFor = _awaitedVariables[depdep2];
           std::cerr << depdep2->getQualifiedName();
-          if(depdep2 == dependent) break;
+          if(depdep2 == dependent) {
+            break;
+          }
           depdep2 = _waitMap[depdep2];
           std::cerr << " waits for " << waitsFor << " from:" << std::endl;
         }
@@ -75,19 +83,19 @@ namespace ChimeraTK::detail {
 
         throw ChimeraTK::logic_error("Circular dependency of ApplicationModules while waiting for initial values");
       }
-      else {
-        // Give other threads a chance to add to the wait map
-        lock.unlock();
-        usleep(10000);
-        lock.lock();
-      }
+      // Give other threads a chance to add to the wait map
+      lock.unlock();
+      usleep(10000);
+      lock.lock();
     }
   }
 
   /*********************************************************************************************************************/
 
   void CircularDependencyDetector::printWaiters() {
-    if(_waitMap.size() == 0) return;
+    if(_waitMap.empty()) {
+      return;
+    }
     std::cerr << "The following modules are still waiting for initial values:" << std::endl;
     for(auto& waiters : _waitMap) {
       std::cerr << waiters.first->getQualifiedName() << " waits for " << _awaitedVariables[waiters.first] << " from "
@@ -139,7 +147,9 @@ namespace ChimeraTK::detail {
 
         // Check if module has registered a dependency wait. If not, situation will either resolve soon or module will
         // register a dependency wait soon. Both cases can be found in the next interation.
-        if(_awaitedNodes.find(module) == _awaitedNodes.end()) continue;
+        if(_awaitedNodes.find(module) == _awaitedNodes.end()) {
+          continue;
+        }
 
         auto* appModule = dynamic_cast<ApplicationModule*>(module);
         if(!appModule) {
@@ -203,7 +213,9 @@ namespace ChimeraTK::detail {
       }
 
       // if all modules are in the mainLoop, stop this thread
-      if(allModulesEnteredMainLoop) break;
+      if(allModulesEnteredMainLoop) {
+        break;
+      }
     }
 
     std::cout << "All application modules are running." << std::endl;

@@ -42,19 +42,25 @@ namespace ChimeraTK {
    *
    * Deprecated, do not use in new code.
    */
-  enum class [[deprecated("Use a qualified name instead")]] HierarchyModifier{
-      none,     ///< No modification is performed
-      hideThis, ///< The hierarchy level at which this flag is specified is hidden. Everything below this level is moved
-      ///< exactly one level up. The structure below this level is kept.
-      moveToRoot, ///< The module at which this flag is specified is moved to the root level, together with the entire
-      ///< structure below the module. Note: Unless you run findTag() or so on the entire application, the
-      ///< moved hierarchy structures might not be visible in the control system etc.
-      oneLevelUp, ///< Move the module up to the level where the owner lives. Instead of creating a "daughter"
-      ///< of the owning module, it creates a "sister" (module that lives on the same level).
-      ///< This modifyer can only be used in sub-modules, not on the first level
-      oneUpAndHide ///< Move the structure inside the module up to the level where the owner lives. Instead of adding a
-                   ///< hierrarchy level, one level is removed. This modifyer can only be used in sub-modules, not on
-                   ///< the first level inside an application.
+#ifndef CHIMERATK_INSIDE_APPLICATION_CORE
+  enum class [[deprecated("Use a qualified name instead")]] HierarchyModifier {
+#else
+  // Do not declare deprecated while compiling ApplicationCore itself. It will generate a ton of warnings for the
+  // also deprecated constructors. Having those trigger a warning in the calling code should be enough
+  enum class HierarchyModifier {
+#endif
+    none,         ///< No modification is performed
+        hideThis, ///< The hierarchy level at which this flag is specified is hidden. Everything below this level is moved
+        ///< exactly one level up. The structure below this level is kept.
+        moveToRoot, ///< The module at which this flag is specified is moved to the root level, together with the entire
+        ///< structure below the module. Note: Unless you run findTag() or so on the entire application, the
+        ///< moved hierarchy structures might not be visible in the control system etc.
+        oneLevelUp, ///< Move the module up to the level where the owner lives. Instead of creating a "daughter"
+        ///< of the owning module, it creates a "sister" (module that lives on the same level).
+        ///< This modifyer can only be used in sub-modules, not on the first level
+        oneUpAndHide ///< Move the structure inside the module up to the level where the owner lives. Instead of adding
+                     ///< a hierrarchy level, one level is removed. This modifyer can only be used in sub-modules, not
+                     ///< on the first level inside an application.
   };
 
   /********************************************************************************************************************/

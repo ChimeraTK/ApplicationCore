@@ -53,7 +53,9 @@ namespace ChimeraTK {
 
   void EntityOwner::registerModule(Module* module, bool addTags) {
     if(addTags) {
-      for(const auto& tag : _tags) module->addTag(tag);
+      for(const auto& tag : _tags) {
+        module->addTag(tag);
+      }
     }
     _moduleList.push_back(module);
   }
@@ -95,7 +97,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void EntityOwner::registerAccessor(VariableNetworkNode accessor) {
-    for(const auto& tag : _tags) accessor.addTag(tag);
+    for(const auto& tag : _tags) {
+      accessor.addTag(tag);
+    }
     _accessorList.push_back(std::move(accessor));
   }
 
@@ -122,8 +126,12 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void EntityOwner::addTag(const std::string& tag) {
-    for(auto& node : getAccessorList()) node.addTag(tag);
-    for(auto& submodule : getSubmoduleList()) submodule->addTag(tag);
+    for(auto& node : getAccessorList()) {
+      node.addTag(tag);
+    }
+    for(auto& submodule : getSubmoduleList()) {
+      submodule->addTag(tag);
+    }
     _tags.insert(tag);
   }
 

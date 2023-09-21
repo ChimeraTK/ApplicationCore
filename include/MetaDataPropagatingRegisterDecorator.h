@@ -19,7 +19,7 @@ namespace ChimeraTK {
    */
   class MetaDataPropagationFlagProvider {
    public:
-    DataValidity getLastValidity() const { return lastValidity; }
+    [[nodiscard]] DataValidity getLastValidity() const { return _lastValidity; }
 
    protected:
     /**
@@ -31,7 +31,7 @@ namespace ChimeraTK {
      *  Value of validity flag from last read or write operation.
      *  This is atomic to allow the InvalidityTracer module to access this information.
      */
-    std::atomic<DataValidity> lastValidity{DataValidity::ok};
+    std::atomic<DataValidity> _lastValidity{DataValidity::ok};
 
     // The VariableNetworkNode needs access to _isCircularInput. It cannot be set at construction time because the
     // network is not complete yet and isCircularInput is not know at that moment.
@@ -57,7 +57,7 @@ namespace ChimeraTK {
     void doPostRead(TransferType type, bool hasNewData) override;
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
-    DataValidity getTargetValidity() const { return _target->dataValidity(); }
+    [[nodiscard]] DataValidity getTargetValidity() const { return _target->dataValidity(); }
 
    protected:
     EntityOwner* _owner;

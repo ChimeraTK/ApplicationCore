@@ -434,8 +434,8 @@ struct TestApplication3 : ctk::Application {
 /*********************************************************************************************************************/
 /*********************************************************************************************************************/
 
-struct Fixture_testFacility {
-  Fixture_testFacility()
+struct FixtureTestFacility {
+  FixtureTestFacility()
   : device1DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD1))),
     device2DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
@@ -445,7 +445,7 @@ struct Fixture_testFacility {
     test.runApplication();
   }
 
-  ~Fixture_testFacility() {
+  ~FixtureTestFacility() {
     device1DummyBackend->throwExceptionRead = false;
     device2DummyBackend->throwExceptionWrite = false;
   }
@@ -456,7 +456,7 @@ struct Fixture_testFacility {
   ctk::TestFacility test{app};
 };
 
-BOOST_FIXTURE_TEST_SUITE(data_validity_propagation, Fixture_testFacility)
+BOOST_FIXTURE_TEST_SUITE(data_validity_propagation, FixtureTestFacility)
 
 /*********************************************************************************************************************/
 
@@ -470,11 +470,12 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
   threadedFanoutInput.write();
   // write to register: m1.i1 linked with the consumingFanout.
   auto consumingFanoutSource =
-      ctk::Device(app.ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i1/DUMMY_WRITEABLE");
+      ctk::Device(TestApplication3::ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i1/DUMMY_WRITEABLE");
   consumingFanoutSource = 10;
   consumingFanoutSource.write();
 
-  auto pollRegister = ctk::Device(app.ExceptionDummyCDD2).getScalarRegisterAccessor<int>("/m1/i2/DUMMY_WRITEABLE");
+  auto pollRegister =
+      ctk::Device(TestApplication3::ExceptionDummyCDD2).getScalarRegisterAccessor<int>("/m1/i2/DUMMY_WRITEABLE");
   pollRegister = 5;
   pollRegister.write();
 
@@ -518,7 +519,8 @@ BOOST_AUTO_TEST_CASE(testThreadedFanout) {
 BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
   std::cout << "testInvalidTrigger" << std::endl;
 
-  auto deviceRegister = ctk::Device(app.ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i3/DUMMY_WRITEABLE");
+  auto deviceRegister =
+      ctk::Device(TestApplication3::ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i3/DUMMY_WRITEABLE");
   deviceRegister = 20;
   deviceRegister.write();
 
@@ -568,8 +570,8 @@ BOOST_AUTO_TEST_SUITE_END()
 /*********************************************************************************************************************/
 /*********************************************************************************************************************/
 
-struct Fixture_noTestableMode {
-  Fixture_noTestableMode()
+struct FixtureNoTestableMode {
+  FixtureNoTestableMode()
   : device1DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
         ChimeraTK::BackendFactory::getInstance().createBackend(TestApplication3::ExceptionDummyCDD1))),
     device2DummyBackend(boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
@@ -599,7 +601,7 @@ struct Fixture_noTestableMode {
     CHECK_EQUAL_TIMEOUT((m1o1->read(), m1o1->accessData(0)), DEFAULT, 10000);
   }
 
-  ~Fixture_noTestableMode() {
+  ~FixtureNoTestableMode() {
     device1DummyBackend->throwExceptionRead = false;
     device2DummyBackend->throwExceptionWrite = false;
   }
@@ -616,13 +618,14 @@ struct Fixture_noTestableMode {
 
 BOOST_AUTO_TEST_SUITE(data_validity_propagation_noTestFacility)
 
-BOOST_FIXTURE_TEST_CASE(testDeviceReadFailure, Fixture_noTestableMode) {
+BOOST_FIXTURE_TEST_CASE(testDeviceReadFailure, FixtureNoTestableMode) {
   std::cout << "testDeviceReadFailure" << std::endl;
   waitForDevices();
 
   auto consumingFanoutSource =
-      ctk::Device(app.ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i1/DUMMY_WRITEABLE");
-  auto pollRegister = ctk::Device(app.ExceptionDummyCDD2).getScalarRegisterAccessor<int>("/m1/i2/DUMMY_WRITEABLE");
+      ctk::Device(TestApplication3::ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i1/DUMMY_WRITEABLE");
+  auto pollRegister =
+      ctk::Device(TestApplication3::ExceptionDummyCDD2).getScalarRegisterAccessor<int>("/m1/i2/DUMMY_WRITEABLE");
 
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");
   auto result = test.getScalar<int>("m1/Module1_result");
@@ -684,7 +687,7 @@ BOOST_FIXTURE_TEST_CASE(testDeviceReadFailure, Fixture_noTestableMode) {
 
 /*********************************************************************************************************************/
 
-BOOST_FIXTURE_TEST_CASE(testReadDeviceWithTrigger, Fixture_noTestableMode) {
+BOOST_FIXTURE_TEST_CASE(testReadDeviceWithTrigger, FixtureNoTestableMode) {
   std::cout << "testReadDeviceWithTrigger" << std::endl;
   waitForDevices();
 
@@ -694,7 +697,8 @@ BOOST_FIXTURE_TEST_CASE(testReadDeviceWithTrigger, Fixture_noTestableMode) {
   fromDevice.read(); // there is an initial value
   BOOST_CHECK_EQUAL(fromDevice, 0);
 
-  auto deviceRegister = ctk::Device(app.ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i3/DUMMY_WRITEABLE");
+  auto deviceRegister =
+      ctk::Device(TestApplication3::ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i3/DUMMY_WRITEABLE");
   deviceRegister = 30;
   deviceRegister.write();
 
@@ -736,7 +740,7 @@ BOOST_FIXTURE_TEST_CASE(testReadDeviceWithTrigger, Fixture_noTestableMode) {
 
 /*********************************************************************************************************************/
 
-BOOST_FIXTURE_TEST_CASE(testConsumingFanout, Fixture_noTestableMode) {
+BOOST_FIXTURE_TEST_CASE(testConsumingFanout, FixtureNoTestableMode) {
   std::cout << "testConsumingFanout" << std::endl;
   waitForDevices();
 
@@ -747,14 +751,14 @@ BOOST_FIXTURE_TEST_CASE(testConsumingFanout, Fixture_noTestableMode) {
   result.read();              // initial value, don't care for this test
 
   auto pollRegisterSource =
-      ctk::Device(app.ExceptionDummyCDD2).getScalarRegisterAccessor<int>("/m1/i2.DUMMY_WRITEABLE");
+      ctk::Device(TestApplication3::ExceptionDummyCDD2).getScalarRegisterAccessor<int>("/m1/i2.DUMMY_WRITEABLE");
   pollRegisterSource = 100;
   pollRegisterSource.write();
 
   threadedFanoutInput = 10;
 
   auto consumingFanoutSource =
-      ctk::Device(app.ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i1.DUMMY_WRITEABLE");
+      ctk::Device(TestApplication3::ExceptionDummyCDD1).getScalarRegisterAccessor<int>("/m1/i1.DUMMY_WRITEABLE");
   consumingFanoutSource = 1;
   consumingFanoutSource.write();
 
@@ -811,7 +815,7 @@ BOOST_FIXTURE_TEST_CASE(testConsumingFanout, Fixture_noTestableMode) {
 
 /*********************************************************************************************************************/
 
-BOOST_FIXTURE_TEST_CASE(testDataFlowOnDeviceException, Fixture_noTestableMode) {
+BOOST_FIXTURE_TEST_CASE(testDataFlowOnDeviceException, FixtureNoTestableMode) {
   std::cout << "testDataFlowOnDeviceException" << std::endl;
 
   auto threadedFanoutInput = test.getScalar<int>("m1/o1");

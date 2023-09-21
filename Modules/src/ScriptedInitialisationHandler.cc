@@ -7,6 +7,7 @@
 #include <boost/process.hpp>
 
 #include <functional>
+#include <utility>
 namespace bp = boost::process;
 
 namespace ChimeraTK {
@@ -14,11 +15,11 @@ namespace ChimeraTK {
   /**********************************************************************************************************************/
 
   ScriptedInitHandler::ScriptedInitHandler(ModuleGroup* owner, const std::string& name, const std::string& description,
-      const std::string& command, DeviceModule& deviceModule, const std::string& outputName,
-      unsigned int errorGracePeriod)
-  : ApplicationModule(owner, name, description), _command(command), _deviceAlias(deviceModule.getDeviceAliasOrURI()),
-    _outputName(outputName), _errorGracePeriod(errorGracePeriod) {
-    deviceModule.addInitialisationHandler(std::bind(&ScriptedInitHandler::doInit, this));
+      std::string command, DeviceModule& deviceModule, std::string outputName, unsigned int errorGracePeriod)
+  : ApplicationModule(owner, name, description), _command(std::move(command)),
+    _deviceAlias(deviceModule.getDeviceAliasOrURI()), _outputName(std::move(outputName)),
+    _errorGracePeriod(errorGracePeriod) {
+    deviceModule.addInitialisationHandler([this](Device&) { doInit(); });
   }
   /**********************************************************************************************************************/
 
@@ -53,13 +54,11 @@ namespace ChimeraTK {
         std::this_thread::sleep_for(std::chrono::seconds(_errorGracePeriod));
         throw ChimeraTK::runtime_error(_deviceAlias + " initialisation failed.");
       }
-      else {
-        output += _deviceAlias + " initialisation SUCCESS!";
-        _scriptOutput = output;
-        _scriptOutput.write();
-        std::cerr << output << std::endl;
-        _lastFailed = false;
-      }
+      output += _deviceAlias + " initialisation SUCCESS!";
+      _scriptOutput = output;
+      _scriptOutput.write();
+      std::cerr << output << std::endl;
+      _lastFailed = false;
     }
     catch(bp::process_error& e) {
       // this

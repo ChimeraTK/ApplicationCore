@@ -13,23 +13,27 @@ namespace ChimeraTK {
 
   template<typename InputType, typename OutputType = InputType, size_t NELEMS = 1>
   struct ConstMultiplier : public ApplicationModule {
-    ConstMultiplier(ModuleGroup* owner, const std::string& name, const std::string& description, double factor)
+    ConstMultiplier(ModuleGroup* owner, const std::string& name, const std::string& description, double theFactor)
     : ApplicationModule(owner, name, ""), input(this, "input", "", NELEMS, description),
-      output(this, "output", "", NELEMS, description), _factor(factor) {}
+      output(this, "output", "", NELEMS, description), factor(theFactor) {}
 
     ArrayPushInput<InputType> input;
     ArrayOutput<OutputType> output;
 
-    double _factor;
+    double factor;
 
     void mainLoop() override {
       while(true) {
         // scale value (with rounding, if integral type)
         if(!std::numeric_limits<OutputType>::is_integer) {
-          for(size_t i = 0; i < NELEMS; ++i) output[i] = input[i] * _factor;
+          for(size_t i = 0; i < NELEMS; ++i) {
+            output[i] = input[i] * factor;
+          }
         }
         else {
-          for(size_t i = 0; i < NELEMS; ++i) output[i] = std::round(input[i] * _factor);
+          for(size_t i = 0; i < NELEMS; ++i) {
+            output[i] = std::round(input[i] * factor);
+          }
         }
 
         // write scaled value
@@ -98,10 +102,14 @@ namespace ChimeraTK {
       while(true) {
         // scale value (with rounding, if integral type)
         if constexpr(!std::numeric_limits<OutputType>::is_integer) {
-          for(size_t i = 0; i < NELEMS; ++i) output[i] = input[i] * factor;
+          for(size_t i = 0; i < NELEMS; ++i) {
+            output[i] = input[i] * factor;
+          }
         }
         else {
-          for(size_t i = 0; i < NELEMS; ++i) output[i] = std::round(input[i] * factor);
+          for(size_t i = 0; i < NELEMS; ++i) {
+            output[i] = std::round(input[i] * factor);
+          }
         }
 
         // write scaled value
@@ -131,10 +139,14 @@ namespace ChimeraTK {
       while(true) {
         // scale value (with rounding, if integral type)
         if(!std::numeric_limits<OutputType>::is_integer) {
-          for(size_t i = 0; i < NELEMS; ++i) output[i] = input[i] / divider;
+          for(size_t i = 0; i < NELEMS; ++i) {
+            output[i] = input[i] / divider;
+          }
         }
         else {
-          for(size_t i = 0; i < NELEMS; ++i) output[i] = std::round(input[i] / divider);
+          for(size_t i = 0; i < NELEMS; ++i) {
+            output[i] = std::round(input[i] / divider);
+          }
         }
 
         // write scaled value

@@ -10,7 +10,9 @@ namespace ChimeraTK::Utilities {
 
   std::string getUnqualifiedName(const std::string& qualifiedName) {
     auto found = qualifiedName.find_last_of('/');
-    if(found == std::string::npos) return qualifiedName;
+    if(found == std::string::npos) {
+      return qualifiedName;
+    }
     return qualifiedName.substr(found + 1);
   }
 
@@ -18,7 +20,9 @@ namespace ChimeraTK::Utilities {
 
   std::string getPathName(const std::string& qualifiedName) {
     auto found = qualifiedName.find_last_of('/');
-    if(found == std::string::npos) return ".";
+    if(found == std::string::npos) {
+      return ".";
+    }
     return qualifiedName.substr(0, found);
   }
 

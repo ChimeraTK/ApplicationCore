@@ -13,6 +13,7 @@
 #include <boost/graph/transpose_graph.hpp>
 
 #include <memory>
+#include <utility>
 
 namespace ChimeraTK {
   // Forward declarations
@@ -262,7 +263,7 @@ namespace ChimeraTK::Model {
     friend struct VertexProperties;
 
     /// Update ModuleGroup reference after move operation
-    void informMove(ModuleGroup& group);
+    void informMove(ModuleGroup& module);
     friend class ChimeraTK::ModuleGroup;
   };
 
@@ -338,7 +339,7 @@ namespace ChimeraTK::Model {
     friend struct VertexProperties;
 
     /// Update DeviceModule reference after move operation
-    void informMove(DeviceModule& group);
+    void informMove(DeviceModule& module);
     friend class ChimeraTK::DeviceModule;
   };
 
@@ -471,7 +472,7 @@ namespace ChimeraTK::Model {
     // Call the visitor and pass the Properties struct matching the current vertex type. The return value of the
     // visitor will be passed through.
     template<typename VISITOR>
-    typename std::invoke_result<VISITOR, ApplicationModuleProperties&>::type visit(VISITOR visitor) const;
+    [[nodiscard]] typename std::invoke_result<VISITOR, ApplicationModuleProperties&>::type visit(VISITOR visitor) const;
 
     // Call the visitor and pass a Proxy matching the current vertex type.The return value of the visitor
     // will be passed through.
@@ -683,7 +684,7 @@ namespace ChimeraTK::Model {
   /// Stop the search after the first hit and return. If the visitor returns a value, it will be passed on to the caller
   /// of the visit() function. If no match is found, the provided notFoundValue will be returned.
   inline constexpr ReturnFirstHitWithValue<void> returnFirstHit() {
-    ReturnFirstHitWithValue<void> rv;
+    ReturnFirstHitWithValue<void> rv{};
     return rv;
   }
 
@@ -725,7 +726,7 @@ namespace ChimeraTK::Model {
     }
 
     template<typename PROXY>
-    constexpr bool constevalObjecttype() const {
+    [[nodiscard]] constexpr bool constevalObjecttype() const {
       return FILTER_LHS::template constevalObjecttype<PROXY>() || FILTER_RHS::template constevalObjecttype<PROXY>();
     }
   };
@@ -755,7 +756,7 @@ namespace ChimeraTK::Model {
     }
 
     template<typename PROXY>
-    constexpr bool constevalObjecttype() const {
+    [[nodiscard]] constexpr bool constevalObjecttype() const {
       return FILTER_LHS::template constevalObjecttype<PROXY>() && FILTER_RHS::template constevalObjecttype<PROXY>();
     }
   };
@@ -795,9 +796,9 @@ namespace ChimeraTK::Model {
 
   template<typename FILTER>
   struct VertexFilter : PropertyFilterTag<VertexProperties> {
-    explicit constexpr VertexFilter(FILTER filter) : _filter(filter) {}
+    explicit constexpr VertexFilter(FILTER filter) : _filter(std::move(filter)) {}
     constexpr VertexFilter(const VertexFilter<FILTER>& rhs) = default;
-    constexpr VertexFilter(VertexFilter<FILTER>&& rhs) = default;
+    constexpr VertexFilter(VertexFilter<FILTER>&& rhs) noexcept = default;
 
     template<typename FILTER_RHS>
     constexpr auto operator||(const FILTER_RHS& rhs) const {
@@ -817,7 +818,7 @@ namespace ChimeraTK::Model {
 
     // Filter on object type in constexpr condition. Will be overridden by ObjecttypeFilter.
     template<typename PROXY>
-    constexpr bool constevalObjecttype() const {
+    [[nodiscard]] constexpr bool constevalObjecttype() const {
       return true;
     }
 
@@ -859,45 +860,51 @@ namespace ChimeraTK::Model {
 
   /******************************************************************************************************************/
 
-  template<VertexProperties::Type OBJECTTYPE, typename PROXYTYPE>
-  struct ObjecttypeFilter : VertexFilter<decltype(detail::objecttypeFilterFunctor<OBJECTTYPE>)> {
-    constexpr ObjecttypeFilter()
-    : VertexFilter<decltype(detail::objecttypeFilterFunctor<OBJECTTYPE>)>(detail::objecttypeFilterFunctor<OBJECTTYPE>) {
-    }
+  // FIXME: This _should_ be fine since it is not possible to use those templates
+  // in different compilation units. This is the recommended work-around from the GCC manpage
+  // GCC will complain about base class using internal linkage because of the base class depending
+  // on the type of lambdas which get a different symbol for every compilation unit they are used in
+  // NOLINTNEXTLINE(google-build-namespaces)
+  namespace {
+    template<VertexProperties::Type OBJECTTYPE, typename PROXYTYPE>
+    struct ObjecttypeFilter : VertexFilter<decltype(detail::objecttypeFilterFunctor<OBJECTTYPE>)> {
+      constexpr ObjecttypeFilter()
+      : VertexFilter<decltype(detail::objecttypeFilterFunctor<OBJECTTYPE>)>(
+            detail::objecttypeFilterFunctor<OBJECTTYPE>) {}
 
-    template<typename FILTER_RHS>
-    constexpr auto operator||(const FILTER_RHS& rhs) const {
-      static_assert(std::is_base_of<PropertyFilterTag<VertexProperties>, FILTER_RHS>::value,
-          "Logical OR operator || cannot be used on different filter types.");
-      return OrSet(*this, rhs);
-    }
+      template<typename FILTER_RHS>
+      constexpr auto operator||(const FILTER_RHS& rhs) const {
+        static_assert(std::is_base_of<PropertyFilterTag<VertexProperties>, FILTER_RHS>::value,
+            "Logical OR operator || cannot be used on different filter types.");
+        return OrSet(*this, rhs);
+      }
 
-    template<typename FILTER_RHS>
-    constexpr auto operator&&(const FILTER_RHS& rhs) const {
-      static_assert(std::is_base_of<PropertyFilterTag<VertexProperties>, FILTER_RHS>::value,
-          "Logical AND operator && cannot be used on different filter types.");
-      return AndSet(*this, rhs);
-    }
+      template<typename FILTER_RHS>
+      constexpr auto operator&&(const FILTER_RHS& rhs) const {
+        static_assert(std::is_base_of<PropertyFilterTag<VertexProperties>, FILTER_RHS>::value,
+            "Logical AND operator && cannot be used on different filter types.");
+        return AndSet(*this, rhs);
+      }
 
-    template<typename PROXY>
-    constexpr bool constevalObjecttype() const {
-      return std::is_same<PROXY, PROXYTYPE>::value;
-    }
-  };
+      template<typename PROXY>
+      [[nodiscard]] constexpr bool constevalObjecttype() const {
+        return std::is_same<PROXY, PROXYTYPE>::value;
+      }
+    };
+
+    /******************************************************************************************************************/
+  } // namespace
 
   /******************************************************************************************************************/
-
-  static constexpr auto keepModuleGroups = ObjecttypeFilter<VertexProperties::Type::moduleGroup, ModuleGroupProxy>();
-  static constexpr auto keepApplicationModules =
+  constexpr static auto keepModuleGroups = ObjecttypeFilter<VertexProperties::Type::moduleGroup, ModuleGroupProxy>();
+  constexpr static auto keepApplicationModules =
       ObjecttypeFilter<VertexProperties::Type::applicationModule, ApplicationModuleProxy>();
-  static constexpr auto keepVariableGroups =
+  constexpr static auto keepVariableGroups =
       ObjecttypeFilter<VertexProperties::Type::variableGroup, VariableGroupProxy>();
-  static constexpr auto keepDeviceModules = ObjecttypeFilter<VertexProperties::Type::deviceModule, DeviceModuleProxy>();
-  static constexpr auto keepProcessVariables =
+  constexpr static auto keepDeviceModules = ObjecttypeFilter<VertexProperties::Type::deviceModule, DeviceModuleProxy>();
+  constexpr static auto keepProcessVariables =
       ObjecttypeFilter<VertexProperties::Type::processVariable, ProcessVariableProxy>();
-  static constexpr auto keepDirectories = ObjecttypeFilter<VertexProperties::Type::directory, DirectoryProxy>();
-
-  /******************************************************************************************************************/
+  constexpr static auto keepDirectories = ObjecttypeFilter<VertexProperties::Type::directory, DirectoryProxy>();
 
   namespace detail {
     /**
@@ -942,7 +949,7 @@ namespace ChimeraTK::Model {
   /******************************************************************************************************************/
   /******************************************************************************************************************/
 
-  [[maybe_unused]] static auto keepName(std::string name) {
+  [[maybe_unused]] static auto keepName(const std::string& name) {
     return VertexFilter([name](const VertexProperties& e) -> bool {
       return e.visit([name](auto props) -> bool {
         if constexpr(hasName(props)) {
@@ -1256,7 +1263,7 @@ namespace ChimeraTK::Model {
 
     // common implementation to add any object (ModuleGroup, ApplicationModule, VariableGroup or DeviceModule)
     template<typename PROXY, typename MODULE, typename PROPS, Model::VertexProperties::Type TYPE>
-    PROXY generic_add(Model::Vertex owner, MODULE& module);
+    PROXY genericAdd(Model::Vertex owner, MODULE& module);
 
     // convenience functions just redirecting to generic_remove.
     void remove(Model::Vertex owner, ModuleGroup& module);
@@ -1267,7 +1274,7 @@ namespace ChimeraTK::Model {
     // Common implementation to remove any object (ModuleGroup, ApplicationModule, VariableGroup or DeviceModule).
     // For ProcessVariables, remove the node from the ProcessVariable instead.
     template<typename MODULE>
-    void generic_remove(Model::Vertex owner, MODULE& module);
+    void genericRemove(Model::Vertex owner, MODULE& module);
 
     // Add variable to parent directory if not yet existing. The corresponding proxy is returned even if the variable
     // existed before.
@@ -1298,10 +1305,10 @@ namespace ChimeraTK::Model {
     template<typename VISITOR, typename PROXY>
     bool visitByPath(std::string_view path, VISITOR visitor, PROXY startProxy);
 
-    Model::Graph graph;
+    Model::Graph _graph;
 
-    Model::EdgeFilteredView ownershipView{graph,
-        [&](const Model::Edge& edge) -> bool { return graph[edge].type == Model::EdgeProperties::Type::ownership; },
+    Model::EdgeFilteredView _ownershipView{_graph,
+        [&](const Model::Edge& edge) -> bool { return _graph[edge].type == Model::EdgeProperties::Type::ownership; },
         boost::keep_all()};
   };
 
@@ -1342,17 +1349,17 @@ namespace ChimeraTK::Model {
     // depth_first_search tried to default-construct their types at some point. Also the lifetime of the lambdas needs
     // to go beyond the scope of this function, hence we must not capture by reference!
     [[maybe_unused]] std::function edgeFilterFunctor = [=](const Model::Edge& e) -> bool {
-      Model::EdgeProperties props = graph[e];
+      Model::EdgeProperties props = _graph[e];
       return edgeFilter.evalEdgeFilter(props);
     };
 
     // Performance optimisation: Only pass predicates that really do something
     constexpr bool filterEdges = !std::is_same<decltype(edgeFilter), decltype(keepAllEdges)>::value;
     if constexpr(filterEdges) {
-      return boost::filtered_graph(graph, edgeFilterFunctor);
+      return boost::filtered_graph(_graph, edgeFilterFunctor);
     }
     else {
-      return graph;
+      return _graph;
     }
   }
 
@@ -1369,7 +1376,9 @@ namespace ChimeraTK::Model {
           ValueHolder<detail::VisitorReturnType<VISITOR, FILTER>>& rv)
       : _visitor(visitor), _filter(filter), _stopAfterVertex(stopAfterVertex), _impl(std::move(impl)), _rv(rv) {}
 
+      // This is a required function by boost::graph - disable naming check
       template<class Vertex, class Graph>
+      // NOLINTNEXTLINE(readability-identifier-naming)
       void discover_vertex(Vertex v, Graph& g) {
         // apply vertex filter
         if(!_filter.evalVertexFilter(g[v])) {
@@ -1390,7 +1399,9 @@ namespace ChimeraTK::Model {
         }
       }
 
+      // This is a required function by boost::graph - disable naming check
       template<class Vertex, class Graph>
+      // NOLINTNEXTLINE(readability-identifier-naming)
       void finish_vertex(Vertex v, Graph&) {
         if(v == _stopAfterVertex) {
           throw StopException();
@@ -1400,7 +1411,7 @@ namespace ChimeraTK::Model {
       auto getReturnValue() { return _rv.get(); }
 
       // This exception is just used to trick the boost::depth_first_search() to stop.
-      class StopException {};
+      class StopException : public std::exception {};
 
      protected:
       VISITOR& _visitor;
@@ -1453,10 +1464,10 @@ namespace ChimeraTK::Model {
       auto [start, end] = boost::out_edges(startVertex, filteredGraph);
       for(auto it = start; it != end; ++it) {
         // obtain target vertex of the current outgoing edge (i.e. vertex at the other end of the edge)
-        auto vtx = target(*it, graph);
+        auto vtx = target(*it, _graph);
 
         // apply vertex filter
-        if(!vertexFilter.evalVertexFilter(graph[vtx])) {
+        if(!vertexFilter.evalVertexFilter(_graph[vtx])) {
           continue;
         }
 
@@ -1472,10 +1483,10 @@ namespace ChimeraTK::Model {
       auto [start, end] = boost::in_edges(startVertex, filteredGraph);
       for(auto it = start; it != end; ++it) {
         // obtain source vertex of the current incoming edge (i.e. vertex at the other end of the edge)
-        auto vtx = source(*it, graph);
+        auto vtx = source(*it, _graph);
 
         // apply vertex filter
-        if(!vertexFilter.evalVertexFilter(graph[vtx])) {
+        if(!vertexFilter.evalVertexFilter(_graph[vtx])) {
           continue;
         }
 
@@ -1585,7 +1596,7 @@ namespace ChimeraTK::Model {
       path = path.substr(1);
 
       // delegate to root proxy
-      RootProxy root(*(boost::vertices(graph).first), shared_from_this());
+      RootProxy root(*(boost::vertices(_graph).first), shared_from_this());
       return root.visitByPath(path, visitor);
     }
 
@@ -1629,11 +1640,11 @@ namespace ChimeraTK::Model {
 
     auto vertexPropWriter = [&](std::ostream& out, const auto& vtx) {
       // apply vertex filter
-      if(!vertexFilter.evalVertexFilter(_d->impl->graph[vtx])) {
+      if(!vertexFilter.evalVertexFilter(_d->impl->_graph[vtx])) {
         return;
       }
 
-      _d->impl->graph[vtx].visit([&](auto prop) {
+      _d->impl->_graph[vtx].visit([&](auto prop) {
         out << "[";
 
         // Add label depending on type
@@ -1683,7 +1694,7 @@ namespace ChimeraTK::Model {
 
     auto edgePropWriter = [&](std::ostream& out, const auto& edge) {
       out << "[";
-      switch(_d->impl->graph[edge].type) {
+      switch(_d->impl->_graph[edge].type) {
         case EdgeProperties::Type::parenthood: {
           out << "color=red, arrowhead=diamond";
           break;

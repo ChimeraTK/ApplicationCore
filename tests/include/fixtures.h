@@ -124,10 +124,10 @@ struct DummyApplication : ChimeraTK::Application {
 /**********************************************************************************************************************/
 
 template<bool enableTestFacility, bool addInitHandlers = false, bool breakSecondDeviceAtStart = false>
-struct fixture_with_poll_and_push_input {
-  fixture_with_poll_and_push_input();
+struct FixtureWithPollAndPushInput {
+  FixtureWithPollAndPushInput();
 
-  ~fixture_with_poll_and_push_input();
+  ~FixtureWithPollAndPushInput();
 
   template<typename T>
   auto read(ChimeraTK::DummyRegisterRawAccessor& accessor);
@@ -181,8 +181,8 @@ struct fixture_with_poll_and_push_input {
 /**********************************************************************************************************************/
 
 template<bool enableTestFacility, bool addInitHandlers, bool breakSecondDeviceAtStart>
-fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers,
-    breakSecondDeviceAtStart>::fixture_with_poll_and_push_input()
+FixtureWithPollAndPushInput<enableTestFacility, addInitHandlers,
+    breakSecondDeviceAtStart>::FixtureWithPollAndPushInput()
 : deviceBackend(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
       ChimeraTK::BackendFactory::getInstance().createBackend(DummyApplication::ExceptionDummyCDD1))),
   deviceBackend2(boost::dynamic_pointer_cast<ChimeraTK::ExceptionDummy>(
@@ -257,8 +257,8 @@ fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers,
 /**********************************************************************************************************************/
 
 template<bool enableTestFacility, bool addInitHandlers, bool breakSecondDeviceAtStart>
-fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers,
-    breakSecondDeviceAtStart>::~fixture_with_poll_and_push_input() {
+FixtureWithPollAndPushInput<enableTestFacility, addInitHandlers,
+    breakSecondDeviceAtStart>::~FixtureWithPollAndPushInput() {
   // make sure no exception throwing is still enabled from previous test
   deviceBackend->throwExceptionOpen = false;
   deviceBackend->throwExceptionRead = false;
@@ -274,8 +274,7 @@ fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers,
 /**********************************************************************************************************************/
 
 template<bool enableTestFacility, bool addInitHandlers, bool breakSecondDeviceAtStart>
-bool fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers,
-    breakSecondDeviceAtStart>::isDeviceInError() {
+bool FixtureWithPollAndPushInput<enableTestFacility, addInitHandlers, breakSecondDeviceAtStart>::isDeviceInError() {
   // By definition, the DeviceModule has finished the recovery procedure when the status is 0 again.
   status.readLatest();
   return static_cast<int>(status);
@@ -285,7 +284,7 @@ bool fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers,
 
 template<bool enableTestFacility, bool addInitHandlers, bool breakSecondDeviceAtStart>
 template<typename T>
-auto fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers, breakSecondDeviceAtStart>::read(
+auto FixtureWithPollAndPushInput<enableTestFacility, addInitHandlers, breakSecondDeviceAtStart>::read(
     ChimeraTK::DummyRegisterRawAccessor& accessor) {
   auto lock = accessor.getBufferLock();
   return static_cast<T>(accessor);
@@ -295,7 +294,7 @@ auto fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers, break
 
 template<bool enableTestFacility, bool addInitHandlers, bool breakSecondDeviceAtStart>
 template<typename T>
-auto fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers, breakSecondDeviceAtStart>::read(
+auto FixtureWithPollAndPushInput<enableTestFacility, addInitHandlers, breakSecondDeviceAtStart>::read(
     ChimeraTK::DummyRegisterRawAccessor&& accessor) {
   read<T>(accessor);
 }
@@ -304,7 +303,7 @@ auto fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers, break
 
 template<bool enableTestFacility, bool addInitHandlers, bool breakSecondDeviceAtStart>
 template<typename T>
-void fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers, breakSecondDeviceAtStart>::write(
+void FixtureWithPollAndPushInput<enableTestFacility, addInitHandlers, breakSecondDeviceAtStart>::write(
     ChimeraTK::DummyRegisterRawAccessor& accessor, T value) {
   auto lock = accessor.getBufferLock();
   accessor = static_cast<int32_t>(value);
@@ -314,7 +313,7 @@ void fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers, break
 
 template<bool enableTestFacility, bool addInitHandlers, bool breakSecondDeviceAtStart>
 template<typename T>
-void fixture_with_poll_and_push_input<enableTestFacility, addInitHandlers, breakSecondDeviceAtStart>::write(
+void FixtureWithPollAndPushInput<enableTestFacility, addInitHandlers, breakSecondDeviceAtStart>::write(
     ChimeraTK::DummyRegisterRawAccessor&& accessor, T value) {
   write(accessor, value);
 }

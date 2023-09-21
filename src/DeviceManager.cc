@@ -9,9 +9,9 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  DeviceManager::DeviceManager(Application* application, const std::string& deviceAliasOrURI)
-  : ApplicationModule(application, "/Devices/" + Utilities::stripName(deviceAliasOrURI, false), ""),
-    _device(deviceAliasOrURI), _deviceAliasOrURI(deviceAliasOrURI), _owner{application} {}
+  DeviceManager::DeviceManager(Application* application, const std::string& deviceAliasOrCDD)
+  : ApplicationModule(application, "/Devices/" + Utilities::stripName(deviceAliasOrCDD, false), ""),
+    _device(deviceAliasOrCDD), _deviceAliasOrCDD(deviceAliasOrCDD), _owner{application} {}
 
   /*********************************************************************************************************************/
 
@@ -24,7 +24,9 @@ namespace ChimeraTK {
     // iterate catalogue, create VariableNetworkNode for all registers
     for(const auto& reg : catalog) {
       // ignore 2D registers
-      if(reg.getNumberOfDimensions() > 1) continue;
+      if(reg.getNumberOfDimensions() > 1) {
+        continue;
+      }
 
       // guess direction and determine update mode
       VariableDirection direction{};
@@ -103,7 +105,7 @@ namespace ChimeraTK {
       }
 
       // create node and add to list
-      rv.emplace_back(reg.getRegisterName(), _deviceAliasOrURI, reg.getRegisterName(), updateMode, direction, *valTyp,
+      rv.emplace_back(reg.getRegisterName(), _deviceAliasOrCDD, reg.getRegisterName(), updateMode, direction, *valTyp,
           reg.getNumberOfElements());
     }
 
@@ -126,7 +128,9 @@ namespace ChimeraTK {
 
     if(!_deviceHasError) { // only report new errors if the device does not have reported errors already
       if(_errorQueue.push(std::move(errMsg))) {
-        if(_owner->getTestableMode().isEnabled()) ++_owner->getTestableMode().counter;
+        if(_owner->getTestableMode().isEnabled()) {
+          ++_owner->getTestableMode()._counter;
+        }
       } // else do nothing. There are plenty of errors reported already: The queue is full.
       // set the error flag and notify the other threads
       _deviceHasError = true;
@@ -176,7 +180,7 @@ namespace ChimeraTK {
         catch(ChimeraTK::runtime_error& e) {
           assert(_deviceError._status != StatusOutput::Status::OK); // any error must already be reported...
           if(std::string(_deviceError._message) != e.what()) {
-            std::cerr << "Device " << _deviceAliasOrURI << " reports error: " << e.what() << std::endl;
+            std::cerr << "Device " << _deviceAliasOrCDD << " reports error: " << e.what() << std::endl;
             // set proper error message in very first attempt to open the device
             setCurrentVersionNumber({});
             _deviceError.write(StatusOutput::Status::FAULT, e.what());
@@ -189,9 +193,9 @@ namespace ChimeraTK {
 
       // [Spec: 2.3.3] Empty exception reporting queue.
       while(_errorQueue.pop()) {
-        if(_owner->getTestableMode().enabled) {
-          assert(_owner->getTestableMode().counter > 0);
-          --_owner->getTestableMode().counter;
+        if(_owner->getTestableMode()._enabled) {
+          assert(_owner->getTestableMode()._counter > 0);
+          --_owner->getTestableMode()._counter;
         }
       }
       errorLock.unlock(); // we don't need to hold the lock for now, but we will need it later
@@ -220,7 +224,7 @@ namespace ChimeraTK {
         assert(_deviceError._status != StatusOutput::Status::OK); // any error must already be reported...
         // update error message, since it might have been changed...
         if(std::string(_deviceError._message) != e.what()) {
-          std::cerr << "Device " << _deviceAliasOrURI << " reports error: " << e.what() << std::endl;
+          std::cerr << "Device " << _deviceAliasOrCDD << " reports error: " << e.what() << std::endl;
           setCurrentVersionNumber({});
           _deviceError.write(StatusOutput::Status::FAULT, e.what());
         }
@@ -247,7 +251,7 @@ namespace ChimeraTK {
       catch(ChimeraTK::runtime_error& e) {
         // update error message, since it might have been changed...
         if(std::string(_deviceError._message) != e.what()) {
-          std::cerr << "Device " << _deviceAliasOrURI << " reports error: " << e.what() << std::endl;
+          std::cerr << "Device " << _deviceAliasOrCDD << " reports error: " << e.what() << std::endl;
           setCurrentVersionNumber({});
           _deviceError.write(StatusOutput::Status::FAULT, e.what());
         }
@@ -273,13 +277,15 @@ namespace ChimeraTK {
       deviceBecameFunctional.write();
 
       if(!firstSuccess) {
-        std::cerr << "Device " << _deviceAliasOrURI << " error cleared." << std::endl;
+        std::cerr << "Device " << _deviceAliasOrCDD << " error cleared." << std::endl;
       }
       firstSuccess = false;
 
       // decrement special testable mode counter, was incremented manually above to make sure initialisation completes
       // within one "application step"
-      if(Application::getInstance().getTestableMode().enabled) --_owner->getTestableMode().deviceInitialisationCounter;
+      if(Application::getInstance().getTestableMode()._enabled) {
+        --_owner->getTestableMode()._deviceInitialisationCounter;
+      }
 
       // [Spec: 2.3.8] Wait for an exception being reported by the ExceptionHandlingDecorators
       // release the testable mode mutex for waiting for the exception.
@@ -295,8 +301,8 @@ namespace ChimeraTK {
       _owner->getTestableMode().lock("Process exception");
       // increment special testable mode counter to make sure the initialisation completes within one
       // "application step"
-      if(Application::getInstance().getTestableMode().enabled) {
-        ++_owner->getTestableMode().deviceInitialisationCounter; // matched above with a decrement
+      if(Application::getInstance().getTestableMode()._enabled) {
+        ++_owner->getTestableMode()._deviceInitialisationCounter; // matched above with a decrement
       }
 
       errorLock.lock(); // we need both locks to modify the queue
@@ -304,13 +310,13 @@ namespace ChimeraTK {
       auto popResult = _errorQueue.pop(error);
       assert(popResult); // this if should always be true, otherwise the waiting did not work.
       (void)popResult;   // avoid warning in production build. g++5.4 does not support [[maybe_unused]] yet.
-      if(_owner->getTestableMode().enabled) {
-        assert(_owner->getTestableMode().counter > 0);
-        --_owner->getTestableMode().counter;
+      if(_owner->getTestableMode()._enabled) {
+        assert(_owner->getTestableMode()._counter > 0);
+        --_owner->getTestableMode()._counter;
       }
 
       // [ExceptionHandling Spec: C.3.3.14] report exception to the control system
-      std::cerr << "Device " << _deviceAliasOrURI << " reports error: " << error << std::endl;
+      std::cerr << "Device " << _deviceAliasOrCDD << " reports error: " << error << std::endl;
       setCurrentVersionNumber({});
       _deviceError.write(StatusOutput::Status::FAULT, error);
 
@@ -337,8 +343,8 @@ namespace ChimeraTK {
     // Increment special testable mode counter to make sure the initialisation completes within one
     // "application step". Start with counter increased (device not initialised yet, wait).
     // We can to this here without testable mode lock because the application is still single threaded.
-    if(Application::getInstance().getTestableMode().enabled) {
-      ++_owner->getTestableMode().deviceInitialisationCounter; // released and increased in handeException loop
+    if(Application::getInstance().getTestableMode()._enabled) {
+      ++_owner->getTestableMode()._deviceInitialisationCounter; // released and increased in handeException loop
     }
   }
 
@@ -409,23 +415,18 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void DeviceManager::terminate() {
-    if(moduleThread.joinable()) {
-      moduleThread.interrupt();
+    if(_moduleThread.joinable()) {
+      _moduleThread.interrupt();
       // try joining the thread
-      while(!moduleThread.try_join_for(boost::chrono::milliseconds(10))) {
+      while(!_moduleThread.try_join_for(boost::chrono::milliseconds(10))) {
         // send boost interrupted exception through the _errorQueue
-        try {
-          throw boost::thread_interrupted();
-        }
-        catch(boost::thread_interrupted&) {
-          _errorQueue.push_exception(std::current_exception());
-        }
+        _errorQueue.push_exception(std::make_exception_ptr(boost::thread_interrupted()));
 
         // it may not suffice to send the exception once, as the exception might get overwritten in the queue, thus we
         // repeat this until the thread was joined.
       }
     }
-    assert(!moduleThread.joinable());
+    assert(!_moduleThread.joinable());
   }
 
   /*********************************************************************************************************************/

@@ -28,11 +28,11 @@ namespace ChimeraTK {
      * be added. */
     void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode&) override;
 
-    bool isReadable() const override { return _withReturn; }
+    [[nodiscard]] bool isReadable() const override { return _withReturn; }
 
-    bool isReadOnly() const override { return false; }
+    [[nodiscard]] bool isReadOnly() const override { return false; }
 
-    bool isWriteable() const override { return true; }
+    [[nodiscard]] bool isWriteable() const override { return true; }
 
     void doReadTransferSynchronously() override;
 
@@ -44,11 +44,13 @@ namespace ChimeraTK {
 
     bool doWriteTransfer(ChimeraTK::VersionNumber versionNumber) override;
 
+    // FIXME: https://redmine.msktools.desy.de/issues/12242
+    // NOLINTNEXTLINE(google-default-arguments)
     bool doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber = {}) override;
 
     void doPostWrite(TransferType, VersionNumber) override;
 
-    bool mayReplaceOther(const boost::shared_ptr<const ChimeraTK::TransferElement>&) const override;
+    [[nodiscard]] bool mayReplaceOther(const boost::shared_ptr<const ChimeraTK::TransferElement>&) const override;
 
     std::list<boost::shared_ptr<ChimeraTK::TransferElement>> getInternalElements() override;
 
@@ -71,8 +73,6 @@ namespace ChimeraTK {
 
     /// The slave with return channel
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _returnSlave;
-
-    /// DataValidity to attach to the data
   };
 
   /********************************************************************************************************************/
@@ -94,7 +94,7 @@ namespace ChimeraTK {
     // Add the consuming accessors
     // TODO FanOut constructors and addSlave should get refactoring
     for(auto el : consumerImplementationPairs) {
-      addSlave(el.first, el.second);
+      FeedingFanOut<UserType>::addSlave(el.first, el.second);
     }
   }
 
@@ -109,7 +109,7 @@ namespace ChimeraTK {
         (slave->getNumberOfChannels() != 1 || slave->getNumberOfSamples() != this->getNumberOfSamples())) {
       std::string what = "FeedingFanOut::addSlave(): Trying to add a slave '" + slave->getName();
       what += "' with incompatible array shape! Name of fan out: '" + this->getName() + "'";
-      throw ChimeraTK::logic_error(what.c_str());
+      throw ChimeraTK::logic_error(what);
     }
 
     // make sure slave is writeable
@@ -141,14 +141,16 @@ namespace ChimeraTK {
     }
 
     // add the slave
-    FanOut<UserType>::slaves.push_back(slave);
+    FanOut<UserType>::_slaves.push_back(slave);
   }
 
   /********************************************************************************************************************/
 
   template<typename UserType>
   void FeedingFanOut<UserType>::doReadTransferSynchronously() {
-    if(this->_disabled) return;
+    if(this->_disabled) {
+      return;
+    }
     assert(_withReturn);
     _returnSlave->readTransfer();
   }
@@ -157,8 +159,12 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void FeedingFanOut<UserType>::doPreRead(TransferType type) {
-    if(!_withReturn) throw ChimeraTK::logic_error("Read operation called on write-only variable.");
-    if(this->_disabled) return;
+    if(!_withReturn) {
+      throw ChimeraTK::logic_error("Read operation called on write-only variable.");
+    }
+    if(this->_disabled) {
+      return;
+    }
     _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
     _returnSlave->preRead(type);
   }
@@ -167,16 +173,22 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void FeedingFanOut<UserType>::doPostRead(TransferType type, bool hasNewData) {
-    if(this->_disabled) return;
+    if(this->_disabled) {
+      return;
+    }
     assert(_withReturn);
     assert(_hasReturnSlave);
 
     auto _ = cppext::finally([&] {
-      if(!hasNewData) return;
+      if(!hasNewData) {
+        return;
+      }
       _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
       // distribute return-channel update to the other slaves
-      for(auto& slave : FanOut<UserType>::slaves) { // send out copies to slaves
-        if(slave == _returnSlave) continue;
+      for(auto& slave : FanOut<UserType>::_slaves) { // send out copies to slaves
+        if(slave == _returnSlave) {
+          continue;
+        }
         if(slave->getNumberOfSamples() != 0) { // do not send copy if no data is expected (e.g. trigger)
           slave->accessChannel(0) = ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0];
         }
@@ -194,14 +206,16 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void FeedingFanOut<UserType>::doPreWrite(TransferType, VersionNumber) {
-    if(this->_disabled) return;
-    for(auto& slave : FanOut<UserType>::slaves) {       // send out copies to slaves
-      if(slave->getNumberOfSamples() != 0) {            // do not send copy if no data is expected (e.g. trigger)
-        if(slave == FanOut<UserType>::slaves.front()) { // in case of first slave, swap instead of copy
+    if(this->_disabled) {
+      return;
+    }
+    for(auto& slave : FanOut<UserType>::_slaves) {       // send out copies to slaves
+      if(slave->getNumberOfSamples() != 0) {             // do not send copy if no data is expected (e.g. trigger)
+        if(slave == FanOut<UserType>::_slaves.front()) { // in case of first slave, swap instead of copy
           slave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
         }
         else { // not the first slave: copy the data from the first slave
-          slave->accessChannel(0) = FanOut<UserType>::slaves.front()->accessChannel(0);
+          slave->accessChannel(0) = FanOut<UserType>::_slaves.front()->accessChannel(0);
         }
       }
       slave->setDataValidity(this->dataValidity());
@@ -220,10 +234,12 @@ namespace ChimeraTK {
 
   template<typename UserType>
   bool FeedingFanOut<UserType>::doWriteTransfer(ChimeraTK::VersionNumber versionNumber) {
-    if(this->_disabled) return false;
+    if(this->_disabled) {
+      return false;
+    }
     bool dataLost = false;
     bool isFirst = true;
-    for(auto& slave : FanOut<UserType>::slaves) {
+    for(auto& slave : FanOut<UserType>::_slaves) {
       bool ret;
       if(isFirst) {
         isFirst = false;
@@ -232,7 +248,9 @@ namespace ChimeraTK {
       else {
         ret = slave->writeDestructively(versionNumber);
       }
-      if(ret) dataLost = true;
+      if(ret) {
+        dataLost = true;
+      }
     }
     return dataLost;
   }
@@ -240,12 +258,18 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
+  // FIXME: https://redmine.msktools.desy.de/issues/12242
+  // NOLINTNEXTLINE(google-default-arguments)
   bool FeedingFanOut<UserType>::doWriteTransferDestructively(ChimeraTK::VersionNumber versionNumber) {
-    if(this->_disabled) return false;
+    if(this->_disabled) {
+      return false;
+    }
     bool dataLost = false;
-    for(auto& slave : FanOut<UserType>::slaves) {
+    for(auto& slave : FanOut<UserType>::_slaves) {
       bool ret = slave->writeDestructively(versionNumber);
-      if(ret) dataLost = true;
+      if(ret) {
+        dataLost = true;
+      }
     }
     return dataLost;
   }
@@ -254,9 +278,11 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void FeedingFanOut<UserType>::doPostWrite(TransferType, VersionNumber) {
-    if(this->_disabled) return;
+    if(this->_disabled) {
+      return;
+    }
     // the postWrite() on the slaves has already been called
-    FanOut<UserType>::slaves.front()->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
+    FanOut<UserType>::_slaves.front()->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
   }
 
   /********************************************************************************************************************/
