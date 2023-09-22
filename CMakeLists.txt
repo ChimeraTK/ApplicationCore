@@ -32,6 +32,7 @@ FIND_PACKAGE(Threads)
 include(cmake/set_default_build_to_release.cmake)
 include(cmake/set_default_flags.cmake)
 include(cmake/enable_code_coverage_report.cmake)
+include(cmake/add_linter_target.cmake)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 file(GLOB headers "${CMAKE_SOURCE_DIR}/include/*.h")
