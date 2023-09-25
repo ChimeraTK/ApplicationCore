@@ -72,7 +72,7 @@ namespace ChimeraTK::Utilities {
     size_t iLast = 0;
     while((i = name_stripped.find('_', iLast)) != std::string::npos) {
       name += name_stripped.substr(iLast, i - iLast);
-      char code = std::stoi(name_stripped.substr(i + 1, 3));
+      char code = char(std::stoi(name_stripped.substr(i + 1, 3)));
       name += code;
       iLast = i + 4;
     }
