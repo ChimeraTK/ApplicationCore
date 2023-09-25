@@ -180,7 +180,7 @@ namespace ChimeraTK {
     assert(_hasReturnSlave);
 
     auto _ = cppext::finally([&] {
-      if(!hasNewData) {
+      if(!hasNewData || TransferElement::_activeException) {
         return;
       }
       _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
