@@ -502,3 +502,63 @@ BOOST_AUTO_TEST_CASE(testInitialValues) {
 }
 
 /*********************************************************************************************************************/
+/*********************************************************************************************************************/
+
+struct ModuleX : ChimeraTK::ApplicationModule {
+  using ChimeraTK::ApplicationModule::ApplicationModule;
+
+  ChimeraTK::ScalarOutputPushRB<int> out{this, "/output", "", ""};
+  ChimeraTK::ScalarPushInput<int> in{this, "/input", "", ""};
+  void mainLoop() override {
+    auto g = readAnyGroup();
+    ChimeraTK::TransferElementID id;
+    while(true) {
+      out.setAndWrite(in);
+      id = g.readAny();
+    }
+  }
+};
+
+/*********************************************************************************************************************/
+
+struct ModuleY : ChimeraTK::ApplicationModule {
+  using ChimeraTK::ApplicationModule::ApplicationModule;
+
+  ChimeraTK::ScalarPushInputWB<int> in{this, "/output", "", ""};
+  void mainLoop() override {
+    auto g = readAnyGroup();
+    while(true) {
+      g.readAny();
+    }
+  }
+};
+
+/*********************************************************************************************************************/
+
+struct TestApplicationShutdownIssue : ChimeraTK::Application {
+  using ChimeraTK::Application::Application;
+  ~TestApplicationShutdownIssue() override { shutdown(); }
+
+  ModuleX mod1{this, "Mod1", ""};
+  ModuleY mod2{this, "Mod2", ""};
+};
+
+/*********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testShutdownWithFeedingFanOut) {
+  // This test checks that the FeedingFanOut does not try to propagate the boost::thread_interrupted exception through
+  // the return channel, which will fail with a logic_error (in this particular case) because the return channel has
+  // not yet been written yet and hence its VersionNumber is still 0.
+
+  TestApplicationShutdownIssue app("TestApplicationShutdownIssue");
+  ChimeraTK::TestFacility test(app, true);
+  test.runApplication();
+
+  test.writeScalar("/input", 1);
+  test.stepApplication();
+
+  std::cout << "Will shutdown now" << std::endl;
+}
+
+/*********************************************************************************************************************/
+/*********************************************************************************************************************/
