@@ -163,6 +163,8 @@ namespace ChimeraTK {
      * receiving any data from push-type inputs).
      */
     VersionNumber getStartVersion() const { return _startVersion; }
+    ApplicationModule* getVersionInfoProvider() { return _versionInfoProvider; }
+    void setVersionInfoProvider(ApplicationModule* provider) { _versionInfoProvider = provider; }
 
     size_t getCircularNetworkInvalidityCounter(size_t circularNetworkHash) const {
       return _circularNetworkInvalidityCounters.at(circularNetworkHash);
@@ -234,6 +236,8 @@ namespace ChimeraTK {
 
     /** Version number used at application start, e.g. to propagate initial values */
     VersionNumber _startVersion;
+
+    ApplicationModule* _versionInfoProvider;
 
     /** Map of atomic invalidity counters for each circular dependency network.
      *  The key is the hash of network which serves as a unique identifier.
