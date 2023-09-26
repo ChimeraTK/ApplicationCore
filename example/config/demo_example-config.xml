@@ -13,4 +13,12 @@
     <variable name="period" type="uint32" value="500"/>
   </module>
 
+  <module name="Application">
+    <!--
+      The value of configPatchVersion is used by the VersionInfoProvider module.
+      67 is only used as an example and should be changed when used as a template.
+    -->
+    <variable name="configPatchVersion" type="int32" value="67"/>
+  </module>
+
 </configuration>

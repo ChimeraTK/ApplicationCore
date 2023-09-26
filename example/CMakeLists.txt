@@ -6,9 +6,11 @@ project(demo_example)
 cmake_minimum_required(VERSION 3.16)
 
 # Use the project template to get the settings required for an application core project
+# The Version 01.23.45 does not represent the actual version of the example and is used
+# only for demonstration purposes. Please change when using the example as a template.
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
-set(${PROJECT_NAME}_MINOR_VERSION 00)
-set(${PROJECT_NAME}_PATCH_VERSION 00)
+set(${PROJECT_NAME}_MINOR_VERSION 23)
+set(${PROJECT_NAME}_PATCH_VERSION 45)
 include(cmake/set_version_numbers.cmake)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
