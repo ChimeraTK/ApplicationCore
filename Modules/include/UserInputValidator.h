@@ -7,6 +7,8 @@
 
 #include <boost/fusion/container.hpp>
 
+#include <iostream>
+
 namespace ChimeraTK {
 
   /**
@@ -187,7 +189,7 @@ namespace ChimeraTK {
     std::map<ChimeraTK::TransferElementID, std::vector<Validator*>> _validatorMap;
 
     // Function to be called for reporting validation errors
-    std::function<void(const std::string&)> _errorFunction;
+    std::function<void(const std::string&)> _errorFunction{[](const std::string& m) { std::cerr << m << std::endl; }};
   };
 
   /*********************************************************************************************************************/
