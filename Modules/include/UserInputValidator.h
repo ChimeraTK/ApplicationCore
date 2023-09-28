@@ -11,6 +11,9 @@
 
 namespace ChimeraTK {
 
+  // Forward-declarations
+  class Module;
+
   /**
    * Class to realise the validation of user input values.
    *
@@ -152,6 +155,7 @@ namespace ChimeraTK {
       virtual ~VariableBase() = default;
       virtual void reject() = 0;
       virtual void accept() = 0;
+      virtual void setHistorySize(size_t size) = 0;
     };
 
     // Type-dependent representation of all known variables.
@@ -167,11 +171,18 @@ namespace ChimeraTK {
       // called when validation function returned true
       void accept() override;
 
+      void setHistorySize(size_t) override;
+
       // value to revert to if reject() is called. Updated through accept().
-      std::vector<UserType> lastAcceptedValue{UserType()};
+      std::vector<std::vector<UserType>> lastAcceptedValue{{UserType()}};
+
+      // value to revert to if no valid lastAcceptedValue could be found
+      std::vector<UserType> fallbackValue{UserType()};
 
       // Reference to the accessor.
       Accessor<UserType>& accessor;
+
+      std::size_t historyLength{1};
     };
 
     // Represents a validation condition
@@ -199,6 +210,7 @@ namespace ChimeraTK {
     ApplicationModule* _module{nullptr};
 
     std::unordered_set<ChimeraTK::TransferElementID> _downstreamInvalidatingReturnChannels{};
+    size_t _validationDepth{0};
   };
 
   /*********************************************************************************************************************/
@@ -232,7 +244,7 @@ namespace ChimeraTK {
           "UserInputValidator::setFallback() with scalar value called for array-typed accessor '" + accessor.getName() +
           "'.");
     }
-    pv->lastAcceptedValue[0] = value;
+    pv->fallbackValue[0] = value;
   }
 
   /*********************************************************************************************************************/
@@ -247,13 +259,14 @@ namespace ChimeraTK {
           "UserInputValidator::setFallback() with called with mismatching array length for accessor '" +
           accessor.getName() + "'.");
     }
-    pv->lastAcceptedValue = value;
+    pv->fallbackValue = value;
   }
   /*********************************************************************************************************************/
 
   template<typename UserType, template<typename> typename Accessor>
   void UserInputValidator::addAccessorIfNeeded(Accessor<UserType>& accessor) {
     if(!_variableMap.count(accessor.getId())) {
+      accessor.addTag(std::string(tagValidatedVariable));
       _variableMap[accessor.getId()] = std::make_shared<Variable<UserType, Accessor>>(accessor);
     }
   }
@@ -269,10 +282,12 @@ namespace ChimeraTK {
         "UserInputValidator can only be used with push-type inputs.");
     if constexpr(std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInputWB<UserType>>::value ||
         std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInput<UserType>>::value) {
-      lastAcceptedValue.resize(1);
+      lastAcceptedValue[0].resize(1);
+      fallbackValue.resize(1);
     }
     else {
-      lastAcceptedValue.resize(accessor.getNElements());
+      lastAcceptedValue[0].resize(accessor.getNElements());
+      fallbackValue.resize(accessor.getNElements());
     }
   }
 
@@ -282,10 +297,10 @@ namespace ChimeraTK {
   void UserInputValidator::Variable<UserType, Accessor>::reject() {
     if constexpr(std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInput<UserType>>::value ||
         std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInputWB<UserType>>::value) {
-      accessor = lastAcceptedValue[0];
+      accessor = lastAcceptedValue[0][0];
     }
     else {
-      accessor = lastAcceptedValue;
+      accessor = lastAcceptedValue[0];
     }
 
     if constexpr(std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInputWB<UserType>>::value ||
@@ -299,11 +314,17 @@ namespace ChimeraTK {
   void UserInputValidator::Variable<UserType, Accessor>::accept() {
     if constexpr(std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInput<UserType>>::value ||
         std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInputWB<UserType>>::value) {
-      lastAcceptedValue[0] = accessor;
+      lastAcceptedValue[0][0] = accessor;
     }
     else {
-      lastAcceptedValue = accessor;
+      lastAcceptedValue[0] = accessor;
     }
+  }
+  /*********************************************************************************************************************/
+
+  template<typename UserType, template<typename> typename Accessor>
+  void UserInputValidator::Variable<UserType, Accessor>::setHistorySize(std::size_t size) {
+    historyLength = 3 * size;
   }
 
   /*********************************************************************************************************************/

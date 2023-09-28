@@ -57,19 +57,32 @@ namespace ChimeraTK {
   }
 
   void UserInputValidator::finalise() {
-    bool downstreamValidatorFound{false};
+    std::unordered_set<std::shared_ptr<UserInputValidator>> downstreamValidators{};
 
     // Find out accessors with return
-    std::list<std::string> outAccessors{};
     for(auto& accessor : _module->getAccessorListRecursive()) {
       if(accessor.getDirection().dir == VariableDirection::feeding && accessor.getDirection().withReturn) {
+        std::cout << _module->getName() << ": Found output with write-back " << accessor.getName() << std::endl;
 
-        auto modelIsValidated =
+        auto moduleIsValidated =
             accessor.getModel().getTags().count(std::string(UserInputValidator::tagValidatedVariable)) > 0;
 
-        _downstreamInvalidatingReturnChannels.emplace(accessor.getAppAccessorNoType().getId());
-        downstreamValidatorFound = true;
+        if(moduleIsValidated) {
+          _downstreamInvalidatingReturnChannels.emplace(accessor.getAppAccessorNoType().getId());
+        }
       }
+    }
+
+    if(!downstreamValidators.empty()) {
+      _validationDepth = 1 +
+          std::max_element(downstreamValidators.begin(), downstreamValidators.end(),
+              [](auto a, auto b) { return a->_validationDepth < b->_validationDepth; })
+              ->get()
+              ->_validationDepth;
+    }
+
+    for(auto& v : _variableMap) {
+      v.second->setHistorySize(_validationDepth);
     }
   }
 
