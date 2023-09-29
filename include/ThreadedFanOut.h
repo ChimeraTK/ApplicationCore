@@ -51,8 +51,6 @@ namespace ChimeraTK {
     ThreadedFanOutWithReturn(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl,
         ConsumerImplementationPairs<UserType> const& consumerImplementationPairs);
 
-    void setReturnChannelSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> returnChannelSlave);
-
     void addSlave(
         boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode& consumer) override;
 
@@ -62,7 +60,7 @@ namespace ChimeraTK {
     /** Thread handling the synchronisation, if needed */
     boost::thread _thread;
 
-    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _returnChannelSlave;
+    std::vector<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>> _inputChannels;
 
     // using ThreadedFanOut<UserType>::_network;
     using ThreadedFanOut<UserType>::readInitialValues;
@@ -175,19 +173,10 @@ namespace ChimeraTK {
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl,
       ConsumerImplementationPairs<UserType> const& consumerImplementationPairs)
   : ThreadedFanOut<UserType>(feedingImpl, consumerImplementationPairs) {
+    _inputChannels.push_back(feedingImpl);
     for(auto el : consumerImplementationPairs) {
-      // TODO Calling a virtual in the constructor seems odd,
-      //      but works because we want this version's implementation
-      addSlave(el.first, el.second);
+      ThreadedFanOutWithReturn<UserType>::addSlave(el.first, el.second);
     }
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename UserType>
-  void ThreadedFanOutWithReturn<UserType>::setReturnChannelSlave(
-      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> returnChannelSlave) {
-    _returnChannelSlave = returnChannelSlave;
   }
 
   /********************************************************************************************************************/
@@ -195,12 +184,11 @@ namespace ChimeraTK {
   template<typename UserType>
   void ThreadedFanOutWithReturn<UserType>::addSlave(
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode& consumer) {
-    // TODO Adding slaves is currently by done by the ThreadedFanOut base class.
+    // TODO Adding slaves is currently by done by the ThreadedFanOut base class constructor.
     //      Refactor constructors and addSlaves for all FanOuts?
     // FanOut<UserType>::addSlave(slave, consumer);
     if(consumer.getDirection().withReturn) {
-      assert(_returnChannelSlave == nullptr);
-      _returnChannelSlave = slave;
+      _inputChannels.push_back(slave);
     }
   }
 
@@ -212,43 +200,44 @@ namespace ChimeraTK {
     Application::getInstance().getTestableMode().lock("start");
     _testableModeReached = true;
 
-    TransferElementID var;
-    ChimeraTK::VersionNumber version{nullptr};
+    std::map<TransferElementID, boost::shared_ptr<NDRegisterAccessor<UserType>>> accessors;
+    for(auto& acc : FanOut<UserType>::_slaves) {
+      accessors[acc->getId()] = acc;
+    }
+    accessors[FanOut<UserType>::_impl->getId()] = FanOut<UserType>::_impl;
+
+    TransferElementID changedVariable = FanOut<UserType>::_impl->getId();
+    VersionNumber version{nullptr};
 
     version = readInitialValues();
 
-    ReadAnyGroup group({FanOut<UserType>::_impl, _returnChannelSlave});
+    ReadAnyGroup group(_inputChannels.begin(), _inputChannels.end());
+
     while(true) {
-      // send out copies to slaves
-      for(auto& slave : FanOut<UserType>::_slaves) {
-        // do not feed back value returnChannelSlave if it was received from it
-        if(slave->getId() == var) {
+      // send out copies to all receivers (slaves and return channel of feeding node)
+      for(auto& [id, accessor] : accessors) {
+        // do not feed back value to the accessor we got it from
+        if(id == changedVariable) {
           continue;
         }
+
         // do not send copy if no data is expected (e.g. trigger)
-        if(slave->getNumberOfSamples() != 0) {
-          slave->accessChannel(0) = FanOut<UserType>::_impl->accessChannel(0);
+        if(accessor->getNumberOfSamples() != 0) {
+          accessor->accessChannel(0) = accessors[changedVariable]->accessChannel(0);
         }
-        bool dataLoss = slave->writeDestructively(version);
+
+        bool dataLoss = accessor->writeDestructively(version);
         if(dataLoss) {
-          Application::incrementDataLossCounter(slave->getName());
+          Application::incrementDataLossCounter(accessor->getName());
         }
       }
+
       // receive data
       boost::this_thread::interruption_point();
-      var = group.readAny();
+      changedVariable = group.readAny();
       boost::this_thread::interruption_point();
-      // if the update came through the return channel, return it to the feeder
-      if(var == _returnChannelSlave->getId()) {
-        FanOut<UserType>::_impl->accessChannel(0).swap(_returnChannelSlave->accessChannel(0));
-        if(version < _returnChannelSlave->getVersionNumber()) {
-          version = _returnChannelSlave->getVersionNumber();
-        }
-        FanOut<UserType>::_impl->write(version);
-      }
-      else {
-        version = FanOut<UserType>::_impl->getVersionNumber();
-      }
+
+      version = accessors[changedVariable]->getVersionNumber();
     }
   }
 

@@ -111,6 +111,34 @@ struct ModuleD : public ctk::ApplicationModule {
 
 /*********************************************************************************************************************/
 
+struct ModuleFunnel : public ctk::ApplicationModule {
+  using ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPushInputWB<int> var1{this, "/var1", "", "Input with funneled return channel"};
+  ctk::ScalarOutput<int> var1out{this, "var1out", "", ""};
+  ctk::ScalarPushInput<int> var1in{this, "var1in", "", ""};
+
+  void mainLoop() override {
+    // This module essentially splits up the forward and return channel of the PushInputWB "var1".
+    auto group = readAnyGroup();
+
+    auto change = var1.getId();
+
+    while(true) {
+      if(change == var1.getId()) {
+        var1out.setAndWrite(var1);
+      }
+      else if(change == var1in.getId()) {
+        var1.setAndWrite(var1in);
+      }
+
+      change = group.readAny();
+    }
+  }
+};
+
+/*********************************************************************************************************************/
+
 struct TestApplication : public ctk::Application {
   TestApplication() : Application("testSuite") {}
   ~TestApplication() override { shutdown(); }
@@ -118,6 +146,16 @@ struct TestApplication : public ctk::Application {
   ModuleA a;
   ModuleB b;
   ModuleD copy;
+};
+
+/*********************************************************************************************************************/
+
+struct FunnelApplication : public ctk::Application {
+  FunnelApplication() : Application("testSuite") {}
+  ~FunnelApplication() override { shutdown(); }
+
+  ModuleFunnel f1{this, "Funnel1", ""};
+  ModuleFunnel f2{this, "Funnel2", ""};
 };
 
 /*********************************************************************************************************************/
@@ -158,7 +196,6 @@ BOOST_AUTO_TEST_CASE(testDirectAppToCSConnections) {
   std::cout << "*** testDirectAppToCSConnections" << std::endl;
 
   TestApplication app;
-  app.debugMakeConnections();
   app.b = {&app, ".", ""};
 
   ctk::TestFacility test(app);
@@ -359,21 +396,63 @@ BOOST_AUTO_TEST_CASE(testRealisticExample) {
 
 /*********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(testFunnel) {
+  std::cout << "*** testFunnel" << std::endl;
+
+  FunnelApplication app;
+
+  ctk::TestFacility test(app);
+
+  auto var1 = test.getScalar<int>("var1");
+  auto funnel1out = test.getScalar<int>("/Funnel1/var1out");
+  auto funnel1in = test.getScalar<int>("/Funnel1/var1in");
+  auto funnel2out = test.getScalar<int>("/Funnel2/var1out");
+  auto funnel2in = test.getScalar<int>("/Funnel2/var1in");
+
+  test.runApplication();
+
+  // discard initial values
+  funnel1out.readLatest();
+  funnel2out.readLatest();
+
+  var1.setAndWrite(42);
+  test.stepApplication();
+  BOOST_TEST(!var1.readNonBlocking());
+  BOOST_TEST(funnel1out.readNonBlocking());
+  BOOST_TEST(funnel1out == 42);
+  BOOST_TEST(funnel2out.readNonBlocking());
+  BOOST_TEST(funnel2out == 42);
+
+  funnel1in.setAndWrite(43);
+  test.stepApplication();
+  BOOST_TEST(!funnel1out.readNonBlocking());
+  BOOST_TEST(var1.readNonBlocking());
+  BOOST_TEST(var1 == 43);
+  BOOST_TEST(funnel2out.readNonBlocking());
+  BOOST_TEST(funnel2out == 43);
+
+  funnel2in.setAndWrite(44);
+  test.stepApplication();
+  BOOST_TEST(!funnel2out.readNonBlocking());
+  BOOST_TEST(var1.readNonBlocking());
+  BOOST_TEST(var1 == 44);
+  BOOST_TEST(funnel1out.readNonBlocking());
+  BOOST_TEST(funnel1out == 44);
+}
+
+/*********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testStartup) {
   std::cout << "*** testStartup" << std::endl;
 
   InitTestApplication testApp;
   ChimeraTK::TestFacility testFacility(testApp);
 
-  //  testApp.dump();
-  //  testApp.dumpConnections();
-
   testFacility.setScalarDefault<int>("/ModuleC/var1", 22);
 
   testFacility.runApplication();
 
-  // The default value should be overwritten when ModuleC
-  // enters its mainLoop
+  // The default value should be overwritten when ModuleC enters its mainLoop
   BOOST_CHECK_EQUAL(testFacility.readScalar<int>("ModuleC/var1"), 42);
 }
 
