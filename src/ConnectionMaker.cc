@@ -152,9 +152,9 @@ namespace ChimeraTK {
       debug("  No feeder in network, creating ControlSystem feeder ", net.proxy->getFullyQualifiedPath());
       debug("    Bi-directional consumers: ", net.numberOfBidirectionalNodes);
 
-      // If we have exactly one bi-directional consumer, mark this CS feeder as bidirectional as well
+      // If we have a bi-directional consumer, mark this CS feeder as bidirectional as well
       net.feeder = VariableNetworkNode(net.proxy->getFullyQualifiedPath(),
-          VariableDirection{VariableDirection::feeding, net.numberOfBidirectionalNodes == 1}, *net.valueType,
+          VariableDirection{VariableDirection::feeding, net.numberOfBidirectionalNodes > 0}, *net.valueType,
           net.valueLength);
 
       neededFeeder = true;
