@@ -30,6 +30,8 @@ aux_source_directory(${CMAKE_SOURCE_DIR}/src_factory factory)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+include(cmake/add_linter_target.cmake)
+
 # Server library links all ApplicationModules and ApplicationCore
 add_library(${PROJECT_NAME}lib ${sources} ${headers})
 target_link_libraries(${PROJECT_NAME}lib ChimeraTK::ChimeraTK-ApplicationCore)
