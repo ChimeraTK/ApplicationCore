@@ -3,6 +3,7 @@
 #include <future>
 
 #define BOOST_TEST_MODULE testUserInputValidator
+#define ENABLE_AFTER_TICKET_11558_IS_IMPLEMENTED
 
 #include "Application.h"
 #include "ScalarAccessor.h"
@@ -24,7 +25,7 @@ struct ModuleA : public ctk::ApplicationModule {
 
   ctk::ScalarPushInputWB<int> in1{this, "in1", "", "First validated input"};
 
-  ctk::UserInputValidator validator;
+  ctk::UserInputValidator validator{this};
 
   static constexpr std::string_view in1ErrorMessage = "in1 needs to be smaller than 10";
 
@@ -34,6 +35,7 @@ struct ModuleA : public ctk::ApplicationModule {
   }
 
   void mainLoop() override {
+    validator.finalise();
     auto group = readAnyGroup();
     ctk::TransferElementID change;
     while(true) {
@@ -72,7 +74,7 @@ struct UpstreamSingleOut : public ctk::ApplicationModule {
   ctk::ScalarPushInputWB<int> in1{this, "in1", "", "First validated input"};
   ctk::ScalarOutputPushRB<int> out1{this, "/Downstream/in1", "", "Output"};
 
-  ctk::UserInputValidator validator;
+  ctk::UserInputValidator validator{this};
 
   void prepare() override {
     validator.add(
@@ -81,6 +83,7 @@ struct UpstreamSingleOut : public ctk::ApplicationModule {
 
   void mainLoop() override {
     auto group = readAnyGroup();
+    validator.finalise();
     ctk::TransferElementID change;
     while(true) {
       validator.validate(change);
@@ -103,7 +106,7 @@ struct UpstreamTwinOut : public ctk::ApplicationModule {
   ctk::ScalarOutputPushRB<int> out1{this, "/Downstream1/in1", "", "Output"};
   ctk::ScalarOutputPushRB<int> out2{this, "/Downstream2/in1", "", "Output"};
 
-  ctk::UserInputValidator validator;
+  ctk::UserInputValidator validator{this};
 
   void prepare() override {
     validator.add(
@@ -111,6 +114,7 @@ struct UpstreamTwinOut : public ctk::ApplicationModule {
   }
 
   void mainLoop() override {
+    validator.finalise();
     auto group = readAnyGroup();
     ctk::TransferElementID change;
     while(true) {
@@ -558,16 +562,33 @@ BOOST_AUTO_TEST_CASE(testDeepBackwardsPropagation) {
     ~TestApplication() override { shutdown(); }
     UpstreamSingleOut upstream{this, "Upstream", ""};
     UpstreamSingleOut midstream{this, "Midstream", ""};
+    struct : ctk::ApplicationModule {
+      using ctk::ApplicationModule::ApplicationModule;
+
+      ctk::ScalarPollInput<ctk::Boolean> a{this, "pollInput", "", ""};
+      void mainLoop() final {}
+    } disconnected{this, "Disconnected", ""};
+
+    struct : ctk::ApplicationModule {
+      using ctk::ApplicationModule::ApplicationModule;
+
+      ctk::ScalarPollInput<ctk::Boolean> a{this, "pollInput", "", ""};
+      void mainLoop() final {}
+    } disconnected2{this, "Disconnected2", ""};
+
     ModuleA downstream{this, "Downstream", ""};
   };
 
   TestApplication app("TestApp");
-  app.upstream.out1 = {&app.upstream, "/Midstream/in1", "", "First validated input"};
+  app.upstream.out1 = {&app.upstream, "/Midstream/in2", "", "First validated input"};
+  app.midstream.in1 = {&app.midstream, "/Midstream/in2", "", "First validated input"};
+  ctk::ScalarOutput<ctk::Boolean> a{&app.downstream, "/Disconnected/pollInput", "", ""};
 
   ctk::TestFacility test(app);
+  app.getModel().writeGraphViz("test.dot");
 
   auto upstrIn = test.getScalar<int>("/Upstream/in1");
-  auto midstreamIn = test.getScalar<int>("/Midstream/in1");
+  auto midstreamIn = test.getScalar<int>("/Midstream/in2");
   auto downstrIn = test.getScalar<int>("/Downstream/in1");
 
   test.setScalarDefault<int>("/Upstream/in1", 5);

@@ -188,6 +188,7 @@ namespace ChimeraTK::Model {
     // Proxy(Model::Vertex vertex, const std::shared_ptr<Impl>& impl);
     explicit Proxy(std::shared_ptr<ProxyData> data);
 
+   public:
     std::shared_ptr<ProxyData> _d;
   };
 
@@ -447,7 +448,7 @@ namespace ChimeraTK::Model {
    * Information to be stored with each vertex
    */
   struct VertexProperties {
-    enum class Type {
+    enum class Type : int {
       invalid,
       root,
       moduleGroup,
@@ -875,8 +876,8 @@ namespace ChimeraTK::Model {
   /******************************************************************************************************************/
 
   template<EdgeProperties::Type RELATIONSHIP>
-  [[maybe_unused]] static constexpr auto relationshipFilter = EdgeFilter(
-      [](const EdgeProperties& e) -> bool { return e.type == RELATIONSHIP; });
+  [[maybe_unused]] static constexpr auto relationshipFilter =
+      EdgeFilter([](const EdgeProperties& e) -> bool { return e.type == RELATIONSHIP; });
 
   /******************************************************************************************************************/
 
@@ -1290,8 +1291,9 @@ namespace ChimeraTK::Model {
     friend class ProcessVariableProxy;
     friend class DirectoryProxy;
 
-   private:
-    // convenience functions just redirecting to generic_add.
+    // private:
+   public:
+    //  convenience functions just redirecting to generic_add.
     ModuleGroupProxy add(Model::Vertex owner, ModuleGroup& module);
     ApplicationModuleProxy add(Model::Vertex owner, ApplicationModule& module);
     VariableGroupProxy add(Model::Vertex owner, VariableGroup& module);
