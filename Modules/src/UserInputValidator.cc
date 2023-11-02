@@ -61,6 +61,7 @@ namespace ChimeraTK {
     TopologicalOrderVisitorImpl(VISITOR& visitor, std::shared_ptr<Model::Impl> impl)
     : _visitor(visitor), _impl(std::move(impl)) {}
 
+    // FIXME: Temporary, just to check where the empty list came from
     TopologicalOrderVisitorImpl(TopologicalOrderVisitorImpl&& Other) = delete;
     TopologicalOrderVisitorImpl(TopologicalOrderVisitorImpl& Other) = delete;
     TopologicalOrderVisitorImpl& operator=(TopologicalOrderVisitorImpl& other) = delete;
@@ -74,8 +75,8 @@ namespace ChimeraTK {
     template<class Vertex, class Graph>
     // NOLINTNEXTLINE(readability-identifier-naming)
     void finishVertex(Vertex v, Graph& g) {
-      if(g[v].type == Model::VertexProperties::Type::applicationModule) {
-        stack.push_back(v);
+      if(g[v].type == Model::VertexProperties::Type::applicationModule && !_nextCallShouldStop) {
+        stack.push_front(v);
         distances.try_emplace(v, std::numeric_limits<int>::min());
       }
     }
@@ -88,7 +89,7 @@ namespace ChimeraTK {
 
     VISITOR _visitor;
     std::shared_ptr<Model::Impl> _impl;
-    std::vector<Model::Vertex> stack{};
+    std::deque<Model::Vertex> stack{};
     std::map<Model::Vertex, int> distances{};
     bool _nextCallShouldStop{false};
   };
@@ -112,7 +113,7 @@ namespace ChimeraTK {
 
     bool shouldStopVisitingCurrentBranch() { return _impl->shouldStopVisitingCurrentBranch(); }
 
-    std::vector<Model::Vertex>& stack() { return _impl->stack; }
+    std::deque<Model::Vertex>& stack() { return _impl->stack; }
     std::map<Model::Vertex, int>& distances() { return _impl->distances; }
     std::shared_ptr<TopologicalOrderVisitorImpl<VISITOR>> _impl;
   };
@@ -139,8 +140,8 @@ namespace ChimeraTK {
         return !std::any_of(list.cbegin(), list.cend(), isAccessorValidated);
       }
 
-      // Not an application module. Continuing anyway
-      // TODO: Really or is not having an application module also a reason to stop?
+      // Not an application module. Continuing anyway because that is how the graph
+      // is layed out - modules are connected via pv nodes
       return false;
     };
 
@@ -158,28 +159,64 @@ namespace ChimeraTK {
           return visitor.shouldStopVisitingCurrentBranch();
         });
 
-    std::cout << "Iterating stack, starting from " << _module->getName() << std::endl;
+    std::cout << "Iterating stack " << visitor.stack().size() << " , module is " << _module->getName() << std::endl;
 
     auto& distances = visitor.distances();
 
     distances[_module->getModel()._d->vertex] = 0;
 
-    for(auto it = std::next(visitor.stack().cbegin()); it != visitor.stack().cend(); ++it) {
-      std::cout << std::get<Model::VertexProperties::ApplicationModuleProperties>(filteredGraph[*it].p).name
-                << std::endl;
+    for(auto* v : visitor.stack()) {
+      std::cout << "   " << std::get<Model::VertexProperties::ApplicationModuleProperties>(filteredGraph[v].p).name;
+    }
+    std::cout << std::endl;
+
+    auto isVariableTaggedVisitor = [&](auto proxy) -> bool {
+      if constexpr(ChimeraTK::Model::isVariable(proxy)) {
+        return proxy.getTags().count(std::string(UserInputValidator::tagValidatedVariable)) > 0;
+      }
+
+      assert(false);
+
+      return false;
+    };
+
+    for(auto it = visitor.stack().cbegin(); it != visitor.stack().cend(); ++it) {
+      auto stackName = std::get<Model::VertexProperties::ApplicationModuleProperties>(filteredGraph[*it].p).name;
+      std::cout << "Looking on stack, going to " << stackName << std::endl;
+
       auto [start, end] = boost::out_edges(*it, filteredGraph);
+      std::set<Model::Vertex> downstream{};
       for(auto edgeIterator = start; edgeIterator != end; ++edgeIterator) {
         auto* vtx = target(*edgeIterator, filteredGraph);
-        if(!filteredGraph[vtx].visitProxy(scanModel, vtx, _module->getModel()._d->impl)) continue;
-        distances[vtx] = std::max(distances[vtx], distances[*it] + 1);
+        if(!filteredGraph[vtx].visitProxy(isVariableTaggedVisitor, vtx, _module->getModel()._d->impl)) continue;
+        auto [s, e] = boost::out_edges(vtx, filteredGraph);
+        for(auto ei = s; ei != e; ++ei) {
+          downstream.insert(target(*ei, filteredGraph));
+        }
+      }
+
+      std::cout << "  We have " << downstream.size() << " Modules connected via PVAccess" << std::endl;
+
+      for(auto* vtx : downstream) {
+        assert(filteredGraph[vtx].type == Model::VertexProperties::Type::applicationModule);
+
+        auto downstreamName = std::get<Model::VertexProperties::ApplicationModuleProperties>(filteredGraph[vtx].p).name;
+        std::cout << "   Looking at distance to " << downstreamName << std::endl;
+
+        auto j = distances.at(*it);
+        auto i = distances.at(vtx);
+        std::cout << "Current distance of  " << stackName << " " << j << " " << downstreamName << " " << i << std::endl;
+        distances[vtx] = std::max(i, j + 1);
+        std::cout << "Current distance of  " << downstreamName << " is now " << distances[vtx] << std::endl;
       }
     }
 
-    _validationDepth = std::max_element(distances.begin(), distances.end(), [](auto& a, auto& b) -> bool {
-      return a.second < b.second;
-    })->second;
+    _validationDepth = std::max_element(distances.begin(), distances.end(),
+                           [](auto& a, auto& b) -> bool { return a.second < b.second; })
+                           ->second +
+        1;
 
-    std::cout << "Longest validation depth: " << _validationDepth << std::endl;
+    std::cout << "Module validation depth: " << _validationDepth << std::endl;
 
     for(auto& v : _variableMap) {
       v.second->setHistorySize(_validationDepth);
