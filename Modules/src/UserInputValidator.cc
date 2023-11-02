@@ -56,10 +56,8 @@ namespace ChimeraTK {
     return rejected;
   }
 
-  template<typename VISITOR>
-  struct TopologicalOrderVisitorImpl : boost::dfs_visitor<> {
-    TopologicalOrderVisitorImpl(VISITOR& visitor, std::shared_ptr<Model::Impl> impl)
-    : _visitor(visitor), _impl(std::move(impl)) {}
+  struct TopologicalOrderVisitorImpl {
+    explicit TopologicalOrderVisitorImpl(std::shared_ptr<Model::Impl> impl) : _impl(std::move(impl)) {}
 
     // FIXME: Temporary, just to check where the empty list came from
     TopologicalOrderVisitorImpl(TopologicalOrderVisitorImpl&& Other) = delete;
@@ -68,42 +66,29 @@ namespace ChimeraTK {
 
     template<class Vertex, class Graph>
     // NOLINTNEXTLINE(readability-identifier-naming)
-    void discoverVertex(Vertex v, Graph& g) {
-      _nextCallShouldStop = g[v].visitProxy(_visitor, v, _impl);
-    }
-
-    template<class Vertex, class Graph>
-    // NOLINTNEXTLINE(readability-identifier-naming)
     void finishVertex(Vertex v, Graph& g) {
-      if(g[v].type == Model::VertexProperties::Type::applicationModule && !_nextCallShouldStop) {
+      if(g[v].type == Model::VertexProperties::Type::applicationModule) {
         stack.push_front(v);
         distances.try_emplace(v, std::numeric_limits<int>::min());
       }
     }
 
-    bool shouldStopVisitingCurrentBranch() {
-      bool shouldStop = _nextCallShouldStop;
-      _nextCallShouldStop = false;
-      return shouldStop;
-    }
-
-    VISITOR _visitor;
     std::shared_ptr<Model::Impl> _impl;
     std::deque<Model::Vertex> stack{};
     std::map<Model::Vertex, int> distances{};
-    bool _nextCallShouldStop{false};
   };
 
-  template<typename VISITOR>
   struct TopologicalOrderVisitor : boost::dfs_visitor<> {
-    TopologicalOrderVisitor(VISITOR& visitor, std::shared_ptr<Model::Impl> impl)
-    : _impl(std::make_shared<TopologicalOrderVisitorImpl<VISITOR>>(visitor, std::move(impl))) {}
+    explicit TopologicalOrderVisitor(std::shared_ptr<Model::Impl> impl)
+    : _impl(std::make_shared<TopologicalOrderVisitorImpl>(std::move(impl))) {}
 
+#if 0
     template<class Vertex, class Graph>
     // NOLINTNEXTLINE(readability-identifier-naming)
     void discover_vertex(Vertex v, Graph& g) {
       _impl->discoverVertex(v, g);
     }
+#endif
 
     template<class Vertex, class Graph>
     // NOLINTNEXTLINE(readability-identifier-naming)
@@ -111,16 +96,12 @@ namespace ChimeraTK {
       _impl->finishVertex(v, g);
     }
 
-    bool shouldStopVisitingCurrentBranch() { return _impl->shouldStopVisitingCurrentBranch(); }
-
     std::deque<Model::Vertex>& stack() { return _impl->stack; }
     std::map<Model::Vertex, int>& distances() { return _impl->distances; }
-    std::shared_ptr<TopologicalOrderVisitorImpl<VISITOR>> _impl;
+    std::shared_ptr<TopologicalOrderVisitorImpl> _impl;
   };
 
   void UserInputValidator::finalise() {
-    std::unordered_set<std::shared_ptr<UserInputValidator>> downstreamValidators{};
-
     auto isAccessorValidated = [](auto& accessor) -> bool {
       return accessor.getDirection().dir == VariableDirection::feeding && accessor.getDirection().withReturn &&
           accessor.getModel().getTags().count(std::string(UserInputValidator::tagValidatedVariable)) > 0;
@@ -133,81 +114,59 @@ namespace ChimeraTK {
       }
     }
 
-    _validationDepth = 1;
-    auto scanModel = [&](auto proxy) -> bool {
-      if constexpr(ChimeraTK::Model::isApplicationModule(proxy)) {
-        auto list = proxy.getApplicationModule().getAccessorListRecursive();
-        return !std::any_of(list.cbegin(), list.cend(), isAccessorValidated);
-      }
-
-      // Not an application module. Continuing anyway because that is how the graph
-      // is layed out - modules are connected via pv nodes
-      return false;
-    };
+    // Find longest path that is validated in our model, starting at this module
+    // Making a DFS, using a color map so that we do not walk in cylces.
 
     std::map<Model::Vertex, boost::default_color_type> colors;
     boost::associative_property_map color_map(colors);
 
-    // TODO: Apply filter for no outgoing validated nodes here already
-    // Then we can use the DFS search
-    auto filteredGraph = _module->getModel()._d->impl->getFilteredGraph(
-        Model::keepPvAccess, Model::keepApplicationModules, Model::keepProcessVariables);
-    auto visitor = TopologicalOrderVisitor(scanModel, _module->getModel()._d->impl);
+    auto extendedVertexFilter = Model::EdgeFilter([](const Model::EdgeProperties& edge) -> bool {
+      return edge.type == Model::EdgeProperties::Type::pvAccess && edge.pvAccessWithReturnChannel;
+    });
 
-    boost::depth_first_visit(filteredGraph, _module->getModel()._d->vertex, visitor, color_map,
-        [&]([[maybe_unused]] auto a, [[maybe_unused]] auto b) -> bool {
-          return visitor.shouldStopVisitingCurrentBranch();
-        });
+    // Filter that keeps our tagged variable nodes and application modules
+    auto extendedTagFilter = Model::VertexFilter([](const Model::VertexProperties& vertex) -> bool {
+      return vertex.visit([](auto props) -> bool {
+        if constexpr(Model::isVariable(props)) {
+          return props.tags.count(std::string(UserInputValidator::tagValidatedVariable)) > 0;
+        }
 
-    std::cout << "Iterating stack " << visitor.stack().size() << " , module is " << _module->getName() << std::endl;
+        if constexpr(Model::isApplicationModule(props)) {
+          return true;
+        }
+
+        return false;
+      });
+    });
+
+    auto filteredGraph = _module->getModel()._d->impl->getFilteredGraph(extendedVertexFilter, extendedTagFilter);
+    auto visitor = TopologicalOrderVisitor(_module->getModel()._d->impl);
+    auto* ourVertex = _module->getModel()._d->vertex;
+
+    boost::depth_first_visit(filteredGraph, ourVertex, visitor, color_map);
+
+    // std::cout << "Iterating stack " << visitor.stack().size() << " , module is " << _module->getName() << std::endl;
 
     auto& distances = visitor.distances();
 
-    distances[_module->getModel()._d->vertex] = 0;
+    distances[ourVertex] = 0;
 
-    for(auto* v : visitor.stack()) {
-      std::cout << "   " << std::get<Model::VertexProperties::ApplicationModuleProperties>(filteredGraph[v].p).name;
-    }
-    std::cout << std::endl;
-
-    auto isVariableTaggedVisitor = [&](auto proxy) -> bool {
-      if constexpr(ChimeraTK::Model::isVariable(proxy)) {
-        return proxy.getTags().count(std::string(UserInputValidator::tagValidatedVariable)) > 0;
-      }
-
-      assert(false);
-
-      return false;
-    };
-
-    for(auto it = visitor.stack().cbegin(); it != visitor.stack().cend(); ++it) {
-      auto stackName = std::get<Model::VertexProperties::ApplicationModuleProperties>(filteredGraph[*it].p).name;
-      std::cout << "Looking on stack, going to " << stackName << std::endl;
-
-      auto [start, end] = boost::out_edges(*it, filteredGraph);
+    for(auto* stackEntry : visitor.stack()) {
+      auto [start, end] = boost::out_edges(stackEntry, filteredGraph);
       std::set<Model::Vertex> downstream{};
       for(auto edgeIterator = start; edgeIterator != end; ++edgeIterator) {
         auto* vtx = target(*edgeIterator, filteredGraph);
-        if(!filteredGraph[vtx].visitProxy(isVariableTaggedVisitor, vtx, _module->getModel()._d->impl)) continue;
         auto [s, e] = boost::out_edges(vtx, filteredGraph);
         for(auto ei = s; ei != e; ++ei) {
           downstream.insert(target(*ei, filteredGraph));
         }
       }
 
-      std::cout << "  We have " << downstream.size() << " Modules connected via PVAccess" << std::endl;
-
       for(auto* vtx : downstream) {
         assert(filteredGraph[vtx].type == Model::VertexProperties::Type::applicationModule);
 
         auto downstreamName = std::get<Model::VertexProperties::ApplicationModuleProperties>(filteredGraph[vtx].p).name;
-        std::cout << "   Looking at distance to " << downstreamName << std::endl;
-
-        auto j = distances.at(*it);
-        auto i = distances.at(vtx);
-        std::cout << "Current distance of  " << stackName << " " << j << " " << downstreamName << " " << i << std::endl;
-        distances[vtx] = std::max(i, j + 1);
-        std::cout << "Current distance of  " << downstreamName << " is now " << distances[vtx] << std::endl;
+        distances[vtx] = std::max(distances[vtx], distances[stackEntry] + 1);
       }
     }
 
@@ -215,8 +174,6 @@ namespace ChimeraTK {
                            [](auto& a, auto& b) -> bool { return a.second < b.second; })
                            ->second +
         1;
-
-    std::cout << "Module validation depth: " << _validationDepth << std::endl;
 
     for(auto& v : _variableMap) {
       v.second->setHistorySize(_validationDepth);

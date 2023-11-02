@@ -306,6 +306,9 @@ namespace ChimeraTK::Model {
      */
     explicit operator Model::VariableGroupProxy();
 
+    template<typename... Args>
+    void writeGraphViz(const std::string& filename, Args... args) const;
+
    private:
     using Proxy::Proxy;
     friend struct VertexProperties;
@@ -1680,6 +1683,109 @@ namespace ChimeraTK::Model {
   /** Implementations of RootProxy */
   /********************************************************************************************************************/
   /********************************************************************************************************************/
+  template<typename... Args>
+  void ApplicationModuleProxy::writeGraphViz(const std::string& filename, Args... args) const {
+    auto filteredGraph = _d->impl->getFilteredGraph(args...);
+
+    auto vertexFilter = Model::getVertexFilter(args...);
+
+    std::ofstream of(filename);
+
+    auto vertexPropWriter = [&](std::ostream& out, const auto& vtx) {
+      // apply vertex filter
+      if(!vertexFilter.evalVertexFilter(_d->impl->_graph[vtx])) {
+        return;
+      }
+
+      _d->impl->_graph[vtx].visit([&](auto prop) {
+        out << "[";
+
+        // Add label depending on type
+        if constexpr(std::is_same<decltype(prop), VertexProperties::RootProperties>::value) {
+          out << R"(label="/")";
+        }
+        else if constexpr(std::is_same<decltype(prop), VertexProperties::DeviceModuleProperties>::value) {
+          out << R"(label=")" << prop.aliasOrCdd << R"(")";
+        }
+        else if constexpr(!std::is_same<decltype(prop), VertexProperties::InvalidProperties>::value) {
+          out << R"(label=")" << prop.name << R"(")";
+        }
+        else {
+          throw ChimeraTK::logic_error("Unexpected VertexProperties type");
+        }
+
+        out << ", ";
+
+        // Set color depending on type
+        if constexpr(std::is_same<decltype(prop), VertexProperties::RootProperties>::value) {
+          out << "color=grey,style=filled";
+        }
+        else if constexpr(std::is_same<decltype(prop), VertexProperties::ModuleGroupProperties>::value) {
+          out << "color=lightskyblue,style=filled";
+        }
+        else if constexpr(std::is_same<decltype(prop), VertexProperties::ApplicationModuleProperties>::value) {
+          out << "color=cyan,style=filled";
+        }
+        else if constexpr(std::is_same<decltype(prop), VertexProperties::VariableGroupProperties>::value) {
+          out << "color=springgreen,style=filled";
+        }
+        else if constexpr(std::is_same<decltype(prop), VertexProperties::DeviceModuleProperties>::value) {
+          out << "color=yellow,style=filled";
+        }
+        else if constexpr(std::is_same<decltype(prop), VertexProperties::ProcessVariableProperties>::value) {
+          out << "color=black";
+        }
+        else if constexpr(std::is_same<decltype(prop), VertexProperties::DirectoryProperties>::value) {
+          out << "color=peachpuff,style=filled";
+        }
+        else {
+          throw ChimeraTK::logic_error("Unexpected VertexProperties type");
+        }
+        out << "]";
+      });
+    };
+
+    auto edgePropWriter = [&](std::ostream& out, const auto& edge) {
+      out << "[";
+      switch(_d->impl->_graph[edge].type) {
+        case EdgeProperties::Type::parenthood: {
+          out << "color=red, arrowhead=diamond";
+          break;
+        }
+        case EdgeProperties::Type::ownership: {
+          out << "color=blue, arrowhead=odot";
+          break;
+        }
+        case EdgeProperties::Type::pvAccess: {
+          out << "color=black";
+          break;
+        }
+        case EdgeProperties::Type::neighbourhood: {
+          out << "color=olive, arrowhead=tee";
+          break;
+        }
+        case EdgeProperties::Type::trigger: {
+          out << "color=grey, arrowhead=crow";
+          break;
+        }
+        default: {
+          throw ChimeraTK::logic_error("Unexpected EdgeProperties type");
+        }
+      }
+      out << "]";
+    };
+
+    // Generate a vertex id map. write_graphviz will use those ids as node ids in the generated graphviz code.
+    std::map<Vertex, size_t> vertex_ids;
+    for(auto u : boost::make_iterator_range(vertices(filteredGraph))) {
+      vertex_ids[u] = vertex_ids.size();
+    }
+
+    // Note that all 3 writers have to be specified to  pass the vertex id map, otherwise very weird error messages
+    // will occur.
+    boost::write_graphviz(of, filteredGraph, vertexPropWriter, edgePropWriter, boost::default_writer(),
+        boost::make_assoc_property_map(vertex_ids));
+  }
 
   template<typename... Args>
   void RootProxy::writeGraphViz(const std::string& filename, Args... args) const {
@@ -1779,7 +1885,7 @@ namespace ChimeraTK::Model {
       vertex_ids[u] = vertex_ids.size();
     }
 
-    // Note that all 3 writers have to be specified to  pass the vertex id map, otherwise very weired error messages
+    // Note that all 3 writers have to be specified to  pass the vertex id map, otherwise very weird error messages
     // will occur.
     boost::write_graphviz(of, filteredGraph, vertexPropWriter, edgePropWriter, boost::default_writer(),
         boost::make_assoc_property_map(vertex_ids));
