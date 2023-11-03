@@ -457,7 +457,7 @@ BOOST_AUTO_TEST_CASE(testBackwardsPropagationSingleDownstream) {
   BOOST_TEST(upstrIn.readNonBlocking());
   BOOST_TEST(upstrIn == 5);
   BOOST_TEST(!downstrIn.readNonBlocking()); // validation happens in upstream, not really part of this test case
-
+  std::cout << "---------------------------------" << std ::endl;
   upstrIn.setAndWrite(12);
   test.stepApplication();
   BOOST_TEST(upstrIn.readNonBlocking());

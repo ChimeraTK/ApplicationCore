@@ -42,6 +42,7 @@ namespace ChimeraTK {
       }
     }
 
+    std::cout << _module->getName() << " Accepting from this " << std::endl;
     _variableMap.at(change)->accept();
     return false;
   }
@@ -145,8 +146,6 @@ namespace ChimeraTK {
 
     boost::depth_first_visit(filteredGraph, ourVertex, visitor, color_map);
 
-    // std::cout << "Iterating stack " << visitor.stack().size() << " , module is " << _module->getName() << std::endl;
-
     auto& distances = visitor.distances();
 
     distances[ourVertex] = 0;
@@ -170,10 +169,9 @@ namespace ChimeraTK {
       }
     }
 
-    _validationDepth = std::max_element(distances.begin(), distances.end(),
-                           [](auto& a, auto& b) -> bool { return a.second < b.second; })
-                           ->second +
-        1;
+    _validationDepth = 1 + std::max_element(distances.begin(), distances.end(), [](auto& a, auto& b) -> bool {
+      return a.second < b.second;
+    })->second;
 
     for(auto& v : _variableMap) {
       v.second->setHistorySize(_validationDepth);
