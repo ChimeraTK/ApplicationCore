@@ -13,18 +13,30 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void StatusWithMessage::write(StatusOutput::Status status, std::string message) {
-    assert(status != StatusOutput::Status::OK);
-    _status = status;
-    _message = std::move(message);
+    set(status, std::move(message));
     writeAll();
   }
 
   /********************************************************************************************************************/
 
   void StatusWithMessage::writeOk() {
+    setOk();
+    writeAll();
+  }
+
+  /********************************************************************************************************************/
+
+  void StatusWithMessage::set(StatusOutput::Status status, std::string message) {
+    assert(status != StatusOutput::Status::OK);
+    _status = status;
+    _message = std::move(message);
+  }
+
+  /********************************************************************************************************************/
+
+  void StatusWithMessage::setOk() {
     _status = StatusOutput::Status::OK;
     _message = "";
-    writeAll();
   }
 
   /********************************************************************************************************************/
