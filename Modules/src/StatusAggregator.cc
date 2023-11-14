@@ -67,10 +67,12 @@ namespace ChimeraTK {
         }
 
         auto tags = proxy.getTags();
+
         // find another aggregator output - this is already covered by checking if given module is a StatusAggregator
         if(tags.find(StatusAggregator::tagAggregatedStatus) != tags.end()) {
           return;
         }
+
         // find status output - this is potential candidate to be aggregated
         if(tags.find(StatusOutput::tagStatusOutput) != tags.end()) {
           for(const auto& tagToAgregate : _tagsToAggregate) {
@@ -80,6 +82,12 @@ namespace ChimeraTK {
             }
           }
           inputPathsSet.insert(proxy.getFullyQualifiedPath());
+
+          // check for presence of message
+          std::string fqn = proxy.getFullyQualifiedPath();
+          if(tags.find(StatusWithMessage::tagStatusHasMessage) != tags.end()) {
+            statusToMessagePathsMap[proxy.getFullyQualifiedPath()] = fqn + "_message";
+          }
         }
       }
     };
@@ -126,21 +134,31 @@ namespace ChimeraTK {
     }
 
     auto rag = readAnyGroup();
-    DataValidity lastStatusValidity = DataValidity::ok;
     while(true) {
       // find highest priority status of all inputs
       StatusOutput::Status status{StatusOutput::Status::FAULT}; // initialised just to prevent warning
+
+      // store the input at which the highest-priority status was found ("selected input"), so we can access the
+      // corresponding message
       StatusWithMessageInput* statusOrigin = nullptr;
+
+      // cache priority of the current "selected" status input
+      int statusPrio = 0; // initialised just to prevent warning
+
       // flag whether status has been set from an input already
       bool statusSet = false;
-      // this stores getPriority(status) if statusSet=true
-      // Intent is to reduce evaluation frequency of getPriority
-      // the initial value provided here is only to prevent compiler warnings
-      int statusPrio = 0;
+
       for(auto& inputPair : _inputs) {
         StatusPushInput& input = inputPair._status;
         auto prio = getPriority(input);
-        if(!statusSet || prio > statusPrio) {
+
+        // Select the input if:
+        // - no input has been selected so far, or
+        // - the priority of the value is higher than the previously selected one, or
+        // - the priority is the same but the input has a lower version number than the previously selected one.
+        if(!statusSet || prio > statusPrio ||
+            (prio == statusPrio && statusOrigin != nullptr &&
+                input.getVersionNumber() < statusOrigin->_status.getVersionNumber())) {
           status = input;
           statusOrigin = &inputPair;
           statusPrio = prio;
@@ -154,28 +172,26 @@ namespace ChimeraTK {
           }
         }
       }
+
+      // some input must be selected due to the logic
       assert(statusSet);
 
-      // write status only if changed, but always write initial value out
-      if(status != _output._status || _output._status.getVersionNumber() == VersionNumber{nullptr} ||
-          getDataValidity() != lastStatusValidity) {
-        if(!statusOrigin) {
-          // this can only happen if warning about mixed values
-          assert(status == StatusOutput::Status::WARNING);
-          _output.write(status, "warning - StatusAggregator inputs have mixed values");
+      // write status output with message from selected input. The output is written only if the output's value has
+      // changed (writeIfDifferent).
+      if(!statusOrigin) {
+        // this can only happen if warning about mixed values
+        assert(status == StatusOutput::Status::WARNING);
+        _output.writeIfDifferent(status, "warning - StatusAggregator inputs have mixed values");
+      }
+      else {
+        if(status != StatusOutput::Status::OK) {
+          // this either copies the message from corresponding string variable, or sets a generic message
+          auto msg = statusOrigin->getMessage();
+          _output.writeIfDifferent(status, msg);
         }
         else {
-          if(status != StatusOutput::Status::OK) {
-            // this either copies the message from corresponding string variable, or sets a generic message
-            auto msg = statusOrigin->getMessage();
-            _output.write(status, msg);
-          }
-          else {
-            _output.writeOk();
-          }
+          _output.writeOkIfDifferent();
         }
-
-        lastStatusValidity = getDataValidity();
       }
 
       // wait for changed inputs

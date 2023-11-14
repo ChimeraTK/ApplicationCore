@@ -52,6 +52,9 @@ namespace ChimeraTK {
      */
     void setOk();
 
+    /** Reserved tag which is used to mark presense of the message output */
+    constexpr static auto tagStatusHasMessage = "_ChimeraTK_StatusOutput_hasMessage";
+
     // FIXME: This needs additional modification in ControlSystemAdapter if changed
     // https://redmine.msktools.desy.de/issues/12241
     // NOLINTNEXTLINE(readability-identifier-naming)

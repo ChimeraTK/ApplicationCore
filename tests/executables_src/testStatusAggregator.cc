@@ -4,6 +4,7 @@
 #include "Application.h"
 #include "ModuleGroup.h"
 #include "StatusAggregator.h"
+#include "StatusWithMessage.h"
 #include "TestFacility.h"
 
 #define BOOST_NO_EXCEPTIONS
@@ -32,6 +33,31 @@ struct StatusGenerator : ctk::ApplicationModule {
   void prepare() override {
     status = initialValue;
     status.write();
+  }
+  void mainLoop() override {}
+};
+
+/**********************************************************************************************************************/
+
+struct StatusWithMessageGenerator : ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+
+  StatusWithMessageGenerator(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
+      const std::unordered_set<std::string>& tags = {},
+      ctk::StatusOutput::Status initialStatus = ctk::StatusOutput::Status::OFF)
+  : ApplicationModule(owner, name, description, tags), initialValue(initialStatus) {}
+
+  ctk::StatusWithMessage status{this, getName(), ""};
+
+  ctk::StatusOutput::Status initialValue;
+
+  void prepare() override {
+    if(initialValue == ctk::StatusOutput::Status::OK) {
+      status.writeOk();
+    }
+    else {
+      status.write(initialValue, getDescription());
+    }
   }
   void mainLoop() override {}
 };
@@ -361,7 +387,7 @@ struct TestApplicationMessage : ctk::Application {
 
     StatusGenerator s1{this, "s1", "Status 1", {}, ctk::StatusOutput::Status::OK};
 
-    StatusGenerator s2{this, "s2", "Status 2", {}, ctk::StatusOutput::Status::OK};
+    StatusWithMessageGenerator s2{this, "s2", "Status 2", {}, ctk::StatusOutput::Status::OK};
 
     ctk::StatusAggregator extraAggregator{
         this, "/Aggregated/extraStatus", "aggregated status description", ctk::StatusAggregator::PriorityMode::ofwk};
@@ -399,18 +425,92 @@ BOOST_AUTO_TEST_CASE(testStatusMessage) {
   statusMessage.readLatest();
   BOOST_CHECK_EQUAL(std::string(statusMessage), "");
 
-  app.outerGroup.s2.status = ctk::StatusOutput::Status::FAULT;
-  app.outerGroup.s2.status.write();
+  // check normal status (without message) going to fault
+  app.outerGroup.s1.status = ctk::StatusOutput::Status::FAULT;
+  app.outerGroup.s1.status.write();
   test.stepApplication();
   status.readLatest();
   statusMessage.readLatest();
   innerStatus.readLatest();
   innerStatusMessage.readLatest();
   BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::FAULT));
-  const char* faultString = "/OuterGroup/s2/s2 switched to FAULT";
-  BOOST_CHECK_EQUAL(std::string(statusMessage), faultString);
+  std::string faultString1 = "/OuterGroup/s1/s1 switched to FAULT";
+  BOOST_CHECK_EQUAL(std::string(statusMessage), faultString1);
   BOOST_CHECK_EQUAL(int(innerStatus), int(ctk::StatusOutput::Status::FAULT));
-  BOOST_CHECK_EQUAL(std::string(innerStatusMessage), faultString);
+  BOOST_CHECK_EQUAL(std::string(innerStatusMessage), faultString1);
+
+  // go back to OK
+  app.outerGroup.s1.status = ctk::StatusOutput::Status::OK;
+  app.outerGroup.s1.status.write();
+  test.stepApplication();
+  status.readLatest();
+  statusMessage.readLatest();
+  innerStatus.readLatest();
+  innerStatusMessage.readLatest();
+  BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::OK));
+  BOOST_CHECK_EQUAL(std::string(statusMessage), "");
+  BOOST_CHECK_EQUAL(int(innerStatus), int(ctk::StatusOutput::Status::OK));
+  BOOST_CHECK_EQUAL(std::string(innerStatusMessage), "");
+
+  // check StatusWithMessage going to fault
+  std::string faultString2 = "Status 2 at fault";
+  app.outerGroup.s2.setCurrentVersionNumber({});
+  app.outerGroup.s2.status.write(ctk::StatusOutput::Status::FAULT, faultString2);
+  test.stepApplication();
+  status.readLatest();
+  statusMessage.readLatest();
+  innerStatus.readLatest();
+  innerStatusMessage.readLatest();
+  BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::FAULT));
+  BOOST_CHECK_EQUAL(std::string(statusMessage), faultString2);
+  BOOST_CHECK_EQUAL(int(innerStatus), int(ctk::StatusOutput::Status::FAULT));
+  BOOST_CHECK_EQUAL(std::string(innerStatusMessage), faultString2);
+
+  // set normal status to fault, too, to see the right message "wins" (first message should stay)
+  app.outerGroup.s1.setCurrentVersionNumber({});
+  app.outerGroup.s1.status = ctk::StatusOutput::Status::FAULT;
+  app.outerGroup.s1.status.write();
+  test.stepApplication();
+  status.readLatest();
+  statusMessage.readLatest();
+  innerStatus.readLatest();
+  innerStatusMessage.readLatest();
+  BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::FAULT));
+  BOOST_CHECK_EQUAL(std::string(statusMessage), faultString2);
+  BOOST_CHECK_EQUAL(int(innerStatus), int(ctk::StatusOutput::Status::FAULT));
+  BOOST_CHECK_EQUAL(std::string(innerStatusMessage), faultString2);
+
+  // go back to OK
+  app.outerGroup.s1.setCurrentVersionNumber({});
+  app.outerGroup.s1.status = ctk::StatusOutput::Status::OK;
+  app.outerGroup.s1.status.write();
+  app.outerGroup.s2.setCurrentVersionNumber({});
+  app.outerGroup.s2.status.writeOk();
+  test.stepApplication();
+  status.readLatest();
+  statusMessage.readLatest();
+  innerStatus.readLatest();
+  innerStatusMessage.readLatest();
+  BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::OK));
+  BOOST_CHECK_EQUAL(std::string(statusMessage), "");
+  BOOST_CHECK_EQUAL(int(innerStatus), int(ctk::StatusOutput::Status::OK));
+  BOOST_CHECK_EQUAL(std::string(innerStatusMessage), "");
+
+  // set both status to fault in alternate order (compared to before), again the first message should "win"
+  app.outerGroup.s1.setCurrentVersionNumber({});
+  app.outerGroup.s1.status = ctk::StatusOutput::Status::FAULT;
+  app.outerGroup.s1.status.write();
+  app.outerGroup.s2.setCurrentVersionNumber({});
+  app.outerGroup.s2.status.write(ctk::StatusOutput::Status::FAULT, faultString2);
+  test.stepApplication();
+  status.readLatest();
+  statusMessage.readLatest();
+  innerStatus.readLatest();
+  innerStatusMessage.readLatest();
+  BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::FAULT));
+  BOOST_CHECK_EQUAL(std::string(statusMessage), faultString1);
+  BOOST_CHECK_EQUAL(int(innerStatus), int(ctk::StatusOutput::Status::FAULT));
+  BOOST_CHECK_EQUAL(std::string(innerStatusMessage), faultString1);
 }
 
 /**********************************************************************************************************************/
