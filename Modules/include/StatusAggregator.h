@@ -78,6 +78,8 @@ namespace ChimeraTK {
 
     void mainLoop() override;
 
+    DataValidity getDataValidity() const override;
+
    protected:
     /// Recursivly search for StatusMonitors and other StatusAggregators
     void populateStatusInput();
