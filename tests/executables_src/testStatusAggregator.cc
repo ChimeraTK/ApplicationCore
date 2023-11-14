@@ -90,7 +90,7 @@ struct TestApplication : ctk::Application {
       this, "Aggregated/status", "aggregated status description", ctk::StatusAggregator::PriorityMode::fwko};
 };
 
-///**********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testSingleNoTags) {
   std::cout << "testSingleNoTags" << std::endl;
@@ -122,6 +122,33 @@ BOOST_AUTO_TEST_CASE(testSingleNoTags) {
   check(app.outerGroup.innerGroup1.deep.status);
   check(app.outerGroup.innerGroup2.s.status);
   check(app.outerGroup.innerGroup2.deep.status);
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testDataValidity) {
+  std::cout << "testDataValidity" << std::endl;
+
+  TestApplication app;
+  ctk::TestFacility test(app);
+
+  auto status = test.getScalar<int>("/Aggregated/status");
+
+  test.runApplication();
+
+  app.s.incrementDataFaultCounter();
+  app.s.status = ctk::StatusOutput::Status::OK;
+  app.s.status.write();
+  test.stepApplication();
+  BOOST_CHECK(status.readNonBlocking() == true);
+  BOOST_CHECK(status.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::OK));
+  app.s.status = ctk::StatusOutput::Status::OFF;
+  app.s.status.write();
+  test.stepApplication();
+  BOOST_CHECK(status.readNonBlocking() == true);
+  BOOST_CHECK(status.dataValidity() == ctk::DataValidity::ok);
+  BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::OFF));
 }
 
 /**********************************************************************************************************************/
