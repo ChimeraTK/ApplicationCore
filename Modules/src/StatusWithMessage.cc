@@ -19,9 +19,29 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  void StatusWithMessage::writeIfDifferent(StatusOutput::Status status, std::string message) {
+    if(status != _status || message != std::string(_message) || _status.getVersionNumber() == VersionNumber{nullptr}) {
+      write(status, std::move(message));
+    }
+  }
+
+  /********************************************************************************************************************/
+
   void StatusWithMessage::writeOk() {
     setOk();
     writeAll();
+  }
+
+  /********************************************************************************************************************/
+
+  void StatusWithMessage::writeOkIfDifferent() {
+    if(_status != StatusOutput::Status::OK || _status.getVersionNumber() == VersionNumber{nullptr}) {
+      setOk();
+      writeAll();
+    }
+    // This assert makes sure the above "if" condition is sufficient. There is no way to set the status to OK and have
+    // a non-empty message string.
+    assert(std::string(_message).empty());
   }
 
   /********************************************************************************************************************/

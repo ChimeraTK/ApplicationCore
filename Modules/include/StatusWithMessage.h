@@ -33,11 +33,13 @@ namespace ChimeraTK {
      * status must be != OK. To set an OK status, use writeOk().
      */
     void write(StatusOutput::Status status, std::string message);
+    void writeIfDifferent(StatusOutput::Status status, std::string message);
 
     /**
      * Set status to OK, clear the message and write the outputs.
      */
     void writeOk();
+    void writeOkIfDifferent();
 
     /**
      * Set status and message but to not write. This is useful when using writeAll() on parent.
