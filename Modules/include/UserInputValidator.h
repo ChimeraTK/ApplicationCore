@@ -68,7 +68,7 @@ namespace ChimeraTK {
    */
   struct UserInputValidator {
     static constexpr std::string_view tagValidatedVariable{"__UserInputValidator"};
-    UserInputValidator(ApplicationModule* module) : _module(module) {}
+    explicit UserInputValidator(ApplicationModule* module) : _module(module) {}
     /**
      * Add new condition to validate the given accessors against.
      *
@@ -152,8 +152,9 @@ namespace ChimeraTK {
 
     // Type-independent base class representing a variable passed at least once to add() or setFallback().
     struct VariableBase {
+      enum class RejectionType { downstream, self };
       virtual ~VariableBase() = default;
-      virtual void reject() = 0;
+      virtual void reject(RejectionType type) = 0;
       virtual void accept() = 0;
       virtual void setHistorySize(size_t size) = 0;
     };
@@ -166,7 +167,7 @@ namespace ChimeraTK {
       ~Variable() override = default;
 
       // called when validation function returned false
-      void reject() override;
+      void reject(RejectionType type) override;
 
       // called when validation function returned true
       void accept() override;
@@ -290,7 +291,10 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   template<typename UserType, template<typename> typename Accessor>
-  void UserInputValidator::Variable<UserType, Accessor>::reject() {
+  void UserInputValidator::Variable<UserType, Accessor>::reject(RejectionType type) {
+    if(type == RejectionType::downstream && !lastAcceptedValue.empty()) {
+      lastAcceptedValue.pop_back();
+    }
     if constexpr(std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInput<UserType>>::value ||
         std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInputWB<UserType>>::value) {
       if(lastAcceptedValue.empty()) {
@@ -301,8 +305,6 @@ namespace ChimeraTK {
         std::cout << lastAcceptedValue.size() << std::endl;
         accessor = lastAcceptedValue.back()[0];
         std::cout << "Using last value" << lastAcceptedValue.back()[0] << std::endl;
-
-        lastAcceptedValue.pop_back();
       }
     }
     else {
@@ -311,7 +313,6 @@ namespace ChimeraTK {
       }
       else {
         accessor = lastAcceptedValue.back();
-        lastAcceptedValue.pop_back();
       }
     }
 

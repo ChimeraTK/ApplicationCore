@@ -24,7 +24,7 @@ namespace ChimeraTK {
     // We have downstream channels that signalized a change - invalidate all of our
     if(_downstreamInvalidatingReturnChannels.count(change) > 0) {
       for(auto& v : _variableMap) {
-        v.second->reject();
+        v.second->reject(VariableBase::RejectionType::downstream);
       }
 
       return false;
@@ -37,7 +37,7 @@ namespace ChimeraTK {
     for(auto* validator : _validatorMap.at(change)) {
       if(!validator->isValidFunction()) {
         _errorFunction(validator->errorMessage);
-        _variableMap.at(change)->reject();
+        _variableMap.at(change)->reject(VariableBase::RejectionType::self);
         return true;
       }
     }
@@ -104,7 +104,7 @@ namespace ChimeraTK {
 
   void UserInputValidator::finalise() {
     auto isAccessorValidated = [](auto& accessor) -> bool {
-      return accessor.getDirection().dir == VariableDirection::feeding && accessor.getDirection().withReturn &&
+      return accessor.getDirection() == VariableDirection{VariableDirection::feeding, true} &&
           accessor.getModel().getTags().count(std::string(UserInputValidator::tagValidatedVariable)) > 0;
     };
 

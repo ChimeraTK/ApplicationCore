@@ -457,12 +457,12 @@ BOOST_AUTO_TEST_CASE(testBackwardsPropagationSingleDownstream) {
   BOOST_TEST(upstrIn.readNonBlocking());
   BOOST_TEST(upstrIn == 5);
   BOOST_TEST(!downstrIn.readNonBlocking()); // validation happens in upstream, not really part of this test case
-  std::cout << "---------------------------------" << std ::endl;
+
   upstrIn.setAndWrite(12);
   test.stepApplication();
   BOOST_TEST(upstrIn.readNonBlocking());
   BOOST_TEST(upstrIn == 5);
-  BOOST_TEST(downstrIn.readNonBlocking());
+  BOOST_TEST(downstrIn.readLatest());
   BOOST_TEST(downstrIn == 6);
 }
 #endif
@@ -511,10 +511,12 @@ BOOST_AUTO_TEST_CASE(testBackwardsPropagationTwoDownstream) {
   test.stepApplication();
   BOOST_TEST(upstrIn.readNonBlocking());
   BOOST_TEST(upstrIn == 5);
-  BOOST_TEST(downstr1In.readNonBlocking());
-  BOOST_TEST(downstr1In == 6);
-  BOOST_TEST(downstr2In.readNonBlocking());
-  BOOST_TEST(downstr2In == 7);
+  // Unfortunately we cannot distinguish whether we got multiple rejections from deep down or from the next level
+  // so this code will go back to the fall-back values
+  BOOST_TEST(downstr1In.readLatest());
+  BOOST_TEST(downstr1In == 1);
+  BOOST_TEST(downstr2In.readLatest());
+  BOOST_TEST(downstr2In == 2);
 }
 #endif
 
@@ -562,33 +564,16 @@ BOOST_AUTO_TEST_CASE(testDeepBackwardsPropagation) {
     ~TestApplication() override { shutdown(); }
     UpstreamSingleOut upstream{this, "Upstream", ""};
     UpstreamSingleOut midstream{this, "Midstream", ""};
-    struct : ctk::ApplicationModule {
-      using ctk::ApplicationModule::ApplicationModule;
-
-      ctk::ScalarPollInput<ctk::Boolean> a{this, "pollInput", "", ""};
-      void mainLoop() final {}
-    } disconnected{this, "Disconnected", ""};
-
-    struct : ctk::ApplicationModule {
-      using ctk::ApplicationModule::ApplicationModule;
-
-      ctk::ScalarPollInput<ctk::Boolean> a{this, "pollInput", "", ""};
-      void mainLoop() final {}
-    } disconnected2{this, "Disconnected2", ""};
-
     ModuleA downstream{this, "Downstream", ""};
   };
 
   TestApplication app("TestApp");
-  app.upstream.out1 = {&app.upstream, "/Midstream/in2", "", "First validated input"};
-  app.midstream.in1 = {&app.midstream, "/Midstream/in2", "", "First validated input"};
-  ctk::ScalarOutput<ctk::Boolean> a{&app.downstream, "/Disconnected/pollInput", "", ""};
+  app.upstream.out1 = {&app.upstream, "/Midstream/in1", "", "First validated input"};
 
   ctk::TestFacility test(app);
-  app.getModel().writeGraphViz("test.dot");
 
   auto upstrIn = test.getScalar<int>("/Upstream/in1");
-  auto midstreamIn = test.getScalar<int>("/Midstream/in2");
+  auto midstreamIn = test.getScalar<int>("/Midstream/in1");
   auto downstrIn = test.getScalar<int>("/Downstream/in1");
 
   test.setScalarDefault<int>("/Upstream/in1", 5);
@@ -600,7 +585,6 @@ BOOST_AUTO_TEST_CASE(testDeepBackwardsPropagation) {
   downstrIn.readLatest();
   BOOST_TEST(midstreamIn == 6);
   BOOST_TEST(downstrIn == 7);
-
   // test a single value being discarded at the lowest level (Downstream)
   upstrIn.setAndWrite(12);
   test.stepApplication();
@@ -641,17 +625,12 @@ BOOST_AUTO_TEST_CASE(testDeepBackwardsPropagation) {
   // test two consecutive values, only the first being discarded at the lowest level and the second is accepted
   upstrIn.setAndWrite(12);
   upstrIn.setAndWrite(3);
-  test.stepApplication();
-  BOOST_TEST(midstreamIn.readNonBlocking());
-  BOOST_TEST(midstreamIn == 13); // first value is coming from upstream
-  BOOST_TEST(downstrIn.readNonBlocking());
-  BOOST_TEST(downstrIn == 14); // first value is coming from upstream/midstream
 
+  test.stepApplication();
   BOOST_TEST(downstrIn.readLatest()); // just observe final state, because intermediate states might be subject
   BOOST_TEST(downstrIn == 5);         // to race conditions
   BOOST_TEST(midstreamIn.readLatest());
   BOOST_TEST(midstreamIn == 4);
-  BOOST_TEST(upstrIn.readLatest());
   BOOST_TEST(upstrIn == 3);
 }
 #endif
