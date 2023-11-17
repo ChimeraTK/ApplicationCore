@@ -140,6 +140,13 @@ namespace ChimeraTK {
      */
     bool validateAll();
 
+    /**
+     * When enabled, validator will also take all return channels from downstream modules into account.
+     * Any value written back from a downstream return channel will cause the accessors that this validator is
+     * configured to handle will be invalidated. The validator takes a best effort to roll back the values
+     * to a known accepted value. Be aware, however, that due to current limitations of the value versioning scheme
+     * the validation can drop too many values and arrive at the fall-back value earlier than exxpected.
+     */
     void enableDeepValidation(ApplicationModule* module);
 
    protected:
