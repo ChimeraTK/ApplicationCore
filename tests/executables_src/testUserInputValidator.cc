@@ -24,7 +24,7 @@ struct ModuleA : public ctk::ApplicationModule {
 
   ctk::ScalarPushInputWB<int> in1{this, "in1", "", "First validated input"};
 
-  ctk::UserInputValidator validator{this};
+  ctk::UserInputValidator validator;
 
   static constexpr std::string_view in1ErrorMessage = "in1 needs to be smaller than 10";
 
@@ -34,7 +34,6 @@ struct ModuleA : public ctk::ApplicationModule {
   }
 
   void mainLoop() override {
-    validator.finalise();
     auto group = readAnyGroup();
     ctk::TransferElementID change;
     while(true) {
@@ -42,6 +41,15 @@ struct ModuleA : public ctk::ApplicationModule {
 
       change = group.readAny();
     }
+  }
+};
+
+struct ModuleADeepValidated : ModuleA {
+  using ModuleA::ModuleA;
+
+  void mainLoop() override {
+    validator.enableDeepValidation(this);
+    ModuleA::mainLoop();
   }
 };
 
@@ -73,7 +81,7 @@ struct UpstreamSingleOut : public ctk::ApplicationModule {
   ctk::ScalarPushInputWB<int> in1{this, "in1", "", "First validated input"};
   ctk::ScalarOutputPushRB<int> out1{this, "/Downstream/in1", "", "Output"};
 
-  ctk::UserInputValidator validator{this};
+  ctk::UserInputValidator validator;
 
   void prepare() override {
     validator.add(
@@ -82,7 +90,6 @@ struct UpstreamSingleOut : public ctk::ApplicationModule {
 
   void mainLoop() override {
     auto group = readAnyGroup();
-    validator.finalise();
     ctk::TransferElementID change;
     while(true) {
       validator.validate(change);
@@ -91,6 +98,15 @@ struct UpstreamSingleOut : public ctk::ApplicationModule {
 
       change = group.readAny();
     }
+  }
+};
+
+struct UpstreamSingleOutDeepValidated : UpstreamSingleOut {
+  using UpstreamSingleOut::UpstreamSingleOut;
+
+  void mainLoop() override {
+    validator.enableDeepValidation(this);
+    UpstreamSingleOut::mainLoop();
   }
 };
 
@@ -105,7 +121,7 @@ struct UpstreamTwinOut : public ctk::ApplicationModule {
   ctk::ScalarOutputPushRB<int> out1{this, "/Downstream1/in1", "", "Output"};
   ctk::ScalarOutputPushRB<int> out2{this, "/Downstream2/in1", "", "Output"};
 
-  ctk::UserInputValidator validator{this};
+  ctk::UserInputValidator validator;
 
   void prepare() override {
     validator.add(
@@ -113,7 +129,6 @@ struct UpstreamTwinOut : public ctk::ApplicationModule {
   }
 
   void mainLoop() override {
-    validator.finalise();
     auto group = readAnyGroup();
     ctk::TransferElementID change;
     while(true) {
@@ -124,6 +139,14 @@ struct UpstreamTwinOut : public ctk::ApplicationModule {
 
       change = group.readAny();
     }
+  }
+};
+struct UpstreamTwinOutDeepValidated : UpstreamTwinOut {
+  using UpstreamTwinOut::UpstreamTwinOut;
+
+  void mainLoop() override {
+    validator.enableDeepValidation(this);
+    UpstreamTwinOut::mainLoop();
   }
 };
 
@@ -432,8 +455,8 @@ BOOST_AUTO_TEST_CASE(testBackwardsPropagationSingleDownstream) {
   struct TestApplication : public ctk::Application {
     using ctk::Application::Application;
     ~TestApplication() override { shutdown(); }
-    UpstreamSingleOut upstream{this, "Upstream", ""};
-    ModuleA downstream{this, "Downstream", ""};
+    UpstreamSingleOutDeepValidated upstream{this, "Upstream", ""};
+    ModuleADeepValidated downstream{this, "Downstream", ""};
   };
 
   TestApplication app("TestApp");
@@ -474,9 +497,9 @@ BOOST_AUTO_TEST_CASE(testBackwardsPropagationTwoDownstream) {
   struct TestApplication : public ctk::Application {
     using ctk::Application::Application;
     ~TestApplication() override { shutdown(); }
-    UpstreamTwinOut upstream{this, "Upstream", ""};
-    ModuleA downstream1{this, "Downstream1", ""};
-    ModuleA downstream2{this, "Downstream2", ""};
+    UpstreamTwinOutDeepValidated upstream{this, "Upstream", ""};
+    ModuleADeepValidated downstream1{this, "Downstream1", ""};
+    ModuleADeepValidated downstream2{this, "Downstream2", ""};
   };
 
   TestApplication app("TestApp");
@@ -556,9 +579,9 @@ BOOST_AUTO_TEST_CASE(testDeepBackwardsPropagation) {
   struct TestApplication : public ctk::Application {
     using ctk::Application::Application;
     ~TestApplication() override { shutdown(); }
-    UpstreamSingleOut upstream{this, "Upstream", ""};
-    UpstreamSingleOut midstream{this, "Midstream", ""};
-    ModuleA downstream{this, "Downstream", ""};
+    UpstreamSingleOutDeepValidated upstream{this, "Upstream", ""};
+    UpstreamSingleOutDeepValidated midstream{this, "Midstream", ""};
+    ModuleADeepValidated downstream{this, "Downstream", ""};
   };
 
   TestApplication app("TestApp");

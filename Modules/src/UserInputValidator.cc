@@ -56,9 +56,14 @@ namespace ChimeraTK {
     return rejected;
   }
 
-  void UserInputValidator::finalise() {
+  void UserInputValidator::enableDeepValidation(ApplicationModule* module) {
+    if(module == nullptr) {
+      throw ChimeraTK::logic_error(
+          "Deep validation requires UserInputValidator to be created with its containing module");
+    }
+
     // Find out accessors with return
-    for(auto& accessor : _module->getAccessorListRecursive()) {
+    for(auto& accessor : module->getAccessorListRecursive()) {
       if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, true} &&
           accessor.getModel().getTags().count(std::string(UserInputValidator::tagValidatedVariable)) > 0) {
         _downstreamInvalidatingReturnChannels.emplace(accessor.getAppAccessorNoType().getId());
@@ -88,7 +93,7 @@ namespace ChimeraTK {
     // Find longest path that is validated in our model, starting at this module
     std::deque<Model::ApplicationModuleProxy> stack;
     std::map<ApplicationModule*, int> distances;
-    distances[_module] = 0;
+    distances[module] = 0;
 
     auto orderVisitor = [&](auto proxy) {
       if constexpr(Model::isApplicationModule(proxy)) {
@@ -97,8 +102,8 @@ namespace ChimeraTK {
       }
     };
 
-    _module->getModel().visit(orderVisitor, Model::visitOrderPost, Model::depthFirstSearch,
-        keepPvAccesWithReturnChannel, validatedVariablesAndApplicationModulesFilter);
+    module->getModel().visit(orderVisitor, Model::visitOrderPost, Model::depthFirstSearch, keepPvAccesWithReturnChannel,
+        validatedVariablesAndApplicationModulesFilter);
 
     std::unordered_set<ApplicationModule*> downstreamModulesWithFeedback;
 

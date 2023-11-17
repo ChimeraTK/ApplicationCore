@@ -67,7 +67,6 @@ namespace ChimeraTK {
    *
    */
   struct UserInputValidator {
-    explicit UserInputValidator(ApplicationModule* module) : _module(module) {}
     /**
      * Add new condition to validate the given accessors against.
      *
@@ -141,7 +140,7 @@ namespace ChimeraTK {
      */
     bool validateAll();
 
-    void finalise();
+    void enableDeepValidation(ApplicationModule* module);
 
    protected:
     static constexpr std::string_view tagValidatedVariable{"__UserInputValidator"};
@@ -206,8 +205,6 @@ namespace ChimeraTK {
 
     // Function to be called for reporting validation errors
     std::function<void(const std::string&)> _errorFunction{[](const std::string& m) { std::cerr << m << std::endl; }};
-
-    ApplicationModule* _module{nullptr};
 
     std::unordered_set<ChimeraTK::TransferElementID> _downstreamInvalidatingReturnChannels{};
     size_t _validationDepth{0};
@@ -287,6 +284,7 @@ namespace ChimeraTK {
     else {
       fallbackValue.resize(accessor.getNElements());
     }
+    lastAcceptedValue.set_capacity(1);
   }
 
   /*********************************************************************************************************************/
