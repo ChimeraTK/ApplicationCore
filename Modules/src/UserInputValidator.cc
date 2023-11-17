@@ -18,7 +18,12 @@ namespace ChimeraTK {
 
   bool UserInputValidator::validate(const ChimeraTK::TransferElementID& change) {
     if(!change.isValid()) {
+      enableDeepValidation();
       return validateAll();
+    }
+
+    if(!_finalised) {
+      throw ChimeraTK::logic_error("Initial values were not validated");
     }
 
     // We have downstream channels that signalized a change - invalidate all of our
@@ -56,14 +61,9 @@ namespace ChimeraTK {
     return rejected;
   }
 
-  void UserInputValidator::enableDeepValidation(ApplicationModule* module) {
-    if(module == nullptr) {
-      throw ChimeraTK::logic_error(
-          "Deep validation requires UserInputValidator to be created with its containing module");
-    }
-
+  void UserInputValidator::enableDeepValidation() {
     // Find out accessors with return
-    for(auto& accessor : module->getAccessorListRecursive()) {
+    for(auto& accessor : _module->getAccessorListRecursive()) {
       if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, true} &&
           accessor.getModel().getTags().count(std::string(UserInputValidator::tagValidatedVariable)) > 0) {
         _downstreamInvalidatingReturnChannels.emplace(accessor.getAppAccessorNoType().getId());
@@ -93,7 +93,7 @@ namespace ChimeraTK {
     // Find longest path that is validated in our model, starting at this module
     std::deque<Model::ApplicationModuleProxy> stack;
     std::map<ApplicationModule*, int> distances;
-    distances[module] = 0;
+    distances[_module] = 0;
 
     auto orderVisitor = [&](auto proxy) {
       if constexpr(Model::isApplicationModule(proxy)) {
@@ -102,8 +102,8 @@ namespace ChimeraTK {
       }
     };
 
-    module->getModel().visit(orderVisitor, Model::visitOrderPost, Model::depthFirstSearch, keepPvAccesWithReturnChannel,
-        validatedVariablesAndApplicationModulesFilter);
+    _module->getModel().visit(orderVisitor, Model::visitOrderPost, Model::depthFirstSearch,
+        keepPvAccesWithReturnChannel, validatedVariablesAndApplicationModulesFilter);
 
     std::unordered_set<ApplicationModule*> downstreamModulesWithFeedback;
 
@@ -137,6 +137,8 @@ namespace ChimeraTK {
     for(auto& v : _variableMap) {
       v.second->setHistorySize(_validationDepth);
     }
+
+    _finalised = true;
   }
 
   /*********************************************************************************************************************/

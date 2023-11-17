@@ -140,20 +140,11 @@ namespace ChimeraTK {
      */
     bool validateAll();
 
-    /**
-     * When enabled, validator will also take all return channels from downstream modules into account.
-     * Any value written back from a downstream return channel will cause the accessors that this validator is
-     * configured to handle will be invalidated. The validator takes a best effort to roll back the values
-     * to a known accepted value. Be aware, however, that due to current limitations of the value versioning scheme
-     * the validation can drop too many values and arrive at the fall-back value earlier than exxpected.
-     *
-     * This function should be called as late as possible, and after all connections are created (so either at the end
-     * of prepare() or at the beginning of mainLoop())
-     */
-    void enableDeepValidation(ApplicationModule* module);
-
    protected:
     static constexpr std::string_view tagValidatedVariable{"__UserInputValidator"};
+
+    // Helper function to set up queue lengths of valid values
+    void enableDeepValidation();
 
     // Helper function for internal book keeping of accessors (prevent unnecessary overwrite of map entry, which might
     // result in loss of fallback values).
@@ -218,6 +209,8 @@ namespace ChimeraTK {
 
     std::unordered_set<ChimeraTK::TransferElementID> _downstreamInvalidatingReturnChannels{};
     size_t _validationDepth{0};
+    ApplicationModule* _module{nullptr};
+    bool _finalised{false};
   };
 
   /*********************************************************************************************************************/
@@ -272,6 +265,9 @@ namespace ChimeraTK {
 
   template<typename UserType, template<typename> typename Accessor>
   void UserInputValidator::addAccessorIfNeeded(Accessor<UserType>& accessor) {
+    if(_module == nullptr) {
+      _module = dynamic_cast<ApplicationModule*>(dynamic_cast<Module*>(accessor.getOwner())->findApplicationModule());
+    }
     if(!_variableMap.count(accessor.getId())) {
       accessor.addTag(std::string(tagValidatedVariable));
       _variableMap[accessor.getId()] = std::make_shared<Variable<UserType, Accessor>>(accessor);

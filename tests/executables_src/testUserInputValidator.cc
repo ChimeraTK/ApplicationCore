@@ -44,15 +44,6 @@ struct ModuleA : public ctk::ApplicationModule {
   }
 };
 
-struct ModuleADeepValidated : ModuleA {
-  using ModuleA::ModuleA;
-
-  void mainLoop() override {
-    validator.enableDeepValidation(this);
-    ModuleA::mainLoop();
-  }
-};
-
 /*********************************************************************************************************************/
 /* Variant of ModuleA with a second input ****************************************************************************/
 /*********************************************************************************************************************/
@@ -100,16 +91,6 @@ struct UpstreamSingleOut : public ctk::ApplicationModule {
     }
   }
 };
-
-struct UpstreamSingleOutDeepValidated : UpstreamSingleOut {
-  using UpstreamSingleOut::UpstreamSingleOut;
-
-  void mainLoop() override {
-    validator.enableDeepValidation(this);
-    UpstreamSingleOut::mainLoop();
-  }
-};
-
 /*********************************************************************************************************************/
 /* Test module with a single validated input and two outputs for connection to another validated input ***************/
 /*********************************************************************************************************************/
@@ -139,14 +120,6 @@ struct UpstreamTwinOut : public ctk::ApplicationModule {
 
       change = group.readAny();
     }
-  }
-};
-struct UpstreamTwinOutDeepValidated : UpstreamTwinOut {
-  using UpstreamTwinOut::UpstreamTwinOut;
-
-  void mainLoop() override {
-    validator.enableDeepValidation(this);
-    UpstreamTwinOut::mainLoop();
   }
 };
 
@@ -455,8 +428,8 @@ BOOST_AUTO_TEST_CASE(testBackwardsPropagationSingleDownstream) {
   struct TestApplication : public ctk::Application {
     using ctk::Application::Application;
     ~TestApplication() override { shutdown(); }
-    UpstreamSingleOutDeepValidated upstream{this, "Upstream", ""};
-    ModuleADeepValidated downstream{this, "Downstream", ""};
+    UpstreamSingleOut upstream{this, "Upstream", ""};
+    ModuleA downstream{this, "Downstream", ""};
   };
 
   TestApplication app("TestApp");
@@ -497,9 +470,9 @@ BOOST_AUTO_TEST_CASE(testBackwardsPropagationTwoDownstream) {
   struct TestApplication : public ctk::Application {
     using ctk::Application::Application;
     ~TestApplication() override { shutdown(); }
-    UpstreamTwinOutDeepValidated upstream{this, "Upstream", ""};
-    ModuleADeepValidated downstream1{this, "Downstream1", ""};
-    ModuleADeepValidated downstream2{this, "Downstream2", ""};
+    UpstreamTwinOut upstream{this, "Upstream", ""};
+    ModuleA downstream1{this, "Downstream1", ""};
+    ModuleA downstream2{this, "Downstream2", ""};
   };
 
   TestApplication app("TestApp");
@@ -579,9 +552,9 @@ BOOST_AUTO_TEST_CASE(testDeepBackwardsPropagation) {
   struct TestApplication : public ctk::Application {
     using ctk::Application::Application;
     ~TestApplication() override { shutdown(); }
-    UpstreamSingleOutDeepValidated upstream{this, "Upstream", ""};
-    UpstreamSingleOutDeepValidated midstream{this, "Midstream", ""};
-    ModuleADeepValidated downstream{this, "Downstream", ""};
+    UpstreamSingleOut upstream{this, "Upstream", ""};
+    UpstreamSingleOut midstream{this, "Midstream", ""};
+    ModuleA downstream{this, "Downstream", ""};
   };
 
   TestApplication app("TestApp");
