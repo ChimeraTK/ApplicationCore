@@ -298,13 +298,10 @@ namespace ChimeraTK {
     if constexpr(std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInput<UserType>>::value ||
         std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInputWB<UserType>>::value) {
       if(lastAcceptedValue.empty()) {
-        std::cout << "Using fallback value" << std::endl;
         accessor = fallbackValue[0];
       }
       else {
-        std::cout << lastAcceptedValue.size() << std::endl;
         accessor = lastAcceptedValue.back()[0];
-        std::cout << "Using last value" << lastAcceptedValue.back()[0] << std::endl;
       }
     }
     else {
@@ -329,9 +326,7 @@ namespace ChimeraTK {
         std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInputWB<UserType>>::value) {
       auto savedValue = std::vector<UserType>(1);
       savedValue[0] = accessor;
-      std::cout << "Saving value " << savedValue[0] << std::endl;
       lastAcceptedValue.push_back(savedValue);
-      std::cout << lastAcceptedValue.size();
     }
     else {
       auto savedValue = std::vector<UserType>(accessor.getNElements());

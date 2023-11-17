@@ -42,7 +42,6 @@ namespace ChimeraTK {
       }
     }
 
-    std::cout << _module->getName() << " Accepting from this " << std::endl;
     _variableMap.at(change)->accept();
     return false;
   }
@@ -57,23 +56,6 @@ namespace ChimeraTK {
     return rejected;
   }
 
-  struct TopologicalOrderVisitor : boost::dfs_visitor<> {
-    explicit TopologicalOrderVisitor(std::shared_ptr<Model::Impl> impl) : _impl(impl) {}
-
-    template<class Vertex, class Graph>
-    // NOLINTNEXTLINE(readability-identifier-naming)
-    void finish_vertex(Vertex v, Graph& g) {
-      if(g[v].type == Model::VertexProperties::Type::applicationModule) {
-        stack.push_front(v);
-        distances.try_emplace(v, std::numeric_limits<int>::min());
-      }
-    }
-
-    std::shared_ptr<Model::Impl> _impl;
-    std::deque<Model::Vertex> stack{};
-    std::map<Model::Vertex, int> distances{};
-  };
-
   void UserInputValidator::finalise() {
     // Find out accessors with return
     for(auto& accessor : _module->getAccessorListRecursive()) {
@@ -83,55 +65,66 @@ namespace ChimeraTK {
       }
     }
 
-    auto extendedVertexFilter = Model::EdgeFilter([](const Model::EdgeProperties& edge) -> bool {
+    auto keepPvAccesWithReturnChannel = Model::EdgeFilter([](const Model::EdgeProperties& edge) -> bool {
       return edge.type == Model::EdgeProperties::Type::pvAccess && edge.pvAccessWithReturnChannel;
     });
 
     // Filter that keeps our tagged variable nodes and application modules
-    auto extendedTagFilter = Model::VertexFilter([](const Model::VertexProperties& vertex) -> bool {
-      return vertex.visit([](auto props) -> bool {
-        if constexpr(Model::isVariable(props)) {
-          return props.tags.count(std::string(UserInputValidator::tagValidatedVariable)) > 0;
-        }
+    auto validatedVariablesAndApplicationModulesFilter =
+        Model::VertexFilter([](const Model::VertexProperties& vertex) -> bool {
+          return vertex.visit([](auto props) -> bool {
+            if constexpr(Model::isVariable(props)) {
+              return props.tags.count(std::string(UserInputValidator::tagValidatedVariable)) > 0;
+            }
 
-        if constexpr(Model::isApplicationModule(props)) {
-          return true;
-        }
+            if constexpr(Model::isApplicationModule(props)) {
+              return true;
+            }
 
-        return false;
-      });
-    });
+            return false;
+          });
+        });
 
     // Find longest path that is validated in our model, starting at this module
-    // Making a DFS, using a color map so that we do not walk in cylces.
-    std::map<Model::Vertex, boost::default_color_type> colors;
-    boost::associative_property_map color_map(colors);
-    auto filteredGraph = _module->getModel()._d->impl->getFilteredGraph(extendedVertexFilter, extendedTagFilter);
-    auto visitor = TopologicalOrderVisitor(_module->getModel()._d->impl);
-    auto* ourVertex = _module->getModel()._d->vertex;
+    std::deque<Model::ApplicationModuleProxy> stack;
+    std::map<ApplicationModule*, int> distances;
+    distances[_module] = 0;
 
-    boost::depth_first_visit(filteredGraph, ourVertex, visitor, color_map);
-
-    auto& distances = visitor.distances;
-
-    distances[ourVertex] = 0;
-
-    for(auto* stackEntry : visitor.stack) {
-      auto [start, end] = boost::out_edges(stackEntry, filteredGraph);
-      std::set<Model::Vertex> downstream{};
-      for(auto edgeIterator = start; edgeIterator != end; ++edgeIterator) {
-        auto* vtx = target(*edgeIterator, filteredGraph);
-        auto [s, e] = boost::out_edges(vtx, filteredGraph);
-        for(auto ei = s; ei != e; ++ei) {
-          downstream.insert(target(*ei, filteredGraph));
-        }
+    auto orderVisitor = [&](auto proxy) {
+      if constexpr(Model::isApplicationModule(proxy)) {
+        stack.push_front(proxy);
+        distances.try_emplace(&proxy.getApplicationModule(), std::numeric_limits<int>::min());
       }
+    };
 
-      for(auto* vtx : downstream) {
-        assert(filteredGraph[vtx].type == Model::VertexProperties::Type::applicationModule);
-        distances[vtx] = std::max(distances[vtx], distances[stackEntry] + 1);
+    _module->getModel().visit(orderVisitor, Model::visitOrderPost, Model::depthFirstSearch,
+        keepPvAccesWithReturnChannel, validatedVariablesAndApplicationModulesFilter);
+
+    std::unordered_set<ApplicationModule*> downstreamModulesWithFeedback;
+
+    auto downstreamModuleCollector = [&](auto proxy) {
+      if constexpr(Model::isApplicationModule(proxy)) {
+        downstreamModulesWithFeedback.insert(&proxy.getApplicationModule());
+      }
+    };
+
+    auto connectingVariableVisitor = [&](auto proxy) {
+      if constexpr(Model::isVariable(proxy)) {
+        proxy.visit(downstreamModuleCollector, Model::adjacentOutSearch, validatedVariablesAndApplicationModulesFilter,
+            Model::keepApplicationModules);
+      }
+    };
+
+    for(const auto& stackEntry : stack) {
+      downstreamModulesWithFeedback.clear();
+      stackEntry.visit(connectingVariableVisitor, Model::adjacentOutSearch,
+          validatedVariablesAndApplicationModulesFilter, keepPvAccesWithReturnChannel);
+
+      for(auto* vtx : downstreamModulesWithFeedback) {
+        distances[vtx] = std::max(distances[vtx], distances[&stackEntry.getApplicationModule()] + 1);
       }
     }
+
     _validationDepth = 1 + std::max_element(distances.begin(), distances.end(), [](auto& a, auto& b) -> bool {
       return a.second < b.second;
     })->second;
