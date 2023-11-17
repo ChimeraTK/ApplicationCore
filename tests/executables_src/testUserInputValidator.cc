@@ -3,7 +3,6 @@
 #include <future>
 
 #define BOOST_TEST_MODULE testUserInputValidator
-#define ENABLE_AFTER_TICKET_11558_IS_IMPLEMENTED
 
 #include "Application.h"
 #include "ScalarAccessor.h"
@@ -424,7 +423,6 @@ BOOST_AUTO_TEST_CASE(testSetErrorFunction) {
 
 /*********************************************************************************************************************/
 
-#ifdef ENABLE_AFTER_TICKET_11558_IS_IMPLEMENTED
 BOOST_AUTO_TEST_CASE(testBackwardsPropagationSingleDownstream) {
   std::cout << "testBackwardsPropagationSingleDownstream" << std::endl;
   // check that two modules with each one validator connected to each other propagate rejections from the downstream
@@ -465,11 +463,9 @@ BOOST_AUTO_TEST_CASE(testBackwardsPropagationSingleDownstream) {
   BOOST_TEST(downstrIn.readLatest());
   BOOST_TEST(downstrIn == 6);
 }
-#endif
 
 /*********************************************************************************************************************/
 
-#ifdef ENABLE_AFTER_TICKET_11558_IS_IMPLEMENTED
 BOOST_AUTO_TEST_CASE(testBackwardsPropagationTwoDownstream) {
   std::cout << "testBackwardsPropagationTwoDownstream" << std::endl;
   // Same as testBackwardsPropagationSingleDownstream but with two downstream modules (different PVs)
@@ -518,7 +514,6 @@ BOOST_AUTO_TEST_CASE(testBackwardsPropagationTwoDownstream) {
   BOOST_TEST(downstr2In.readLatest());
   BOOST_TEST(downstr2In == 2);
 }
-#endif
 
 /*********************************************************************************************************************/
 
@@ -553,7 +548,6 @@ BOOST_AUTO_TEST_CASE(testFunnel) {
 
 /*********************************************************************************************************************/
 
-#ifdef ENABLE_AFTER_TICKET_11558_IS_IMPLEMENTED
 BOOST_AUTO_TEST_CASE(testDeepBackwardsPropagation) {
   std::cout << "testDeepBackwardsPropagation" << std::endl;
   // Like testBackwardsPropagationSingleDownstream, but with deeper validation chain and new input values arriving at
@@ -633,6 +627,5 @@ BOOST_AUTO_TEST_CASE(testDeepBackwardsPropagation) {
   BOOST_TEST(midstreamIn == 4);
   BOOST_TEST(upstrIn == 3);
 }
-#endif
 
 /*********************************************************************************************************************/
