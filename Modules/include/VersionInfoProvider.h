@@ -24,6 +24,8 @@ namespace ChimeraTK {
    public:
     explicit VersionInfoProvider(Application* owner);
 
+    ~VersionInfoProvider() override { dynamic_cast<Application*>(getOwner())->setVersionInfoProvider(nullptr); };
+
    private:
     int configPatch{appConfig().get<int>("Application/configPatchVersion")};
 
