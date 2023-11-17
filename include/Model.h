@@ -698,7 +698,7 @@ namespace ChimeraTK::Model {
   struct ReturnFirstHit : SearchOption {};
 
   struct VisitOrder : SearchOption {
-    enum class VisitOrderType { pre, in, post };
+    enum class VisitOrderType { in, post };
     constexpr VisitOrder() = default;
     constexpr VisitOrder(VisitOrderType t) : SearchOption(), type(t) {}
 
@@ -732,7 +732,10 @@ namespace ChimeraTK::Model {
     return rv;
   }
 
+  // Calls the visitor before walking along its edges. Default visiting order.
   static constexpr VisitOrder visitOrderIn{VisitOrder::VisitOrderType::in};
+
+  // Calls the visitor after all edges have been visited. Use together with DFS or BFS to modify the visiting order.
   static constexpr VisitOrder visitOrderPost{VisitOrder::VisitOrderType::post};
 
   /******************************************************************************************************************/
@@ -1423,17 +1426,8 @@ namespace ChimeraTK::Model {
       // not stopped. The stopping is realised by throwing a DfsVisitor::StopException.
       explicit VisitorHelper(VISITOR& visitor, std::shared_ptr<Impl> impl, FILTER& filter, Vertex stopAfterVertex,
           ValueHolder<detail::VisitorReturnType<VISITOR, FILTER>>& rv, VisitOrder& visitOrder)
-      : _visitor(visitor), _filter(filter), _stopAfterVertex(stopAfterVertex), _impl(std::move(impl)),
-        _rv(rv), _visitOrder{visitOrder} {}
-
-      // This is a required function by boost::graph - disable naming check
-      template<class Vertex, class Graph>
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      void start_vertex(Vertex v, Graph& g) {
-        if(_visitOrder.type == VisitOrder::VisitOrderType::pre) {
-          doVisit(v, g);
-        }
-      }
+      : _visitor(visitor), _filter(filter), _stopAfterVertex(stopAfterVertex), _impl(std::move(impl)), _rv(rv),
+        _visitOrder{visitOrder} {}
 
       // This is a required function by boost::graph - disable naming check
       template<class Vertex, class Graph>
