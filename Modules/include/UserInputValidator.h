@@ -146,6 +146,9 @@ namespace ChimeraTK {
      * configured to handle will be invalidated. The validator takes a best effort to roll back the values
      * to a known accepted value. Be aware, however, that due to current limitations of the value versioning scheme
      * the validation can drop too many values and arrive at the fall-back value earlier than exxpected.
+     *
+     * This function should be called as late as possible, and after all connections are created (so either at the end
+     * of prepare() or at the beginning of mainLoop())
      */
     void enableDeepValidation(ApplicationModule* module);
 
