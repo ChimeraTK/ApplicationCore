@@ -28,6 +28,7 @@ namespace ChimeraTK {
 
     // We have downstream channels that signalized a change - invalidate all of our
     if(_downstreamInvalidatingReturnChannels.count(change) > 0) {
+      _module->setCurrentVersionNumber({});
       for(auto& v : _variableMap) {
         v.second->reject(VariableBase::RejectionType::downstream);
       }
