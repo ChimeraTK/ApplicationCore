@@ -18,7 +18,6 @@ namespace ChimeraTK {
 
   bool UserInputValidator::validate(const ChimeraTK::TransferElementID& change) {
     if(!change.isValid()) {
-      enableDeepValidation();
       return validateAll();
     }
 
@@ -55,6 +54,9 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   bool UserInputValidator::validateAll() {
+    if(!_finalised) {
+      finalise();
+    }
     bool rejected = false;
     for(auto& v : _variableMap) {
       rejected |= validate(v.first);
@@ -62,8 +64,13 @@ namespace ChimeraTK {
     return rejected;
   }
 
-  void UserInputValidator::enableDeepValidation() {
-    // Find out accessors with return
+  /*********************************************************************************************************************/
+
+  void UserInputValidator::finalise() {
+    if(_finalised) {
+      return;
+    }
+
     for(auto& accessor : _module->getAccessorListRecursive()) {
       if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, true} &&
           accessor.getModel().getTags().count(std::string(UserInputValidator::tagValidatedVariable)) > 0) {

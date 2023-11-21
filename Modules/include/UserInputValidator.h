@@ -143,8 +143,8 @@ namespace ChimeraTK {
    protected:
     static constexpr std::string_view tagValidatedVariable{"__UserInputValidator"};
 
-    // Helper function to set up queue lengths of valid values
-    void enableDeepValidation();
+    // Helper function to set up queue lengths of valid values. Will be called automatically for the first call to // validate
+    void finalise();
 
     // Helper function for internal book keeping of accessors (prevent unnecessary overwrite of map entry, which might
     // result in loss of fallback values).
