@@ -79,10 +79,13 @@ namespace ChimeraTK {
     }
 
     // Find longest path that is validated in our model, starting at this module
+
+    // Step 1: Do a topological order of the tree of modules with a return channel, starting from this module
     std::deque<Model::ApplicationModuleProxy> stack;
     std::map<ApplicationModule*, int> distances;
-    distances[_module] = 0;
 
+    // Visitor that a) builds the order in stack and b) initialises the distance array used later to calculate
+    // the distance from this node to the entry in that array
     auto orderVisitor = [&](auto proxy) {
       if constexpr(Model::isApplicationModule(proxy)) {
         stack.push_front(proxy);
@@ -90,9 +93,16 @@ namespace ChimeraTK {
       }
     };
 
+    // March through the tree with post order to properly build the stack. Technically sort a tree that is larger
+    // that what we want to look at, because we cannot stop the visit if there is a PV access with return channel
+    // that does not correspond to another UserInputValidator. However these distances should then left
+    // uninitialised in the distance calculation below and not taken into account
     _module->getModel().visit(orderVisitor, Model::visitOrderPost, Model::depthFirstSearch,
         Model::keepPvAccesWithReturnChannel, Model::keepApplicationModules);
 
+    // Step 2: From the topological sort of the subtree, calculate the distances from our module to the currently
+    // checked module.
+    distances[_module] = 0;
     std::unordered_set<ApplicationModule*> downstreamModulesWithFeedback;
 
     auto downstreamModuleCollector = [&](auto proxy) {
@@ -110,9 +120,17 @@ namespace ChimeraTK {
 
     for(const auto& stackEntry : stack) {
       downstreamModulesWithFeedback.clear();
+
+      // We need to find all connected modules to the module currently looked at. Unfortunately we need to
+      // do that with a double visit, because the connection via PV access edges is not directly between modules
+      // but through a variable Vertex. So we first jump to the Variable using adjacentOut and in that visitor
+      // collect the modules into the downstreamModulesWithFeedback set
       stackEntry.visit(connectingVariableVisitor, Model::adjacentOutSearch, Model::keepApplicationModules,
           Model::keepPvAccesWithReturnChannel);
 
+      // The distances from this module to the module on the stack is then just updated to be either what it
+      // was or the distance from the currently looked-at stack entry + 1 (since we have equal weights for the
+      // edges)
       for(auto* vtx : downstreamModulesWithFeedback) {
         distances[vtx] = std::max(distances[vtx], distances[&stackEntry.getApplicationModule()] + 1);
       }
