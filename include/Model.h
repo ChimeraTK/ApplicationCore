@@ -85,6 +85,7 @@ namespace ChimeraTK::Model {
      * pre-defined filters can be used:
      * - Relationship filters (filter edges by type, cf. EdgeProperties::Type):
      *   - keepPvAccess
+     *   - keepPvAccessWithReturnChannel
      *   - keepOwnership
      *   - keepParenthood
      *   - keepNeighbourhood
@@ -895,6 +896,9 @@ namespace ChimeraTK::Model {
   /******************************************************************************************************************/
 
   static constexpr auto keepPvAccess = relationshipFilter<EdgeProperties::Type::pvAccess>;
+  static constexpr auto keepPvAccesWithReturnChannel = Model::EdgeFilter([](const Model::EdgeProperties& edge) -> bool {
+    return edge.type == Model::EdgeProperties::Type::pvAccess && edge.pvAccessWithReturnChannel;
+  });
   static constexpr auto keepOwnership = relationshipFilter<EdgeProperties::Type::ownership>;
   static constexpr auto keepParenthood = relationshipFilter<EdgeProperties::Type::parenthood>;
   static constexpr auto keepNeighbourhood = relationshipFilter<EdgeProperties::Type::neighbourhood>;

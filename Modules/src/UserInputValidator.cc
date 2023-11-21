@@ -78,10 +78,6 @@ namespace ChimeraTK {
       }
     }
 
-    auto keepPvAccesWithReturnChannel = Model::EdgeFilter([](const Model::EdgeProperties& edge) -> bool {
-      return edge.type == Model::EdgeProperties::Type::pvAccess && edge.pvAccessWithReturnChannel;
-    });
-
     // Filter that keeps our tagged variable nodes and application modules
     auto validatedVariablesAndApplicationModulesFilter =
         Model::VertexFilter([](const Model::VertexProperties& vertex) -> bool {
@@ -111,7 +107,7 @@ namespace ChimeraTK {
     };
 
     _module->getModel().visit(orderVisitor, Model::visitOrderPost, Model::depthFirstSearch,
-        keepPvAccesWithReturnChannel, validatedVariablesAndApplicationModulesFilter);
+        Model::keepPvAccesWithReturnChannel, validatedVariablesAndApplicationModulesFilter);
 
     std::unordered_set<ApplicationModule*> downstreamModulesWithFeedback;
 
@@ -131,7 +127,7 @@ namespace ChimeraTK {
     for(const auto& stackEntry : stack) {
       downstreamModulesWithFeedback.clear();
       stackEntry.visit(connectingVariableVisitor, Model::adjacentOutSearch,
-          validatedVariablesAndApplicationModulesFilter, keepPvAccesWithReturnChannel);
+          validatedVariablesAndApplicationModulesFilter, Model::keepPvAccesWithReturnChannel);
 
       for(auto* vtx : downstreamModulesWithFeedback) {
         distances[vtx] = std::max(distances[vtx], distances[&stackEntry.getApplicationModule()] + 1);
