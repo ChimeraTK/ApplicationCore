@@ -78,22 +78,6 @@ namespace ChimeraTK {
       }
     }
 
-    // Filter that keeps our tagged variable nodes and application modules
-    auto validatedVariablesAndApplicationModulesFilter =
-        Model::VertexFilter([](const Model::VertexProperties& vertex) -> bool {
-          return vertex.visit([](auto props) -> bool {
-            if constexpr(Model::isVariable(props)) {
-              return props.tags.count(std::string(UserInputValidator::tagValidatedVariable)) > 0;
-            }
-
-            if constexpr(Model::isApplicationModule(props)) {
-              return true;
-            }
-
-            return false;
-          });
-        });
-
     // Find longest path that is validated in our model, starting at this module
     std::deque<Model::ApplicationModuleProxy> stack;
     std::map<ApplicationModule*, int> distances;
@@ -107,7 +91,7 @@ namespace ChimeraTK {
     };
 
     _module->getModel().visit(orderVisitor, Model::visitOrderPost, Model::depthFirstSearch,
-        Model::keepPvAccesWithReturnChannel, validatedVariablesAndApplicationModulesFilter);
+        Model::keepPvAccesWithReturnChannel, Model::keepApplicationModules);
 
     std::unordered_set<ApplicationModule*> downstreamModulesWithFeedback;
 
@@ -119,15 +103,15 @@ namespace ChimeraTK {
 
     auto connectingVariableVisitor = [&](auto proxy) {
       if constexpr(Model::isVariable(proxy)) {
-        proxy.visit(downstreamModuleCollector, Model::adjacentOutSearch, validatedVariablesAndApplicationModulesFilter,
-            Model::keepApplicationModules);
+        proxy.visit(downstreamModuleCollector, Model::adjacentOutSearch, Model::keepPvAccesWithReturnChannel,
+            Model::keepProcessVariables);
       }
     };
 
     for(const auto& stackEntry : stack) {
       downstreamModulesWithFeedback.clear();
-      stackEntry.visit(connectingVariableVisitor, Model::adjacentOutSearch,
-          validatedVariablesAndApplicationModulesFilter, Model::keepPvAccesWithReturnChannel);
+      stackEntry.visit(connectingVariableVisitor, Model::adjacentOutSearch, Model::keepApplicationModules,
+          Model::keepPvAccesWithReturnChannel);
 
       for(auto* vtx : downstreamModulesWithFeedback) {
         distances[vtx] = std::max(distances[vtx], distances[&stackEntry.getApplicationModule()] + 1);
