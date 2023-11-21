@@ -503,12 +503,10 @@ BOOST_AUTO_TEST_CASE(testBackwardsPropagationTwoDownstream) {
   test.stepApplication();
   BOOST_TEST(upstrIn.readNonBlocking());
   BOOST_TEST(upstrIn == 5);
-  // Unfortunately we cannot distinguish whether we got multiple rejections from deep down or from the next level
-  // so this code will go back to the fall-back values
   BOOST_TEST(downstr1In.readLatest());
-  BOOST_TEST(downstr1In == 1);
+  BOOST_TEST(downstr1In == 6);
   BOOST_TEST(downstr2In.readLatest());
-  BOOST_TEST(downstr2In == 2);
+  BOOST_TEST(downstr2In == 7);
 }
 
 /*********************************************************************************************************************/
@@ -621,6 +619,7 @@ BOOST_AUTO_TEST_CASE(testDeepBackwardsPropagation) {
   BOOST_TEST(downstrIn == 5);         // to race conditions
   BOOST_TEST(midstreamIn.readLatest());
   BOOST_TEST(midstreamIn == 4);
+  BOOST_TEST(!upstrIn.readLatest());
   BOOST_TEST(upstrIn == 3);
 }
 
