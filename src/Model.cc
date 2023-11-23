@@ -455,13 +455,17 @@ namespace ChimeraTK::Model {
           assert(ownershipDeleted);
 
           // remove pv access edge
+#ifndef NDEBUG
           bool pvAccessDeleted{false};
+#endif
           if(node.getDirection().dir == VariableDirection::consuming) {
             for(const auto& edge :
                 boost::make_iterator_range(boost::edge_range(_d->vertex, amm._d->vertex, _d->impl->_graph))) {
               if(_d->impl->_graph[edge].type == EdgeProperties::Type::pvAccess) {
                 boost::remove_edge(edge, _d->impl->_graph);
+#ifndef NDEBUG
                 pvAccessDeleted = true;
+#endif
                 break;
               }
             }
@@ -472,7 +476,9 @@ namespace ChimeraTK::Model {
                 boost::make_iterator_range(boost::edge_range(amm._d->vertex, _d->vertex, _d->impl->_graph))) {
               if(_d->impl->_graph[edge].type == EdgeProperties::Type::pvAccess) {
                 boost::remove_edge(edge, _d->impl->_graph);
+#ifndef NDEBUG
                 pvAccessDeleted = true;
+#endif
                 break;
               }
             }
