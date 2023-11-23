@@ -85,6 +85,7 @@ namespace ChimeraTK::Model {
      * pre-defined filters can be used:
      * - Relationship filters (filter edges by type, cf. EdgeProperties::Type):
      *   - keepPvAccess
+     *   - keepPvAccessWithReturnChannel
      *   - keepOwnership
      *   - keepParenthood
      *   - keepNeighbourhood
@@ -697,6 +698,14 @@ namespace ChimeraTK::Model {
 
   struct ReturnFirstHit : SearchOption {};
 
+  struct VisitOrder : SearchOption {
+    enum class VisitOrderType { in, post };
+    constexpr VisitOrder() = default;
+    constexpr VisitOrder(VisitOrderType t) : SearchOption(), type(t) {}
+
+    VisitOrderType type{VisitOrderType::in};
+  };
+
   template<typename T>
   struct ReturnFirstHitWithValue : ReturnFirstHit {
     detail::ValueHolder<T> notFoundValue; /// Value to be returned when no match was found
@@ -723,6 +732,12 @@ namespace ChimeraTK::Model {
     ReturnFirstHitWithValue<void> rv{};
     return rv;
   }
+
+  // Calls the visitor before walking along its edges. Default visiting order.
+  static constexpr VisitOrder visitOrderIn{VisitOrder::VisitOrderType::in};
+
+  // Calls the visitor after all edges have been visited. Use together with DFS or BFS to modify the visiting order.
+  static constexpr VisitOrder visitOrderPost{VisitOrder::VisitOrderType::post};
 
   /******************************************************************************************************************/
 
@@ -881,6 +896,9 @@ namespace ChimeraTK::Model {
   /******************************************************************************************************************/
 
   static constexpr auto keepPvAccess = relationshipFilter<EdgeProperties::Type::pvAccess>;
+  static constexpr auto keepPvAccesWithReturnChannel = Model::EdgeFilter([](const Model::EdgeProperties& edge) -> bool {
+    return edge.type == Model::EdgeProperties::Type::pvAccess && edge.pvAccessWithReturnChannel;
+  });
   static constexpr auto keepOwnership = relationshipFilter<EdgeProperties::Type::ownership>;
   static constexpr auto keepParenthood = relationshipFilter<EdgeProperties::Type::parenthood>;
   static constexpr auto keepNeighbourhood = relationshipFilter<EdgeProperties::Type::neighbourhood>;
@@ -1411,13 +1429,33 @@ namespace ChimeraTK::Model {
       // (checked in "finish_vertex"). By default, stopAfterVertex is set to an out-of-range index so the search is
       // not stopped. The stopping is realised by throwing a DfsVisitor::StopException.
       explicit VisitorHelper(VISITOR& visitor, std::shared_ptr<Impl> impl, FILTER& filter, Vertex stopAfterVertex,
-          ValueHolder<detail::VisitorReturnType<VISITOR, FILTER>>& rv)
-      : _visitor(visitor), _filter(filter), _stopAfterVertex(stopAfterVertex), _impl(std::move(impl)), _rv(rv) {}
+          ValueHolder<detail::VisitorReturnType<VISITOR, FILTER>>& rv, VisitOrder& visitOrder)
+      : _visitor(visitor), _filter(filter), _stopAfterVertex(stopAfterVertex), _impl(std::move(impl)),
+        _rv(rv), _visitOrder{visitOrder} {}
 
       // This is a required function by boost::graph - disable naming check
       template<class Vertex, class Graph>
       // NOLINTNEXTLINE(readability-identifier-naming)
       void discover_vertex(Vertex v, Graph& g) {
+        if(_visitOrder.type == VisitOrder::VisitOrderType::in) {
+          doVisit(v, g);
+        }
+      }
+
+      // This is a required function by boost::graph - disable naming check
+      template<class Vertex, class Graph>
+      // NOLINTNEXTLINE(readability-identifier-naming)
+      void finish_vertex(Vertex v, Graph& g) {
+        if(_visitOrder.type == VisitOrder::VisitOrderType::post) {
+          doVisit(v, g);
+        }
+        if(v == _stopAfterVertex) {
+          throw StopException();
+        }
+      }
+
+      template<class Vertex, class Graph>
+      void doVisit(Vertex v, Graph& g) {
         // apply vertex filter
         if(!_filter.evalVertexFilter(g[v])) {
           return;
@@ -1437,15 +1475,6 @@ namespace ChimeraTK::Model {
         }
       }
 
-      // This is a required function by boost::graph - disable naming check
-      template<class Vertex, class Graph>
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      void finish_vertex(Vertex v, Graph&) {
-        if(v == _stopAfterVertex) {
-          throw StopException();
-        }
-      }
-
       auto getReturnValue() { return _rv.get(); }
 
       // This exception is just used to trick the boost::depth_first_search() to stop.
@@ -1457,6 +1486,7 @@ namespace ChimeraTK::Model {
       Vertex _stopAfterVertex;
       std::shared_ptr<Impl> _impl;
       ValueHolder<detail::VisitorReturnType<VISITOR, FILTER>>& _rv;
+      VisitOrder _visitOrder;
     };
 
   } // namespace detail
@@ -1550,14 +1580,19 @@ namespace ChimeraTK::Model {
 
       // create visitor object
       detail::ValueHolder<detail::VisitorReturnType<decltype(visitorWrapper), decltype(vertexFilter)>> rv;
+      constexpr bool hasVisitOrderOption = Model::hasSearchOption<VisitOrder, Args...>();
+      VisitOrder visitOrder;
+      if constexpr(hasVisitOrderOption) {
+        visitOrder = Model::getSearchOption<VisitOrder, Args...>(args...);
+      }
       auto visitorObjectFactory = [&]() {
         if constexpr(isDFS) {
           return detail::VisitorHelper<boost::dfs_visitor<>, decltype(visitorWrapper), decltype(vertexFilter),
-              returnFirst>(visitorWrapper, shared_from_this(), vertexFilter, stopVertex, rv);
+              returnFirst>(visitorWrapper, shared_from_this(), vertexFilter, stopVertex, rv, visitOrder);
         }
         else {
           return detail::VisitorHelper<boost::bfs_visitor<>, decltype(visitorWrapper), decltype(vertexFilter),
-              returnFirst>(visitorWrapper, shared_from_this(), vertexFilter, stopVertex, rv);
+              returnFirst>(visitorWrapper, shared_from_this(), vertexFilter, stopVertex, rv, visitOrder);
         }
       };
       auto visitorObject = visitorObjectFactory();

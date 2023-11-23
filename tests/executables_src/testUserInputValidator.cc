@@ -91,7 +91,6 @@ struct UpstreamSingleOut : public ctk::ApplicationModule {
     }
   }
 };
-
 /*********************************************************************************************************************/
 /* Test module with a single validated input and two outputs for connection to another validated input ***************/
 /*********************************************************************************************************************/
@@ -420,7 +419,6 @@ BOOST_AUTO_TEST_CASE(testSetErrorFunction) {
 
 /*********************************************************************************************************************/
 
-#ifdef ENABLE_AFTER_TICKET_11558_IS_IMPLEMENTED
 BOOST_AUTO_TEST_CASE(testBackwardsPropagationSingleDownstream) {
   std::cout << "testBackwardsPropagationSingleDownstream" << std::endl;
   // check that two modules with each one validator connected to each other propagate rejections from the downstream
@@ -458,14 +456,12 @@ BOOST_AUTO_TEST_CASE(testBackwardsPropagationSingleDownstream) {
   test.stepApplication();
   BOOST_TEST(upstrIn.readNonBlocking());
   BOOST_TEST(upstrIn == 5);
-  BOOST_TEST(downstrIn.readNonBlocking());
+  BOOST_TEST(downstrIn.readLatest());
   BOOST_TEST(downstrIn == 6);
 }
-#endif
 
 /*********************************************************************************************************************/
 
-#ifdef ENABLE_AFTER_TICKET_11558_IS_IMPLEMENTED
 BOOST_AUTO_TEST_CASE(testBackwardsPropagationTwoDownstream) {
   std::cout << "testBackwardsPropagationTwoDownstream" << std::endl;
   // Same as testBackwardsPropagationSingleDownstream but with two downstream modules (different PVs)
@@ -507,12 +503,11 @@ BOOST_AUTO_TEST_CASE(testBackwardsPropagationTwoDownstream) {
   test.stepApplication();
   BOOST_TEST(upstrIn.readNonBlocking());
   BOOST_TEST(upstrIn == 5);
-  BOOST_TEST(downstr1In.readNonBlocking());
+  BOOST_TEST(downstr1In.readLatest());
   BOOST_TEST(downstr1In == 6);
-  BOOST_TEST(downstr2In.readNonBlocking());
+  BOOST_TEST(downstr2In.readLatest());
   BOOST_TEST(downstr2In == 7);
 }
-#endif
 
 /*********************************************************************************************************************/
 
@@ -547,7 +542,6 @@ BOOST_AUTO_TEST_CASE(testFunnel) {
 
 /*********************************************************************************************************************/
 
-#ifdef ENABLE_AFTER_TICKET_11558_IS_IMPLEMENTED
 BOOST_AUTO_TEST_CASE(testDeepBackwardsPropagation) {
   std::cout << "testDeepBackwardsPropagation" << std::endl;
   // Like testBackwardsPropagationSingleDownstream, but with deeper validation chain and new input values arriving at
@@ -579,7 +573,6 @@ BOOST_AUTO_TEST_CASE(testDeepBackwardsPropagation) {
   downstrIn.readLatest();
   BOOST_TEST(midstreamIn == 6);
   BOOST_TEST(downstrIn == 7);
-
   // test a single value being discarded at the lowest level (Downstream)
   upstrIn.setAndWrite(12);
   test.stepApplication();
@@ -620,19 +613,14 @@ BOOST_AUTO_TEST_CASE(testDeepBackwardsPropagation) {
   // test two consecutive values, only the first being discarded at the lowest level and the second is accepted
   upstrIn.setAndWrite(12);
   upstrIn.setAndWrite(3);
-  test.stepApplication();
-  BOOST_TEST(midstreamIn.readNonBlocking());
-  BOOST_TEST(midstreamIn == 13); // first value is coming from upstream
-  BOOST_TEST(downstrIn.readNonBlocking());
-  BOOST_TEST(downstrIn == 14); // first value is coming from upstream/midstream
 
+  test.stepApplication();
   BOOST_TEST(downstrIn.readLatest()); // just observe final state, because intermediate states might be subject
   BOOST_TEST(downstrIn == 5);         // to race conditions
   BOOST_TEST(midstreamIn.readLatest());
   BOOST_TEST(midstreamIn == 4);
-  BOOST_TEST(upstrIn.readLatest());
+  BOOST_TEST(!upstrIn.readLatest());
   BOOST_TEST(upstrIn == 3);
 }
-#endif
 
 /*********************************************************************************************************************/

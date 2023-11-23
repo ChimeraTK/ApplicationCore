@@ -719,6 +719,7 @@ namespace ChimeraTK::Model {
     }
     assert(success);
     _graph[newEdge].type = EdgeProperties::Type::pvAccess;
+    _graph[newEdge].pvAccessWithReturnChannel = node.getDirection().withReturn;
   }
 
   /********************************************************************************************************************/
