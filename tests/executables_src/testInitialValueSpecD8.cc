@@ -11,6 +11,7 @@
 
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/Device.h>
+#include <ChimeraTK/DummyRegisterAccessor.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
 
 #include <boost/mpl/list.hpp>
@@ -446,9 +447,11 @@ BOOST_AUTO_TEST_CASE(testConstantD10InitialValue) {
   BOOST_CHECK(d.application.constantModule.reg1.constant == 0); // no longer at the value set in prepare()
   BOOST_CHECK(d.application.constantModule.reg1.constant.getVersionNumber() != ctk::VersionNumber(std::nullptr_t()));
 
-  BOOST_CHECK(dev.read<int>("REG1") == 1234);
+  ChimeraTK::DummyRegisterAccessor<int> reg1(
+      boost::dynamic_pointer_cast<ChimeraTK::DummyBackend>(dev.getBackend()).get(), "", "REG1");
+  BOOST_CHECK(reg1 == 1234);
   d.deviceBackend->throwExceptionOpen = false;
-  CHECK_TIMEOUT(dev.read<int>("REG1") == 0, 1000000);
+  CHECK_TIMEOUT(reg1 == 0, 1000000);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

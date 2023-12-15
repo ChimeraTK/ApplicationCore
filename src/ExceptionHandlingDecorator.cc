@@ -131,11 +131,12 @@ namespace ChimeraTK {
         } // end scope for recovery lock
       }
       catch(ChimeraTK::runtime_error& e) {
-        // Report exception to the exception backend. This would be done by the TransferElement base class only if we
-        // would let the exception through, hence we have to take care of this here.
-        this->_exceptionBackend->setException();
+        auto description = std::string(e.what()) + " (seen by '" + _target->getName() + "')";
+        // Report exception to the exception backend. This would be done by the TransferElement base class only if
+        // we would let the exception through, hence we have to take care of this here.
+        this->_exceptionBackend->setException(description);
         // Report exception to the DeviceModule
-        deviceManager->reportException(std::string(e.what()) + " (seen by '" + _target->getName() + "')");
+        deviceManager->reportException(description);
       }
     }
     assert(_activeException == nullptr);
@@ -164,11 +165,12 @@ namespace ChimeraTK {
         }
       }
       catch(ChimeraTK::runtime_error& e) {
-        // Report exception to the exception backend. This would be done by the TransferElement base class only if we
-        // would let the exception through, hence we have to take care of this here.
-        this->_exceptionBackend->setException();
+        auto description = std::string(e.what()) + " (seen by '" + _target->getName() + "')";
+        // Report exception to the exception backend. This would be done by the TransferElement base class only if
+        // we would let the exception through, hence we have to take care of this here.
+        this->_exceptionBackend->setException(description);
         // Report exception to the DeviceModule
-        deviceManager->reportException(std::string(e.what()) + " (seen by '" + _target->getName() + "')");
+        deviceManager->reportException(description);
         _hasReportedException = true;
       }
     }

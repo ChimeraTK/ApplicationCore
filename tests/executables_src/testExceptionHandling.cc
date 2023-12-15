@@ -568,7 +568,7 @@ BOOST_FIXTURE_TEST_CASE(B_2_2_5, Fixture) {
   ctk::VersionNumber someVersionBeforeReporting = {};
   deviceBackend->throwExceptionOpen = true; // required to make sure device stays down
   application.group1.device.reportException("explicit report by test");
-  deviceBackend->setException(); // FIXME: should this be called by reportException()??
+  deviceBackend->setException("explicit report by test"); // FIXME: should this be called by reportException()??
   ctk::VersionNumber someVersionAfterReporting = {};
 
   //  Check push variable
@@ -794,8 +794,8 @@ BOOST_FIXTURE_TEST_CASE(B_3_1_2, Fixture_initHandlers) {
   deviceBackend->throwExceptionOpen = false;
 
   // wait until the write exception has been thrown
-  deviceBackend->thereHaveBeenExceptions = false;
-  CHECK_TIMEOUT(deviceBackend->thereHaveBeenExceptions, 10000);
+  deviceBackend->throwExceptionCounter = 0;
+  CHECK_TIMEOUT(deviceBackend->throwExceptionCounter > 0, 10000);
   BOOST_CHECK_NE(exceptionDummyRegister2[0], 803);
   BOOST_CHECK_NE(exceptionDummyRegister3[0], 802);
 
