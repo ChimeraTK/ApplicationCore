@@ -93,6 +93,8 @@ namespace ChimeraTK {
             }
 
             // find the right PV in the model
+            VariableNetworkNode theNode;
+            Model::ProcessVariableProxy theProxy;
             neighbourDirectory.visitByPath(registerName, [&](auto proxy) {
               if constexpr(isVariable(proxy)) {
                 assert(proxy.isValid());
@@ -100,12 +102,17 @@ namespace ChimeraTK {
                 // find the right node (belonging to our device) to remove
                 for(auto& proxyNode : proxy.getNodes()) {
                   if(proxyNode.getType() == NodeType::Device && proxyNode.getDeviceAlias() == getDeviceAliasOrURI()) {
-                    proxy.removeNode(proxyNode);
+                    theProxy = proxy;
+                    theNode = proxyNode;
                     break;
                   }
                 }
               }
             });
+            if(theNode.isValid()) {
+              assert(theProxy.isValid());
+              theProxy.removeNode(theNode);
+            }
           }
         }
       }
