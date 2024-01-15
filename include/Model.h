@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include <ChimeraTK/cppext/finally.hpp>
 #include <ChimeraTK/RegisterPath.h>
 
 #include <boost/algorithm/string/predicate.hpp>
@@ -12,6 +13,7 @@
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/transpose_graph.hpp>
 
+#include <atomic>
 #include <map>
 #include <memory>
 #include <utility>
@@ -1361,6 +1363,10 @@ namespace ChimeraTK::Model {
 
     Model::Graph _graph;
 
+    // Counter for bookkeeping whether we are currently visiting (i.e. iterating) the _graph or whether modifying
+    // the _graph is allowed.
+    std::atomic<size_t> _graphVisitingLevel{0};
+
     Model::EdgeFilteredView _ownershipView{_graph,
         [&](const Model::Edge& edge) -> bool { return _graph[edge].type == Model::EdgeProperties::Type::ownership; },
         boost::keep_all()};
@@ -1495,6 +1501,10 @@ namespace ChimeraTK::Model {
 
   template<typename VISITOR, typename... Args>
   auto Impl::visit(Vertex startVertex, VISITOR visitor, Args... args) {
+    // increase visiting level to prevent modification while iterating, decrease when leaving this function
+    _graphVisitingLevel++;
+    auto decrementVisitingLevel = cppext::finally([&] { _graphVisitingLevel--; });
+
     auto filteredGraph = getFilteredGraph(args...);
 
     auto vertexFilter = Model::getVertexFilter(args...);
@@ -1643,6 +1653,10 @@ namespace ChimeraTK::Model {
 
   template<typename VISITOR, typename PROXY>
   bool Impl::visitByPath(std::string_view path, VISITOR visitor, PROXY startProxy) {
+    // Note: the _graphVisitingLevel is not incremented here, since this visitByPath() function does not use any
+    // iterators directly. Only when using visit() internally, iterators are used, but visit() increments the counter
+    // itself.
+
     // remove any redundant "./" at the beginning
     while(boost::starts_with(path, "./")) {
       path = path.substr(2);
