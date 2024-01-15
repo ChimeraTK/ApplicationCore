@@ -396,7 +396,7 @@ namespace ChimeraTK::Model {
 
   /********************************************************************************************************************/
 
-  void ProcessVariableProxy::removeNode(const VariableNetworkNode& node) {
+  void ProcessVariableProxy::removeNode(VariableNetworkNode node) {
     assert(node.getType() == NodeType::Application || node.getType() == NodeType::Device);
     assert(node.getModel().isValid());
     assert(isValid());
