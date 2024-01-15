@@ -397,6 +397,11 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   void ProcessVariableProxy::removeNode(VariableNetworkNode node) {
+    // Safety check: We must not modify the model while iterating
+    if(_d->impl->_graphVisitingLevel != 0) {
+      throw ChimeraTK::logic_error("Must not alter the model while iterating/visiting!");
+    }
+
     assert(node.getType() == NodeType::Application || node.getType() == NodeType::Device);
     assert(node.getModel().isValid());
     assert(isValid());
@@ -583,6 +588,11 @@ namespace ChimeraTK::Model {
 
   template<typename PROXY, typename MODULE, typename PROPS, VertexProperties::Type TYPE>
   PROXY Impl::genericAdd(Vertex owner, MODULE& module) {
+    // Safety check: We must not modify the model while iterating
+    if(_graphVisitingLevel != 0) {
+      throw ChimeraTK::logic_error("Must not alter the model while iterating/visiting!");
+    }
+
     auto parentDirectory = visit(owner, returnDirectory, getNeighbourDirectory, returnFirstHit(DirectoryProxy{}));
 
     // create plain vertex first
@@ -664,6 +674,10 @@ namespace ChimeraTK::Model {
 
   template<typename MODULE>
   void Impl::genericRemove(MODULE& module) {
+    // Safety check: We must not modify the model while iterating
+    if(_graphVisitingLevel != 0) {
+      throw ChimeraTK::logic_error("Must not alter the model while iterating/visiting!");
+    }
     auto modelToRemove = module.getModel();
 
     // The model may be invalid e.g. in case of calls to unregisterModule() in move assignment operations. Nothing to be
@@ -684,6 +698,10 @@ namespace ChimeraTK::Model {
 
   template<typename PROXY>
   void Impl::addVariableNode(PROXY module, ProcessVariableProxy& variable, VariableNetworkNode& node) {
+    // Safety check: We must not modify the model while iterating
+    if(_graphVisitingLevel != 0) {
+      throw ChimeraTK::logic_error("Must not alter the model while iterating/visiting!");
+    }
     node.setModel(variable);
 
     // get vertex of for variable
@@ -731,6 +749,10 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   ProcessVariableProxy Impl::addVariable(Vertex parent, const std::string& name) {
+    // Safety check: We must not modify the model while iterating
+    if(_graphVisitingLevel != 0) {
+      throw ChimeraTK::logic_error("Must not alter the model while iterating/visiting!");
+    }
     if(!Utilities::checkName(name, false)) {
       throw ChimeraTK::logic_error("Variable name '" + name + "' contains illegal characters.");
     }
@@ -761,6 +783,10 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   DirectoryProxy Impl::addDirectory(Vertex parent, const std::string& name) {
+    // Safety check: We must not modify the model while iterating
+    if(_graphVisitingLevel != 0) {
+      throw ChimeraTK::logic_error("Must not alter the model while iterating/visiting!");
+    }
     if(!Utilities::checkName(name, false)) {
       throw ChimeraTK::logic_error("Variable name '" + name + "' contains illegal characters.");
     }

@@ -302,17 +302,18 @@ namespace ChimeraTK {
     debug("    Collecting triggers");
 
     // Collect all triggers, add a TriggerReceiver placeholder for every device associated with that trigger
-    auto triggerCollector = [&](auto proxy) {
+    std::list<Model::DeviceModuleProxy> dmProxyList;
+    auto triggerCollector = [&](auto proxy) { dmProxyList.push_back(proxy); };
+    _app.getModel().visit(triggerCollector, Model::depthFirstSearch, Model::keepDeviceModules);
+    for(auto& proxy : dmProxyList) {
       auto trigger = proxy.getTrigger();
       if(not trigger.isValid()) {
-        return;
+        continue;
       }
-
       _triggers.insert(trigger);
       VariableNetworkNode placeholder(proxy.getAliasOrCdd(), 0);
       proxy.addVariable(trigger, placeholder);
-    };
-    _app.getModel().visit(triggerCollector, Model::depthFirstSearch, Model::keepDeviceModules);
+    }
 
     debug("    Finalising trigger networks");
     for(auto trigger : _triggers) {
