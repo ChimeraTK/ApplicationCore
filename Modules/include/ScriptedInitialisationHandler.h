@@ -59,8 +59,9 @@ namespace ChimeraTK {
     std::string _outputName;
     unsigned int _errorGracePeriod; // additional sleep time before a retry after an error
     //_scriptOutput must be in this file after _outputName so the latter can be used as constructor parameter
-    ScalarOutput<std::string> _scriptOutput{
-        this, RegisterPath("/Devices") / Utilities::escapeName(_deviceAlias, false) / _outputName, "", "stdout+stderr of init script"};
+    ScalarOutput<std::string> _scriptOutput{this,
+        RegisterPath("/Devices") / Utilities::escapeName(_deviceAlias, false) / _outputName, "",
+        "stdout+stderr of init script"};
   };
 
 } // namespace ChimeraTK
