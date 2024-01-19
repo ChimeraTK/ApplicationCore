@@ -258,7 +258,8 @@ namespace ChimeraTK {
         peer->set_attribute("type", "TriggerProvider");
       }
       else if(peerNode.getType() == NodeType::TriggerReceiver) {
-        peer->set_attribute("type", "TriggerReceiver (" + peerNode.getDeviceAlias() + ")");
+        peer->set_attribute("type", "TriggerReceiver");
+        peer->set_attribute("name", "Device = " + peerNode.getDeviceAlias());
       }
       else {
         peer->set_attribute("type", "Unknown (" + std::to_string(int(peerNode.getType())) + ")");
