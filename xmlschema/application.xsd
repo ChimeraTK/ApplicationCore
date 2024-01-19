@@ -48,6 +48,8 @@
       <xsd:enumeration value="float"/>
       <xsd:enumeration value="double"/>
       <xsd:enumeration value="string"/>
+      <xsd:enumeration value="Void" />
+      <xsd:enumeration value="Boolean" />
     </xsd:restriction>
   </xsd:simpleType>
 
@@ -67,7 +69,7 @@
   <xsd:complexType name="PeerType">
     <xsd:attribute name="type" type="PeerTypeType" use="required"/>
     <xsd:attribute name="name" type="xsd:string" use="required"/>
-    <xsd:attribute name="class" type="xsd:string" use="required"/>
+    <xsd:attribute name="class" type="xsd:string" use="optional"/>
     <xsd:attribute name="direction" type="PeerDirectionType" use="required"/>
   </xsd:complexType>
 
@@ -77,6 +79,7 @@
       <xsd:enumeration value="Constant"/>
       <xsd:enumeration value="Device"/>
       <xsd:enumeration value="TriggerProvider"/>
+      <xsd:enumeration value="TriggerReceiver"/>
     </xsd:restriction>
   </xsd:simpleType>
 
