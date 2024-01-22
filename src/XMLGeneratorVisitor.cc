@@ -32,20 +32,27 @@ namespace ChimeraTK {
   void XMLGenerator::run() {
     _rootElement->set_attribute("name", _app.getName());
 
-    std::set<Model::ProcessVariableProxy, NetworkVisitor::ProcessVariableComperator> triggers;
+    std::list<Model::DeviceModuleProxy> deviceModules;
 
-    // Collect all triggers, add a TriggerReceiver placeholder for every device associated with that trigger
-    auto triggerCollector = [&](auto proxy) {
+    // Collect all DeviceModule proxies with triggers
+    auto deviceModuleCollector = [&](auto proxy) {
       auto trigger = proxy.getTrigger();
       if(not trigger.isValid()) {
         return;
       }
 
-      triggers.insert(trigger);
+      deviceModules.push_back(proxy);
+    };
+
+    _app.getModel().visit(deviceModuleCollector, Model::depthFirstSearch, Model::keepDeviceModules);
+
+    // Add a TriggerReceiver placeholder for every device associated with that trigger
+    // Do this in two steps, otherwise we would be modifying the model while iterating
+    for(auto& proxy : deviceModules) {
+      auto trigger = proxy.getTrigger();
       VariableNetworkNode placeholder(proxy.getAliasOrCdd(), 0);
       proxy.addVariable(trigger, placeholder);
     };
-    _app.getModel().visit(triggerCollector, Model::depthFirstSearch, Model::keepDeviceModules);
 
     auto connectingVisitor = [&](auto proxy) { generateXMLNetwork(proxy); };
 
@@ -251,7 +258,8 @@ namespace ChimeraTK {
         peer->set_attribute("type", "TriggerProvider");
       }
       else if(peerNode.getType() == NodeType::TriggerReceiver) {
-        peer->set_attribute("type", "TriggerReceiver (" + peerNode.getDeviceAlias() + ")");
+        peer->set_attribute("type", "TriggerReceiver");
+        peer->set_attribute("name", "Device = " + peerNode.getDeviceAlias());
       }
       else {
         peer->set_attribute("type", "Unknown (" + std::to_string(int(peerNode.getType())) + ")");
