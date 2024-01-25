@@ -45,67 +45,11 @@ namespace ChimeraTK {
         }
       }
 
-      // guess type
-      const std::type_info* valTyp{&typeid(AnyType)};
-      const auto& dd = reg.getDataDescriptor(); // numeric, string, boolean, nodata, undefined
-      if(dd.fundamentalType() == DataDescriptor::FundamentalType::numeric) {
-        if(dd.isIntegral()) {
-          if(dd.isSigned()) {
-            if(dd.nDigits() > 11) {
-              valTyp = &typeid(int64_t);
-            }
-            else if(dd.nDigits() > 6) {
-              valTyp = &typeid(int32_t);
-            }
-            else if(dd.nDigits() > 4) {
-              valTyp = &typeid(int16_t);
-            }
-            else {
-              valTyp = &typeid(int8_t);
-            }
-          }
-          else {
-            if(dd.nDigits() > 10) {
-              valTyp = &typeid(uint64_t);
-            }
-            else if(dd.nDigits() > 5) {
-              valTyp = &typeid(uint32_t);
-            }
-            else if(dd.nDigits() > 3) {
-              valTyp = &typeid(uint16_t);
-            }
-            else {
-              valTyp = &typeid(uint8_t);
-            }
-          }
-        }
-        else { // fractional
-          // Maximum number of decimal digits to display a float without loss in non-exponential display, including
-          // sign, leading 0, decimal dot and one extra digit to avoid rounding issues (hence the +4).
-          // This computation matches the one performed in the NumericAddressedBackend catalogue.
-          size_t floatMaxDigits = 4 +
-              size_t(std::max(std::log10(std::numeric_limits<float>::max()),
-                  -std::log10(std::numeric_limits<float>::denorm_min())));
-          if(dd.nDigits() > floatMaxDigits) {
-            valTyp = &typeid(double);
-          }
-          else {
-            valTyp = &typeid(float);
-          }
-        }
-      }
-      else if(dd.fundamentalType() == DataDescriptor::FundamentalType::boolean) {
-        valTyp = &typeid(ChimeraTK::Boolean);
-      }
-      else if(dd.fundamentalType() == DataDescriptor::FundamentalType::string) {
-        valTyp = &typeid(std::string);
-      }
-      else if(dd.fundamentalType() == DataDescriptor::FundamentalType::nodata) {
-        valTyp = &typeid(ChimeraTK::Void);
-      }
+      // find minimum type required to represent data
+      const std::type_info& valTyp = reg.getDataDescriptor().minimumDataType().getAsTypeInfo();
 
       // create node and add to list
-      rv.emplace_back(reg.getRegisterName(), _deviceAliasOrCDD, reg.getRegisterName(), updateMode, direction, *valTyp,
+      rv.emplace_back(reg.getRegisterName(), _deviceAliasOrCDD, reg.getRegisterName(), updateMode, direction, valTyp,
           reg.getNumberOfElements());
     }
 
