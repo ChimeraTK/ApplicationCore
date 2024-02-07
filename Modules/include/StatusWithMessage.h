@@ -72,7 +72,7 @@ namespace ChimeraTK {
    */
   struct StatusWithMessageInput : StatusWithMessageReaderBase<StatusWithMessageInput>, public VariableGroup {
     /// Construct StatusWithMessageInput which reads only status, not message
-    StatusWithMessageInput(ApplicationModule* owner, const std::string& qualifiedName, const std::string& description,
+    StatusWithMessageInput(VariableGroup* owner, const std::string& qualifiedName, const std::string& description,
         const std::unordered_set<std::string>& tags = {});
 
     /// read associated status message from given (fully qualified) msgInputName.

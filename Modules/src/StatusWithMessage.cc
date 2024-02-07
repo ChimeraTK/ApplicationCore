@@ -64,7 +64,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
   /********************************************************************************************************************/
 
-  StatusWithMessageInput::StatusWithMessageInput(ApplicationModule* owner, const std::string& qualifiedName,
+  StatusWithMessageInput::StatusWithMessageInput(VariableGroup* owner, const std::string& qualifiedName,
       const std::string& description, const std::unordered_set<std::string>& tags)
   : VariableGroup(owner, Utilities::getPathName(qualifiedName), "", tags),
     _status(this, Utilities::getUnqualifiedName(qualifiedName), description) {
