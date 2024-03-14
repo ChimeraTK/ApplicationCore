@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnections) {
   i3.read();
   BOOST_CHECK(o1.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(o2.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK_EQUAL(int(o1), 42);
   BOOST_CHECK_EQUAL(o2[0], 10);
   BOOST_CHECK_EQUAL(o2[1], 11);
@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnections) {
   BOOST_CHECK_EQUAL(int(o1), 3);
   BOOST_CHECK_EQUAL(o2[0], 10);
   BOOST_CHECK_EQUAL(o2[1], 11);
-  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK_EQUAL(int(i3), 10);
 
   // send two data fault flags. both need to be cleared before the outputs go back to ok
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnections) {
   i1.write();
   i3 = 121;
   i3.write();
-  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::ok);
   test.stepApplication();
   o1.readLatest();
   o2.readLatest();
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnections) {
   BOOST_CHECK_EQUAL(int(o1), 120);
   BOOST_CHECK_EQUAL(o2[0], 10);
   BOOST_CHECK_EQUAL(o2[1], 11);
-  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK_EQUAL(int(i3), 10);
 
   // clear first flag
@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnections) {
   BOOST_CHECK_EQUAL(int(o1), 122);
   BOOST_CHECK_EQUAL(o2[0], 10);
   BOOST_CHECK_EQUAL(o2[1], 11);
-  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK_EQUAL(int(i3), 10);
 
   // clear second flag

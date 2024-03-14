@@ -544,15 +544,19 @@ BOOST_AUTO_TEST_CASE(testDataValidityReturn) {
     app.lower.incrementDataFaultCounter();
     app.lower.var = 120;
     app.lower.var.write();
+    app.lower.decrementDataFaultCounter();
+    app.upper.var.read();
+    BOOST_CHECK(app.upper.var.dataValidity() == ctk::DataValidity::ok);
+    BOOST_CHECK(app.upper.getDataValidity() == ctk::DataValidity::ok);
+
+    // Manually setting the validity of the return channel
+    app.lower.var = 130;
+    app.lower.var.setDataValidity(ctk::DataValidity::faulty);
+    app.lower.var.write();
     app.upper.var.read();
     BOOST_CHECK(app.upper.var.dataValidity() == ctk::DataValidity::faulty);
+    BOOST_CHECK(app.upper.getDataValidity() == ctk::DataValidity::faulty);
 
-    //=====================================================================
-    // TODO This check would fail - intended behaviour unclear!!!
-    //
-    // See redmine issue #8607
-    //
-    // BOOST_CHECK(app.upper.getDataValidity() == ctk::DataValidity::ok);
     //=====================================================================
   }
 }

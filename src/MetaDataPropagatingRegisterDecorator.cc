@@ -21,13 +21,16 @@ namespace ChimeraTK {
     // Check if the data validity flag changed. If yes, propagate this information to the owning module and the application
     if(_dataValidity != _lastValidity) {
       if(_dataValidity == DataValidity::faulty) { // data validity changes to faulty
+        // Only propagate the validity to the owning module if we are not the return channel
         _owner->incrementDataFaultCounter();
-        // external inpput in a circular dependency network
+        // external input in a circular dependency network
         if(_owner->getCircularNetworkHash() && !_isCircularInput) {
           ++(Application::getInstance()._circularNetworkInvalidityCounters[_owner->getCircularNetworkHash()]);
         }
       }
       else { // data validity changed to OK
+        // Only propagate the validity to the owning module if we are not the return channel
+
         _owner->decrementDataFaultCounter();
         // external inpput in a circular dependency network
         if(_owner->getCircularNetworkHash() && !_isCircularInput) {
@@ -59,8 +62,15 @@ namespace ChimeraTK {
     if(_dataValidity == DataValidity::faulty) { // the application has manualy set the validity to faulty
       _target->setDataValidity(DataValidity::faulty);
     }
-    else { // automatic propagation of the owner validity
-      _target->setDataValidity(_owner->getDataValidity());
+    else {
+      if(_direction.dir == VariableDirection::feeding) {
+        _target->setDataValidity(_owner->getDataValidity());
+      }
+      else {
+        // Do not propagate the owner's validity through the return channel. The user can still override this because
+        // of the override above
+        _target->setDataValidity(DataValidity::ok);
+      }
     }
 
     for(unsigned int i = 0; i < _target->getNumberOfChannels(); ++i) {
