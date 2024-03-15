@@ -229,7 +229,7 @@ namespace ChimeraTK {
 
   DataValidity StatusAggregator::getDataValidity() const {
     return DataValidity::ok;
-  };
+  }
 
   /********************************************************************************************************************/
 

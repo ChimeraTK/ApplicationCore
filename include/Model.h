@@ -703,7 +703,7 @@ namespace ChimeraTK::Model {
   struct VisitOrder : SearchOption {
     enum class VisitOrderType { in, post };
     constexpr VisitOrder() = default;
-    constexpr VisitOrder(VisitOrderType t) : SearchOption(), type(t) {}
+    constexpr explicit VisitOrder(VisitOrderType t) : SearchOption(), type(t) {}
 
     VisitOrderType type{VisitOrderType::in};
   };

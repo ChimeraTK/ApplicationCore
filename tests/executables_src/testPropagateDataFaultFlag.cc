@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnections) {
   BOOST_CHECK_EQUAL(o2[0], 10);
   BOOST_CHECK_EQUAL(o2[1], 11);
 
-  // the return channel should also receive the flag
+  // the return channel does not receive the flag
   BOOST_CHECK(i3.readNonBlocking() == false);
   BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::ok);
   i3 = 20;
@@ -161,13 +161,13 @@ BOOST_AUTO_TEST_CASE(testDirectConnections) {
   i3.read();
   BOOST_CHECK(o1.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(o2.dataValidity() == ctk::DataValidity::faulty);
-  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK_EQUAL(int(o1), 42);
   BOOST_CHECK_EQUAL(o2[0], 10);
   BOOST_CHECK_EQUAL(o2[1], 11);
   BOOST_CHECK_EQUAL(int(i3), 10);
 
-  // clear the flag on i1, i3 will keep it for now (we have received it there and not yet sent it out!)
+  // clear the flag on i1, i3 does not get it
   i1 = 3;
   i1.setDataValidity(ctk::DataValidity::ok);
   i1.write();
@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnections) {
   BOOST_CHECK_EQUAL(int(o1), 3);
   BOOST_CHECK_EQUAL(o2[0], 10);
   BOOST_CHECK_EQUAL(o2[1], 11);
-  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK_EQUAL(int(i3), 10);
 
   // send two data fault flags. both need to be cleared before the outputs go back to ok
@@ -188,8 +188,8 @@ BOOST_AUTO_TEST_CASE(testDirectConnections) {
   i1.setDataValidity(ctk::DataValidity::faulty);
   i1.write();
   i3 = 121;
+  i3.setDataValidity(ctk::DataValidity::faulty);
   i3.write();
-  BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::faulty);
   test.stepApplication();
   o1.readLatest();
   o2.readLatest();

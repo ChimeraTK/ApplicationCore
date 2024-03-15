@@ -266,7 +266,8 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void VariableNetworkNode::setAppAccessorImplementation(boost::shared_ptr<NDRegisterAccessor<UserType>> impl) const {
-    auto decorated = boost::make_shared<MetaDataPropagatingRegisterDecorator<UserType>>(impl, getOwningModule());
+    auto decorated =
+        boost::make_shared<MetaDataPropagatingRegisterDecorator<UserType>>(impl, getOwningModule(), getDirection());
     getAppAccessor<UserType>().replace(decorated);
     auto flagProvider = boost::dynamic_pointer_cast<MetaDataPropagationFlagProvider>(decorated);
     assert(flagProvider);

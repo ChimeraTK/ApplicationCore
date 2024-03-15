@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "Flags.h"
+
 #include <ChimeraTK/NDRegisterAccessorDecorator.h>
 
 namespace ChimeraTK {
@@ -49,8 +51,9 @@ namespace ChimeraTK {
   class MetaDataPropagatingRegisterDecorator : public NDRegisterAccessorDecorator<T, T>,
                                                public MetaDataPropagationFlagProvider {
    public:
-    MetaDataPropagatingRegisterDecorator(const boost::shared_ptr<NDRegisterAccessor<T>>& target, EntityOwner* owner)
-    : NDRegisterAccessorDecorator<T, T>(target), _owner(owner) {}
+    MetaDataPropagatingRegisterDecorator(
+        const boost::shared_ptr<NDRegisterAccessor<T>>& target, EntityOwner* owner, VariableDirection direction)
+    : NDRegisterAccessorDecorator<T, T>(target), _owner(owner), _direction(direction) {}
 
     void doPreRead(TransferType type) override { NDRegisterAccessorDecorator<T, T>::doPreRead(type); }
 
@@ -61,6 +64,7 @@ namespace ChimeraTK {
 
    protected:
     EntityOwner* _owner;
+    VariableDirection _direction;
 
     using TransferElement::_dataValidity;
     using NDRegisterAccessorDecorator<T>::_target;
