@@ -544,10 +544,10 @@ BOOST_AUTO_TEST_CASE(testDataValidityReturn) {
     app.lower.incrementDataFaultCounter();
     app.lower.var = 120;
     app.lower.var.write();
-    app.lower.decrementDataFaultCounter();
     app.upper.var.read();
     BOOST_CHECK(app.upper.var.dataValidity() == ctk::DataValidity::ok);
     BOOST_CHECK(app.upper.getDataValidity() == ctk::DataValidity::ok);
+    app.lower.decrementDataFaultCounter();
 
     // Manually setting the validity of the return channel
     app.lower.var = 130;

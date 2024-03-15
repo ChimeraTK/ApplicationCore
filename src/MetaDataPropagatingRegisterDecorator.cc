@@ -21,7 +21,6 @@ namespace ChimeraTK {
     // Check if the data validity flag changed. If yes, propagate this information to the owning module and the application
     if(_dataValidity != _lastValidity) {
       if(_dataValidity == DataValidity::faulty) { // data validity changes to faulty
-        // Only propagate the validity to the owning module if we are not the return channel
         _owner->incrementDataFaultCounter();
         // external input in a circular dependency network
         if(_owner->getCircularNetworkHash() && !_isCircularInput) {
@@ -29,8 +28,6 @@ namespace ChimeraTK {
         }
       }
       else { // data validity changed to OK
-        // Only propagate the validity to the owning module if we are not the return channel
-
         _owner->decrementDataFaultCounter();
         // external inpput in a circular dependency network
         if(_owner->getCircularNetworkHash() && !_isCircularInput) {
