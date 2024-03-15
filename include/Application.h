@@ -237,7 +237,7 @@ namespace ChimeraTK {
     /** Version number used at application start, e.g. to propagate initial values */
     VersionNumber _startVersion;
 
-    ApplicationModule* _versionInfoProvider;
+    ApplicationModule* _versionInfoProvider{nullptr};
 
     /** Map of atomic invalidity counters for each circular dependency network.
      *  The key is the hash of network which serves as a unique identifier.
