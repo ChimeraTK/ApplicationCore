@@ -1,5 +1,21 @@
 #!/usr/bin/python3
 
+# This is a simple simulator script for an oven.
+# It is meant to run in parallel to the demo_example server.
+# 
+# Both are accessing the same device using the same DMAP file. Since the device is
+# backed by the SharedMemoryDummy, it is possible to react to the setpoint provided
+# by the demo_example server and provide values back to it. The SharedMemoryDummy
+# maps the register map on a shared memory segment, making it possible to access
+# the device from multiple applications simultaneously.
+#
+# Through special registers it also enables us to provide values for registers that
+# are declared read-only in the map file.
+
+# The script runs a simple heating simulation that generates the oven temperature from the
+# heating current and environment temperature.
+
+
 import deviceaccess as da
 import numpy as np
 import random
@@ -19,8 +35,13 @@ h=0.0003 #deg/(A*s)
 ovenTemp = 25.
 environment = 25.
 
+# Our current setpoint
 currentSetpoint = dev.getScalarRegisterAccessor(np.double, "HEATER.CURRENT_SET")
+
+# The readback value of the actual current.
 currentReadback = dev.getScalarRegisterAccessor(np.double, "HEATER.CURRENT_READBACK.DUMMY_WRITEABLE")
+
+# The readback of various temperatures
 tempratureReadback = dev.getScalarRegisterAccessor(np.double, "SENSORS.TEMPERATURE1.DUMMY_WRITEABLE")
 temperatureTop = dev.getScalarRegisterAccessor(np.double, "SENSORS.TEMPERATURE2.DUMMY_WRITEABLE")
 temperatureBottom = dev.getScalarRegisterAccessor(np.double, "SENSORS.TEMPERATURE3.DUMMY_WRITEABLE")
