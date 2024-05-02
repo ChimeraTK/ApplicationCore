@@ -171,31 +171,38 @@ namespace ChimeraTK {
     assert(not net.consumers.empty());
 
     // register PVs with the control system adapter
-    callForType(*net.valueType, [&](auto t) {
-      using UserType = decltype(t);
+    try {
+      callForType(*net.valueType, [&](auto t) {
+        using UserType = decltype(t);
 
-      for(auto& node : net.consumers) {
-        if(node.getType() != NodeType::ControlSystem) {
-          continue;
-        }
-        this->createProcessVariable<UserType>(
-            node, net.valueLength, net.unit, net.description, {AccessMode::wait_for_new_data});
-      }
-
-      if(net.feeder.getType() == NodeType::ControlSystem) {
-        AccessModeFlags flags = {AccessMode::wait_for_new_data};
-
-        if(net.consumers.size() == 1) {
-          auto consumer = net.consumers.front();
-          if(consumer.getType() == NodeType::Application && consumer.getMode() == UpdateMode::poll) {
-            flags = {};
+        for(auto& node : net.consumers) {
+          if(node.getType() != NodeType::ControlSystem) {
+            continue;
           }
+          this->createProcessVariable<UserType>(
+              node, net.valueLength, net.unit, net.description, {AccessMode::wait_for_new_data});
         }
 
-        AccessModeFlags give_me_a_name;
-        this->createProcessVariable<UserType>(net.feeder, net.valueLength, net.unit, net.description, flags);
-      }
-    });
+        if(net.feeder.getType() == NodeType::ControlSystem) {
+          AccessModeFlags flags = {AccessMode::wait_for_new_data};
+
+          if(net.consumers.size() == 1) {
+            auto consumer = net.consumers.front();
+            if(consumer.getType() == NodeType::Application && consumer.getMode() == UpdateMode::poll) {
+              flags = {};
+            }
+          }
+
+          AccessModeFlags give_me_a_name;
+          this->createProcessVariable<UserType>(net.feeder, net.valueLength, net.unit, net.description, flags);
+        }
+      });
+    }
+    catch(std::bad_cast& e) {
+      std::cerr << "Illegal value type " + boost::core::demangle(net.valueType->name()) + " of variable network: "
+                << net.proxy->getFullyQualifiedPath() << std::endl;
+      throw;
+    }
   }
 
   /*********************************************************************************************************************/
