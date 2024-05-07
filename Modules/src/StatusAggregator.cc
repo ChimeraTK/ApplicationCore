@@ -207,19 +207,17 @@ namespace ChimeraTK {
 
       // handle request for debug info
       if(change == _debug.getId()) {
-        static std::mutex debugMutex; // all aggregators trigger at the same time => lock for clean output
-        std::unique_lock<std::mutex> lk(debugMutex);
-
-        std::cout << "StatusAggregtor " << getQualifiedName() << " debug info:" << std::endl;
+        auto myLog = logger(Logger::Severity::info);
+        myLog << "StatusAggregtor " << getQualifiedName() << " debug info:" << std::endl;
         for(auto& inputPair : _inputs) {
           StatusPushInput& input = inputPair._status;
-          std::cout << input.getName() << " = " << input;
+          myLog << input.getName() << " = " << input;
           if(inputPair.hasMessageSource) {
-            std::cout << inputPair._message.getName() << " = " << (std::string)inputPair._message;
+            myLog << inputPair._message.getName() << " = " << (std::string)inputPair._message;
           }
-          std::cout << std::endl;
+          myLog << std::endl;
         }
-        std::cout << "debug info finished." << std::endl;
+        myLog << "debug info finished." << std::endl;
         goto waitForChange;
       }
     }

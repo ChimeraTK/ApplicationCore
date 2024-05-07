@@ -103,19 +103,19 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void EntityOwner::dump(const std::string& prefix) const {
+  void EntityOwner::dump(const std::string& prefix, std::ostream& stream) const {
     if(prefix.empty()) {
-      std::cout << "==== Hierarchy dump of module '" << _name << "':" << std::endl;
+      stream << "==== Hierarchy dump of module '" << _name << "':" << std::endl;
     }
 
     for(auto& node : getAccessorList()) {
-      std::cout << prefix << "+ ";
-      node.dump();
+      stream << prefix << "+ ";
+      node.dump(stream);
     }
 
     for(auto& submodule : getSubmoduleList()) {
-      std::cout << prefix << "| " << submodule->getName() << std::endl;
-      submodule->dump(prefix + "| ");
+      stream << prefix << "| " << submodule->getName() << std::endl;
+      submodule->dump(prefix + "| ", stream);
     }
   }
 

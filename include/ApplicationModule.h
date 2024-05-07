@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CircularDependencyDetectionRecursionStopper.h"
+#include "Logger.h"
 #include "Model.h"
 #include "VariableGroup.h"
 
@@ -18,7 +19,7 @@ namespace ChimeraTK {
   class ModuleGroup;
   struct ConfigReader;
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   class ApplicationModule : public VariableGroup {
    public:
@@ -104,6 +105,12 @@ namespace ChimeraTK {
 
     void unregisterModule(Module* module) override;
 
+    /**
+     * Convenicene function to obtain a logger stream with the given Severity. The context string will be obtained from
+     * the class name of the module.
+     */
+    Logger::StreamProxy logger(Logger::Severity severity);
+
    protected:
     /** Wrapper around mainLoop(), to execute additional tasks in the thread
      * before entering the main loop */
@@ -134,10 +141,24 @@ namespace ChimeraTK {
      */
     detail::CircularDependencyDetectionRecursionStopper _recursionStopper;
 
+    /**
+     * Name of the module class, used for logging and debugging purposes
+     */
+    std::string className() {
+      auto name = boost::core::demangle(typeid(*this).name());
+      return name.substr(name.find_last_of(':') + 1);
+    }
+
     ChimeraTK::Model::ApplicationModuleProxy _model;
     friend class ChimeraTK::Model::Impl;
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  inline Logger::StreamProxy ApplicationModule::logger(Logger::Severity severity) {
+    return ChimeraTK::logger(severity, className());
+  }
+
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

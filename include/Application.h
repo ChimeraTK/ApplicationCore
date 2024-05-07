@@ -6,6 +6,7 @@
 #include "ConnectionMaker.h"
 #include "Flags.h"
 #include "InternalModule.h"
+#include "Logger.h"
 #include "Model.h"
 #include "ModuleGroup.h"
 #include "TestableMode.h"
@@ -248,6 +249,12 @@ namespace ChimeraTK {
     /** The networks of circular dependencies, reachable by their hash, which serves as unique ID
      */
     std::map<size_t, std::list<EntityOwner*>> _circularDependencyNetworks;
+
+    /**
+     * Shared Pointer to central logger instance. Keeping this here prevents the Logger to be destroyed
+     * before the application.
+     */
+    std::shared_ptr<Logger> _logger{Logger::getSharedPtr()};
 
     friend class TestFacility; // needs access to testableMode variables
 

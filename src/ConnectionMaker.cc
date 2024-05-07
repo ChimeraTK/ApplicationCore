@@ -213,11 +213,8 @@ namespace ChimeraTK {
       return;
     }
 
-    // FIXME: Use the proper logging mechanism once in place
-    // https://redmine.msktools.desy.de/issues/8305
-
     // Fold expression printer from https://en.cppreference.com/w/cpp/language/fold
-    (std::cout << ... << args) << std::endl;
+    (logger(Logger::Severity::debug, "ConnectionMaker") << ... << args) << std::endl;
   }
 
   /*********************************************************************************************************************/

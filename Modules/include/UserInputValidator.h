@@ -205,7 +205,8 @@ namespace ChimeraTK {
     std::map<ChimeraTK::TransferElementID, std::vector<Validator*>> _validatorMap;
 
     // Function to be called for reporting validation errors
-    std::function<void(const std::string&)> _errorFunction{[](const std::string& m) { std::cerr << m << std::endl; }};
+    std::function<void(const std::string&)> _errorFunction{
+        [](const std::string& m) { logger(Logger::Severity::warning, "UserInputValidator") << m; }};
 
     std::unordered_set<ChimeraTK::TransferElementID> _downstreamInvalidatingReturnChannels{};
     size_t _validationDepth{0};

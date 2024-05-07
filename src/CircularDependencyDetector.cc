@@ -92,16 +92,16 @@ namespace ChimeraTK::detail {
 
   /*********************************************************************************************************************/
 
-  void CircularDependencyDetector::printWaiters() {
+  void CircularDependencyDetector::printWaiters(std::ostream& stream) {
     if(_waitMap.empty()) {
       return;
     }
-    std::cerr << "The following modules are still waiting for initial values:" << std::endl;
+    stream << "The following modules are still waiting for initial values:" << std::endl;
     for(auto& waiters : _waitMap) {
-      std::cerr << waiters.first->getQualifiedName() << " waits for " << _awaitedVariables[waiters.first] << " from "
-                << waiters.second->getQualifiedName() << std::endl;
+      stream << waiters.first->getQualifiedName() << " waits for " << _awaitedVariables[waiters.first] << " from "
+             << waiters.second->getQualifiedName() << std::endl;
     }
-    std::cerr << "(end of list)" << std::endl;
+    stream << "(end of list)" << std::endl;
   }
 
   /*********************************************************************************************************************/
@@ -154,8 +154,8 @@ namespace ChimeraTK::detail {
         auto* appModule = dynamic_cast<ApplicationModule*>(module);
         if(!appModule) {
           // only ApplicationModule can have hasReachedTestableMode() == true, so it should not happen
-          std::cout << "CircularDependencyDetector found non-application module: " << module->getQualifiedName()
-                    << std::endl;
+          logger(Logger::Severity::warning, "CircularDependencyDetector")
+              << "found non-application module: " << module->getQualifiedName() << std::endl;
           continue;
         }
 
@@ -171,9 +171,10 @@ namespace ChimeraTK::detail {
                 // not yet sent the initial value. Ideally we should wait another iteration before printing warnings!
                 if(_modulesWeHaveWarnedAbout.find(feedingAppModule) == _modulesWeHaveWarnedAbout.end()) {
                   _modulesWeHaveWarnedAbout.insert(feedingAppModule);
-                  std::cout << "Note: ApplicationModule " << appModule->getQualifiedName() << " is waiting for an "
-                            << "initial value, because " << feedingAppModule->getQualifiedName()
-                            << " has not yet sent one." << std::endl;
+                  logger(Logger::Severity::warning, "CircularDependencyDetector")
+                      << "Note: ApplicationModule " << appModule->getQualifiedName() << " is waiting for an "
+                      << "initial value, because " << feedingAppModule->getQualifiedName() << " has not yet sent one."
+                      << std::endl;
                 }
                 return;
               }
@@ -190,20 +191,23 @@ namespace ChimeraTK::detail {
               const auto& deviceName = proxy.getAliasOrCdd();
               if(_devicesWeHaveWarnedAbout.find(deviceName) == _devicesWeHaveWarnedAbout.end()) {
                 _devicesWeHaveWarnedAbout.insert(deviceName);
-                std::cout << "Note: Still waiting for device " << deviceName << " to come up";
+                auto myLog = logger(Logger::Severity::warning, "CircularDependencyDetector");
+                myLog << "Note: Still waiting for device " << deviceName << " to come up";
                 auto dm = Application::getInstance()._deviceManagerMap[deviceName];
                 std::unique_lock dmLock(dm->_errorMutex);
                 if(dm->_deviceHasError) {
-                  std::cout << " (" << std::string(dm->_deviceError._message) << ")";
+                  myLog << " (" << std::string(dm->_deviceError._message) << ")";
                 }
-                std::cout << "..." << std::endl;
+                myLog << "...";
               }
             }
             else {
               // fed by anything else?
-              std::cout << "At least one ApplicationModule (" << appModule->getQualifiedName() << " is waiting for an "
-                        << "initial value from an unexpected source." << std::endl;
-              std::cout << "This is probably a BUG in the ChimeraTK framework." << std::endl;
+              logger(Logger::Severity::warning, "CircularDependencyDetector")
+                  << "At least one ApplicationModule (" << appModule->getQualifiedName() << " is waiting for an "
+                  << "initial value from an unexpected source."
+                  << "\n"
+                  << "This is probably a BUG in the ChimeraTK framework.";
             }
           };
 
@@ -218,7 +222,7 @@ namespace ChimeraTK::detail {
       }
     }
 
-    std::cout << "All application modules are running." << std::endl;
+    logger(Logger::Severity::info, "CircularDependencyDetector") << "All application modules are running.";
 
     // free some memory
     _waitMap.clear();

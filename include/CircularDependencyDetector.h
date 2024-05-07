@@ -10,6 +10,7 @@
 #include <boost/thread.hpp>
 
 #include <map>
+#include <ostream>
 
 namespace ChimeraTK::detail {
 
@@ -26,8 +27,10 @@ namespace ChimeraTK::detail {
     /// non-Application-typed nodes are ignored.
     void unregisterDependencyWait(VariableNetworkNode& node);
 
-    /// Print modules which are currently waiting for initial values.
-    void printWaiters();
+    /// Print modules which are currently waiting for initial values to the given stream.
+    /// By default, std::cout is used as a stream (the ChimeraTK::Logger cannot be used here as we
+    /// cannot take a reference to a temporary object).
+    void printWaiters(std::ostream& stream = std::cout);
 
     /// Stop the thread before ApplicationBase::terminate() is called.
     void terminate();
