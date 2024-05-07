@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
-#include <ChimeraTK/ApplicationCore/ConfigReader.h>
-#include <ChimeraTK/ApplicationCore/PeriodicTrigger.h>
-#include <ChimeraTK/ApplicationCore/StatusWithMessage.h>
-#include <ChimeraTK/ApplicationCore/VoidAccessor.h>
+#include "ConfigReader.h"
+#include "PeriodicTrigger.h"
+#include "StatusWithMessage.h"
+#include "VoidAccessor.h"
 #include <ChimeraTK/ScalarRegisterAccessor.h>
 
 namespace ChimeraTK {
