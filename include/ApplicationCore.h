@@ -8,6 +8,7 @@
 #include "ConfigReader.h"
 #include "DeviceModule.h"
 #include "HierarchyModifyingGroup.h"
+#include "Logger.h"
 #include "ModuleGroup.h"
 #include "ScalarAccessor.h"
 #include "StatusAccessor.h"

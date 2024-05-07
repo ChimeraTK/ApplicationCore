@@ -48,7 +48,7 @@ namespace ChimeraTK {
         _scriptOutput = output;
         _scriptOutput.write();
         if(!_lastFailed) {
-          std::cerr << output << std::endl;
+          ChimeraTK::logger(Logger::Severity::error, "Device " + _deviceAlias) << output << std::endl;
         }
         _lastFailed = true;
         std::this_thread::sleep_for(std::chrono::seconds(_errorGracePeriod));
@@ -57,7 +57,7 @@ namespace ChimeraTK {
       output += _deviceAlias + " initialisation SUCCESS!";
       _scriptOutput = output;
       _scriptOutput.write();
-      std::cerr << output << std::endl;
+      ChimeraTK::logger(Logger::Severity::info, "Device " + _deviceAlias) << output << std::endl;
       _lastFailed = false;
     }
     catch(bp::process_error& e) {

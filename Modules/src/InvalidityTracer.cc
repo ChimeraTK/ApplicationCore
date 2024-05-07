@@ -11,13 +11,19 @@ namespace ChimeraTK {
 
     /******************************************************************************************************************/
 
-    struct InvalidityTracerVisitor : Visitor<VariableNetworkNode, ApplicationModule> {
+    class InvalidityTracerVisitor : public Visitor<VariableNetworkNode, ApplicationModule> {
+     public:
+      explicit InvalidityTracerVisitor(ChimeraTK::Logger::StreamProxy& myLog) : _myLog(myLog) {}
+
       // Print invalidity information for given module. This will also call dispatch() for all inputs of the given module.
       void dispatch(const ApplicationModule& module) override;
 
       // Print invalidity information for given input decorated with MetaDataPropagatingRegisterDecorator. Other nodes
       // are simply ignored.
       void dispatch(const VariableNetworkNode& node) override;
+
+     private:
+      ChimeraTK::Logger::StreamProxy& _myLog;
     };
 
     /******************************************************************************************************************/
@@ -26,16 +32,14 @@ namespace ChimeraTK {
       auto validity = module.getDataValidity();
       // print, if validity is faulty
       if(validity == DataValidity::faulty) {
-        std::cout << "Module " << module.getQualifiedName()
-                  << " has DataValidity::faulty (count: " << module.getDataFaultCounter() << ")";
+        _myLog << "Module " << module.getQualifiedName()
+               << " has DataValidity::faulty (count: " << module.getDataFaultCounter() << ")";
 
         auto hash = module.getCircularNetworkHash();
         if(hash != 0) {
-          std::cout << " (in circular network " << hash << " with invalidity count "
-                    << Application::getInstance().getCircularNetworkInvalidityCounter(hash) << ")";
+          _myLog << " (in circular network " << hash << " with invalidity count "
+                 << Application::getInstance().getCircularNetworkInvalidityCounter(hash) << ")\n";
         }
-
-        std::cout << std::endl;
 
         // dispatch to all accessors of the module
         for(auto& accessor : module.getAccessorListRecursive()) {
@@ -62,16 +66,15 @@ namespace ChimeraTK {
       auto accessor = boost::dynamic_pointer_cast<MetaDataPropagationFlagProvider>(
           node.getAppAccessorNoType().getHighLevelImplElement());
       if(!accessor) {
-        std::cout << "InvalidityTracerVisitor: The following application node does not derive from "
-                     "MetaDataPropagationFlagProvider:"
-                  << std::endl;
-        node.dump();
+        _myLog << "InvalidityTracerVisitor: The following application node does not derive from "
+                  "MetaDataPropagationFlagProvider:\n";
+        node.dump(_myLog);
         return;
       }
 
       // check if invalid
       if(accessor->getLastValidity() == DataValidity::faulty) {
-        std::cout << " -> Input " << node.getQualifiedName() << " has DataValidity::faulty" << std::endl;
+        _myLog << " -> Input " << node.getQualifiedName() << " has DataValidity::faulty\n";
       }
     }
 
@@ -82,14 +85,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void InvalidityTracer::mainLoop() {
-    InvalidityTracerVisitor visitor;
-
     while(true) {
       // wait for user to hit the button
       printTrace.read();
 
       // start banner
-      std::cout << "==== BEGIN InvalidityTracer trace output ============================================" << std::endl;
+      auto myLog = logger(Logger::Severity::info);
+      InvalidityTracerVisitor visitor(myLog);
+      myLog << "==== BEGIN InvalidityTracer trace output ============================================\n";
 
       // dispatch to all ApplicationModules
       for(auto* module : Application::getInstance().getSubmoduleListRecursive()) {
@@ -101,7 +104,7 @@ namespace ChimeraTK {
       }
 
       // end banner
-      std::cout << "==== END InvalidityTracer trace output ==============================================" << std::endl;
+      myLog << "==== END InvalidityTracer trace output ==============================================";
     }
   }
 

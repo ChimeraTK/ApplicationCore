@@ -68,7 +68,7 @@ void Application::registerThread(const std::string& name) {
 
 void Application::incrementDataLossCounter(const std::string& name) {
   if(getInstance()._debugDataLoss) {
-    std::cout << "Data loss in variable " << name << std::endl;
+    logger(Logger::Severity::debug, "DataLossCounter") << "Data loss in variable " << name;
   }
   getInstance()._dataLossCounter++;
 }

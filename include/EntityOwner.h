@@ -7,6 +7,7 @@
 #include "VariableNetworkNode.h"
 #include <unordered_set>
 
+#include <iostream>
 #include <list>
 #include <string>
 
@@ -104,8 +105,8 @@ namespace ChimeraTK {
      * information about tags. */
     void addTag(const std::string& tag);
 
-    /** Print the full hierarchy to stdout. */
-    void dump(const std::string& prefix = "") const;
+    /** Print the full hierarchy to given stream. */
+    void dump(const std::string& prefix = "", std::ostream& stream = std::cout) const;
 
     enum class ModuleType { ApplicationModule, ModuleGroup, VariableGroup, ControlSystem, Device, Invalid };
 

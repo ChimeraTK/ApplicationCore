@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "Logger.h"
 #include "VariableNetworkNode.h"
 
 #include <ChimeraTK/ControlSystemAdapter/BidirectionalProcessArray.h>
@@ -265,8 +266,9 @@ namespace ChimeraTK::detail {
     }
 
     if(_debugDecorating) {
-      std::cout << "      Decorating pair " << producer.getQualifiedName() << "[" << other.first->getId() << "] -> "
-                << consumer.getQualifiedName() << "[" << other.second->getId() << "]" << std::endl;
+      logger(Logger::Severity::debug, "TestableMode")
+          << "      Decorating pair " << producer.getQualifiedName() << "[" << other.first->getId() << "] -> "
+          << consumer.getQualifiedName() << "[" << other.second->getId() << "]";
     }
 
     // create variable IDs
@@ -312,8 +314,9 @@ namespace ChimeraTK::detail {
     }
 
     if(_debugDecorating) {
-      std::cout << "      Decorating single " << (direction == DecoratorType::READ ? "consumer " : "feeder ") << name
-                << "[" << other->getId() << "]" << std::endl;
+      logger(Logger::Severity::debug, "TestableMode")
+          << "      Decorating single " << (direction == DecoratorType::READ ? "consumer " : "feeder ") << name << "["
+          << other->getId() << "]";
     }
 
     if(varId == 0) {
@@ -427,17 +430,19 @@ namespace ChimeraTK::detail {
       --_testableMode._counter;
       --variable.counter;
       if(_testableMode._enableDebug) {
-        std::cout << "TestableModeAccessorDecorator[name='" << this->getName() << "', id=" << _variableIdRead
-                  << "]: testableMode.counter decreased, now at value " << _testableMode._counter << " / "
-                  << variable.counter << std::endl;
+        logger(Logger::Severity::debug, "TestableMode")
+            << "TestableModeAccessorDecorator[name='" << this->getName() << "', id=" << _variableIdRead
+            << "]: testableMode.counter decreased, now at value " << _testableMode._counter << " / "
+            << variable.counter;
       }
     }
     else {
       if(_testableMode._enableDebug) {
-        std::cout << "TestableModeAccessorDecorator[name='" << this->getName() << "', id=" << _variableIdRead
-                  << "]: testableMode.counter NOT decreased, was already at value " << _testableMode._counter << " / "
-                  << variable.counter << std::endl;
-        std::cout << variable.name << std::endl;
+        logger(Logger::Severity::debug, "TestableMode")
+            << "TestableModeAccessorDecorator[name='" << this->getName() << "', id=" << _variableIdRead
+            << "]: testableMode.counter NOT decreased, was already at value " << _testableMode._counter << " / "
+            << variable.counter << "\n"
+            << variable.name;
       }
     }
   }
@@ -475,14 +480,16 @@ namespace ChimeraTK::detail {
       ++_testableMode._counter;
       ++_testableMode._variables.at(_variableIdWrite).counter;
       if(_testableMode._enableDebug) {
-        std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
-                  << "]: testableMode.counter increased, now at value " << _testableMode._counter << std::endl;
+        logger(Logger::Severity::debug, "TestableMode")
+            << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
+            << "]: testableMode.counter increased, now at value " << _testableMode._counter;
       }
     }
     else {
       if(_testableMode._enableDebug) {
-        std::cout << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
-                  << "]: testableMode.counter not increased due to lost data" << std::endl;
+        logger(Logger::Severity::debug, "TestableMode")
+            << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
+            << "]: testableMode.counter not increased due to lost data";
       }
     }
     return dataLost;

@@ -6,6 +6,7 @@
 #include "PeriodicTrigger.h"
 #include "StatusWithMessage.h"
 #include "VoidAccessor.h"
+
 #include <ChimeraTK/ScalarRegisterAccessor.h>
 
 namespace ChimeraTK {

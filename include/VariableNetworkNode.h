@@ -4,6 +4,7 @@
 
 #include "ConstantAccessor.h"
 #include "Flags.h"
+#include "Logger.h"
 #include "MetaDataPropagatingRegisterDecorator.h"
 #include "Model.h"
 #include "Visitor.h"
@@ -98,7 +99,7 @@ namespace ChimeraTK {
     bool operator!=(const VariableNetworkNode& other) const;
     bool operator<(const VariableNetworkNode& other) const;
 
-    /** Print node information to std::cout */
+    /** Print node information to specified stream */
     void dump(std::ostream& stream = std::cout) const;
 
     /** Add a tag. This function may only be used on Application-type nodes. Valid

@@ -118,8 +118,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void ApplicationModule::mainLoopWrapper() {
-    std::string className = boost::core::demangle(typeid(*this).name());
-    Application::registerThread("AM_" + className); // + getName());
+    Application::registerThread("AM_" + className()); // + getName());
 
     // Acquire testable mode lock, so from this point on we are running only one user thread concurrently
     Application::getInstance().getTestableMode().lock("start");

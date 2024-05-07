@@ -62,11 +62,12 @@ namespace ChimeraTK::detail {
     }
 
     // debug output if enabled (also prevent spamming the same message)
-    if(_enableDebug && _repeatingMutexOwner == 0) {                           // LCOV_EXCL_LINE
-                                                                              // (only cout)
-      std::cout << "Application::testableModeLock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
-                << " tries to obtain lock for " << name << std::endl;         // LCOV_EXCL_LINE (only cout)
-    }                                                                         // LCOV_EXCL_LINE (only cout)
+    if(_enableDebug && _repeatingMutexOwner == 0) { // LCOV_EXCL_LINE
+                                                    // (only cout)
+      logger(Logger::Severity::debug, "TestableMode")
+          << "Application::testableModeLock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
+          << " tries to obtain lock for " << name;                      // LCOV_EXCL_LINE (only cout)
+    }                                                                   // LCOV_EXCL_LINE (only cout)
 
     // if last lock was obtained repeatedly by the same thread, sleep a short time
     // before obtaining the lock to give the other threads a chance to get the
@@ -85,10 +86,9 @@ namespace ChimeraTK::detail {
         lastSeen_lastOwner = currentLastOwner;
         goto repeatTryLock;
       }
-      std::cout << "testableModeLock(): Thread " << threadName()                // LCOV_EXCL_LINE
-                << " could not obtain lock for 30 seconds, presumably because " // LCOV_EXCL_LINE
-                << threadName(_lastMutexOwner) << " does not release it."       // LCOV_EXCL_LINE
-                << std::endl;                                                   // LCOV_EXCL_LINE
+      std::cerr << "testableModeLock(): Thread " << threadName()                        // LCOV_EXCL_LINE
+                << " could not obtain lock for 30 seconds, presumably because "         // LCOV_EXCL_LINE
+                << threadName(_lastMutexOwner) << " does not release it." << std::endl; // LCOV_EXCL_LINE
 
       // throw a specialised exception to make sure whoever catches it really knows what he does...
       terminateTestStalled(); // LCOV_EXCL_LINE
@@ -100,8 +100,9 @@ namespace ChimeraTK::detail {
       // debug output if enabled
       if(_enableDebug && _repeatingMutexOwner == 0) {                       // LCOV_EXCL_LINE
                                                                             // (only cout)
-        std::cout << "testableModeLock(): Thread " << threadName()          // LCOV_EXCL_LINE (only cout)
-                  << " repeatedly obtained lock successfully for " << name  // LCOV_EXCL_LINE (only cout)
+        std::cerr << "testableModeLock(): Thread " << threadName()          // LCOV_EXCL_LINE (only cout)
+                  << " repeatedly obtained lock successfully for "          // LCOV_EXCL_LINE (only cout)
+                  << name                                                   // LCOV_EXCL_LINE (only cout)
                   << ". Further messages will be suppressed." << std::endl; // LCOV_EXCL_LINE (only cout)
       }                                                                     // LCOV_EXCL_LINE (only cout)
 
@@ -114,9 +115,9 @@ namespace ChimeraTK::detail {
       if(_repeatingMutexOwner > 100) {
         // print an informative message first, which lists also all variables
         // currently containing unread data.
-        std::cerr << "*** Tests are stalled due to data which has been sent but not received." << std::endl;
-        std::cerr << "    The following variables still contain unread values or had data loss due to a queue overflow:"
-                  << std::endl;
+        std::cerr << "*** Tests are stalled due to data which has been sent but not received.\n";
+        std::cerr
+            << "    The following variables still contain unread values or had data loss due to a queue overflow:\n";
         for(auto& pair : _variables) {
           const auto& variable = pair.second;
           if(variable.counter > 0) {
@@ -136,12 +137,12 @@ namespace ChimeraTK::detail {
               // and we actually were not allowed to read...
               std::cerr << " (data loss)";
             }
-            std::cerr << std::endl;
+            std::cerr << "\n";
           }
         }
-        std::cerr << "(end of list)" << std::endl;
+        std::cerr << "(end of list)\n";
         // Check for modules waiting for initial values (prints nothing if there are no such modules)
-        Application::getInstance()._circularDependencyDetector.printWaiters();
+        Application::getInstance()._circularDependencyDetector.printWaiters(std::cerr);
         // throw a specialised exception to make sure whoever catches it really knows what he does...
         terminateTestStalled();
       }
@@ -153,10 +154,11 @@ namespace ChimeraTK::detail {
       _lastMutexOwner = boost::this_thread::get_id();
 
       // debug output if enabled
-      if(_enableDebug) {                                                      // LCOV_EXCL_LINE (only cout)
-        std::cout << "TestableMode::lock(): Thread " << threadName()          // LCOV_EXCL_LINE (only cout)
-                  << " obtained lock successfully for " << name << std::endl; // LCOV_EXCL_LINE (only cout)
-      }                                                                       // LCOV_EXCL_LINE (only cout)
+      if(_enableDebug) { // LCOV_EXCL_LINE (only cout)
+        logger(Logger::Severity::debug, "TestableMode")
+            << "TestableMode::lock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
+            << " obtained lock successfully for " << name;     // LCOV_EXCL_LINE (only cout)
+      }                                                        // LCOV_EXCL_LINE (only cout)
     }
   }
 
@@ -167,10 +169,11 @@ namespace ChimeraTK::detail {
       return;
     }
     if(_enableDebug &&
-        (not _repeatingMutexOwner                                    // LCOV_EXCL_LINE (only cout)
-            || _lastMutexOwner != boost::this_thread::get_id())) {   // LCOV_EXCL_LINE (only cout)
-      std::cout << "TestableMode::unlock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
-                << " releases lock for " << name << std::endl;       // LCOV_EXCL_LINE (only cout)
+        (not _repeatingMutexOwner                                  // LCOV_EXCL_LINE (only cout)
+            || _lastMutexOwner != boost::this_thread::get_id())) { // LCOV_EXCL_LINE (only cout)
+      logger(Logger::Severity::debug, "TestableMode")
+          << "TestableMode::unlock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
+          << " releases lock for " << name;                    // LCOV_EXCL_LINE (only cout)
     }
     // LCOV_EXCL_LINE (only cout)
     getLockObject().unlock();
@@ -191,9 +194,9 @@ namespace ChimeraTK::detail {
     size_t oldCounter = 0;
     while(_counter > 0 || (waitForDeviceInitialisation && _deviceInitialisationCounter > 0)) {
       if(_enableDebug && (oldCounter != _counter)) { // LCOV_EXCL_LINE (only cout)
-        std::cout << "Application::stepApplication(): testableMode.counter = " << _counter
-                  << std::endl; // LCOV_EXCL_LINE (only cout)
-        oldCounter = _counter;  // LCOV_EXCL_LINE (only cout)
+        logger(Logger::Severity::debug, "TestableMode")
+            << "Application::stepApplication(): testableMode.counter = " << _counter; // LCOV_EXCL_LINE (only cout)
+        oldCounter = _counter;                                                        // LCOV_EXCL_LINE (only cout)
       }
       unlock("stepApplication");
       boost::this_thread::yield();
