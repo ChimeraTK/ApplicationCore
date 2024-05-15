@@ -245,7 +245,9 @@ FixtureWithPollAndPushInput<enableTestFacility, addInitHandlers,
       application.group2.outputModule2.p.get_future().wait();
       // application.group2.pollModule2.p.get_future().wait();
       application.group2.pushModule2.p.get_future().wait();
+      application.group2.pushModule3.p.get_future().wait();
     }
+    application.group3.pollModule3.p.get_future().wait();
     deviceBecameFunctional.read();
   }
   catch(std::exception& e) {
