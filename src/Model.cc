@@ -396,7 +396,7 @@ namespace ChimeraTK::Model {
 
   /********************************************************************************************************************/
 
-  void ProcessVariableProxy::removeNode(VariableNetworkNode node) {
+  void ProcessVariableProxy::removeNode(const VariableNetworkNode& node) {
     // Safety check: We must not modify the model while iterating
     if(_d->impl->_graphVisitingLevel != 0) {
       throw ChimeraTK::logic_error("Must not alter the model while iterating/visiting!");
