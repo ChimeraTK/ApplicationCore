@@ -402,7 +402,7 @@ namespace ChimeraTK::Model {
     void addTag(const std::string& tag);
 
     /// Remove VariableNetworkNode from the list of nodes. Note: Will invalidate return value of getNodes()!
-    void removeNode(VariableNetworkNode node);
+    void removeNode(const VariableNetworkNode& node);
 
     friend class ChimeraTK::VariableNetworkNode;
     friend class ChimeraTK::DeviceModule;

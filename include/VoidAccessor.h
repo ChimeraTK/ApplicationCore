@@ -24,7 +24,7 @@ namespace ChimeraTK {
     using ChimeraTK::VoidRegisterAccessor::operator=;
 
     /** Move constructor */
-    VoidAccessor(VoidAccessor&& other) noexcept { InversionOfControlAccessor<VoidAccessor>::replace(std::move(other)); }
+    VoidAccessor(VoidAccessor&& other) noexcept;
 
     /** Move assignment. */
     VoidAccessor& operator=(VoidAccessor&& other) noexcept;
@@ -88,10 +88,28 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
   /********************************************************************************************************************/
 
+  inline VoidAccessor::VoidAccessor(VoidAccessor&& other) noexcept {
+    try {
+      InversionOfControlAccessor<VoidAccessor>::replace(std::move(other));
+    }
+    catch(ChimeraTK::logic_error& e) {
+      std::cerr << "ChimeraTK::logic_error caught: " << e.what() << std::endl;
+      std::terminate();
+    }
+  }
+
+  /********************************************************************************************************************/
+
   inline VoidAccessor& VoidAccessor::operator=(VoidAccessor&& other) noexcept {
     // Having a move-assignment operator is required to use the move-assignment
     // operator of a module containing an accessor.
-    InversionOfControlAccessor<VoidAccessor>::replace(std::move(other));
+    try {
+      InversionOfControlAccessor<VoidAccessor>::replace(std::move(other));
+    }
+    catch(ChimeraTK::logic_error& e) {
+      std::cerr << "ChimeraTK::logic_error caught: " << e.what() << std::endl;
+      std::terminate();
+    }
     return *this;
   }
 

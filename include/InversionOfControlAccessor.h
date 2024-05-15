@@ -76,7 +76,13 @@ namespace ChimeraTK {
       getOwner()->unregisterAccessor(_node);
     }
     if(getModel().isValid()) {
-      getModel().removeNode(_node);
+      try {
+        getModel().removeNode(_node);
+      }
+      catch(ChimeraTK::logic_error& e) {
+        std::cerr << "ChimeraTK::logic_error caught: " << e.what() << std::endl;
+        std::terminate();
+      }
     }
   }
 
