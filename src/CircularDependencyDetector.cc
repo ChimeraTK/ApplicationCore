@@ -146,7 +146,7 @@ namespace ChimeraTK::detail {
         std::lock_guard<std::mutex> lock(_mutex);
 
         // Check if module has registered a dependency wait. If not, situation will either resolve soon or module will
-        // register a dependency wait soon. Both cases can be found in the next interation.
+        // register a dependency wait soon. Both cases can be found in the next iteration.
         if(_awaitedNodes.find(module) == _awaitedNodes.end()) {
           continue;
         }
@@ -160,6 +160,7 @@ namespace ChimeraTK::detail {
         }
 
         // Iteratively search for reason the module blocks
+        std::set<Module*> searchedModules;
         std::function<void(const VariableNetworkNode& node)> iterativeSearch = [&](const VariableNetworkNode& node) {
           auto visitor = [&](auto proxy) {
             if constexpr(Model::isApplicationModule(proxy)) {
@@ -184,7 +185,20 @@ namespace ChimeraTK::detail {
                 return;
               }
               // The other module is right now waiting: continue iterative search
-              iterativeSearch(_awaitedNodes.at(feedingAppModule));
+              bool notYetSearched = searchedModules.insert(feedingAppModule).second;
+              if(notYetSearched) {
+                iterativeSearch(_awaitedNodes.at(feedingAppModule));
+              }
+              else {
+                if(_modulesWeHaveWarnedAbout.find(feedingAppModule) == _modulesWeHaveWarnedAbout.end()) {
+                  _modulesWeHaveWarnedAbout.insert(feedingAppModule);
+                  logger(Logger::Severity::warning, "CircularDependencyDetector")
+                      << "Note: ApplicationModule " << appModule->getQualifiedName() << " and "
+                      << feedingAppModule->getQualifiedName()
+                      << " are both waiting, on initial value provided directly or indirectly by the other."
+                      << std::endl;
+                }
+              }
             }
             else if constexpr(Model::isDeviceModule(proxy)) {
               // fed by device
