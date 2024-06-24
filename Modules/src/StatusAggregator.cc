@@ -15,9 +15,11 @@ namespace ChimeraTK {
       const std::unordered_set<std::string>& outputTags)
   : ApplicationModule(owner, ".", description, outputTags), _output(this, name), _mode(mode),
     _tagsToAggregate(std::move(tagsToAggregate)) {
-    // check maximum size of tagsToAggregate
+    // Check that size of tagsToAggregate is 1.
+    // There is a design decision pending whether multiple tags should be logical AND or logical OR (#13256).
     if(_tagsToAggregate.size() > 1) {
-      throw ChimeraTK::logic_error("StatusAggregator: List of tagsToAggregate must contain at most one tag.");
+      throw ChimeraTK::logic_error(
+          "StatusAggregator: List of tagsToAggregate is currently limited to one tag (see #13256).");
     }
     // add reserved tag tagAggregatedStatus to the status output, so it can be detected by other StatusAggregators
     _output._status.addTag(tagAggregatedStatus);
@@ -44,17 +46,25 @@ namespace ChimeraTK {
           if(staAggPtr == this) {
             return;
           }
-
-          if(_tagsToAggregate == staAggPtr->_tagsToAggregate) {
-            inputPathsSet.insert(staAggPtr->_output._status.getModel().getFullyQualifiedPath());
-
-            statusToMessagePathsMap[staAggPtr->_output._status.getModel().getFullyQualifiedPath()] =
-                staAggPtr->_output._message.getModel().getFullyQualifiedPath();
-
-            for(auto& anotherStatusAgregatorInput : staAggPtr->_inputs) {
-              anotherStatusAgregatorInputSet.insert(
-                  anotherStatusAgregatorInput._status.getModel().getFullyQualifiedPath());
+          // ATTENTION. This loop is implementing a logical AND.
+          // There is a design decision pending whether this is the wanted behaviour (#13256).
+          // The constructor is currently limiting to one tag, so existing logic will not break.
+          for(const auto& tagToAgregate : _tagsToAggregate) {
+            // Each tag attached to this StatusAggregator must be present at all StatusOutputs to be aggregated
+            auto outputNode = VariableNetworkNode(staAggPtr->_output._status);
+            if(outputNode.getTags().find(tagToAgregate) == outputNode.getTags().end()) {
+              return;
             }
+          }
+
+          inputPathsSet.insert(staAggPtr->_output._status.getModel().getFullyQualifiedPath());
+
+          statusToMessagePathsMap[staAggPtr->_output._status.getModel().getFullyQualifiedPath()] =
+              staAggPtr->_output._message.getModel().getFullyQualifiedPath();
+
+          for(auto& anotherStatusAgregatorInput : staAggPtr->_inputs) {
+            anotherStatusAgregatorInputSet.insert(
+                anotherStatusAgregatorInput._status.getModel().getFullyQualifiedPath());
           }
         }
       }
@@ -76,6 +86,10 @@ namespace ChimeraTK {
         // find status output - this is potential candidate to be aggregated
         if(tags.find(StatusOutput::tagStatusOutput) != tags.end()) {
           for(const auto& tagToAgregate : _tagsToAggregate) {
+            // ATTENTION. This loop is implementing a logical AND.
+            // There is a design decision pending whether this is the wanted behaviour (#13256).
+            // The constructor is currently limiting to one tag, so existing logic will not break.
+            //
             // Each tag attached to this StatusAggregator must be present at all StatusOutputs to be aggregated
             if(tags.find(tagToAgregate) == tags.end()) {
               return;

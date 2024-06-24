@@ -338,10 +338,11 @@ struct TestApplicationTags : ctk::Application {
     StatusGenerator sA{this, "sA", "Status 1", ctk::TAGS{"A"}, ctk::StatusOutput::Status::WARNING};
     StatusGenerator sAB{this, "sAB", "Status 2", {"A", "B"}, ctk::StatusOutput::Status::OFF};
 
+    // First level of aggregation: Input and output tags are identical
     ctk::StatusAggregator aggregateA{
-        this, "aggregateA", "aggregated status description", ctk::StatusAggregator::PriorityMode::fwko, {"A"}};
-    ctk::StatusAggregator aggregateB{this, "aggregateB", "aggregated status description",
-        ctk::StatusAggregator::PriorityMode::fwko, {"B"}, {"A"}}; // the "A" tag should be ignored by other aggregators
+        this, "aggregateA", "aggregated status description", ctk::StatusAggregator::PriorityMode::fwko, {"A"}, {"A"}};
+    ctk::StatusAggregator aggregateB{
+        this, "aggregateB", "aggregated status description", ctk::StatusAggregator::PriorityMode::fwko, {"B"}, {"B"}};
 
   } group{this, "Group", ""};
 
@@ -400,6 +401,72 @@ BOOST_AUTO_TEST_CASE(testTags) {
   BOOST_CHECK_EQUAL(int(Group_aggregateA), int(ctk::StatusOutput::Status::FAULT));
   BOOST_CHECK_EQUAL(int(Group_aggregateB), int(ctk::StatusOutput::Status::FAULT));
 }
+
+/**********************************************************************************************************************/
+
+struct TestApplicationAggregatorTags : ctk::Application {
+  TestApplicationAggregatorTags() : Application("testApp") {}
+  ~TestApplicationAggregatorTags() override { shutdown(); }
+
+  struct OuterGroup : ctk::ModuleGroup {
+    using ctk::ModuleGroup::ModuleGroup;
+
+    StatusGenerator sA{this, "sA", "Status A", ctk::TAGS{"A"}};
+    StatusGenerator sB1{this, "sB1", "Status B1", ctk::TAGS{"B"}};
+    StatusGenerator sB2{this, "sB2", "Status B2", ctk::TAGS{"B"}};
+    StatusGenerator sC{this, "sC", "Status C", ctk::TAGS{"C"}};
+
+    ctk::StatusAggregator aggregateA{
+        this, "aggregatedA", "", ctk::StatusAggregator::PriorityMode::fwko, {"A"}, {"AGG_A"}};
+    //  Same input and output tag. When aggregating tag "B" the status outputs themselves shoudl not be taken again.
+    ctk::StatusAggregator aggregateB{this, "aggregatedB", "", ctk::StatusAggregator::PriorityMode::fwko, {"B"}, {"B"}};
+
+    // Missing: Test of multiple aggregation tags. Currently only one tag is allowed due to the missing
+    // design decision whether multiple tags should be a logical AND or OR (#13256).
+  } group{this, "Group", ""};
+
+  // Does not aggregate an aggregator
+  ctk::StatusAggregator aggregateA{this, "aggA", "", ctk::StatusAggregator::PriorityMode::fwko, {"A"}};
+  // Aggregates the A aggregator
+  ctk::StatusAggregator aggAggA{this, "aggAggA", "", ctk::StatusAggregator::PriorityMode::fwko, {"AGG_A"}};
+  // Aggregates the B aggregator
+  ctk::StatusAggregator aggAggB{this, "aggAggB", "", ctk::StatusAggregator::PriorityMode::fwko, {"B"}};
+};
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testAggregatorTags) {
+  std::cout << "testAggregatorTags" << std::endl;
+
+  TestApplicationAggregatorTags app;
+  ctk::TestFacility test(app);
+
+  auto checkForName = [](auto& accessors, std::string name) {
+    return std::any_of(accessors.begin(), accessors.end(), [&name](auto acc) { return acc.getName() == name; });
+  };
+
+  auto accessorsAggA = app.aggregateA.getAccessorListRecursive();
+  // One aggregated input ("sA") + plus 3 inputs/outputs from the aggregator itself
+  // "aggregatedA" is not used because the tag "A" is its input. The output tag is "AGG_A"
+  BOOST_TEST(accessorsAggA.size() == 4);
+  BOOST_CHECK(checkForName(accessorsAggA, "sA"));
+  BOOST_CHECK(!checkForName(accessorsAggA, "aggregatedA"));
+
+  auto accessorsAggAggA = app.aggAggA.getAccessorListRecursive();
+  // One aggregated input ("aggregatedA") + according status message + plus 3 inputs/outputs from the aggregator itself
+  // "sA" is not used because the tag "A" is its input. The output tag is "AGG_A"
+  BOOST_TEST(accessorsAggAggA.size() == 5);
+  BOOST_CHECK(checkForName(accessorsAggAggA, "aggregatedA"));
+  BOOST_CHECK(!checkForName(accessorsAggAggA, "sA"));
+
+  auto accessorsAggAggB = app.aggAggB.getAccessorListRecursive();
+  // One aggregated input ("aggregatedB") + according status message + plus 3 inputs/outputs from the aggregator itself
+  // "sB1" and "sB2" are not used because their input is already aggregated.
+  BOOST_TEST(accessorsAggAggB.size() == 5);
+  BOOST_CHECK(checkForName(accessorsAggAggB, "aggregatedB"));
+  BOOST_CHECK(!checkForName(accessorsAggAggB, "sB1"));
+  BOOST_CHECK(!checkForName(accessorsAggAggB, "sB2"));
+};
 
 /**********************************************************************************************************************/
 
