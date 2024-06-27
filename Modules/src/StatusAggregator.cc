@@ -171,7 +171,7 @@ namespace ChimeraTK {
         // - the priority of the value is higher than the previously selected one, or
         // - the priority is the same but the input has a lower version number than the previously selected one.
         if(!statusSet || prio > statusPrio ||
-            (prio == statusPrio && statusOrigin != nullptr &&
+            (input == status && statusOrigin != nullptr &&
                 input.getVersionNumber() < statusOrigin->_status.getVersionNumber())) {
           status = input;
           statusOrigin = &inputPair;

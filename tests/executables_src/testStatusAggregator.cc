@@ -189,20 +189,37 @@ BOOST_AUTO_TEST_CASE(testPriorities) {
     status.readNonBlocking(); // do not check return value, as it will only be written when changed
     BOOST_CHECK_EQUAL(int(status), int(prio0));
 
-    // define repeated check to test all combinations of two given values with different priority
-    auto subcheck = [&](auto lower, auto higher, bool warnMixed = false) {
+    // Define repeated check to test all combinations of two given values with different priority.
+    // This kind of a whitebox test. We know that
+    // - the first aggregates variable has a different code path
+    // - the code path depends on the VersionNumber, so the write order matters and we have to set the version number
+    auto subcheck = [&](auto lower, auto higher, bool writeS2First, bool warnMixed = false) {
+      StatusGenerator* first;
+      StatusGenerator* second;
+      if(writeS2First) {
+        first = &app.s2;
+        second = &app.s1;
+      }
+      else {
+        first = &app.s1;
+        second = &app.s2;
+      }
       std::cout << int(lower) << " vs. " << int(higher) << std::endl;
-      app.s1.status = lower;
-      app.s1.status.write();
-      app.s2.status = lower;
-      app.s2.status.write();
+      first->status = lower;
+      first->setCurrentVersionNumber({});
+      first->status.write();
+      second->status = lower;
+      second->setCurrentVersionNumber({});
+      second->status.write();
       test.stepApplication();
       status.readLatest();
       BOOST_CHECK_EQUAL(int(status), int(lower));
-      app.s1.status = lower;
-      app.s1.status.write();
-      app.s2.status = higher;
-      app.s2.status.write();
+      first->status = lower;
+      first->setCurrentVersionNumber({});
+      first->status.write();
+      second->status = higher;
+      second->setCurrentVersionNumber({});
+      second->status.write();
       test.stepApplication();
       status.readLatest();
       if(!warnMixed) {
@@ -211,10 +228,12 @@ BOOST_AUTO_TEST_CASE(testPriorities) {
       else {
         BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::WARNING));
       }
-      app.s1.status = higher;
-      app.s1.status.write();
-      app.s2.status = lower;
-      app.s2.status.write();
+      first->status = higher;
+      first->setCurrentVersionNumber({});
+      first->status.write();
+      second->status = lower;
+      second->setCurrentVersionNumber({});
+      second->status.write();
       test.stepApplication();
       status.readLatest();
       if(!warnMixed) {
@@ -223,22 +242,28 @@ BOOST_AUTO_TEST_CASE(testPriorities) {
       else {
         BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::WARNING));
       }
-      app.s1.status = higher;
-      app.s1.status.write();
-      app.s2.status = higher;
-      app.s2.status.write();
+      first->status = higher;
+      first->setCurrentVersionNumber({});
+      first->status.write();
+      second->status = higher;
+      second->setCurrentVersionNumber({});
+      second->status.write();
       test.stepApplication();
       status.readLatest();
       BOOST_CHECK_EQUAL(int(status), int(higher));
     };
 
     // all prios against each other
-    subcheck(prio0, prio1, warnMixed01);
-    subcheck(prio0, prio2);
-    subcheck(prio0, prio3);
-    subcheck(prio1, prio2);
-    subcheck(prio1, prio3);
-    subcheck(prio2, prio3);
+    auto runAllSubchecks = [&](bool writeS2First) {
+      subcheck(prio0, prio1, writeS2First, warnMixed01);
+      subcheck(prio0, prio2, writeS2First);
+      subcheck(prio0, prio3, writeS2First);
+      subcheck(prio1, prio2, writeS2First);
+      subcheck(prio1, prio3, writeS2First);
+      subcheck(prio2, prio3, writeS2First);
+    };
+    runAllSubchecks(false);
+    runAllSubchecks(true);
   };
 
   // check all priority modes
