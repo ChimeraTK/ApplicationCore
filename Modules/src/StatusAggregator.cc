@@ -222,15 +222,33 @@ namespace ChimeraTK {
       // handle request for debug info
       if(change == _debug.getId()) {
         auto myLog = logger(Logger::Severity::info);
-        myLog << "StatusAggregtor " << getQualifiedName() << " debug info:" << std::endl;
+        myLog << "StatusAggregtor (";
+        switch(_mode) {
+          case PriorityMode::fwok:
+            myLog << "fwok";
+            break;
+          case PriorityMode::fwko:
+            myLog << "fwko";
+            break;
+          case PriorityMode::fw_warn_mixed:
+            myLog << "fw_warn_mixed";
+            break;
+          case PriorityMode::ofwk:
+            myLog << "ofwk";
+            break;
+        };
+        myLog << ") " << _output._status.getModel().getFullyQualifiedPath() << " debug info:" << std::endl;
         for(auto& inputPair : _inputs) {
           StatusPushInput& input = inputPair._status;
-          myLog << input.getName() << " = " << input;
+          myLog << input.getModel().getFullyQualifiedPath() << " = " << input;
           if(inputPair.hasMessageSource) {
-            myLog << inputPair._message.getName() << " = " << (std::string)inputPair._message;
+            myLog << " ; " << inputPair._message.getModel().getFullyQualifiedPath() << " = "
+                  << std::string(inputPair._message);
           }
           myLog << std::endl;
         }
+        myLog << "output status is " << _output._status << " (" << std::string(_output._message) << ")" << std::endl;
+
         myLog << "debug info finished." << std::endl;
         goto waitForChange;
       }
