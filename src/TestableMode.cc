@@ -77,11 +77,11 @@ namespace ChimeraTK::detail {
     }
 
     // obtain the lock
-    auto lastSeen_lastOwner = _lastMutexOwner;
+    boost::thread::id lastSeen_lastOwner = _lastMutexOwner;
   repeatTryLock:
     auto success = getLockObject().try_lock_for(std::chrono::seconds(30));
+    boost::thread::id currentLastOwner = _lastMutexOwner;
     if(!success) {
-      auto currentLastOwner = _lastMutexOwner;
       if(currentLastOwner != lastSeen_lastOwner) {
         lastSeen_lastOwner = currentLastOwner;
         goto repeatTryLock;
@@ -96,7 +96,7 @@ namespace ChimeraTK::detail {
 
     // check if the last owner of the mutex was this thread, which may be a hint
     // that no other thread is waiting for the lock
-    if(_lastMutexOwner == boost::this_thread::get_id()) {
+    if(currentLastOwner == boost::this_thread::get_id()) {
       // debug output if enabled
       if(_enableDebug && _repeatingMutexOwner == 0) {                       // LCOV_EXCL_LINE
                                                                             // (only cout)
@@ -169,8 +169,8 @@ namespace ChimeraTK::detail {
       return;
     }
     if(_enableDebug &&
-        (not _repeatingMutexOwner                                  // LCOV_EXCL_LINE (only cout)
-            || _lastMutexOwner != boost::this_thread::get_id())) { // LCOV_EXCL_LINE (only cout)
+        (not _repeatingMutexOwner                                         // LCOV_EXCL_LINE (only cout)
+            || _lastMutexOwner.load() != boost::this_thread::get_id())) { // LCOV_EXCL_LINE (only cout)
       logger(Logger::Severity::debug, "TestableMode")
           << "TestableMode::unlock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
           << " releases lock for " << name;                    // LCOV_EXCL_LINE (only cout)

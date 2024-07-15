@@ -220,7 +220,7 @@ namespace ChimeraTK::detail {
      * This is used to prevent spamming repeating messages if the same thread
      * acquires and releases the lock in a loop without another thread
      *  activating in between. */
-    boost::thread::id _lastMutexOwner;
+    std::atomic<boost::thread::id> _lastMutexOwner;
 
     /** Counter how often the same thread has acquired the testable mode mutex in
      * a row without another thread owning it in between. This is an indicator for

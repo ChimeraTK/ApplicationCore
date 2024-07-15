@@ -91,8 +91,6 @@ struct TestApplication : ctk::Application {
 
   } module{this, "module", ""};
 
-  ctk::PeriodicTrigger trigger{this, "trigger", ""};
-
   ctk::DeviceModule dev{this, ExceptionDummyCDD1.data(), "/fakeTriggerToMakeUnusedPollRegsHappy"};
 };
 
@@ -123,8 +121,7 @@ BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
         10000);
 
     // Trigger and check
-    app.trigger.sendTrigger();
-    // app.name.name.tick.write();
+    test.writeScalar<uint64_t>("/trigger/tick", 1);
     usleep(10000);
     BOOST_CHECK(app.module.readDataValidity == ctk::DataValidity::faulty);
 
@@ -154,14 +151,14 @@ BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
   // Advance through all read methods
   while(app.module.readMode < 3) {
     // Check
-    app.trigger.sendTrigger();
+    test.writeScalar<uint64_t>("/trigger/tick", 1);
     test.stepApplication();
     BOOST_CHECK(app.module.vars.read.dataValidity() == ctk::DataValidity::ok);
 
     // Check
     std::cout << "Checking read mode " << app.module.readMode << "\n";
     dummyBackend1->throwExceptionRead = true;
-    app.trigger.sendTrigger();
+    test.writeScalar<uint64_t>("/trigger/tick", 1);
     test.stepApplication(false);
     BOOST_CHECK(app.module.vars.read.dataValidity() == ctk::DataValidity::faulty);
 
@@ -190,13 +187,13 @@ BOOST_AUTO_TEST_CASE(testDirectConnectWrite) {
   // Advance through all non-blocking read methods
   while(app.module.readMode < 5) {
     // Check
-    app.trigger.sendTrigger();
+    test.writeScalar<uint64_t>("/trigger/tick", 1);
     test.stepApplication();
     BOOST_CHECK(app.module.vars.set.dataValidity() == ctk::DataValidity::ok);
 
     // Check
     dummyBackend1->throwExceptionWrite = true;
-    app.trigger.sendTrigger();
+    test.writeScalar<uint64_t>("/trigger/tick", 1);
     test.stepApplication(false);
     // write operations failing does not invalidate data
     BOOST_CHECK(app.module.vars.set.dataValidity() == ctk::DataValidity::ok);
