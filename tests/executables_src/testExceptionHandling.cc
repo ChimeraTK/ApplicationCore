@@ -806,8 +806,8 @@ BOOST_FIXTURE_TEST_CASE(B_3_1_2, Fixture_initHandlers) {
   deviceBackend->throwExceptionWrite = false;
 
   // check that values finally are written to the device
-  CHECK_EQUAL_TIMEOUT(exceptionDummyRegister2[0], 803, 10000);
-  CHECK_EQUAL_TIMEOUT(exceptionDummyRegister3[0], 802, 10000);
+  CHECK_EQUAL_TIMEOUT((exceptionDummyRegister2.getBufferLock(), exceptionDummyRegister2[0]), 803, 10000);
+  CHECK_EQUAL_TIMEOUT((exceptionDummyRegister3.getBufferLock(), exceptionDummyRegister3[0]), 802, 10000);
 
   // check order of writes
   auto woReg2 = deviceBackend->getWriteOrder("REG2");
