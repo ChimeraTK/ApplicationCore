@@ -26,9 +26,10 @@ struct ModuleA : public ctk::ApplicationModule {
 
   ctk::UserInputValidator validator;
 
-  static constexpr std::string_view in1ErrorMessage = "in1 needs to be smaller than 10";
+  std::string in1ErrorMessage;
 
   void prepare() override {
+    in1ErrorMessage = "(" + getName() + ") in1 needs to be smaller than 10";
     validator.add(
         in1ErrorMessage.data(), [&] { return in1 < 10; }, in1);
   }
@@ -51,12 +52,13 @@ struct ModuleA : public ctk::ApplicationModule {
 struct ModuleAwithSecondInput : public ModuleA {
   using ModuleA::ModuleA;
 
-  static constexpr const char* in2ErrorMessage = "in2 needs to be bigger than 10";
-
   ctk::ScalarPushInputWB<int> in2{this, "in2", "", "Second validated input"};
+
+  std::string in2ErrorMessage;
 
   void prepare() override {
     ModuleA::prepare();
+    in2ErrorMessage = "(" + getName() + ") in2 needs to be bigger than 10";
     validator.add(
         in2ErrorMessage, [&] { return in2 > 10; }, in2);
   }
@@ -76,7 +78,7 @@ struct UpstreamSingleOut : public ctk::ApplicationModule {
 
   void prepare() override {
     validator.add(
-        "in1 needs to be smaller than 20", [&] { return in1 < 20; }, in1);
+        "(" + getName() + ") in1 needs to be smaller than 20", [&] { return in1 < 20; }, in1);
   }
 
   void mainLoop() override {
@@ -106,7 +108,7 @@ struct UpstreamTwinOut : public ctk::ApplicationModule {
 
   void prepare() override {
     validator.add(
-        "in1 needs to be smaller than 20", [&] { return in1 < 20; }, in1);
+        "(" + getName() + ") in1 needs to be smaller than 20", [&] { return in1 < 20; }, in1);
   }
 
   void mainLoop() override {
@@ -407,14 +409,14 @@ BOOST_AUTO_TEST_CASE(testSetErrorFunction) {
   BOOST_TEST(modAin1.readLatest());
   BOOST_TEST(modAin1 == 8);
   BOOST_TEST(app.moduleA.in1 == 8);
-  BOOST_TEST(errorMessage == ModuleAwithSecondInput::in1ErrorMessage);
+  BOOST_TEST(errorMessage == app.moduleA.in1ErrorMessage);
 
   modAin2.setAndWrite(1);
   test.stepApplication();
   BOOST_TEST(modAin2.readLatest());
   BOOST_TEST(modAin2 == 20);
   BOOST_TEST(app.moduleA.in2 == 20);
-  BOOST_TEST(errorMessage == ModuleAwithSecondInput::in2ErrorMessage);
+  BOOST_TEST(errorMessage == app.moduleA.in2ErrorMessage);
 }
 
 /*********************************************************************************************************************/
@@ -611,15 +613,42 @@ BOOST_AUTO_TEST_CASE(testDeepBackwardsPropagation) {
   BOOST_TEST(upstrIn == 5);
 
   // test two consecutive values, only the first being discarded at the lowest level and the second is accepted
+  size_t retry = 0;
+repeat:
   upstrIn.setAndWrite(12);
   upstrIn.setAndWrite(3);
 
   test.stepApplication();
-  BOOST_TEST(downstrIn.readLatest()); // just observe final state, because intermediate states might be subject
-  BOOST_TEST(downstrIn == 5);         // to race conditions
+
+  // There are two acceptable outcomes of this test:
+  //
+  // 1) Likely: The first value was rejected and the second was accepted
+  //
+  // 2) Unlikely: Both values are rejected. This can happen because the UserInputValidator of midstream needs to use a
+  //    fresh VersionNumber to propagate the rejection of the first value from downstream (otherwise the scenario in
+  //    testBackwardsPropagationTwoDownstream would break). Since that fresh VersionNumber is bigger then the one of the
+  //    second, valid value, it can overwrite the second value and hence that gets effectively rejected.
+  //
+  // Currently, we accept both scenarios but require that the likely scenario is observed (by retrying a couple of times
+  // if we see the second scenario). This problem can be solved by extending the VersionNumber with a sub-version, so we
+  // can both distinguish the corrected from the rejected values as well as find out to which original VersionNumber
+  // the corrected value belongs. Due to the fact that this problem only occurs when writing inputs faster than the
+  // values get rejected and the UserInputValidator being designed for inputs by users, this problem does not seem to
+  // play a big role in real scenarios.
+
+  BOOST_TEST(downstrIn.readLatest()); // just observe final state, to avoid intermediate races
   BOOST_TEST(midstreamIn.readLatest());
-  BOOST_TEST(midstreamIn == 4);
+  if(downstrIn == 7) {
+    BOOST_TEST(upstrIn.readLatest());
+    BOOST_TEST(midstreamIn == 6);
+    BOOST_TEST(upstrIn == 5);
+    if(++retry < 10) {
+      goto repeat;
+    }
+  }
   BOOST_TEST(!upstrIn.readLatest());
+  BOOST_TEST(downstrIn == 5);
+  BOOST_TEST(midstreamIn == 4);
   BOOST_TEST(upstrIn == 3);
 }
 
