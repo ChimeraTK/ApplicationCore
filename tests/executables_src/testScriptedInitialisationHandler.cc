@@ -79,11 +79,8 @@ BOOST_FIXTURE_TEST_CASE(testSuccess, Fixture) {
   BOOST_CHECK(std::filesystem::exists("device1Init.success"));
 
   auto secondInitMessage = testFacility.getScalar<std::string>("/Devices/Dummy0/secondInitScriptOutput");
-  secondInitMessage.read(); // empty
-  secondInitMessage.read(); // script message
-  secondInitMessage.read(); // success message
-  BOOST_CHECK_EQUAL(
-      static_cast<std::string>(secondInitMessage), "just a second script\nDummy0 initialisation SUCCESS!");
+  referenceString = "just a second script\nDummy0 initialisation SUCCESS!";
+  CHECK_TIMEOUT((secondInitMessage.readLatest(), std::string(secondInitMessage) == referenceString), 20000);
 
   // cleanup
   (void)std::filesystem::remove("device1Init.success");
