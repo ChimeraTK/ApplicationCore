@@ -36,7 +36,7 @@ namespace ChimeraTK {
       // such that a growing message is published.
       // For debugging it is important to get the intermediate information. In case the script gets stuck
       // you want to know what has already been printed.
-      while(initScript.running() && std::getline(out, line)) {
+      while(std::getline(out, line)) {
         output += line + "\n";
         _scriptOutput = output;
         _scriptOutput.write();
