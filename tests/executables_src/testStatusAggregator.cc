@@ -491,7 +491,7 @@ BOOST_AUTO_TEST_CASE(testAggregatorTags) {
   BOOST_CHECK(checkForName(accessorsAggAggB, "aggregatedB"));
   BOOST_CHECK(!checkForName(accessorsAggAggB, "sB1"));
   BOOST_CHECK(!checkForName(accessorsAggAggB, "sB2"));
-};
+}
 
 /**********************************************************************************************************************/
 
