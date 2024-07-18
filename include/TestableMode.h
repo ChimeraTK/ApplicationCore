@@ -216,11 +216,23 @@ namespace ChimeraTK::detail {
      */
     std::map<size_t, VariableDescriptor> _variables;
 
-    /** Last thread which successfully obtained the lock for the testable mode.
-     * This is used to prevent spamming repeating messages if the same thread
-     * acquires and releases the lock in a loop without another thread
-     *  activating in between. */
-    std::atomic<boost::thread::id> _lastMutexOwner;
+    /**
+     * Last thread which successfully obtained the lock for the testable mode. This is used to prevent spamming
+     * repeating messages if the same thread acquires and releases the lock in a loop without another thread activating
+     * in between.
+     *
+     * @todo: After moving away from Ubuntu 20.04, we can replace this construction with an
+     *        std::atomic<boost::thread::id>.
+     */
+    class _LastMutexOwner {
+     public:
+      _LastMutexOwner& operator=(const boost::thread::id& id);
+      operator boost::thread::id();
+
+     private:
+      boost::thread::id _lastMutexOwner;
+      std::mutex _mxLastMutexOwner;
+    } _lastMutexOwner;
 
     /** Counter how often the same thread has acquired the testable mode mutex in
      * a row without another thread owning it in between. This is an indicator for
