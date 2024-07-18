@@ -169,8 +169,8 @@ namespace ChimeraTK::detail {
       return;
     }
     if(_enableDebug &&
-        (not _repeatingMutexOwner                                         // LCOV_EXCL_LINE (only cout)
-            || _lastMutexOwner.load() != boost::this_thread::get_id())) { // LCOV_EXCL_LINE (only cout)
+        (not _repeatingMutexOwner                                  // LCOV_EXCL_LINE (only cout)
+            || boost::thread::id(_lastMutexOwner) != boost::this_thread::get_id())) { // LCOV_EXCL_LINE (only cout)
       logger(Logger::Severity::debug, "TestableMode")
           << "TestableMode::unlock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
           << " releases lock for " << name;                    // LCOV_EXCL_LINE (only cout)
@@ -222,5 +222,22 @@ namespace ChimeraTK::detail {
 
     return "*UNKNOWN_THREAD*";
   }
+
+  /********************************************************************************************************************/
+
+  TestableMode::_LastMutexOwner::operator boost::thread::id() {
+    std::lock_guard<std::mutex> lk(_mxLastMutexOwner);
+    return _lastMutexOwner;
+  }
+
+  /********************************************************************************************************************/
+
+  TestableMode::_LastMutexOwner& TestableMode::_LastMutexOwner::operator=(const boost::thread::id& id) {
+    std::lock_guard<std::mutex> lk(_mxLastMutexOwner);
+    _lastMutexOwner = id;
+    return *this;
+  }
+
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK::detail
