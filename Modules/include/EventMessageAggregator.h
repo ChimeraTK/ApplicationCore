@@ -26,6 +26,7 @@ namespace ChimeraTK {
         const std::unordered_set<std::string>& tags = {});
 
     using ScalarOutput::ScalarOutput;
+    using ScalarOutput::operator=;
 
     static constexpr std::string_view aggregatableMessageTag{"_ChimeraTK_AggregatableMessage"};
   };
