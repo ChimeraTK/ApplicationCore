@@ -12,9 +12,9 @@ namespace ChimeraTK {
 
   StatusAggregator::StatusAggregator(ModuleGroup* owner, const std::string& name, const std::string& description,
       PriorityMode mode, std::unordered_set<std::string> tagsToAggregate,
-      const std::unordered_set<std::string>& outputTags)
+      const std::unordered_set<std::string>& outputTags, std::string warnMixedMessage)
   : ApplicationModule(owner, ".", description, outputTags), _output(this, name), _mode(mode),
-    _tagsToAggregate(std::move(tagsToAggregate)) {
+    _tagsToAggregate(std::move(tagsToAggregate)), _warnMixedMessage(std::move(warnMixedMessage)) {
     // Check that size of tagsToAggregate is 1.
     // There is a design decision pending whether multiple tags should be logical AND or logical OR (#13256).
     if(_tagsToAggregate.size() > 1) {
@@ -195,7 +195,7 @@ namespace ChimeraTK {
       if(!statusOrigin) {
         // this can only happen if warning about mixed values
         assert(status == StatusOutput::Status::WARNING);
-        _output.writeIfDifferent(status, "warning - StatusAggregator inputs have mixed values");
+        _output.writeIfDifferent(status, _warnMixedMessage);
       }
       else {
         if(status != StatusOutput::Status::OK) {
@@ -259,6 +259,12 @@ namespace ChimeraTK {
 
   DataValidity StatusAggregator::getDataValidity() const {
     return DataValidity::ok;
+  }
+
+  /********************************************************************************************************************/
+
+  void StatusAggregator::setWarnMixedMessage(std::string message) {
+    _warnMixedMessage = message;
   }
 
   /********************************************************************************************************************/

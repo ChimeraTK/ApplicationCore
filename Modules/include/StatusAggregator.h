@@ -70,7 +70,8 @@ namespace ChimeraTK {
      */
     StatusAggregator(ModuleGroup* owner, const std::string& outputName, const std::string& description,
         PriorityMode mode = PriorityMode::fwok, std::unordered_set<std::string> tagsToAggregate = {},
-        const std::unordered_set<std::string>& outputTags = {});
+        const std::unordered_set<std::string>& outputTags = {},
+        std::string warnMixedMessage = "warning - StatusAggregator inputs have mixed values");
 
     StatusAggregator(StatusAggregator&& other) = default;
     StatusAggregator() = default;
@@ -79,6 +80,10 @@ namespace ChimeraTK {
     void mainLoop() override;
 
     DataValidity getDataValidity() const override;
+
+    /** Set a custom message for the warn mixed state.
+     */
+    void setWarnMixedMessage(std::string message);
 
    protected:
     /// Recursivly search for StatusMonitors and other StatusAggregators
@@ -110,6 +115,9 @@ namespace ChimeraTK {
 
     /// Allow runtime debugging
     VoidInput _debug{this, "/Debug/statusAggregators", "Print debug info for all status aggregators once."};
+
+    /// Error message for the warn_mixed condition
+    std::string _warnMixedMessage;
   };
 
   /********************************************************************************************************************/
