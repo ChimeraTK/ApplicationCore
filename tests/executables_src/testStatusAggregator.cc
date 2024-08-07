@@ -283,6 +283,40 @@ BOOST_AUTO_TEST_CASE(testPriorities) {
 
 /**********************************************************************************************************************/
 
+BOOST_AUTO_TEST_CASE(testCustomMixedWarnMessage) {
+  std::cout << "testCustomMixedWarnMessage" << std::endl;
+
+  const std::string customMessage1{"My custom warn mixed message"};
+
+  TestPrioApplication app(ctk::StatusOutput::Status::OK);
+  app.aggregator = ctk::StatusAggregator{&app, "Aggregated/status", "aggregated status description",
+      ctk::StatusAggregator::PriorityMode::fw_warn_mixed, {}, {}, customMessage1};
+
+  ctk::TestFacility test(app);
+  test.runApplication();
+
+  auto statusMessage = test.getScalar<std::string>("/Aggregated/status_message");
+
+  // check test pre-condition: No message when OK.
+  BOOST_TEST(std::string(statusMessage) == "");
+
+  app.s1.setCurrentVersionNumber({});
+  app.s1.status.setAndWrite(int(ctk::StatusOutput::Status::OFF));
+  test.stepApplication();
+  BOOST_TEST(statusMessage.readAndGet() == customMessage1);
+
+  // Change custom message at run time
+  const std::string customMessage2{"Another warn mixed message"};
+  app.aggregator.setWarnMixedMessage(customMessage2);
+
+  app.s1.setCurrentVersionNumber({});
+  app.s1.status.setAndWrite(int(ctk::StatusOutput::Status::OFF));
+  test.stepApplication();
+  BOOST_TEST(statusMessage.readAndGet() == customMessage2);
+}
+
+/**********************************************************************************************************************/
+
 struct TestApplication2Levels : ctk::Application {
   TestApplication2Levels() : Application("testApp") {}
   ~TestApplication2Levels() override { shutdown(); }
