@@ -40,7 +40,7 @@ struct TestModule1 : ctk::ApplicationModule {
   ctk::ScalarPushInputWB<int> i3{this, "i3", "", ""};
   ctk::ScalarOutput<int> o1{this, "o1", "", ""};
   ctk::ArrayOutput<int> o2{this, "o2", "", 2, ""};
-  ctk::StatusOutput oStat{this, "oStat", "", {ctk::TagExplicitDataValidity}};
+  ctk::StatusOutput oStat{this, "oStat", "", {ctk::explicitDataValidityTag}};
   void mainLoop() override {
     auto group = readAnyGroup();
     while(true) {

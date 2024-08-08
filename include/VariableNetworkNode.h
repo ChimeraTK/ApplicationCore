@@ -181,7 +181,7 @@ namespace ChimeraTK {
 
   /** Special tag to designate that a not should not automatically take over DataValidity of its owning module.
    *  Use e.g. for a StatusOutput which should indicate errors. */
-  constexpr auto TagExplicitDataValidity = "_ChimeraTK_NodeHasExplicitDataValidity";
+  constexpr auto explicitDataValidityTag = "_ChimeraTK_NodeHasExplicitDataValidity";
 
   /********************************************************************************************************************/
 
@@ -275,7 +275,7 @@ namespace ChimeraTK {
   void VariableNetworkNode::setAppAccessorImplementation(boost::shared_ptr<NDRegisterAccessor<UserType>> impl) const {
     auto decorated =
         boost::make_shared<MetaDataPropagatingRegisterDecorator<UserType>>(impl, getOwningModule(), getDirection());
-    if(pdata->tags.find(TagExplicitDataValidity) != pdata->tags.end()) {
+    if(pdata->tags.find(explicitDataValidityTag) != pdata->tags.end()) {
       decorated->disableDataValidityPropagation();
     }
 
