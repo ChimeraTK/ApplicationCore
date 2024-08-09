@@ -391,7 +391,10 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   void ProcessVariableProxy::addTag(const std::string& tag) {
-    std::get<VertexProperties::ProcessVariableProperties>(_d->impl->_graph[_d->vertex].p).tags.insert(tag);
+    auto& tags = std::get<VertexProperties::ProcessVariableProperties>(_d->impl->_graph[_d->vertex].p).tags;
+    if(tags.erase(negateTag(tag)) == 0) {
+      tags.insert(tag);
+    }
   }
 
   /********************************************************************************************************************/
