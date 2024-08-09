@@ -179,6 +179,12 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  /** Special tag to designate that a not should not automatically take over DataValidity of its owning module.
+   *  Use e.g. for a StatusOutput which should indicate errors. */
+  constexpr auto explicitDataValidityTag = "_ChimeraTK_NodeHasExplicitDataValidity";
+
+  /********************************************************************************************************************/
+
   /** We use a pimpl pattern so copied instances of VariableNetworkNode refer to
    * the same instance of the data structure and thus stay consistent all the
    * time. */
@@ -269,6 +275,10 @@ namespace ChimeraTK {
   void VariableNetworkNode::setAppAccessorImplementation(boost::shared_ptr<NDRegisterAccessor<UserType>> impl) const {
     auto decorated =
         boost::make_shared<MetaDataPropagatingRegisterDecorator<UserType>>(impl, getOwningModule(), getDirection());
+    if(pdata->tags.find(explicitDataValidityTag) != pdata->tags.end()) {
+      decorated->disableDataValidityPropagation();
+    }
+
     getAppAccessor<UserType>().replace(decorated);
     auto flagProvider = boost::dynamic_pointer_cast<MetaDataPropagationFlagProvider>(decorated);
     assert(flagProvider);

@@ -293,7 +293,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void VariableNetworkNode::addTag(const std::string& tag) const {
-    pdata->tags.insert(tag);
+    if(pdata->tags.erase(negateTag(tag)) == 0) {
+      pdata->tags.insert(tag);
+    }
     if(pdata->model.isValid()) {
       pdata->model.addTag(tag);
     }

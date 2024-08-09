@@ -26,6 +26,9 @@ namespace ChimeraTK {
    */
   using TAGS = const std::unordered_set<std::string>;
 
+  /** negate tag using prefix '!' */
+  std::string negateTag(const std::string& tag);
+
   /********************************************************************************************************************/
 
   /**
