@@ -550,9 +550,36 @@ BOOST_AUTO_TEST_CASE(testAddTag) {
   };
 
   app.testModule.getModel().visit(
-      checker, ctk::Model::keepProcessVariables, ctk::Model::keepTag("newTag"), ChimeraTK::Model::depthFirstSearch);
+      checker, ctk::Model::keepProcessVariables && ctk::Model::keepTag("newTag"), ChimeraTK::Model::depthFirstSearch);
 
   BOOST_TEST(nFound == 5);
+}
+
+/*********************************************************************************************************************/
+/* test addTag() with negated tags, in order to remove tags */
+
+BOOST_AUTO_TEST_CASE(testAddTagNegated) {
+  std::cout << "***************************************************************"
+               "******************************************************"
+            << std::endl;
+  std::cout << "==> testAddTagNegated" << std::endl;
+
+  OneModuleApp app;
+  BOOST_TEST(ChimeraTK::negateTag("newTag") == "!newTag");
+  BOOST_TEST(ChimeraTK::negateTag("!newTag") == "newTag");
+  app.testModule.addTag("!newTag");
+  app.testModule.addTag("newTag");
+
+  size_t nFound = 0;
+  auto checker = [&](ChimeraTK::Model::ProcessVariableProxy /* proxy */) {
+    ++nFound;
+    // std::cout << proxy.getName() << " tags: " << std::endl;
+  };
+
+  app.testModule.getModel().visit(checker, ctk::Model::keepProcessVariables && ChimeraTK::Model::keepTag("newTag"),
+      ChimeraTK::Model::depthFirstSearch);
+
+  BOOST_TEST(nFound == 0);
 }
 
 /*********************************************************************************************************************/
