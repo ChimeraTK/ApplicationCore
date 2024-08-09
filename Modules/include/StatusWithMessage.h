@@ -21,10 +21,11 @@ namespace ChimeraTK {
   /**
    *  A VariableGroup for error status and message reporting.
    *  Convenience methods ensure that status and message are updated consistently.
+   *  Like StatusOutput, by default does not propagate DataValidity=invalid of owning module to status and message.
    */
   struct StatusWithMessage : VariableGroup {
     StatusWithMessage(VariableGroup* owner, const std::string& qualifiedStatusVariableName,
-        const std::string& description = "", const std::unordered_set<std::string>& tags = {});
+        const std::string& description = "", const std::unordered_set<std::string>& tags = {explicitDataValidityTag});
 
     StatusWithMessage() = default;
 
