@@ -10,6 +10,7 @@
 #include "check_timeout.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
+#include "StatusAccessor.h"
 #include "TestFacility.h"
 #include "VariableGroup.h"
 
@@ -39,6 +40,7 @@ struct TestModule1 : ctk::ApplicationModule {
   ctk::ScalarPushInputWB<int> i3{this, "i3", "", ""};
   ctk::ScalarOutput<int> o1{this, "o1", "", ""};
   ctk::ArrayOutput<int> o2{this, "o2", "", 2, ""};
+  ctk::StatusOutput oStat{this, "oStat", ""};
   void mainLoop() override {
     auto group = readAnyGroup();
     while(true) {
@@ -51,6 +53,10 @@ struct TestModule1 : ctk::ApplicationModule {
       o2[1] = i2[1];
       o1.write();
       o2.write();
+      if(i1 < 0) {
+        oStat.setDataValidity(ctk::DataValidity::faulty);
+      }
+      oStat.write();
       group.readAny();
     }
   }
@@ -107,18 +113,21 @@ BOOST_AUTO_TEST_CASE(testDirectConnections) {
   auto i3 = test.getScalar<int>("/t1/i3");
   auto o1 = test.getScalar<int>("/t1/o1");
   auto o2 = test.getArray<int>("/t1/o2");
+  auto oStat = test.getArray<int>("/t1/oStat");
 
   test.runApplication();
 
-  // test if fault flag propagates to all outputs
+  // test if fault flag propagates to all outputs, except oStat
   i1 = 1;
   i1.setDataValidity(ctk::DataValidity::faulty);
   i1.write();
   test.stepApplication();
   o1.read();
   o2.read();
+  oStat.read();
   BOOST_CHECK(o1.dataValidity() == ctk::DataValidity::faulty);
   BOOST_CHECK(o2.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(oStat.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK_EQUAL(int(o1), 1);
   BOOST_CHECK_EQUAL(o2[0], 0);
   BOOST_CHECK_EQUAL(o2[1], 0);
@@ -233,6 +242,13 @@ BOOST_AUTO_TEST_CASE(testDirectConnections) {
   BOOST_CHECK_EQUAL(o2[1], 11);
   BOOST_CHECK(i3.dataValidity() == ctk::DataValidity::ok);
   BOOST_CHECK_EQUAL(int(i3), 10);
+
+  // check that oStat can also receive data faulty, if set explicitly
+  i1 = -1;
+  i1.write();
+  test.stepApplication();
+  oStat.readLatest();
+  BOOST_CHECK(oStat.dataValidity() == ctk::DataValidity::faulty);
 }
 
 /*********************************************************************************************************************/

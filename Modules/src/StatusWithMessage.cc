@@ -10,7 +10,9 @@ namespace ChimeraTK {
       const std::string& description, const std::unordered_set<std::string>& tags)
   : VariableGroup(owner, Utilities::getPathName(qualifiedStatusVariableName), description, tags),
     _status(this, Utilities::getUnqualifiedName(qualifiedStatusVariableName), description, {tagStatusHasMessage}),
-    _message(this, Utilities::getUnqualifiedName(qualifiedStatusVariableName) + "_message", "", "status message") {}
+    _message(this, Utilities::getUnqualifiedName(qualifiedStatusVariableName) + "_message", "", "status message") {
+    addTag(explicitDataValidityTag);
+  }
 
   /********************************************************************************************************************/
 

@@ -916,11 +916,12 @@ BOOST_AUTO_TEST_CASE(testMonitorDataValidityPropagation) {
   watch.setDataValidity(ctk::DataValidity::faulty);
   watch.write();
   test.stepApplication();
-  status.readLatest();
   // status is not changed as watch is the same, data validity is changed -> test condition: getDataValidity() !=
   // lastStatusValidity
+  BOOST_CHECK(status.readLatest());
   BOOST_CHECK(status == static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
-  BOOST_CHECK(status.dataValidity() == ctk::DataValidity::faulty);
+  // StatusOutput by default does not propagate DataValidity=fault (behaviour was changed!)
+  BOOST_CHECK(status.dataValidity() == ctk::DataValidity::ok);
 
   watch = 55.0;
   watch.write();
@@ -928,14 +929,14 @@ BOOST_AUTO_TEST_CASE(testMonitorDataValidityPropagation) {
   status.readLatest();
   // status is changed, data validity is not changed -> test condition: status.value != newStatus
   BOOST_CHECK(status == static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
-  BOOST_CHECK(status.dataValidity() == ctk::DataValidity::faulty);
+  BOOST_CHECK(status.dataValidity() == ctk::DataValidity::ok);
 
   watch = 70.0;
   watch.setDataValidity(ctk::DataValidity::ok);
   watch.write();
   test.stepApplication();
   status.readLatest();
-  // status is changed, data validity is changed -> test condition: status.value != newStatus || status.value != newStatus
+  // status is changed, data validity is changed -> test condition: status.value != newStatus
   BOOST_CHECK(status == static_cast<int>(ChimeraTK::StatusOutput::Status::FAULT));
   BOOST_CHECK(status.dataValidity() == ctk::DataValidity::ok);
 
