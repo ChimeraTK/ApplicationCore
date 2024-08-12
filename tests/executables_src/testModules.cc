@@ -550,9 +550,55 @@ BOOST_AUTO_TEST_CASE(testAddTag) {
   };
 
   app.testModule.getModel().visit(
-      checker, ctk::Model::keepProcessVariables, ctk::Model::keepTag("newTag"), ChimeraTK::Model::depthFirstSearch);
+      checker, ctk::Model::keepProcessVariables && ctk::Model::keepTag("newTag"), ChimeraTK::Model::depthFirstSearch);
 
   BOOST_TEST(nFound == 5);
+}
+
+/*********************************************************************************************************************/
+/* test addTag() with negated tags, in order to remove tags */
+
+BOOST_AUTO_TEST_CASE(testAddTagNegated) {
+  std::cout << "***************************************************************"
+               "******************************************************"
+            << std::endl;
+  std::cout << "==> testAddTagNegated" << std::endl;
+
+  BOOST_TEST(ChimeraTK::negateTag("newTag") == "!newTag");
+  BOOST_TEST(ChimeraTK::negateTag("!newTag") == "newTag");
+
+  {
+    // negated tags on module level
+    OneModuleApp app;
+    BOOST_TEST(ChimeraTK::negateTag("newTag") == "!newTag");
+    BOOST_TEST(ChimeraTK::negateTag("!newTag") == "newTag");
+    app.testModule.addTag("!newTag");
+    app.testModule.addTag("newTag");
+
+    const auto& tags = app.testModule.someOutput.getTags();
+    BOOST_CHECK(tags.find("newTag") == tags.end());
+  }
+  {
+    // negated tags on variable level
+    OneModuleApp app;
+    app.testModule.someOutput.addTag("newTag");
+    app.testModule.someOutput.addTag("!newTag");
+
+    const auto& tags = app.testModule.someOutput.getTags();
+    BOOST_CHECK(tags.find("newTag") == tags.end());
+  }
+  {
+    // negated tags on variable and module level, mixed
+    OneModuleApp app;
+    app.testModule.addTag("newTag");
+    app.testModule.someOutput.addTag("!newTag");
+
+    const auto& tags = app.testModule.someOutput.getTags();
+    BOOST_CHECK(tags.find("newTag") == tags.end());
+  }
+  // note, we currently do not test the tag set of the model associated with the accessors.
+  // the tags on the model level are not clear since a vertex in the model represents an output pv and its input
+  // in some other module at the same time
 }
 
 /*********************************************************************************************************************/

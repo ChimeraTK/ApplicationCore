@@ -391,7 +391,11 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   void ProcessVariableProxy::addTag(const std::string& tag) {
-    std::get<VertexProperties::ProcessVariableProperties>(_d->impl->_graph[_d->vertex].p).tags.insert(tag);
+    auto& tags = std::get<VertexProperties::ProcessVariableProperties>(_d->impl->_graph[_d->vertex].p).tags;
+    tags.insert(tag);
+    // note, we do not erase negated tags here (in contrast to EntityOwner::addTag) since the model anyway
+    // collects tags from all associated Accessors. If one Accessor adds a tag and another one removes the same, the
+    // set of tags in the model contains both tag and negate tag, meaning it is undecided.
   }
 
   /********************************************************************************************************************/

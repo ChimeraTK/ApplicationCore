@@ -128,7 +128,10 @@ namespace ChimeraTK {
     for(auto& submodule : getSubmoduleList()) {
       submodule->addTag(tag);
     }
-    _tags.insert(tag);
+    if(_tags.erase(negateTag(tag)) == 0) {
+      // negated tag was not found, so insert the tag
+      _tags.insert(tag);
+    }
   }
 
   /********************************************************************************************************************/
@@ -153,6 +156,15 @@ namespace ChimeraTK {
       name = "..";
     }
     return name;
+  }
+
+  /********************************************************************************************************************/
+
+  std::string negateTag(const std::string& tag) {
+    if(!tag.empty() && tag[0] == '!') {
+      return tag.substr(1);
+    }
+    return '!' + tag;
   }
 
   /********************************************************************************************************************/
