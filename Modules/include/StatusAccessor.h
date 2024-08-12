@@ -59,13 +59,18 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  /** Special ScalarOutput which represents a status which can be aggregated by the StatusAggregator. */
+  /** Special ScalarOutput which represents a status which can be aggregated by the StatusAggregator.
+   *  By default it discards DataValidity meta data of owning module, i.e. does not propagate DataValidity=invalid to
+   *  status, unless explicitly set for the output.
+   *  The owning ApplicationModule is responsible for a implenting reasonable mapping, if required.
+   */
   struct StatusOutput : StatusAccessor<ScalarOutput<int32_t>> {
     /** Note: In contrast to normal ScalarOutput accessors, this constructor omits the unit argument. */
     StatusOutput(Module* owner, const std::string& name, const std::string& description,
         const std::unordered_set<std::string>& tags = {})
     : StatusAccessor<ScalarOutput<int32_t>>(owner, name, "", description, tags) {
       addTag(tagStatusOutput);
+      addTag(explicitDataValidityTag);
     }
     StatusOutput() = default;
     using StatusAccessor<ScalarOutput<int32_t>>::operator=;

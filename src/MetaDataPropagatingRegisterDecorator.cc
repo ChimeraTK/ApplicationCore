@@ -60,7 +60,7 @@ namespace ChimeraTK {
       _target->setDataValidity(DataValidity::faulty);
     }
     else {
-      if(_direction.dir == VariableDirection::feeding) {
+      if(_direction.dir == VariableDirection::feeding && !_disableDataValidityPropagation) {
         _target->setDataValidity(_owner->getDataValidity());
       }
       else {
