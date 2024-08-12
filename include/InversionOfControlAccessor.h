@@ -41,6 +41,9 @@ namespace ChimeraTK {
      * characters (i.e. no spaces and no special characters). */
     void addTags(const std::unordered_set<std::string>& tags);
 
+    /** Return set of tags. */
+    const std::unordered_set<std::string>& getTags();
+
     /** Convert into VariableNetworkNode */
     explicit operator VariableNetworkNode() { return _node; }
     explicit operator VariableNetworkNode() const { return _node; }
@@ -109,6 +112,13 @@ namespace ChimeraTK {
     for(const auto& tag : tags) {
       _node.addTag(tag);
     }
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename Derived>
+  const std::unordered_set<std::string>& InversionOfControlAccessor<Derived>::getTags() {
+    return _node.getTags();
   }
 
   /********************************************************************************************************************/
