@@ -72,7 +72,7 @@ namespace ChimeraTK {
       VoidInput _clear{this, "clear", ""};
       ScalarPushInput<uint64_t> _autoClearTimer{this, "AutoClearTimer/tick", "", ""};
 
-      uint32_t _autoClearSeconds{appConfig().get<uint32_t>("/Configuration/autoClearEventMessage", 300)};
+      uint32_t _autoClearSeconds{appConfig().get<uint32_t>("Configuration/autoClearEventMessage", 300)};
     };
 
     Impl _impl{this, ".", ""};
