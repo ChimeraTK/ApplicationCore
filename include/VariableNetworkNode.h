@@ -141,7 +141,7 @@ namespace ChimeraTK {
 
     [[nodiscard]] Model::ProcessVariableProxy getModel() const;
 
-    void setModel(Model::ProcessVariableProxy model) const;
+    void setModel(const Model::ProcessVariableProxy& model) const;
 
     void setPublicName(const std::string& name) const;
 
@@ -250,7 +250,7 @@ namespace ChimeraTK {
     size_t circularNetworkHash{0};
 
     /** Model representation of this variable */
-    Model::ProcessVariableProxy model;
+    Model::NonOwningProxy<Model::ProcessVariableProxy> model;
 
     /** Value in case of a constant */
     userTypeMap constantValue;

@@ -285,6 +285,7 @@ namespace ChimeraTK {
 
     if(_owner) {
       _owner->unregisterModule(this);
+      _owner = nullptr;
     }
   }
 

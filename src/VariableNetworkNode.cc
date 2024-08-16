@@ -297,8 +297,9 @@ namespace ChimeraTK {
       // negated tag was not found, so insert the tag
       pdata->tags.insert(tag);
     }
-    if(pdata->model.isValid()) {
-      pdata->model.addTag(tag);
+    auto model = pdata->model.lock();
+    if(model.isValid()) {
+      model.addTag(tag);
     }
   }
 
@@ -412,13 +413,13 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   Model::ProcessVariableProxy VariableNetworkNode::getModel() const {
-    return pdata->model;
+    return pdata->model.lock();
   }
 
   /********************************************************************************************************************/
 
-  void VariableNetworkNode::setModel(Model::ProcessVariableProxy model) const {
-    pdata->model = std::move(model);
+  void VariableNetworkNode::setModel(const Model::ProcessVariableProxy& model) const {
+    pdata->model = model;
   }
 
   /********************************************************************************************************************/

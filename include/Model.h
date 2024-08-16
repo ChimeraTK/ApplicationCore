@@ -47,6 +47,9 @@ namespace ChimeraTK::Model {
   class DirectoryProxy;
   class Impl;
 
+  template<typename ProxyType>
+  class NonOwningProxy;
+
   namespace detail {
     // Define how the boost::adjacency_list is supposed to store edges and vertices internally
     using OutEdgeListType = boost::multisetS;
@@ -184,6 +187,9 @@ namespace ChimeraTK::Model {
     friend class ProcessVariableProxy;
     friend class DirectoryProxy;
     friend struct VertexProperties;
+
+    template<typename ProxyType>
+    friend class NonOwningProxy;
 
     /// Struct holding the data for the proxy classes
     struct ProxyData;
@@ -447,6 +453,55 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   /**
+   * Proxy class which does not keep the ownership of the model.
+   *
+   * The normal Proxy-based types like ProcessVariableProxy keep internally a shared pointer to the model. In place
+   * where the model is supposed to keep a Proxy (e.g. in the VertexProperties), this would create a shared-pointer loop
+   * resulting in a memory leak. To break this circle, a NonOwningProxy templated to the respective proxy-type
+   * (e.g. NonOwningProxy<ProcessVariableProxy>) can be used instead.
+   */
+  template<typename ProxyType>
+  class NonOwningProxy {
+   public:
+    /// Default constructor creates "empty" non-owning proxy which does not contain a valid proxy
+    NonOwningProxy() = default;
+
+    /// Construct non-owning proxy from (owning) proxy
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    NonOwningProxy(const ProxyType& owningProxy)
+    : _vertex(owningProxy.isValid() ? owningProxy._d->vertex : nullptr),
+      _impl(owningProxy.isValid() ? owningProxy._d->impl : nullptr) {}
+
+    /// Assign non-owning proxy from (owning) proxy
+    NonOwningProxy& operator=(const ProxyType& owningProxy) {
+      if(owningProxy.isValid()) {
+        _vertex = owningProxy._d->vertex;
+        _impl = owningProxy._d->impl;
+      }
+      else {
+        _vertex = nullptr;
+        _impl.reset();
+      }
+      return *this;
+    }
+
+    /// Return owning proxy. If the model targeted by this non-owning proxy has gone away, the returned proxy will
+    /// not be valid.
+    ProxyType lock() {
+      ProxyType p;
+      p._d = std::make_shared<Proxy::ProxyData>(_vertex, _impl.lock());
+      return p;
+    }
+
+   private:
+    Model::Vertex _vertex{};
+    std::weak_ptr<Impl> _impl;
+  };
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  /**
    * Information to be stored with each vertex
    */
   struct VertexProperties {
@@ -480,7 +535,7 @@ namespace ChimeraTK::Model {
     };
     struct DeviceModuleProperties {
       std::string aliasOrCdd;
-      ProcessVariableProxy trigger;
+      NonOwningProxy<ProcessVariableProxy> trigger;
       DeviceModule& module;
     };
     struct ProcessVariableProperties {
