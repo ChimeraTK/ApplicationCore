@@ -15,15 +15,12 @@
 #include <ChimeraTK/ExceptionDummyBackend.h>
 
 #include <boost/mpl/list.hpp>
+#include <boost/test/included/unit_test.hpp>
 
 #include <chrono>
 #include <functional>
 #include <future>
 #include <VoidAccessor.h>
-
-#define BOOST_NO_EXCEPTIONS
-#include <boost/test/included/unit_test.hpp>
-#undef BOOST_NO_EXCEPTIONS
 
 /*********************************************************************************************************************/
 
@@ -449,9 +446,12 @@ BOOST_AUTO_TEST_CASE(testConstantD10InitialValue) {
 
   ChimeraTK::DummyRegisterAccessor<int> reg1(
       boost::dynamic_pointer_cast<ChimeraTK::DummyBackend>(dev.getBackend()).get(), "", "REG1");
-  BOOST_CHECK(reg1 == 1234);
+  {
+    auto lk = reg1.getBufferLock();
+    BOOST_CHECK(reg1 == 1234);
+  }
   d.deviceBackend->throwExceptionOpen = false;
-  CHECK_TIMEOUT(reg1 == 0, 1000000);
+  CHECK_TIMEOUT((reg1.getBufferLock(), reg1 == 0), 1000000);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
