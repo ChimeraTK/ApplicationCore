@@ -46,10 +46,10 @@ namespace ChimeraTK {
       }
 
       // find minimum type required to represent data
-      const std::type_info& valTyp = reg.getDataDescriptor().minimumDataType().getAsTypeInfo();
+      const auto* valTyp = &(reg.getDataDescriptor().minimumDataType().getAsTypeInfo());
 
       // create node and add to list
-      rv.emplace_back(reg.getRegisterName(), _deviceAliasOrCDD, reg.getRegisterName(), updateMode, direction, valTyp,
+      rv.emplace_back(reg.getRegisterName(), _deviceAliasOrCDD, reg.getRegisterName(), updateMode, direction, *valTyp,
           reg.getNumberOfElements());
     }
 

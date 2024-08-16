@@ -51,7 +51,7 @@ namespace ChimeraTK {
    private:
     std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>> parse();
     xmlpp::Element* getRootNode(xmlpp::DomParser& parser);
-    void error(const std::string& message);
+    [[noreturn]] void error(const std::string& message);
     bool isVariable(const xmlpp::Element* element);
     bool isArray(const xmlpp::Element* element);
     bool isModule(const xmlpp::Element* element);
