@@ -344,7 +344,7 @@ namespace ChimeraTK::Model {
   /********************************************************************************************************************/
 
   ProcessVariableProxy DeviceModuleProxy::getTrigger() const {
-    return std::get<VertexProperties::DeviceModuleProperties>(_d->impl->_graph[_d->vertex].p).trigger;
+    return std::get<VertexProperties::DeviceModuleProperties>(_d->impl->_graph[_d->vertex].p).trigger.lock();
   }
 
   /********************************************************************************************************************/
@@ -526,6 +526,8 @@ namespace ChimeraTK::Model {
     catch(std::bad_variant_access&) {
       assert(false);
     }
+
+    node.setModel({});
   }
 
   /********************************************************************************************************************/
