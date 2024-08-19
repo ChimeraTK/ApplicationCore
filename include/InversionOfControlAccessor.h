@@ -177,9 +177,6 @@ namespace ChimeraTK {
     static_assert(std::is_base_of<InversionOfControlAccessor<Derived>, Derived>::value,
         "InversionOfControlAccessor<> must be used in a curiously recurring template pattern!");
 
-    auto path = Utilities::getPathName(name);
-    auto unqualName = Utilities::getUnqualifiedName(name);
-
     /// @todo FIXME eliminate dynamic_cast and the "lambda trick" by changing owner pointer type
     auto addToOnwer = [&](auto& owner_casted) {
       auto model = owner_casted.getModel();
