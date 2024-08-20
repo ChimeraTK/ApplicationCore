@@ -227,14 +227,14 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
-  TestableMode::_LastMutexOwner::operator boost::thread::id() {
+  TestableMode::LastMutexOwner::operator boost::thread::id() {
     std::lock_guard<std::mutex> lk(_mxLastMutexOwner);
     return _lastMutexOwner;
   }
 
   /********************************************************************************************************************/
 
-  TestableMode::_LastMutexOwner& TestableMode::_LastMutexOwner::operator=(const boost::thread::id& id) {
+  TestableMode::LastMutexOwner& TestableMode::LastMutexOwner::operator=(const boost::thread::id& id) {
     std::lock_guard<std::mutex> lk(_mxLastMutexOwner);
     _lastMutexOwner = id;
     return *this;

@@ -31,7 +31,7 @@ struct ModuleA : public ctk::ApplicationModule {
   void prepare() override {
     in1ErrorMessage = "(" + getName() + ") in1 needs to be smaller than 10";
     validator.add(
-        in1ErrorMessage.data(), [&] { return in1 < 10; }, in1);
+        in1ErrorMessage, [&] { return in1 < 10; }, in1);
   }
 
   void mainLoop() override {
