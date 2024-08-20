@@ -264,7 +264,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void StatusAggregator::setWarnMixedMessage(std::string message) {
-    _warnMixedMessage = message;
+    _warnMixedMessage = std::move(message);
   }
 
   /********************************************************************************************************************/

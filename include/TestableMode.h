@@ -224,9 +224,10 @@ namespace ChimeraTK::detail {
      * @todo: After moving away from Ubuntu 20.04, we can replace this construction with an
      *        std::atomic<boost::thread::id>.
      */
-    class _LastMutexOwner {
+    class LastMutexOwner {
      public:
-      _LastMutexOwner& operator=(const boost::thread::id& id);
+      LastMutexOwner& operator=(const boost::thread::id& id);
+      // NOLINTNEXTLINE(google-explicit-constructor)
       operator boost::thread::id();
 
      private:
