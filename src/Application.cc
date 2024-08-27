@@ -29,7 +29,7 @@ Application::Application(const std::string& name) : ApplicationBase(name), Modul
   ModuleGroup::_model = Model::ModuleGroupProxy(_model);
 
   // check if the application name has been set
-  if(applicationName.empty()) {
+  if(_applicationName.empty()) {
     Application::shutdown();
     throw ChimeraTK::logic_error("Error: An instance of Application must have its applicationName set.");
   }
@@ -44,7 +44,7 @@ Application::Application(const std::string& name) : ApplicationBase(name), Modul
 /*********************************************************************************************************************/
 
 Application::~Application() {
-  if(_lifeCycleState == LifeCycleState::initialisation && !hasBeenShutdown) {
+  if(_lifeCycleState == LifeCycleState::initialisation && !_hasBeenShutdown) {
     // likely an exception has been thrown in the initialisation phase, in which case we better call shutdown to prevent
     // ApplicationBase from complaining and hiding the exception
     ApplicationBase::shutdown();
@@ -114,7 +114,7 @@ void Application::optimiseUnmappedVariables(const std::set<std::string>& names) 
 /*********************************************************************************************************************/
 
 void Application::run() {
-  assert(not applicationName.empty());
+  assert(!_applicationName.empty());
 
   if(_testableMode.isEnabled()) {
     if(!_testFacilityRunApplicationCalled) {
@@ -224,18 +224,18 @@ void Application::shutdown() {
 /*********************************************************************************************************************/
 
 void Application::generateXML() {
-  assert(not applicationName.empty());
+  assert(!_applicationName.empty());
 
   XMLGenerator generator{*this};
   generator.run();
-  generator.save(applicationName + ".xml");
+  generator.save(_applicationName + ".xml");
 }
 
 /*********************************************************************************************************************/
 
 void Application::generateDOT() {
-  assert(not applicationName.empty());
-  this->getModel().writeGraphViz(applicationName + ".dot");
+  assert(!_applicationName.empty());
+  this->getModel().writeGraphViz(_applicationName + ".dot");
 }
 
 /*********************************************************************************************************************/

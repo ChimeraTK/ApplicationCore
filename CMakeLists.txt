@@ -11,7 +11,7 @@ include(cmake/set_version_numbers.cmake)
 option(BUILD_TESTS "Build tests." ON)
 
 # Find the ControlSystemAdapter
-FIND_PACKAGE(ChimeraTK-ControlSystemAdapter 02.07 REQUIRED)
+FIND_PACKAGE(ChimeraTK-ControlSystemAdapter 02.11 REQUIRED)
 
 # Find the DeviceAccess
 FIND_PACKAGE(ChimeraTK-DeviceAccess 03.14 REQUIRED)
