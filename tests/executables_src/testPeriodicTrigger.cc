@@ -2,58 +2,62 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #define BOOST_TEST_MODULE testPeriodicTrigger
 
-#include <boost/test/included/unit_test.hpp>
-using namespace boost::unit_test_framework;
-
 #include "Application.h"
 #include "PeriodicTrigger.h"
 #include "TestFacility.h"
 
-using namespace ChimeraTK;
+#include <boost/test/included/unit_test.hpp>
 
-// Just consume variables because the testfacility is too stupid to step without anything being written.
-struct TestModule : public ApplicationModule {
-  using ApplicationModule::ApplicationModule;
+namespace Tests::testPeriodicTrigger {
 
-  ScalarPushInput<int> in{this, "in", "", ""};
-  void mainLoop() override { in.read(); }
-};
+  using namespace boost::unit_test_framework;
+  using namespace ChimeraTK;
 
-struct TestApplication : Application {
-  TestApplication() : Application("myTestApp") {}
-  ~TestApplication() override { shutdown(); }
+  // Just consume variables because the testfacility is too stupid to step without anything being written.
+  struct TestModule : public ApplicationModule {
+    using ApplicationModule::ApplicationModule;
 
-  PeriodicTrigger p{this, "SomeTimer", "", 1000, {}, "/Config/timerPeriod", "../tickTock"};
-  TestModule m{this, "SomeModule", ""};
-};
+    ScalarPushInput<int> in{this, "in", "", ""};
+    void mainLoop() override { in.read(); }
+  };
 
-// This test is checking that the I/O variables are created as intended,
-// and that the functionality in testable mode is working. It does not
-// the real timing (and thus the only and main functionality of the PeriodicTrigger).
-BOOST_AUTO_TEST_CASE(testIterface) {
-  BOOST_CHECK(true);
-  TestApplication app;
-  TestFacility test{app};
-  test.runApplication();
+  struct TestApplication : Application {
+    TestApplication() : Application("myTestApp") {}
+    ~TestApplication() override { shutdown(); }
 
-  auto tick = test.getScalar<uint64_t>("/tickTock");
-  tick.readLatest();
-  BOOST_CHECK(tick.getVersionNumber() != VersionNumber{nullptr});
-  BOOST_CHECK_EQUAL(static_cast<uint64_t>(tick), 0);
+    PeriodicTrigger p{this, "SomeTimer", "", 1000, {}, "/Config/timerPeriod", "../tickTock"};
+    TestModule m{this, "SomeModule", ""};
+  };
 
-  // We can only check that the period variable exists and is writeable.
-  // There is no effect in testable mode. Actually, we cannot even write to it
-  // because it not read any more, and the test would faild with an unread queue.
-  BOOST_CHECK_NO_THROW((void)test.getScalar<uint32_t>("/Config/timerPeriod"));
+  // This test is checking that the I/O variables are created as intended,
+  // and that the functionality in testable mode is working. It does not
+  // the real timing (and thus the only and main functionality of the PeriodicTrigger).
+  BOOST_AUTO_TEST_CASE(testIterface) {
+    BOOST_CHECK(true);
+    TestApplication app;
+    TestFacility test{app};
+    test.runApplication();
 
-  auto oldVersion = tick.getVersionNumber();
-  // The test facilty does not recognise that the PeriodicTrigger send something. It expects some input from the CS.
-  app.p.sendTrigger();
-  test.writeScalar<int>("/SomeModule/in", 42);
+    auto tick = test.getScalar<uint64_t>("/tickTock");
+    tick.readLatest();
+    BOOST_CHECK(tick.getVersionNumber() != VersionNumber{nullptr});
+    BOOST_CHECK_EQUAL(static_cast<uint64_t>(tick), 0);
 
-  test.stepApplication();
-  tick.read();
+    // We can only check that the period variable exists and is writeable.
+    // There is no effect in testable mode. Actually, we cannot even write to it
+    // because it not read any more, and the test would faild with an unread queue.
+    BOOST_CHECK_NO_THROW((void)test.getScalar<uint32_t>("/Config/timerPeriod"));
 
-  BOOST_CHECK(tick.getVersionNumber() > oldVersion);
-  BOOST_CHECK_EQUAL(static_cast<uint64_t>(tick), 1);
-}
+    auto oldVersion = tick.getVersionNumber();
+    // The test facilty does not recognise that the PeriodicTrigger send something. It expects some input from the CS.
+    app.p.sendTrigger();
+    test.writeScalar<int>("/SomeModule/in", 42);
+
+    test.stepApplication();
+    tick.read();
+
+    BOOST_CHECK(tick.getVersionNumber() > oldVersion);
+    BOOST_CHECK_EQUAL(static_cast<uint64_t>(tick), 1);
+  }
+
+} // namespace Tests::testPeriodicTrigger
