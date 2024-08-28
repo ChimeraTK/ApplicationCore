@@ -49,6 +49,8 @@ namespace ChimeraTK {
 
     void setAndWrite(const std::vector<UserType>& newValue);
 
+    using value_type = UserType;
+
    protected:
     friend class InversionOfControlAccessor<ArrayAccessor<UserType>>;
 
@@ -111,8 +113,19 @@ namespace ChimeraTK {
   /** Convenience class for output array accessors with return channel ("read
    * back") (always UpdateMode::push) */
   template<typename UserType>
+  struct ArrayOutputPushRB : public ArrayAccessor<UserType> {
+    ArrayOutputPushRB(Module* owner, const std::string& name, std::string unit, size_t nElements,
+        const std::string& description, const std::unordered_set<std::string>& tags = {});
+    ArrayOutputPushRB() = default;
+    using ArrayAccessor<UserType>::operator=;
+  };
+
+  /********************************************************************************************************************/
+
+  /** Deprecated, do not use. Use ArrayOutpuPushRB instead (works identically). */
+  template<typename UserType>
   struct ArrayOutputRB : public ArrayAccessor<UserType> {
-    ArrayOutputRB(Module* owner, const std::string& name, std::string unit, size_t nElements,
+    [[deprecated]] ArrayOutputRB(Module* owner, const std::string& name, std::string unit, size_t nElements,
         const std::string& description, const std::unordered_set<std::string>& tags = {});
     ArrayOutputRB() = default;
     using ArrayAccessor<UserType>::operator=;
@@ -238,6 +251,15 @@ namespace ChimeraTK {
       size_t nElements, const std::string& description, const std::unordered_set<std::string>& tags)
   : ArrayAccessor<UserType>(
         owner, name, {VariableDirection::consuming, true}, unit, nElements, UpdateMode::push, description, tags) {}
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  ArrayOutputPushRB<UserType>::ArrayOutputPushRB(Module* owner, const std::string& name, std::string unit,
+      size_t nElements, const std::string& description, const std::unordered_set<std::string>& tags)
+  : ArrayAccessor<UserType>(
+        owner, name, {VariableDirection::feeding, true}, unit, nElements, UpdateMode::push, description, tags) {}
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/

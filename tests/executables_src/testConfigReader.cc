@@ -16,11 +16,11 @@ using namespace boost::unit_test_framework;
 
 namespace ctk = ChimeraTK;
 
-std::string cdd{"(dummy?map=configReaderDevice.map)"};
+constexpr std::string_view cdd{"(dummy?map=configReaderDevice.map)"};
 
 namespace Tests::testConfigReader {
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Module to receive the config values */
 
   struct TestModule : ctk::ApplicationModule {
@@ -81,41 +81,41 @@ namespace Tests::testConfigReader {
 
     void mainLoop() override {
       // values should be available right away
-      BOOST_CHECK_EQUAL((int8_t)var8, -123);
-      BOOST_CHECK_EQUAL((uint8_t)var8u, 34);
-      BOOST_CHECK_EQUAL((int16_t)var16, -567);
-      BOOST_CHECK_EQUAL((uint16_t)var16u, 678);
-      BOOST_CHECK_EQUAL((int32_t)var32, -345678);
-      BOOST_CHECK_EQUAL((uint32_t)var32u, 234567);
-      BOOST_CHECK_EQUAL((int64_t)var64, -2345678901234567890);
-      BOOST_CHECK_EQUAL((uint64_t)var64u, 12345678901234567890U);
-      BOOST_CHECK_CLOSE((float)varFloat, 3.1415, 0.000001);
-      BOOST_CHECK_CLOSE((double)varDouble, -2.8, 0.000001);
-      BOOST_CHECK_EQUAL((std::string)varString, "My dear mister singing club!");
+      BOOST_CHECK_EQUAL(int8_t(var8), -123);
+      BOOST_CHECK_EQUAL(uint8_t(var8u), 34);
+      BOOST_CHECK_EQUAL(int16_t(var16), -567);
+      BOOST_CHECK_EQUAL(uint16_t(var16u), 678);
+      BOOST_CHECK_EQUAL(int32_t(var32), -345678);
+      BOOST_CHECK_EQUAL(uint32_t(var32u), 234567);
+      BOOST_CHECK_EQUAL(int64_t(var64), -2345678901234567890);
+      BOOST_CHECK_EQUAL(uint64_t(var64u), 12345678901234567890U);
+      BOOST_CHECK_CLOSE(float(varFloat), 3.1415, 0.000001);
+      BOOST_CHECK_CLOSE(double(varDouble), -2.8, 0.000001);
+      BOOST_CHECK_EQUAL(std::string(varString), "My dear mister singing club!");
 
       BOOST_CHECK_EQUAL(intArray.getNElements(), 10);
-      for(size_t i = 0; i < 10; ++i) {
+      for(unsigned int i = 0; i < 10; ++i) {
         BOOST_CHECK_EQUAL(intArray[i], 10 - i);
       }
 
       BOOST_CHECK_EQUAL(stringArray.getNElements(), 8);
-      for(size_t i = 0; i < 8; ++i) {
+      for(unsigned int i = 0; i < 8; ++i) {
         BOOST_CHECK_EQUAL(stringArray[i], "Hallo" + std::to_string(i + 1));
       }
 
-      BOOST_CHECK_EQUAL((int16_t)module1.var16, -567);
-      BOOST_CHECK_EQUAL((uint16_t)module1.var16u, 678);
-      BOOST_CHECK_EQUAL((int32_t)module1.var32, -345678);
-      BOOST_CHECK_EQUAL((uint32_t)module1.var32u, 234567);
-      BOOST_CHECK_EQUAL((uint32_t)module1.submodule.var32u, 234567);
+      BOOST_CHECK_EQUAL(int16_t(module1.var16), -567);
+      BOOST_CHECK_EQUAL(uint16_t(module1.var16u), 678);
+      BOOST_CHECK_EQUAL(int32_t(module1.var32), -345678);
+      BOOST_CHECK_EQUAL(uint32_t(module1.var32u), 234567);
+      BOOST_CHECK_EQUAL(uint32_t(module1.submodule.var32u), 234567);
 
       BOOST_CHECK_EQUAL(module1.submodule.intArray.getNElements(), 10);
-      for(size_t i = 0; i < 10; ++i) {
+      for(unsigned int i = 0; i < 10; ++i) {
         BOOST_CHECK_EQUAL(module1.submodule.intArray[i], 10 - i);
       }
 
       BOOST_CHECK_EQUAL(module1.submodule.stringArray.getNElements(), 8);
-      for(size_t i = 0; i < 8; ++i) {
+      for(unsigned int i = 0; i < 8; ++i) {
         BOOST_CHECK_EQUAL(module1.submodule.stringArray[i], "Hallo" + std::to_string(i + 1));
       }
 
@@ -147,7 +147,7 @@ namespace Tests::testConfigReader {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* dummy application */
 
   struct TestApplication : public ctk::Application {
@@ -157,19 +157,22 @@ namespace Tests::testConfigReader {
     TestModule testModule{this, "/", "The test module"};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* dummy application with two config readers (to check the exception in ApplicationModule::appConfig()) */
 
   struct TestApplicationTwoConfigs : public ctk::Application {
     TestApplicationTwoConfigs() : Application("TestApplicationTwoConfigs") {}
     ~TestApplicationTwoConfigs() override { shutdown(); }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
     ctk::ConfigReader config2{this, "config2", "validConfig.xml"};
 #pragma GCC diagnostic pop
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* dummy application with default config readers, but no matching config file */
 
   struct TestApplicationNoConfigs : public ctk::Application {
@@ -177,7 +180,7 @@ namespace Tests::testConfigReader {
     ~TestApplicationNoConfigs() override { shutdown(); }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* dummy application with deprecated config that is invalid */
 
   struct TestApplicationInvalidConfig : public ctk::Application {
@@ -191,17 +194,17 @@ namespace Tests::testConfigReader {
 #pragma GCC diagnostic pop
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* dummy application which directly connects config reader variables to a device */
 
   struct TestApplicationWithDevice : public ctk::Application {
     TestApplicationWithDevice() : Application("valid") {}
     ~TestApplicationWithDevice() override { shutdown(); }
 
-    ctk::DeviceModule device{this, cdd};
+    ctk::DeviceModule device{this, cdd.data()};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test trigger by app variable when connecting a polled device register to an
    * app variable */
 
@@ -209,7 +212,7 @@ namespace Tests::testConfigReader {
     std::cout << "==> testConfigReader" << std::endl;
 
     TestApplication app;
-    auto& config = app.appConfig();
+    auto& config = app.getConfigReader();
 
     BOOST_TEST(config.getOwner() != nullptr);
 
@@ -270,7 +273,7 @@ namespace Tests::testConfigReader {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testExceptions) {
     std::cout << "==> testExceptions" << std::endl;
@@ -278,7 +281,7 @@ namespace Tests::testConfigReader {
     { BOOST_CHECK_THROW(std::make_unique<TestApplicationInvalidConfig>(), ctk::logic_error); }
     {
       TestApplication app;
-      auto& config = app.appConfig();
+      auto& config = app.getConfigReader();
       // Test get with types mismatch
       BOOST_CHECK_THROW(config.get<uint16_t>("var32u"), ctk::logic_error);
 
@@ -294,7 +297,7 @@ namespace Tests::testConfigReader {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testDirectWriteToDevice) {
     std::cout << "==> testDirectWriteToDevice" << std::endl;
@@ -302,9 +305,9 @@ namespace Tests::testConfigReader {
     ctk::TestFacility test(app);
     test.runApplication();
 
-    BOOST_TEST(app.appConfig().getOwner() != nullptr);
+    BOOST_TEST(app.getConfigReader().getOwner() != nullptr);
 
-    ctk::Device device(cdd);
+    ctk::Device device(cdd.data());
 
     auto var32u = device.getScalarRegisterAccessor<uint32_t>("var32u");
     auto var16 = device.getScalarRegisterAccessor<int16_t>("var16");
@@ -318,9 +321,24 @@ namespace Tests::testConfigReader {
     BOOST_CHECK_EQUAL(var16, -567);
     BOOST_CHECK_EQUAL(module1var16, -567);
     BOOST_CHECK_EQUAL(intArray.getNElements(), 10);
-    for(size_t i = 0; i < 10; ++i) {
+    for(unsigned int i = 0; i < 10; ++i) {
       BOOST_CHECK_EQUAL(intArray[i], 10 - i);
     }
+  }
+
+  /********************************************************************************************************************/
+
+  BOOST_AUTO_TEST_CASE(testGetModules) {
+    TestApplication app;
+    auto& config = app.getConfigReader();
+
+    auto modules = config.getModules();
+    BOOST_TEST(std::list<std::string>({"module1", "module2"}) == modules);
+
+    auto modules2 = config.getModules("module1");
+    BOOST_TEST(std::list<std::string>({"submodule"}) == modules2);
+
+    BOOST_TEST(config.getModules("this/should/not/exist") == std::list<std::string>());
   }
 
 } // namespace Tests::testConfigReader

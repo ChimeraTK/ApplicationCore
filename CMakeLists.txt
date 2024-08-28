@@ -10,6 +10,20 @@ include(cmake/set_version_numbers.cmake)
 
 option(BUILD_TESTS "Build tests." ON)
 
+set(PYBIND11_FINDPYTHON ON)
+find_package(pybind11 2.11)
+
+if(${pybind11_FOUND})
+  find_program(STUBGEN stubgen)
+
+  if(${STUBGEN} STREQUAL "STUBGEN-NOTFOUND")
+    message(FATAL_ERROR "Could not find program 'stubgen'. Try installing package 'mypy' or similar.")
+  endif()
+
+else()
+  message(WARNING "pybind11 was not found in an appropriate version, disabling Python support!")
+endif()
+
 # Find the ControlSystemAdapter
 FIND_PACKAGE(ChimeraTK-ControlSystemAdapter 02.11 REQUIRED)
 
@@ -45,38 +59,67 @@ file(GLOB module_headers "${CMAKE_SOURCE_DIR}/Modules/include/*.h")
 set(${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/Modules/include/)
 aux_source_directory(${CMAKE_SOURCE_DIR}/Modules/src library_module_sources)
 
-MACRO(COPY_MAPPING_FILES)
-  foreach(FILE_TO_COPY test.xlmap test.dmap)
-    configure_file(tests/${FILE_TO_COPY} ${PROJECT_BINARY_DIR}/${FILE_TO_COPY} copyonly)
-  endforeach(FILE_TO_COPY)
-ENDMACRO(COPY_MAPPING_FILES)
+if(${pybind11_FOUND})
+  # Python module mmanager sources and headers
+  include_directories(${CMAKE_SOURCE_DIR}/Python/manager)
+  set(${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/Python/manager/)
+  file(GLOB python_manager_headers "${CMAKE_SOURCE_DIR}/Python/manager/*.h")
+  set(python_manager_sources "${CMAKE_SOURCE_DIR}/Python/manager/PythonModuleManager.cc")
+
+  # Python bindings sources and headers
+  include_directories(${CMAKE_SOURCE_DIR}/Python/bindings/include)
+  set(${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/Python/bindings/include/)
+  file(GLOB python_module_headers "${CMAKE_SOURCE_DIR}/Python/bindings/include/*.h")
+  file(GLOB python_module_sources "${CMAKE_SOURCE_DIR}/Python/bindings/src/*.cc")
+endif()
 
 # Create the executables for automated unit testing.
-option(BUILD_TESTS "Build test programs" ON)
-
 if(BUILD_TESTS)
   enable_testing()
   add_subdirectory("${PROJECT_SOURCE_DIR}/tests")
 endif()
 
 # C++ library
-add_library(${PROJECT_NAME} SHARED ${library_sources} ${library_module_sources} ${headers} ${module_headers})
+add_library(${PROJECT_NAME} SHARED ${library_sources} ${library_module_sources} ${python_manager_sources} ${headers} ${module_headers} ${python_module_headers} ${python_manager_sources})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
   SOVERSION ${${PROJECT_NAME}_SOVERSION})
 
 # exported includes are all under ${CMAKE_INSTALL_PREFIX}/include
 target_include_directories(${PROJECT_NAME} INTERFACE "$<INSTALL_INTERFACE:include>")
 target_link_libraries(${PROJECT_NAME}
-
-  # put ControlSystemAdapter public since implicit dep DeviceAccess must be public
   PUBLIC ChimeraTK::ChimeraTK-ControlSystemAdapter
   PUBLIC ${Boost_LIBRARIES}
   PRIVATE Threads::Threads PkgConfig::LibXML++ PkgConfig::glib ${HDF5_LIBRARIES})
+
+if(${pybind11_FOUND})
+  target_link_libraries(${PROJECT_NAME} PRIVATE pybind11::embed)
+endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE CHIMERATK_INSIDE_APPLICATION_CORE)
 
 # do not remove runtime path of the library when installing
 set_property(TARGET ${PROJECT_NAME} PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+if(${pybind11_FOUND})
+  target_compile_definitions(${PROJECT_NAME} PUBLIC CHIMERATK_APPLICATION_CORE_WITH_PYTHON)
+
+  # Python module
+  pybind11_add_module(PyApplicationCore ${python_module_sources} ${python_module_headers} ${python_manager_headers})
+  target_link_libraries(PyApplicationCore PRIVATE ${PROJECT_NAME})
+
+  # Python module stub
+  if((NOT ${CMAKE_BUILD_TYPE} STREQUAL "asan") AND(NOT ${CMAKE_BUILD_TYPE} STREQUAL "tsan"))
+    add_custom_target(PyApplicationCoreInterface ALL
+      COMMAND ${STUBGEN} --include-docstrings -m PyApplicationCore -o .
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      DEPENDS PyApplicationCore
+      BYPRODUCTS {CMAKE_CURRENT_BINARY_DIR}/PyApplicationCore.pyi
+      COMMENT "Use stubgen to create .pyi for statement completion")
+  else()
+    # stubgen would fail to run due to missing asan/tsan symbols
+    message(NOTICE "Note: Python stub will not be generated for asan and tsan builds.")
+  endif()
+endif()
 
 # add a target to generate API documentation with Doxygen
 include(cmake/enable_doxygen_documentation.cmake)
@@ -96,8 +139,22 @@ install(TARGETS ${PROJECT_NAME}
 # The original headers are in include/*.h, the installed ones in include/PROJECT_NAME/*.h.
 install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS} DESTINATION include/ChimeraTK/ApplicationCore
   FILES_MATCHING PATTERN "*.h"
-  PATTERN ".svn" EXCLUDE
   PATTERN "${PROJECT_NAME}" EXCLUDE)
+
+if(${pybind11_FOUND})
+  # install Python modules to correct platform-dependent directory (if installing to system prefix)
+  if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/usr" OR "${CMAKE_INSTALL_PREFIX}" STREQUAL "/usr/local")
+    set(python_install_path ${Python_SITEARCH})
+  else()
+    set(python_install_path "lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages")
+  endif()
+
+  install(TARGETS PyApplicationCore LIBRARY DESTINATION ${python_install_path})
+
+  if((NOT ${CMAKE_BUILD_TYPE} STREQUAL "asan") AND(NOT ${CMAKE_BUILD_TYPE} STREQUAL "tsan"))
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/PyApplicationCore.pyi DESTINATION ${python_install_path})
+  endif()
+endif()
 
 # we need the public dependencies so create_cmake_config_files can find them as implicit dependencies
 list(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES "Boost COMPONENTS system thread chrono filesystem date_time;ChimeraTK-ControlSystemAdapter")

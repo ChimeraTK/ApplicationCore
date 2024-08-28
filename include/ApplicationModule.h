@@ -67,6 +67,7 @@ namespace ChimeraTK {
     void incrementDataFaultCounter() override;
     void decrementDataFaultCounter() override;
 
+    /** Get the Number of inputs which report DataValidity::faulty. */
     size_t getDataFaultCounter() const { return _dataFaultCounter; }
 
     void setCurrentVersionNumber(VersionNumber versionNumber) override;
