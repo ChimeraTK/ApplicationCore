@@ -20,399 +20,403 @@
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
-// list of user types the accessors are tested with
-using test_types = boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double>;
+namespace Tests::testAppModuleConnections {
 
-/*********************************************************************************************************************/
-/* the ApplicationModule for the test is a template of the user type */
+  // list of user types the accessors are tested with
+  using test_types = boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double>;
 
-template<typename T>
-struct TestModule : public ctk::ApplicationModule {
-  TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
-      const std::unordered_set<std::string>& tags = {}, bool unregister = false)
-  : ApplicationModule(owner, name, description, tags), mainLoopStarted(2) {
-    if(unregister) {
-      owner->unregisterModule(this);
+  /*********************************************************************************************************************/
+  /* the ApplicationModule for the test is a template of the user type */
+
+  template<typename T>
+  struct TestModule : public ctk::ApplicationModule {
+    TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
+        const std::unordered_set<std::string>& tags = {}, bool unregister = false)
+    : ApplicationModule(owner, name, description, tags), mainLoopStarted(2) {
+      if(unregister) {
+        owner->unregisterModule(this);
+      }
+    }
+
+    ctk::ScalarOutput<T> feedingPush;
+    ctk::ScalarPushInput<T> consumingPush;
+    ctk::ScalarPushInput<T> consumingPush2;
+    ctk::ScalarPushInput<T> consumingPush3;
+
+    ctk::ScalarPollInput<T> consumingPoll;
+    ctk::ArrayPushInput<T> consumingPushArray;
+
+    ctk::ArrayOutput<T> feedingArray;
+    ctk::ArrayOutput<T> feedingPseudoArray;
+
+    // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
+    // mainLoop(). This is required since the mainLoopWrapper accesses the module variables before the start of the
+    // mainLoop.
+    // execute this right after the Application::run():
+    //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+    boost::barrier mainLoopStarted;
+
+    void prepare() override {
+      incrementDataFaultCounter(); // force all outputs  to invalid
+      writeAll();                  // write initial values
+      decrementDataFaultCounter(); // validity according to input validity
+    }
+
+    void mainLoop() override { mainLoopStarted.wait(); }
+  };
+
+  /*********************************************************************************************************************/
+  /* dummy application */
+
+  template<typename T>
+  struct TestApplication : public ctk::Application {
+    TestApplication() : Application("testSuite") {}
+    ~TestApplication() override { shutdown(); }
+
+    TestModule<T> testModule{this, "testModule", "The test module"};
+  };
+
+  /*********************************************************************************************************************/
+  /* test case for two scalar accessors in push mode */
+
+  BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPushAccessors, T, test_types) {
+    // FIXME: With the new scheme, there cannot be a 1:1 module connection any more, it will always be a network
+    // involving the ControlSystem
+    std::cout << "*** testTwoScalarPushAccessors<" << typeid(T).name() << ">" << std::endl;
+
+    TestApplication<T> app;
+    app.testModule.feedingPush = {&app.testModule, "testTwoScalarPushAccessors", "", ""};
+    app.testModule.consumingPush = {&app.testModule, "testTwoScalarPushAccessors", "", ""};
+
+    ctk::TestFacility tf{app, false};
+    tf.runApplication();
+    app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+
+    // single threaded test
+    app.testModule.consumingPush = 0;
+    app.testModule.feedingPush = 42;
+    BOOST_CHECK(app.testModule.consumingPush == 0);
+    app.testModule.feedingPush.write();
+    BOOST_CHECK(app.testModule.consumingPush == 0);
+    app.testModule.consumingPush.read();
+    BOOST_CHECK(app.testModule.consumingPush == 42);
+
+    // launch read() on the consumer asynchronously and make sure it does not yet
+    // receive anything
+    auto futRead = std::async(std::launch::async, [&app] { app.testModule.consumingPush.read(); });
+    BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
+
+    BOOST_CHECK(app.testModule.consumingPush == 42);
+
+    // write to the feeder
+    app.testModule.feedingPush = 120;
+    app.testModule.feedingPush.write();
+
+    // check that the consumer now receives the just written value
+    BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
+    BOOST_CHECK(app.testModule.consumingPush == 120);
+  }
+
+  /*********************************************************************************************************************/
+  /* test case for four scalar accessors in push mode: one feeder and three
+   * consumers */
+
+  BOOST_AUTO_TEST_CASE_TEMPLATE(testFourScalarPushAccessors, T, test_types) {
+    std::cout << "*** testFourScalarPushAccessors<" << typeid(T).name() << ">" << std::endl;
+
+    TestApplication<T> app;
+    app.testModule.consumingPush = {&app.testModule, "testFourScalarPushAccessors", "", ""};
+    app.testModule.consumingPush2 = {&app.testModule, "testFourScalarPushAccessors", "", ""};
+    app.testModule.feedingPush = {&app.testModule, "testFourScalarPushAccessors", "", ""};
+    app.testModule.consumingPush3 = {&app.testModule, "testFourScalarPushAccessors", "", ""};
+
+    ctk::TestFacility tf{app, false};
+    tf.runApplication();
+    app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+
+    // single threaded test
+    app.testModule.consumingPush = 0;
+    app.testModule.consumingPush2 = 2;
+    app.testModule.consumingPush3 = 3;
+    app.testModule.feedingPush = 42;
+    BOOST_CHECK(app.testModule.consumingPush == 0);
+    BOOST_CHECK(app.testModule.consumingPush2 == 2);
+    BOOST_CHECK(app.testModule.consumingPush3 == 3);
+    app.testModule.feedingPush.write();
+    BOOST_CHECK(app.testModule.consumingPush == 0);
+    BOOST_CHECK(app.testModule.consumingPush2 == 2);
+    BOOST_CHECK(app.testModule.consumingPush3 == 3);
+    app.testModule.consumingPush.read();
+    BOOST_CHECK(app.testModule.consumingPush == 42);
+    BOOST_CHECK(app.testModule.consumingPush2 == 2);
+    BOOST_CHECK(app.testModule.consumingPush3 == 3);
+    app.testModule.consumingPush2.read();
+    BOOST_CHECK(app.testModule.consumingPush == 42);
+    BOOST_CHECK(app.testModule.consumingPush2 == 42);
+    BOOST_CHECK(app.testModule.consumingPush3 == 3);
+    app.testModule.consumingPush3.read();
+    BOOST_CHECK(app.testModule.consumingPush == 42);
+    BOOST_CHECK(app.testModule.consumingPush2 == 42);
+    BOOST_CHECK(app.testModule.consumingPush3 == 42);
+
+    // launch read() on the consumers asynchronously and make sure it does not yet
+    // receive anything
+    auto futRead = std::async(std::launch::async, [&app] { app.testModule.consumingPush.read(); });
+    auto futRead2 = std::async(std::launch::async, [&app] { app.testModule.consumingPush2.read(); });
+    auto futRead3 = std::async(std::launch::async, [&app] { app.testModule.consumingPush3.read(); });
+    BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
+    BOOST_CHECK(futRead2.wait_for(std::chrono::milliseconds(1)) == std::future_status::timeout);
+    BOOST_CHECK(futRead3.wait_for(std::chrono::milliseconds(1)) == std::future_status::timeout);
+
+    BOOST_CHECK(app.testModule.consumingPush == 42);
+    BOOST_CHECK(app.testModule.consumingPush2 == 42);
+    BOOST_CHECK(app.testModule.consumingPush3 == 42);
+
+    // write to the feeder
+    app.testModule.feedingPush = 120;
+    app.testModule.feedingPush.write();
+
+    // check that the consumers now receive the just written value
+    BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
+    BOOST_CHECK(futRead2.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
+    BOOST_CHECK(futRead3.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
+    BOOST_CHECK(app.testModule.consumingPush == 120);
+    BOOST_CHECK(app.testModule.consumingPush2 == 120);
+    BOOST_CHECK(app.testModule.consumingPush3 == 120);
+  }
+
+  /*********************************************************************************************************************/
+  /* test case for two scalar accessors, feeder in push mode and consumer in poll
+   * mode */
+
+  BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPushPollAccessors, T, test_types) {
+    std::cout << "*** testTwoScalarPushPollAccessors<" << typeid(T).name() << ">" << std::endl;
+
+    TestApplication<T> app;
+
+    app.testModule.feedingPush = {&app.testModule, "testTwoScalarPushPollAccessors", "", ""};
+    app.testModule.consumingPoll = {&app.testModule, "testTwoScalarPushPollAccessors", "", ""};
+
+    ctk::TestFacility tf{app, false};
+    tf.runApplication();
+    app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+
+    // single threaded test only, since read() does not block in this case
+    app.testModule.consumingPoll = 0;
+    app.testModule.feedingPush = 42;
+    BOOST_CHECK(app.testModule.consumingPoll == 0);
+    app.testModule.feedingPush.write();
+    BOOST_CHECK(app.testModule.consumingPoll == 0);
+    app.testModule.consumingPoll.read();
+    BOOST_CHECK(app.testModule.consumingPoll == 42);
+    app.testModule.consumingPoll.read();
+    BOOST_CHECK(app.testModule.consumingPoll == 42);
+    app.testModule.consumingPoll.read();
+    BOOST_CHECK(app.testModule.consumingPoll == 42);
+    app.testModule.feedingPush = 120;
+    BOOST_CHECK(app.testModule.consumingPoll == 42);
+    app.testModule.feedingPush.write();
+    BOOST_CHECK(app.testModule.consumingPoll == 42);
+    app.testModule.consumingPoll.read();
+    BOOST_CHECK(app.testModule.consumingPoll == 120);
+    app.testModule.consumingPoll.read();
+    BOOST_CHECK(app.testModule.consumingPoll == 120);
+    app.testModule.consumingPoll.read();
+    BOOST_CHECK(app.testModule.consumingPoll == 120);
+  }
+
+  /*********************************************************************************************************************/
+  /* test case for two array accessors in push mode */
+
+  BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoArrayAccessors, T, test_types) {
+    std::cout << "*** testTwoArrayAccessors<" << typeid(T).name() << ">" << std::endl;
+
+    TestApplication<T> app;
+
+    // app.testModule.feedingArray >> app.testModule.consumingPushArray;
+    app.testModule.feedingArray = {&app.testModule, "testFourScalarPushAccessors", "", 10, ""};
+    app.testModule.consumingPushArray = {&app.testModule, "testFourScalarPushAccessors", "", 10, ""};
+    ctk::TestFacility tf{app, false};
+    tf.runApplication();
+
+    app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+
+    BOOST_CHECK(app.testModule.feedingArray.getNElements() == 10);
+    BOOST_CHECK(app.testModule.consumingPushArray.getNElements() == 10);
+
+    // single threaded test
+    for(auto& val : app.testModule.consumingPushArray) {
+      val = 0;
+    }
+    for(unsigned int i = 0; i < 10; ++i) {
+      app.testModule.feedingArray[i] = 99 + (T)i;
+    }
+    for(auto& val : app.testModule.consumingPushArray) {
+      BOOST_CHECK(val == 0);
+    }
+    app.testModule.feedingArray.write();
+    for(auto& val : app.testModule.consumingPushArray) {
+      BOOST_CHECK(val == 0);
+    }
+    app.testModule.consumingPushArray.read();
+    for(unsigned int i = 0; i < 10; ++i) {
+      BOOST_CHECK(app.testModule.consumingPushArray[i] == 99 + (T)i);
+    }
+
+    // launch read() on the consumer asynchronously and make sure it does not yet
+    // receive anything
+    auto futRead = std::async(std::launch::async, [&app] { app.testModule.consumingPushArray.read(); });
+    BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
+
+    for(unsigned int i = 0; i < 10; ++i) {
+      BOOST_CHECK(app.testModule.consumingPushArray[i] == 99 + (T)i);
+    }
+
+    // write to the feeder
+    for(unsigned int i = 0; i < 10; ++i) {
+      app.testModule.feedingArray[i] = 42 - (T)i;
+    }
+    app.testModule.feedingArray.write();
+
+    // check that the consumer now receives the just written value
+    BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
+    for(unsigned int i = 0; i < 10; ++i) {
+      BOOST_CHECK(app.testModule.consumingPushArray[i] == 42 - (T)i);
     }
   }
 
-  ctk::ScalarOutput<T> feedingPush;
-  ctk::ScalarPushInput<T> consumingPush;
-  ctk::ScalarPushInput<T> consumingPush2;
-  ctk::ScalarPushInput<T> consumingPush3;
+  /*********************************************************************************************************************/
+  /* test case for connecting array of length 1 with scalar */
 
-  ctk::ScalarPollInput<T> consumingPoll;
-  ctk::ArrayPushInput<T> consumingPushArray;
+  BOOST_AUTO_TEST_CASE_TEMPLATE(testPseudoArray, T, test_types) {
+    std::cout << "*** testPseudoArray<" << typeid(T).name() << ">" << std::endl;
 
-  ctk::ArrayOutput<T> feedingArray;
-  ctk::ArrayOutput<T> feedingPseudoArray;
+    TestApplication<T> app;
 
-  // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
-  // mainLoop(). This is required since the mainLoopWrapper accesses the module variables before the start of the
-  // mainLoop.
-  // execute this right after the Application::run():
-  //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
-  boost::barrier mainLoopStarted;
+    // app.testModule.feedingPseudoArray >> app.testModule.consumingPush;
+    app.testModule.feedingPseudoArray = {&app.testModule, "testPseudoArray", "", 1, ""};
+    app.testModule.consumingPush = {&app.testModule, "testPseudoArray", "", ""};
 
-  void prepare() override {
-    incrementDataFaultCounter(); // force all outputs  to invalid
-    writeAll();                  // write initial values
-    decrementDataFaultCounter(); // validity according to input validity
+    // run the app
+    ctk::TestFacility tf{app, false};
+    tf.runApplication();
+    app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+
+    // test data transfer
+    app.testModule.feedingPseudoArray[0] = 33;
+    app.testModule.feedingPseudoArray.write();
+    app.testModule.consumingPush.read();
+    BOOST_CHECK(app.testModule.consumingPush == 33);
   }
 
-  void mainLoop() override { mainLoopStarted.wait(); }
-};
+  /*********************************************************************************************************************/
+  /* test case for EntityOwner::constant() */
 
-/*********************************************************************************************************************/
-/* dummy application */
+  BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
+    std::cout << "*** testConstants<" << typeid(T).name() << ">" << std::endl;
 
-template<typename T>
-struct TestApplication : public ctk::Application {
-  TestApplication() : Application("testSuite") {}
-  ~TestApplication() override { shutdown(); }
+    TestApplication<T> app;
+    app.testModule.consumingPush = {&app.testModule, app.testModule.constant(T(66)), "", ""};
+    app.testModule.consumingPoll = {&app.testModule, app.testModule.constant(T(77)), "", ""};
 
-  TestModule<T> testModule{this, "testModule", "The test module"};
-};
+    // test a second accessor of a different type but defining the constant with the same type as before
+    ctk::ScalarPollInput<std::string> myStringConstant{&app.testModule, app.testModule.constant(T(66)), "", ""};
 
-/*********************************************************************************************************************/
-/* test case for two scalar accessors in push mode */
+    ctk::TestFacility tf{app, false};
+    tf.runApplication();
+    app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPushAccessors, T, test_types) {
-  // FIXME: With the new scheme, there cannot be a 1:1 module connection any more, it will always be a network involving
-  // the ControlSystem
-  std::cout << "*** testTwoScalarPushAccessors<" << typeid(T).name() << ">" << std::endl;
+    BOOST_TEST(app.testModule.consumingPush == 66);
+    BOOST_TEST(app.testModule.consumingPoll == 77);
+    BOOST_TEST(boost::starts_with(std::string(myStringConstant), "66")); // might be 66 or 66.000000
 
-  TestApplication<T> app;
-  app.testModule.feedingPush = {&app.testModule, "testTwoScalarPushAccessors", "", ""};
-  app.testModule.consumingPush = {&app.testModule, "testTwoScalarPushAccessors", "", ""};
+    BOOST_TEST(app.testModule.consumingPush.readNonBlocking() == false);
 
-  ctk::TestFacility tf{app, false};
-  tf.runApplication();
-  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
-
-  // single threaded test
-  app.testModule.consumingPush = 0;
-  app.testModule.feedingPush = 42;
-  BOOST_CHECK(app.testModule.consumingPush == 0);
-  app.testModule.feedingPush.write();
-  BOOST_CHECK(app.testModule.consumingPush == 0);
-  app.testModule.consumingPush.read();
-  BOOST_CHECK(app.testModule.consumingPush == 42);
-
-  // launch read() on the consumer asynchronously and make sure it does not yet
-  // receive anything
-  auto futRead = std::async(std::launch::async, [&app] { app.testModule.consumingPush.read(); });
-  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
-
-  BOOST_CHECK(app.testModule.consumingPush == 42);
-
-  // write to the feeder
-  app.testModule.feedingPush = 120;
-  app.testModule.feedingPush.write();
-
-  // check that the consumer now receives the just written value
-  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
-  BOOST_CHECK(app.testModule.consumingPush == 120);
-}
-
-/*********************************************************************************************************************/
-/* test case for four scalar accessors in push mode: one feeder and three
- * consumers */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testFourScalarPushAccessors, T, test_types) {
-  std::cout << "*** testFourScalarPushAccessors<" << typeid(T).name() << ">" << std::endl;
-
-  TestApplication<T> app;
-  app.testModule.consumingPush = {&app.testModule, "testFourScalarPushAccessors", "", ""};
-  app.testModule.consumingPush2 = {&app.testModule, "testFourScalarPushAccessors", "", ""};
-  app.testModule.feedingPush = {&app.testModule, "testFourScalarPushAccessors", "", ""};
-  app.testModule.consumingPush3 = {&app.testModule, "testFourScalarPushAccessors", "", ""};
-
-  ctk::TestFacility tf{app, false};
-  tf.runApplication();
-  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
-
-  // single threaded test
-  app.testModule.consumingPush = 0;
-  app.testModule.consumingPush2 = 2;
-  app.testModule.consumingPush3 = 3;
-  app.testModule.feedingPush = 42;
-  BOOST_CHECK(app.testModule.consumingPush == 0);
-  BOOST_CHECK(app.testModule.consumingPush2 == 2);
-  BOOST_CHECK(app.testModule.consumingPush3 == 3);
-  app.testModule.feedingPush.write();
-  BOOST_CHECK(app.testModule.consumingPush == 0);
-  BOOST_CHECK(app.testModule.consumingPush2 == 2);
-  BOOST_CHECK(app.testModule.consumingPush3 == 3);
-  app.testModule.consumingPush.read();
-  BOOST_CHECK(app.testModule.consumingPush == 42);
-  BOOST_CHECK(app.testModule.consumingPush2 == 2);
-  BOOST_CHECK(app.testModule.consumingPush3 == 3);
-  app.testModule.consumingPush2.read();
-  BOOST_CHECK(app.testModule.consumingPush == 42);
-  BOOST_CHECK(app.testModule.consumingPush2 == 42);
-  BOOST_CHECK(app.testModule.consumingPush3 == 3);
-  app.testModule.consumingPush3.read();
-  BOOST_CHECK(app.testModule.consumingPush == 42);
-  BOOST_CHECK(app.testModule.consumingPush2 == 42);
-  BOOST_CHECK(app.testModule.consumingPush3 == 42);
-
-  // launch read() on the consumers asynchronously and make sure it does not yet
-  // receive anything
-  auto futRead = std::async(std::launch::async, [&app] { app.testModule.consumingPush.read(); });
-  auto futRead2 = std::async(std::launch::async, [&app] { app.testModule.consumingPush2.read(); });
-  auto futRead3 = std::async(std::launch::async, [&app] { app.testModule.consumingPush3.read(); });
-  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
-  BOOST_CHECK(futRead2.wait_for(std::chrono::milliseconds(1)) == std::future_status::timeout);
-  BOOST_CHECK(futRead3.wait_for(std::chrono::milliseconds(1)) == std::future_status::timeout);
-
-  BOOST_CHECK(app.testModule.consumingPush == 42);
-  BOOST_CHECK(app.testModule.consumingPush2 == 42);
-  BOOST_CHECK(app.testModule.consumingPush3 == 42);
-
-  // write to the feeder
-  app.testModule.feedingPush = 120;
-  app.testModule.feedingPush.write();
-
-  // check that the consumers now receive the just written value
-  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
-  BOOST_CHECK(futRead2.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
-  BOOST_CHECK(futRead3.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
-  BOOST_CHECK(app.testModule.consumingPush == 120);
-  BOOST_CHECK(app.testModule.consumingPush2 == 120);
-  BOOST_CHECK(app.testModule.consumingPush3 == 120);
-}
-
-/*********************************************************************************************************************/
-/* test case for two scalar accessors, feeder in push mode and consumer in poll
- * mode */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPushPollAccessors, T, test_types) {
-  std::cout << "*** testTwoScalarPushPollAccessors<" << typeid(T).name() << ">" << std::endl;
-
-  TestApplication<T> app;
-
-  app.testModule.feedingPush = {&app.testModule, "testTwoScalarPushPollAccessors", "", ""};
-  app.testModule.consumingPoll = {&app.testModule, "testTwoScalarPushPollAccessors", "", ""};
-
-  ctk::TestFacility tf{app, false};
-  tf.runApplication();
-  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
-
-  // single threaded test only, since read() does not block in this case
-  app.testModule.consumingPoll = 0;
-  app.testModule.feedingPush = 42;
-  BOOST_CHECK(app.testModule.consumingPoll == 0);
-  app.testModule.feedingPush.write();
-  BOOST_CHECK(app.testModule.consumingPoll == 0);
-  app.testModule.consumingPoll.read();
-  BOOST_CHECK(app.testModule.consumingPoll == 42);
-  app.testModule.consumingPoll.read();
-  BOOST_CHECK(app.testModule.consumingPoll == 42);
-  app.testModule.consumingPoll.read();
-  BOOST_CHECK(app.testModule.consumingPoll == 42);
-  app.testModule.feedingPush = 120;
-  BOOST_CHECK(app.testModule.consumingPoll == 42);
-  app.testModule.feedingPush.write();
-  BOOST_CHECK(app.testModule.consumingPoll == 42);
-  app.testModule.consumingPoll.read();
-  BOOST_CHECK(app.testModule.consumingPoll == 120);
-  app.testModule.consumingPoll.read();
-  BOOST_CHECK(app.testModule.consumingPoll == 120);
-  app.testModule.consumingPoll.read();
-  BOOST_CHECK(app.testModule.consumingPoll == 120);
-}
-
-/*********************************************************************************************************************/
-/* test case for two array accessors in push mode */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoArrayAccessors, T, test_types) {
-  std::cout << "*** testTwoArrayAccessors<" << typeid(T).name() << ">" << std::endl;
-
-  TestApplication<T> app;
-
-  // app.testModule.feedingArray >> app.testModule.consumingPushArray;
-  app.testModule.feedingArray = {&app.testModule, "testFourScalarPushAccessors", "", 10, ""};
-  app.testModule.consumingPushArray = {&app.testModule, "testFourScalarPushAccessors", "", 10, ""};
-  ctk::TestFacility tf{app, false};
-  tf.runApplication();
-
-  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
-
-  BOOST_CHECK(app.testModule.feedingArray.getNElements() == 10);
-  BOOST_CHECK(app.testModule.consumingPushArray.getNElements() == 10);
-
-  // single threaded test
-  for(auto& val : app.testModule.consumingPushArray) {
-    val = 0;
-  }
-  for(unsigned int i = 0; i < 10; ++i) {
-    app.testModule.feedingArray[i] = 99 + (T)i;
-  }
-  for(auto& val : app.testModule.consumingPushArray) {
-    BOOST_CHECK(val == 0);
-  }
-  app.testModule.feedingArray.write();
-  for(auto& val : app.testModule.consumingPushArray) {
-    BOOST_CHECK(val == 0);
-  }
-  app.testModule.consumingPushArray.read();
-  for(unsigned int i = 0; i < 10; ++i) {
-    BOOST_CHECK(app.testModule.consumingPushArray[i] == 99 + (T)i);
+    app.testModule.consumingPoll = 0;
+    app.testModule.consumingPoll.read();
+    BOOST_TEST(app.testModule.consumingPoll == 77);
   }
 
-  // launch read() on the consumer asynchronously and make sure it does not yet
-  // receive anything
-  auto futRead = std::async(std::launch::async, [&app] { app.testModule.consumingPushArray.read(); });
-  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout);
+  /*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
-  for(unsigned int i = 0; i < 10; ++i) {
-    BOOST_CHECK(app.testModule.consumingPushArray[i] == 99 + (T)i);
-  }
-
-  // write to the feeder
-  for(unsigned int i = 0; i < 10; ++i) {
-    app.testModule.feedingArray[i] = 42 - (T)i;
-  }
-  app.testModule.feedingArray.write();
-
-  // check that the consumer now receives the just written value
-  BOOST_CHECK(futRead.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready);
-  for(unsigned int i = 0; i < 10; ++i) {
-    BOOST_CHECK(app.testModule.consumingPushArray[i] == 42 - (T)i);
-  }
-}
-
-/*********************************************************************************************************************/
-/* test case for connecting array of length 1 with scalar */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testPseudoArray, T, test_types) {
-  std::cout << "*** testPseudoArray<" << typeid(T).name() << ">" << std::endl;
-
-  TestApplication<T> app;
-
-  // app.testModule.feedingPseudoArray >> app.testModule.consumingPush;
-  app.testModule.feedingPseudoArray = {&app.testModule, "testPseudoArray", "", 1, ""};
-  app.testModule.consumingPush = {&app.testModule, "testPseudoArray", "", ""};
-
-  // run the app
-  ctk::TestFacility tf{app, false};
-  tf.runApplication();
-  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
-
-  // test data transfer
-  app.testModule.feedingPseudoArray[0] = 33;
-  app.testModule.feedingPseudoArray.write();
-  app.testModule.consumingPush.read();
-  BOOST_CHECK(app.testModule.consumingPush == 33);
-}
-
-/*********************************************************************************************************************/
-/* test case for EntityOwner::constant() */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
-  std::cout << "*** testConstants<" << typeid(T).name() << ">" << std::endl;
-
-  TestApplication<T> app;
-  app.testModule.consumingPush = {&app.testModule, app.testModule.constant(T(66)), "", ""};
-  app.testModule.consumingPoll = {&app.testModule, app.testModule.constant(T(77)), "", ""};
-
-  // test a second accessor of a different type but defining the constant with the same type as before
-  ctk::ScalarPollInput<std::string> myStringConstant{&app.testModule, app.testModule.constant(T(66)), "", ""};
-
-  ctk::TestFacility tf{app, false};
-  tf.runApplication();
-  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
-
-  BOOST_TEST(app.testModule.consumingPush == 66);
-  BOOST_TEST(app.testModule.consumingPoll == 77);
-  BOOST_TEST(boost::starts_with(std::string(myStringConstant), "66")); // might be 66 or 66.000000
-
-  BOOST_TEST(app.testModule.consumingPush.readNonBlocking() == false);
-
-  app.testModule.consumingPoll = 0;
-  app.testModule.consumingPoll.read();
-  BOOST_TEST(app.testModule.consumingPoll == 77);
-}
-
-/*********************************************************************************************************************/
-/*********************************************************************************************************************/
-
-struct SelfUnregisteringModule : public ctk::ApplicationModule {
-  SelfUnregisteringModule(
-      ctk::ModuleGroup* owner, const std::string& name, const std::string& description, bool unregister = false)
-  : ApplicationModule(owner, name, description) {
-    if(unregister) {
-      disable();
+  struct SelfUnregisteringModule : public ctk::ApplicationModule {
+    SelfUnregisteringModule(
+        ctk::ModuleGroup* owner, const std::string& name, const std::string& description, bool unregister = false)
+    : ApplicationModule(owner, name, description) {
+      if(unregister) {
+        disable();
+      }
     }
-  }
 
-  ctk::ScalarOutput<int> out{this, "out", "", "Some output"};
-  ctk::ScalarPushInput<int> in{this, "in", "", "Some input"};
+    ctk::ScalarOutput<int> out{this, "out", "", "Some output"};
+    ctk::ScalarPushInput<int> in{this, "in", "", "Some input"};
 
-  void mainLoop() override {
-    while(true) {
-      out = 1 + in;
-      writeAll();
-      readAll();
+    void mainLoop() override {
+      while(true) {
+        out = 1 + in;
+        writeAll();
+        readAll();
+      }
     }
+  };
+
+  /*********************************************************************************************************************/
+
+  struct TestAppSelfUnregisteringModule : public ctk::Application {
+    TestAppSelfUnregisteringModule() : Application("SelfUnregisteringModuleApp") {}
+    ~TestAppSelfUnregisteringModule() override { shutdown(); }
+
+    SelfUnregisteringModule a{this, "a", "First test module which stays"};
+    SelfUnregisteringModule b{this, "b", "The test module which unregisters itself", true};
+    SelfUnregisteringModule c{this, "c", "Another test module which stays"};
+  };
+
+  /*********************************************************************************************************************/
+  /* test case for EntityOwner::constant() */
+
+  BOOST_AUTO_TEST_CASE(testSelfUnregisteringModule) {
+    std::cout << "*** testSelfUnregisteringModule" << std::endl;
+
+    TestAppSelfUnregisteringModule app;
+    app.debugMakeConnections();
+
+    ctk::TestFacility tf{app};
+
+    auto& pvm = *tf.getPvManager();
+    BOOST_TEST(pvm.hasProcessVariable("a/out"));
+    BOOST_TEST(pvm.hasProcessVariable("a/in"));
+    BOOST_TEST(!pvm.hasProcessVariable("b/out"));
+    BOOST_TEST(!pvm.hasProcessVariable("b/in"));
+    BOOST_TEST(pvm.hasProcessVariable("c/out"));
+    BOOST_TEST(pvm.hasProcessVariable("c/in"));
+
+    auto aout = tf.getScalar<int>("a/out");
+    auto ain = tf.getScalar<int>("a/in");
+    auto cout = tf.getScalar<int>("c/out");
+    auto cin = tf.getScalar<int>("c/in");
+
+    tf.setScalarDefault("a/in", 1000);
+    tf.setScalarDefault("c/in", 2000);
+
+    tf.runApplication();
+
+    BOOST_TEST(aout == 1001);
+    BOOST_TEST(cout == 2001);
+
+    ain.setAndWrite(42);
+    tf.stepApplication();
+    BOOST_TEST(aout.readNonBlocking());
+    BOOST_TEST(!cout.readNonBlocking());
+    BOOST_TEST(aout == 43);
+
+    cin.setAndWrite(120);
+    tf.stepApplication();
+    BOOST_TEST(!aout.readNonBlocking());
+    BOOST_TEST(cout.readNonBlocking());
+    BOOST_TEST(cout == 121);
   }
-};
 
-/*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
-struct TestAppSelfUnregisteringModule : public ctk::Application {
-  TestAppSelfUnregisteringModule() : Application("SelfUnregisteringModuleApp") {}
-  ~TestAppSelfUnregisteringModule() override { shutdown(); }
-
-  SelfUnregisteringModule a{this, "a", "First test module which stays"};
-  SelfUnregisteringModule b{this, "b", "The test module which unregisters itself", true};
-  SelfUnregisteringModule c{this, "c", "Another test module which stays"};
-};
-
-/*********************************************************************************************************************/
-/* test case for EntityOwner::constant() */
-
-BOOST_AUTO_TEST_CASE(testSelfUnregisteringModule) {
-  std::cout << "*** testSelfUnregisteringModule" << std::endl;
-
-  TestAppSelfUnregisteringModule app;
-  app.debugMakeConnections();
-
-  ctk::TestFacility tf{app};
-
-  auto& pvm = *tf.getPvManager();
-  BOOST_TEST(pvm.hasProcessVariable("a/out"));
-  BOOST_TEST(pvm.hasProcessVariable("a/in"));
-  BOOST_TEST(!pvm.hasProcessVariable("b/out"));
-  BOOST_TEST(!pvm.hasProcessVariable("b/in"));
-  BOOST_TEST(pvm.hasProcessVariable("c/out"));
-  BOOST_TEST(pvm.hasProcessVariable("c/in"));
-
-  auto aout = tf.getScalar<int>("a/out");
-  auto ain = tf.getScalar<int>("a/in");
-  auto cout = tf.getScalar<int>("c/out");
-  auto cin = tf.getScalar<int>("c/in");
-
-  tf.setScalarDefault("a/in", 1000);
-  tf.setScalarDefault("c/in", 2000);
-
-  tf.runApplication();
-
-  BOOST_TEST(aout == 1001);
-  BOOST_TEST(cout == 2001);
-
-  ain.setAndWrite(42);
-  tf.stepApplication();
-  BOOST_TEST(aout.readNonBlocking());
-  BOOST_TEST(!cout.readNonBlocking());
-  BOOST_TEST(aout == 43);
-
-  cin.setAndWrite(120);
-  tf.stepApplication();
-  BOOST_TEST(!aout.readNonBlocking());
-  BOOST_TEST(cout.readNonBlocking());
-  BOOST_TEST(cout == 121);
-}
-
-/*********************************************************************************************************************/
+} // namespace Tests::testAppModuleConnections

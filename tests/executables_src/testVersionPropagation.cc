@@ -14,192 +14,196 @@
 
 #include <future>
 
-namespace ctk = ChimeraTK;
-using Fixture = FixtureWithPollAndPushInput<false>;
+namespace Tests::testVersionpropagation {
 
-BOOST_FIXTURE_TEST_SUITE(versionPropagation, Fixture)
+  namespace ctk = ChimeraTK;
+  using Fixture = FixtureWithPollAndPushInput<false>;
 
-/*********************************************************************************************************************/
+  BOOST_FIXTURE_TEST_SUITE(versionPropagation, Fixture)
 
-BOOST_AUTO_TEST_CASE(versionPropagation_testPolledRead) {
-  std::cout << "versionPropagation_testPolledRead" << std::endl;
-  auto moduleVersion = application.group1.pollModule.getCurrentVersionNumber();
-  [[maybe_unused]] auto pollVariableVersion = pollVariable2.getVersionNumber();
+  /*********************************************************************************************************************/
 
-  application.group1.outputModule.setCurrentVersionNumber({});
-  outputVariable2.write();
-  pollVariable2.read();
+  BOOST_AUTO_TEST_CASE(versionPropagation_testPolledRead) {
+    std::cout << "versionPropagation_testPolledRead" << std::endl;
+    auto moduleVersion = application.group1.pollModule.getCurrentVersionNumber();
+    [[maybe_unused]] auto pollVariableVersion = pollVariable2.getVersionNumber();
 
-  assert(pollVariable2.getVersionNumber() > pollVariableVersion);
-  BOOST_CHECK(moduleVersion == application.group1.pollModule.getCurrentVersionNumber());
-}
+    application.group1.outputModule.setCurrentVersionNumber({});
+    outputVariable2.write();
+    pollVariable2.read();
 
-/*********************************************************************************************************************/
+    assert(pollVariable2.getVersionNumber() > pollVariableVersion);
+    BOOST_CHECK(moduleVersion == application.group1.pollModule.getCurrentVersionNumber());
+  }
 
-BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadNonBlocking) {
-  std::cout << "versionPropagation_testPolledReadNonBlocking" << std::endl;
-  auto moduleVersion = application.group1.pollModule.getCurrentVersionNumber();
-  [[maybe_unused]] auto pollVariableVersion = pollVariable2.getVersionNumber();
+  /*********************************************************************************************************************/
 
-  application.group1.outputModule.setCurrentVersionNumber({});
-  outputVariable2.write();
-  pollVariable2.readNonBlocking();
+  BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadNonBlocking) {
+    std::cout << "versionPropagation_testPolledReadNonBlocking" << std::endl;
+    auto moduleVersion = application.group1.pollModule.getCurrentVersionNumber();
+    [[maybe_unused]] auto pollVariableVersion = pollVariable2.getVersionNumber();
 
-  assert(pollVariable2.getVersionNumber() > pollVariableVersion);
-  BOOST_CHECK(moduleVersion == application.group1.pollModule.getCurrentVersionNumber());
-}
+    application.group1.outputModule.setCurrentVersionNumber({});
+    outputVariable2.write();
+    pollVariable2.readNonBlocking();
 
-/*********************************************************************************************************************/
+    assert(pollVariable2.getVersionNumber() > pollVariableVersion);
+    BOOST_CHECK(moduleVersion == application.group1.pollModule.getCurrentVersionNumber());
+  }
 
-BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadLatest) {
-  std::cout << "versionPropagation_testPolledReadLatest" << std::endl;
-  auto moduleVersion = application.group1.pollModule.getCurrentVersionNumber();
-  [[maybe_unused]] auto pollVariableVersion = pollVariable2.getVersionNumber();
+  /*********************************************************************************************************************/
 
-  application.group1.outputModule.setCurrentVersionNumber({});
-  outputVariable2.write();
-  pollVariable2.readLatest();
+  BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadLatest) {
+    std::cout << "versionPropagation_testPolledReadLatest" << std::endl;
+    auto moduleVersion = application.group1.pollModule.getCurrentVersionNumber();
+    [[maybe_unused]] auto pollVariableVersion = pollVariable2.getVersionNumber();
 
-  assert(pollVariable2.getVersionNumber() > pollVariableVersion);
-  BOOST_CHECK(moduleVersion == application.group1.pollModule.getCurrentVersionNumber());
-}
+    application.group1.outputModule.setCurrentVersionNumber({});
+    outputVariable2.write();
+    pollVariable2.readLatest();
 
-/*********************************************************************************************************************/
+    assert(pollVariable2.getVersionNumber() > pollVariableVersion);
+    BOOST_CHECK(moduleVersion == application.group1.pollModule.getCurrentVersionNumber());
+  }
 
-BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeRead) {
-  std::cout << "versionPropagation_testPushTypeRead" << std::endl;
-  // Make sure we pop out any stray values in the pushInput before test start:
-  CHECK_TIMEOUT(pushVariable.readLatest() == false, 10000);
+  /*********************************************************************************************************************/
 
-  [[maybe_unused]] ctk::VersionNumber nextVersionNumber = {};
-  interrupt.write();
-  pushVariable.read();
-  assert(pushVariable.getVersionNumber() > nextVersionNumber);
-  BOOST_CHECK(application.group1.pushModule.getCurrentVersionNumber() == pushVariable.getVersionNumber());
-}
+  BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeRead) {
+    std::cout << "versionPropagation_testPushTypeRead" << std::endl;
+    // Make sure we pop out any stray values in the pushInput before test start:
+    CHECK_TIMEOUT(pushVariable.readLatest() == false, 10000);
 
-/*********************************************************************************************************************/
+    [[maybe_unused]] ctk::VersionNumber nextVersionNumber = {};
+    interrupt.write();
+    pushVariable.read();
+    assert(pushVariable.getVersionNumber() > nextVersionNumber);
+    BOOST_CHECK(application.group1.pushModule.getCurrentVersionNumber() == pushVariable.getVersionNumber());
+  }
 
-BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeReadNonBlocking) {
-  std::cout << "versionPropagation_testPushTypeReadNonBlocking" << std::endl;
-  CHECK_TIMEOUT(pushVariable.readLatest() == false, 10000);
+  /*********************************************************************************************************************/
 
-  auto pushInputVersionNumber = pushVariable.getVersionNumber();
+  BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeReadNonBlocking) {
+    std::cout << "versionPropagation_testPushTypeReadNonBlocking" << std::endl;
+    CHECK_TIMEOUT(pushVariable.readLatest() == false, 10000);
 
-  // no version change on readNonBlocking false
-  BOOST_CHECK_EQUAL(pushVariable.readNonBlocking(), false);
-  BOOST_CHECK(pushInputVersionNumber == pushVariable.getVersionNumber());
+    auto pushInputVersionNumber = pushVariable.getVersionNumber();
 
-  ctk::VersionNumber nextVersionNumber = {};
-  auto moduleVersion = application.group1.pushModule.getCurrentVersionNumber();
+    // no version change on readNonBlocking false
+    BOOST_CHECK_EQUAL(pushVariable.readNonBlocking(), false);
+    BOOST_CHECK(pushInputVersionNumber == pushVariable.getVersionNumber());
 
-  interrupt.write();
-  CHECK_TIMEOUT(pushVariable.readNonBlocking() == true, 10000);
-  BOOST_CHECK(pushVariable.getVersionNumber() > nextVersionNumber);
+    ctk::VersionNumber nextVersionNumber = {};
+    auto moduleVersion = application.group1.pushModule.getCurrentVersionNumber();
 
-  // readNonBlocking will not propagete the version to the module
-  BOOST_CHECK(application.group1.pushModule.getCurrentVersionNumber() == moduleVersion);
-}
+    interrupt.write();
+    CHECK_TIMEOUT(pushVariable.readNonBlocking() == true, 10000);
+    BOOST_CHECK(pushVariable.getVersionNumber() > nextVersionNumber);
 
-/*********************************************************************************************************************/
+    // readNonBlocking will not propagete the version to the module
+    BOOST_CHECK(application.group1.pushModule.getCurrentVersionNumber() == moduleVersion);
+  }
 
-BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeReadLatest) {
-  std::cout << "versionPropagation_testPushTypeReadLatest" << std::endl;
-  // Make sure we pop out any stray values in the pushInput before test start:
-  CHECK_TIMEOUT(pushVariable.readLatest() == false, 10000);
+  /*********************************************************************************************************************/
 
-  auto pushInputVersionNumber = pushVariable.getVersionNumber();
+  BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeReadLatest) {
+    std::cout << "versionPropagation_testPushTypeReadLatest" << std::endl;
+    // Make sure we pop out any stray values in the pushInput before test start:
+    CHECK_TIMEOUT(pushVariable.readLatest() == false, 10000);
 
-  // no version change on readNonBlocking false
-  BOOST_CHECK_EQUAL(pushVariable.readLatest(), false);
-  BOOST_CHECK(pushInputVersionNumber == pushVariable.getVersionNumber());
+    auto pushInputVersionNumber = pushVariable.getVersionNumber();
 
-  ctk::VersionNumber nextVersionNumber = {};
-  auto moduleVersion = application.group1.pushModule.getCurrentVersionNumber();
+    // no version change on readNonBlocking false
+    BOOST_CHECK_EQUAL(pushVariable.readLatest(), false);
+    BOOST_CHECK(pushInputVersionNumber == pushVariable.getVersionNumber());
 
-  interrupt.write();
-  CHECK_TIMEOUT(pushVariable.readLatest() == true, 10000);
-  BOOST_CHECK(pushVariable.getVersionNumber() > nextVersionNumber);
+    ctk::VersionNumber nextVersionNumber = {};
+    auto moduleVersion = application.group1.pushModule.getCurrentVersionNumber();
 
-  // readLatest will not propagete the version to the module
-  BOOST_CHECK(application.group1.pushModule.getCurrentVersionNumber() == moduleVersion);
-}
+    interrupt.write();
+    CHECK_TIMEOUT(pushVariable.readLatest() == true, 10000);
+    BOOST_CHECK(pushVariable.getVersionNumber() > nextVersionNumber);
 
-BOOST_AUTO_TEST_SUITE_END()
+    // readLatest will not propagete the version to the module
+    BOOST_CHECK(application.group1.pushModule.getCurrentVersionNumber() == moduleVersion);
+  }
 
-/*********************************************************************************************************************/
-/*********************************************************************************************************************/
+  BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_SUITE()
+  /*********************************************************************************************************************/
+  /*********************************************************************************************************************/
 
-struct ThePushModule : ChimeraTK::ApplicationModule {
-  using ChimeraTK::ApplicationModule::ApplicationModule;
+  BOOST_AUTO_TEST_SUITE()
 
-  ChimeraTK::ScalarPushInput<int> pushInput{this, "/theVariable", "", ""};
+  struct ThePushModule : ChimeraTK::ApplicationModule {
+    using ChimeraTK::ApplicationModule::ApplicationModule;
 
-  std::promise<void> p;
-  void mainLoop() override { p.set_value(); }
-};
+    ChimeraTK::ScalarPushInput<int> pushInput{this, "/theVariable", "", ""};
 
-struct TheOutputModule : ChimeraTK::ApplicationModule {
-  using ChimeraTK::ApplicationModule::ApplicationModule;
+    std::promise<void> p;
+    void mainLoop() override { p.set_value(); }
+  };
 
-  ChimeraTK::ScalarOutput<int> output{this, "/theVariable", "", ""};
+  struct TheOutputModule : ChimeraTK::ApplicationModule {
+    using ChimeraTK::ApplicationModule::ApplicationModule;
 
-  void prepare() override { output.write(); }
+    ChimeraTK::ScalarOutput<int> output{this, "/theVariable", "", ""};
 
-  std::promise<void> p;
-  void mainLoop() override { p.set_value(); }
-};
+    void prepare() override { output.write(); }
 
-struct TheTestApplication : ChimeraTK::Application {
-  using ChimeraTK::Application::Application;
-  ~TheTestApplication() override { shutdown(); }
+    std::promise<void> p;
+    void mainLoop() override { p.set_value(); }
+  };
 
-  ThePushModule pm{this, "pm", ""};
-  TheOutputModule om{this, "om", ""};
-};
+  struct TheTestApplication : ChimeraTK::Application {
+    using ChimeraTK::Application::Application;
+    ~TheTestApplication() override { shutdown(); }
 
-/*********************************************************************************************************************/
+    ThePushModule pm{this, "pm", ""};
+    TheOutputModule om{this, "om", ""};
+  };
 
-BOOST_AUTO_TEST_CASE(versionPropagation_testSetAndWrite) {
-  std::cout << "versionPropagation_testSetAndWrite" << std::endl;
-  TheTestApplication app("app");
-  ChimeraTK::TestFacility test(app, false);
-  test.runApplication();
-  app.pm.p.get_future().wait();
-  app.om.p.get_future().wait();
+  /*********************************************************************************************************************/
 
-  ChimeraTK::VersionNumber theVersion;
-  app.om.setCurrentVersionNumber(theVersion);
-  app.om.output.setAndWrite(42);
+  BOOST_AUTO_TEST_CASE(versionPropagation_testSetAndWrite) {
+    std::cout << "versionPropagation_testSetAndWrite" << std::endl;
+    TheTestApplication app("app");
+    ChimeraTK::TestFacility test(app, false);
+    test.runApplication();
+    app.pm.p.get_future().wait();
+    app.om.p.get_future().wait();
 
-  app.pm.pushInput.read();
+    ChimeraTK::VersionNumber theVersion;
+    app.om.setCurrentVersionNumber(theVersion);
+    app.om.output.setAndWrite(42);
 
-  BOOST_CHECK(app.pm.getCurrentVersionNumber() == theVersion);
-}
+    app.pm.pushInput.read();
 
-/*********************************************************************************************************************/
+    BOOST_CHECK(app.pm.getCurrentVersionNumber() == theVersion);
+  }
 
-BOOST_AUTO_TEST_CASE(versionPropagation_testWriteIfDifferent) {
-  std::cout << "versionPropagation_testWriteIfDifferent" << std::endl;
-  TheTestApplication app("app");
-  ChimeraTK::TestFacility test(app, false);
-  test.runApplication();
-  app.pm.p.get_future().wait();
-  app.om.p.get_future().wait();
+  /*********************************************************************************************************************/
 
-  ChimeraTK::VersionNumber theVersion;
-  app.om.setCurrentVersionNumber(theVersion);
-  app.om.output.writeIfDifferent(42);
+  BOOST_AUTO_TEST_CASE(versionPropagation_testWriteIfDifferent) {
+    std::cout << "versionPropagation_testWriteIfDifferent" << std::endl;
+    TheTestApplication app("app");
+    ChimeraTK::TestFacility test(app, false);
+    test.runApplication();
+    app.pm.p.get_future().wait();
+    app.om.p.get_future().wait();
 
-  app.pm.pushInput.read();
+    ChimeraTK::VersionNumber theVersion;
+    app.om.setCurrentVersionNumber(theVersion);
+    app.om.output.writeIfDifferent(42);
 
-  BOOST_CHECK(app.pm.getCurrentVersionNumber() == theVersion);
-}
+    app.pm.pushInput.read();
 
-/*********************************************************************************************************************/
+    BOOST_CHECK(app.pm.getCurrentVersionNumber() == theVersion);
+  }
 
-BOOST_AUTO_TEST_SUITE_END()
+  /*********************************************************************************************************************/
 
-/*********************************************************************************************************************/
+  BOOST_AUTO_TEST_SUITE_END()
+
+  /*********************************************************************************************************************/
+
+} // namespace Tests::testVersionpropagation

@@ -17,166 +17,171 @@
 #include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
 
-using namespace boost::unit_test_framework;
-namespace ctk = ChimeraTK;
+namespace Tests::testIllegalNetworks {
 
-// list of user types the accessors are tested with
-using TestTypes = boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double, ctk::Boolean>;
+  using namespace boost::unit_test_framework;
+  namespace ctk = ChimeraTK;
 
-/*********************************************************************************************************************/
-/* test case for two scalar accessors, feeder in poll mode and consumer in push
- * mode (without trigger) */
+  // list of user types the accessors are tested with
+  using TestTypes =
+      boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double, ctk::Boolean>;
 
-struct TestApplication1 : public ctk::Application {
-  TestApplication1() : Application("testSuite") {}
-  ~TestApplication1() override { shutdown(); }
+  /*********************************************************************************************************************/
+  /* test case for two scalar accessors, feeder in poll mode and consumer in push
+   * mode (without trigger) */
 
-  ctk::SetDMapFilePath dmap{"test.dmap"};
+  struct TestApplication1 : public ctk::Application {
+    TestApplication1() : Application("testSuite") {}
+    ~TestApplication1() override { shutdown(); }
 
-  struct : ctk::ApplicationModule {
-    using ApplicationModule::ApplicationModule;
+    ctk::SetDMapFilePath dmap{"test.dmap"};
 
-    ctk::ScalarPushInput<int> consumingPush{this, "/MyModule/readBack", "", ""};
+    struct : ctk::ApplicationModule {
+      using ApplicationModule::ApplicationModule;
 
-    void mainLoop() override {}
-  } testModule{(this), ".", ""}; // extra parentheses are for doxygen...
+      ctk::ScalarPushInput<int> consumingPush{this, "/MyModule/readBack", "", ""};
 
-  ctk::DeviceModule dev{this, "Dummy0"};
-};
+      void mainLoop() override {}
+    } testModule{(this), ".", ""}; // extra parentheses are for doxygen...
 
-BOOST_AUTO_TEST_CASE(testTwoScalarPollPushAccessors) {
-  TestApplication1 app;
-  app.debugMakeConnections();
+    ctk::DeviceModule dev{this, "Dummy0"};
+  };
 
-  BOOST_CHECK_THROW(
-      {
-        app.initialise();
-        app.run();
-      },
-      ctk::logic_error);
-}
+  BOOST_AUTO_TEST_CASE(testTwoScalarPollPushAccessors) {
+    TestApplication1 app;
+    app.debugMakeConnections();
 
-/*********************************************************************************************************************/
-/* test case for two feeders */
+    BOOST_CHECK_THROW(
+        {
+          app.initialise();
+          app.run();
+        },
+        ctk::logic_error);
+  }
 
-template<typename T>
-struct TestApplication3 : public ctk::Application {
-  TestApplication3() : Application("testSuite") { debugMakeConnections(); }
-  ~TestApplication3() override { shutdown(); }
+  /*********************************************************************************************************************/
+  /* test case for two feeders */
 
-  struct : ctk::ApplicationModule {
-    using ApplicationModule::ApplicationModule;
+  template<typename T>
+  struct TestApplication3 : public ctk::Application {
+    TestApplication3() : Application("testSuite") { debugMakeConnections(); }
+    ~TestApplication3() override { shutdown(); }
 
-    ctk::ScalarOutput<T> consumingPush{this, "/MyModule/readBack", "", ""};
+    struct : ctk::ApplicationModule {
+      using ApplicationModule::ApplicationModule;
 
-    void mainLoop() override {}
-  } testModule{this, ".", ""};
+      ctk::ScalarOutput<T> consumingPush{this, "/MyModule/readBack", "", ""};
 
-  struct : ctk::ApplicationModule {
-    using ApplicationModule::ApplicationModule;
+      void mainLoop() override {}
+    } testModule{this, ".", ""};
 
-    ctk::ScalarOutput<T> consumingPush2{this, "/MyModule/readBack", "", ""};
+    struct : ctk::ApplicationModule {
+      using ApplicationModule::ApplicationModule;
 
-    void mainLoop() override {}
-  } testModule2{this, ".", ""};
-};
+      ctk::ScalarOutput<T> consumingPush2{this, "/MyModule/readBack", "", ""};
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoFeeders, T, TestTypes) {
-  TestApplication3<T> app;
+      void mainLoop() override {}
+    } testModule2{this, ".", ""};
+  };
 
-  BOOST_CHECK_THROW(ctk::TestFacility tf(app, false), ctk::logic_error);
-}
+  BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoFeeders, T, TestTypes) {
+    TestApplication3<T> app;
 
-/*********************************************************************************************************************/
-/* test case for too many polling consumers */
+    BOOST_CHECK_THROW(ctk::TestFacility tf(app, false), ctk::logic_error);
+  }
 
-struct TestApplication4 : public ctk::Application {
-  TestApplication4() : Application("testSuite") { debugMakeConnections(); }
-  ~TestApplication4() override { shutdown(); }
+  /*********************************************************************************************************************/
+  /* test case for too many polling consumers */
 
-  ctk::SetDMapFilePath dmap{"test.dmap"};
+  struct TestApplication4 : public ctk::Application {
+    TestApplication4() : Application("testSuite") { debugMakeConnections(); }
+    ~TestApplication4() override { shutdown(); }
 
-  struct : ctk::ApplicationModule {
-    using ApplicationModule::ApplicationModule;
+    ctk::SetDMapFilePath dmap{"test.dmap"};
 
-    ctk::ScalarPollInput<int> consumingPush{this, "/MyModule/readBack", "", ""};
+    struct : ctk::ApplicationModule {
+      using ApplicationModule::ApplicationModule;
 
-    void mainLoop() override {}
-  } testModule{this, ".", ""};
+      ctk::ScalarPollInput<int> consumingPush{this, "/MyModule/readBack", "", ""};
 
-  struct : ctk::ApplicationModule {
-    using ApplicationModule::ApplicationModule;
+      void mainLoop() override {}
+    } testModule{this, ".", ""};
 
-    ctk::ScalarPollInput<int> consumingPush2{this, "/MyModule/readBack", "", ""};
+    struct : ctk::ApplicationModule {
+      using ApplicationModule::ApplicationModule;
 
-    void mainLoop() override {}
-  } testModule2{this, ".", ""};
+      ctk::ScalarPollInput<int> consumingPush2{this, "/MyModule/readBack", "", ""};
 
-  ctk::DeviceModule dev{this, "Dummy0"};
-};
+      void mainLoop() override {}
+    } testModule2{this, ".", ""};
 
-BOOST_AUTO_TEST_CASE(testTooManyPollingConsumers) {
-  TestApplication4 app;
+    ctk::DeviceModule dev{this, "Dummy0"};
+  };
 
-  BOOST_CHECK_THROW(
-      {
-        app.initialise();
-        app.run();
-      },
-      ctk::logic_error);
-}
+  BOOST_AUTO_TEST_CASE(testTooManyPollingConsumers) {
+    TestApplication4 app;
 
-/*********************************************************************************************************************/
-/* test case for different number of elements */
+    BOOST_CHECK_THROW(
+        {
+          app.initialise();
+          app.run();
+        },
+        ctk::logic_error);
+  }
 
-template<typename T>
-struct TestApplication5 : public ctk::Application {
-  TestApplication5() : Application("testSuite") { debugMakeConnections(); }
-  ~TestApplication5() override { shutdown(); }
+  /*********************************************************************************************************************/
+  /* test case for different number of elements */
 
-  struct : ctk::ApplicationModule {
-    using ApplicationModule::ApplicationModule;
+  template<typename T>
+  struct TestApplication5 : public ctk::Application {
+    TestApplication5() : Application("testSuite") { debugMakeConnections(); }
+    ~TestApplication5() override { shutdown(); }
 
-    ctk::ArrayOutput<T> feed{this, "/MyModule/readBack", "", 10, ""};
+    struct : ctk::ApplicationModule {
+      using ApplicationModule::ApplicationModule;
 
-    void mainLoop() override {}
-  } testModule{this, ".", ""};
+      ctk::ArrayOutput<T> feed{this, "/MyModule/readBack", "", 10, ""};
 
-  struct : ctk::ApplicationModule {
-    using ApplicationModule::ApplicationModule;
+      void mainLoop() override {}
+    } testModule{this, ".", ""};
 
-    ctk::ArrayPollInput<T> consume{this, "/MyModule/readBack", "", 20, ""};
+    struct : ctk::ApplicationModule {
+      using ApplicationModule::ApplicationModule;
 
-    void mainLoop() override {}
-  } testModule2{this, ".", ""};
-};
+      ctk::ArrayPollInput<T> consume{this, "/MyModule/readBack", "", 20, ""};
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testDifferentNrElements, T, TestTypes) {
-  TestApplication5<T> app;
-  BOOST_CHECK_THROW(ctk::TestFacility tf(app, false), ctk::logic_error);
-}
+      void mainLoop() override {}
+    } testModule2{this, ".", ""};
+  };
 
-/*********************************************************************************************************************/
-/* test case for zero-length elements that are not void */
+  BOOST_AUTO_TEST_CASE_TEMPLATE(testDifferentNrElements, T, TestTypes) {
+    TestApplication5<T> app;
+    BOOST_CHECK_THROW(ctk::TestFacility tf(app, false), ctk::logic_error);
+  }
 
-template<typename T>
-struct TestApplication6 : public ctk::Application {
-  TestApplication6() : Application("testSuite") { debugMakeConnections(); }
-  ~TestApplication6() override { shutdown(); }
+  /*********************************************************************************************************************/
+  /* test case for zero-length elements that are not void */
 
-  struct : ctk::ApplicationModule {
-    using ApplicationModule::ApplicationModule;
+  template<typename T>
+  struct TestApplication6 : public ctk::Application {
+    TestApplication6() : Application("testSuite") { debugMakeConnections(); }
+    ~TestApplication6() override { shutdown(); }
 
-    ctk::ArrayOutput<T> feed{this, "/MyModule/readBack", "", 0, ""};
+    struct : ctk::ApplicationModule {
+      using ApplicationModule::ApplicationModule;
 
-    void mainLoop() override {}
-  } testModule{this, ".", ""};
+      ctk::ArrayOutput<T> feed{this, "/MyModule/readBack", "", 0, ""};
 
-  struct : ctk::ApplicationModule {
-    using ApplicationModule::ApplicationModule;
+      void mainLoop() override {}
+    } testModule{this, ".", ""};
 
-    ctk::ArrayPollInput<T> consume{this, "/MyModule/readBack", "", 0, ""};
+    struct : ctk::ApplicationModule {
+      using ApplicationModule::ApplicationModule;
 
-    void mainLoop() override {}
-  } testModule2{this, ".", ""};
-};
+      ctk::ArrayPollInput<T> consume{this, "/MyModule/readBack", "", 0, ""};
+
+      void mainLoop() override {}
+    } testModule2{this, ".", ""};
+  };
+
+} // namespace Tests::testIllegalNetworks

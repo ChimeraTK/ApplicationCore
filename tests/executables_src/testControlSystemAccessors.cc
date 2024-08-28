@@ -20,8 +20,10 @@
 using namespace boost::unit_test_framework;
 namespace ctk = ChimeraTK;
 
-// list of user types the accessors are tested with
-using test_types = boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double>;
+namespace Tests::testControlSystemAccessors {
+
+  // list of user types the accessors are tested with
+  using test_types = boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double>;
 
 #define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
   {                                                                                                                    \
@@ -34,115 +36,117 @@ using test_types = boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t,
     }                                                                                                                  \
   }
 
-/*********************************************************************************************************************/
-/* the ApplicationModule for the test is a template of the user type */
+  /*********************************************************************************************************************/
+  /* the ApplicationModule for the test is a template of the user type */
 
-template<typename T>
-struct TestModule : public ctk::ApplicationModule {
-  TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
-      const std::unordered_set<std::string>& tags = {})
-  : ApplicationModule(owner, name, description, tags), mainLoopStarted(2) {}
+  template<typename T>
+  struct TestModule : public ctk::ApplicationModule {
+    TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
+        const std::unordered_set<std::string>& tags = {})
+    : ApplicationModule(owner, name, description, tags), mainLoopStarted(2) {}
 
-  ctk::ScalarPushInput<T> consumer{this, "consumer", "", "No comment."};
-  ctk::ScalarOutput<T> feeder{this, "feeder", "MV/m", "Some fancy explanation about this variable"};
+    ctk::ScalarPushInput<T> consumer{this, "consumer", "", "No comment."};
+    ctk::ScalarOutput<T> feeder{this, "feeder", "MV/m", "Some fancy explanation about this variable"};
 
-  // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
-  // mainLoop(). This is required since the mainLoopWrapper accesses the module variables before the start of the
-  // mainLoop.
-  // execute this right after the Application::run():
-  //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
-  boost::barrier mainLoopStarted;
+    // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
+    // mainLoop(). This is required since the mainLoopWrapper accesses the module variables before the start of the
+    // mainLoop.
+    // execute this right after the Application::run():
+    //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+    boost::barrier mainLoopStarted;
 
-  void mainLoop() override { mainLoopStarted.wait(); }
-};
+    void mainLoop() override { mainLoopStarted.wait(); }
+  };
 
-/*********************************************************************************************************************/
-/* dummy application */
+  /*********************************************************************************************************************/
+  /* dummy application */
 
-template<typename T>
-struct TestApplication : public ctk::Application {
-  TestApplication() : Application("testSuite") {
-    ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+  template<typename T>
+  struct TestApplication : public ctk::Application {
+    TestApplication() : Application("testSuite") {
+      ChimeraTK::BackendFactory::getInstance().setDMapFilePath("test.dmap");
+    }
+    ~TestApplication() override { shutdown(); }
+
+    TestModule<T> testModule{this, "TestModule", "The test module"};
+  };
+
+  /*********************************************************************************************************************/
+  /* test feeding a scalar to the control system adapter */
+
+  BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToCS, T, test_types) {
+    TestApplication<T> app;
+
+    app.debugMakeConnections();
+
+    auto pvManagers = ctk::createPVManager();
+    app.setPVManager(pvManagers.second);
+
+    // app.testModule.feeder >> app.cs("myFeeder");
+    app.initialise();
+
+    auto myFeeder = pvManagers.first->getProcessArray<T>("/TestModule/feeder");
+    auto consumer = pvManagers.first->getProcessArray<T>("/TestModule/consumer");
+
+    app.run();
+    consumer->write();                     // send initial value so the application module can start up
+    app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+
+    BOOST_TEST(myFeeder->getName() == "/TestModule/feeder");
+    BOOST_TEST(myFeeder->getUnit() == "MV/m");
+    BOOST_TEST(myFeeder->getDescription() == "The test module - Some fancy explanation about this variable");
+
+    app.testModule.feeder = 42;
+    BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), false);
+    app.testModule.feeder.write();
+    BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), true);
+    BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), false);
+    BOOST_CHECK(myFeeder->accessData(0) == 42);
+
+    app.testModule.feeder = 120;
+    BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), false);
+    app.testModule.feeder.write();
+    BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), true);
+    BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), false);
+    BOOST_CHECK(myFeeder->accessData(0) == 120);
   }
-  ~TestApplication() override { shutdown(); }
 
-  TestModule<T> testModule{this, "TestModule", "The test module"};
-};
+  /*********************************************************************************************************************/
+  /* test consuming a scalar from the control system adapter */
 
-/*********************************************************************************************************************/
-/* test feeding a scalar to the control system adapter */
+  BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromCS, T, test_types) {
+    TestApplication<T> app;
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToCS, T, test_types) {
-  TestApplication<T> app;
+    auto pvManagers = ctk::createPVManager();
+    app.setPVManager(pvManagers.second);
 
-  app.debugMakeConnections();
+    // app.cs("myConsumer") >> app.testModule.consumer;
+    app.initialise();
 
-  auto pvManagers = ctk::createPVManager();
-  app.setPVManager(pvManagers.second);
+    auto myConsumer = pvManagers.first->getProcessArray<T>("/TestModule/consumer");
+    BOOST_TEST(myConsumer->getName() == "/TestModule/consumer");
+    BOOST_TEST(myConsumer->getUnit() == "");
+    BOOST_TEST(myConsumer->getDescription() == "The test module - No comment.");
 
-  // app.testModule.feeder >> app.cs("myFeeder");
-  app.initialise();
+    myConsumer->accessData(0) = 123; // set inital value
+    myConsumer->write();
 
-  auto myFeeder = pvManagers.first->getProcessArray<T>("/TestModule/feeder");
-  auto consumer = pvManagers.first->getProcessArray<T>("/TestModule/consumer");
+    app.run();                             // should propagate initial value
+    app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
-  app.run();
-  consumer->write();                     // send initial value so the application module can start up
-  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+    BOOST_CHECK(app.testModule.consumer == 123); // check initial value
 
-  BOOST_TEST(myFeeder->getName() == "/TestModule/feeder");
-  BOOST_TEST(myFeeder->getUnit() == "MV/m");
-  BOOST_TEST(myFeeder->getDescription() == "The test module - Some fancy explanation about this variable");
+    myConsumer->accessData(0) = 42;
+    myConsumer->write();
+    app.testModule.consumer.read();
+    BOOST_CHECK(app.testModule.consumer == 42);
 
-  app.testModule.feeder = 42;
-  BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), false);
-  app.testModule.feeder.write();
-  BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), true);
-  BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), false);
-  BOOST_CHECK(myFeeder->accessData(0) == 42);
+    myConsumer->accessData(0) = 120;
+    myConsumer->write();
+    app.testModule.consumer.read();
+    BOOST_CHECK(app.testModule.consumer == 120);
+  }
 
-  app.testModule.feeder = 120;
-  BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), false);
-  app.testModule.feeder.write();
-  BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), true);
-  BOOST_CHECK_EQUAL(myFeeder->readNonBlocking(), false);
-  BOOST_CHECK(myFeeder->accessData(0) == 120);
-}
+  /*********************************************************************************************************************/
 
-/*********************************************************************************************************************/
-/* test consuming a scalar from the control system adapter */
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromCS, T, test_types) {
-  TestApplication<T> app;
-
-  auto pvManagers = ctk::createPVManager();
-  app.setPVManager(pvManagers.second);
-
-  // app.cs("myConsumer") >> app.testModule.consumer;
-  app.initialise();
-
-  auto myConsumer = pvManagers.first->getProcessArray<T>("/TestModule/consumer");
-  BOOST_TEST(myConsumer->getName() == "/TestModule/consumer");
-  BOOST_TEST(myConsumer->getUnit() == "");
-  BOOST_TEST(myConsumer->getDescription() == "The test module - No comment.");
-
-  myConsumer->accessData(0) = 123; // set inital value
-  myConsumer->write();
-
-  app.run();                             // should propagate initial value
-  app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
-
-  BOOST_CHECK(app.testModule.consumer == 123); // check initial value
-
-  myConsumer->accessData(0) = 42;
-  myConsumer->write();
-  app.testModule.consumer.read();
-  BOOST_CHECK(app.testModule.consumer == 42);
-
-  myConsumer->accessData(0) = 120;
-  myConsumer->write();
-  app.testModule.consumer.read();
-  BOOST_CHECK(app.testModule.consumer == 120);
-}
-
-/*********************************************************************************************************************/
+} // namespace Tests::testControlSystemAccessors
