@@ -37,10 +37,10 @@ namespace ChimeraTK {
   using ArrayList = std::vector<Array>;
 
   class ConfigParser {
-    std::string _fileName{};
-    std::unique_ptr<xmlpp::DomParser> _parser{};
-    std::unique_ptr<VariableList> _variableList{};
-    std::unique_ptr<ArrayList> _arrayList{};
+    std::string _fileName;
+    std::unique_ptr<xmlpp::DomParser> _parser;
+    std::unique_ptr<VariableList> _variableList;
+    std::unique_ptr<ArrayList> _arrayList;
 
    public:
     explicit ConfigParser(const std::string& fileName) : _fileName(fileName), _parser(createDomParser(fileName)) {}
@@ -65,26 +65,35 @@ namespace ChimeraTK {
 
   class ModuleTree : public VariableGroup {
    public:
-    // Note: This has hideThis as default modifier, because we want the level of
-    // the ModuleTree to vanish in its owner.
-    ModuleTree(VariableGroup* owner, const std::string& name, const std::string& description)
-    : VariableGroup{owner, name, description} {}
+    using VariableGroup::VariableGroup;
 
     ChimeraTK::Module* lookup(const std::string& flattened_module_name);
+    std::list<std::string> getChildList() { return _childrenInOrder; }
+
+    // Prevent any modification of the ModuleTree by lookup(), which otherwise will do a lazy-create
+    // Will be called on the top-level module tree once the parsing is done
+    void seal();
 
    private:
     void addChildNode(const std::string& name) {
       if(_children.find(name) == _children.end()) {
         _children[name] = std::make_unique<ModuleTree>(this, name, "");
+        _childrenInOrder.push_back(name);
       }
     }
 
     ChimeraTK::ModuleTree* get(const std::string& flattened_name);
 
     std::unordered_map<std::string, std::unique_ptr<ModuleTree>> _children;
+
+    // Helper list to be able to return the child modules in the order they were found in the XML file
+    std::list<std::string> _childrenInOrder;
+
+    // Whether the ConfigReader will be modified by lookup() or not.
+    bool _sealed{false};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Functor to fill variableMap */
   struct FunctorFill {
@@ -114,7 +123,7 @@ namespace ChimeraTK {
                      // this to the caller
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Functor to fill variableMap for arrays */
   struct ArrayFunctorFill {
@@ -145,7 +154,7 @@ namespace ChimeraTK {
                      // this to the caller
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct FunctorGetTypeForName {
     FunctorGetTypeForName(const ConfigReader* theOwner, std::string const& theName, std::string& theType)
@@ -172,7 +181,7 @@ namespace ChimeraTK {
     std::string& type;
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ConfigReader::checkVariable(std::string const& name, std::string const& typeOfThis) const {
     std::string typeOfVar;
@@ -194,7 +203,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ConfigReader::checkArray(std::string const& name, std::string const& typeOfThis) const {
     std::string typeOfVar;
@@ -214,7 +223,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename T>
   void ConfigReader::createVar(const std::string& name, const std::string& value) {
@@ -229,9 +238,9 @@ namespace ChimeraTK {
     theMap.emplace(std::make_pair(name, ConfigReader::Var<T>(varOwner, varName, convertedValue)));
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename T>
   void ConfigReader::createArray(const std::string& name, const std::map<size_t, std::string>& values) {
@@ -263,7 +272,7 @@ namespace ChimeraTK {
     theMap.emplace(std::make_pair(name, ConfigReader::Array<T>(arrayOwner, arrayName, Tvalues)));
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   ConfigReader::ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
       const std::unordered_set<std::string>& tags)
@@ -300,7 +309,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ConfigReader::construct(const std::string& fileName) {
     auto fillVariableMap = [this](const Variable& var) {
@@ -330,6 +339,9 @@ namespace ChimeraTK {
     for(const auto& arr : *a) {
       fillArrayMap(arr);
     }
+
+    // Stop all modification of moduleTree after reading in the configuration
+    _moduleTree->seal();
   }
 
   // workaround for std::unique_ptr static assert.
@@ -340,7 +352,23 @@ namespace ChimeraTK {
     throw ChimeraTK::logic_error("ConfigReader: Error parsing the config file '" + _fileName + "': " + message);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  std::list<std::string> ConfigReader::getModules(const std::string& path) const {
+    auto* module = _moduleTree->lookup(path);
+    if(!module) {
+      return {};
+    }
+
+    if(module == this) {
+      return _moduleTree->getChildList();
+    }
+
+    auto* castedModule = dynamic_cast<ModuleTree*>(module);
+    return castedModule->getChildList();
+  }
+
+  /********************************************************************************************************************/
 
   /** Functor to set values to the scalar accessors */
   struct FunctorSetValues {
@@ -364,7 +392,7 @@ namespace ChimeraTK {
     ConfigReader* owner;
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Functor to set values to the array accessors */
   struct FunctorSetValuesArray {
@@ -388,14 +416,14 @@ namespace ChimeraTK {
     ConfigReader* owner;
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ConfigReader::prepare() {
     boost::fusion::for_each(_variableMap.table, FunctorSetValues(this));
     boost::fusion::for_each(_arrayMap.table, FunctorSetValuesArray(this));
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   ChimeraTK::Module* ModuleTree::lookup(const std::string& flattened_module_name) {
     // Root node, return pointer to the ConfigReader
@@ -406,30 +434,44 @@ namespace ChimeraTK {
     return get(flattened_module_name);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  void ModuleTree::seal() {
+    _sealed = true;
+    for(auto& [k, v] : _children) {
+      v->seal();
+    }
+  }
+
+  /********************************************************************************************************************/
 
   ChimeraTK::ModuleTree* ModuleTree::get(const std::string& flattened_name) {
     auto root_name = root(flattened_name);
     auto remaining_branch_name = branchWithoutRoot(flattened_name);
 
-    ModuleTree* module;
+    ModuleTree* module{nullptr};
 
     auto r = _children.find(root_name);
-    if(r == _children.end()) {
+    if(r == _children.end() && !_sealed) {
       addChildNode(root_name);
     }
 
-    if(!remaining_branch_name.empty()) {
-      module = _children[root_name]->get(remaining_branch_name);
+    try {
+      if(!remaining_branch_name.empty()) {
+        module = _children.at(root_name)->get(remaining_branch_name);
+      }
+      else {
+        module = _children.at(root_name).get();
+      }
     }
-    else {
-      module = _children[root_name].get();
+    catch(std::out_of_range&) {
+      assert(_sealed);
     }
 
     return module;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::unique_ptr<VariableList> ConfigParser::getVariableList() {
     if(_variableList == nullptr) {
@@ -438,7 +480,7 @@ namespace ChimeraTK {
     return std::move(_variableList);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::unique_ptr<ArrayList> ConfigParser::getArrayList() {
     if(_arrayList != nullptr) {
@@ -447,7 +489,7 @@ namespace ChimeraTK {
     return std::move(_arrayList);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>> ConfigParser::parse() {
     auto* const root = getRootNode(*_parser);
@@ -467,7 +509,7 @@ namespace ChimeraTK {
         std::move(_variableList), std::move(_arrayList)};
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ConfigParser::parseModule(const xmlpp::Element* element, std::string parent_name) {
     auto module_name = (element->get_name() == "configuration") // root node gets special treatment
@@ -497,7 +539,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   Variable ConfigParser::parseVariable(const xmlpp::Element* element) {
     auto name = element->get_attribute("name")->get_value();
@@ -506,7 +548,7 @@ namespace ChimeraTK {
     return Variable{name, type, value};
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   Array ConfigParser::parseArray(const xmlpp::Element* element) {
     auto name = element->get_attribute("name")->get_value();
@@ -515,7 +557,7 @@ namespace ChimeraTK {
     return Array{name, type, values};
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   xmlpp::Element* ConfigParser::getRootNode(xmlpp::DomParser& parser) {
     auto* root = parser.get_document()->get_root_node();
@@ -525,13 +567,13 @@ namespace ChimeraTK {
     return root;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ConfigParser::error(const std::string& message) {
     throw ChimeraTK::logic_error("ConfigReader: Error parsing the config file '" + _fileName + "': " + message);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   bool ConfigParser::isVariable(const xmlpp::Element* element) {
     if((element->get_name() == "variable") && element->get_attribute("value")) {
@@ -547,7 +589,7 @@ namespace ChimeraTK {
     return false;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   bool ConfigParser::isArray(const xmlpp::Element* element) {
     if((element->get_name() == "variable") && !element->get_attribute("value")) {
@@ -563,7 +605,7 @@ namespace ChimeraTK {
     return false;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   bool ConfigParser::isModule(const xmlpp::Element* element) {
     if(element->get_name() == "module") {
@@ -575,7 +617,7 @@ namespace ChimeraTK {
     return false;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::map<size_t, std::string> ConfigParser::gettArrayValues(const xmlpp::Element* element) {
     bool valueFound = false;
@@ -609,7 +651,7 @@ namespace ChimeraTK {
     return values;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ConfigParser::validateValueNode(const xmlpp::Element* valueElement) {
     if(valueElement->get_name() != "value") {
@@ -623,7 +665,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::unique_ptr<xmlpp::DomParser> createDomParser(const std::string& fileName) {
     try {
@@ -634,7 +676,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::string root(const std::string& flattened_name) {
     auto pos = flattened_name.find_first_of('/');
@@ -642,7 +684,7 @@ namespace ChimeraTK {
     return flattened_name.substr(0, pos);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::string branchWithoutRoot(const std::string& flattened_name) {
     auto pos = flattened_name.find_first_of('/');
@@ -650,7 +692,7 @@ namespace ChimeraTK {
     return flattened_name.substr(pos, flattened_name.size());
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::string branch(const std::string& flattened_name) {
     auto pos = flattened_name.find_last_of('/');
@@ -658,13 +700,13 @@ namespace ChimeraTK {
     return flattened_name.substr(0, pos);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::string leaf(const std::string& flattened_name) {
     auto pos = flattened_name.find_last_of('/');
     return flattened_name.substr(pos + 1, flattened_name.size());
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK

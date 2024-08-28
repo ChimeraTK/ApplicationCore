@@ -11,6 +11,10 @@
 #include "ModuleGroup.h"
 #include "TestableMode.h"
 
+#ifdef CHIMERATK_APPLICATION_CORE_WITH_PYTHON
+#  include "PythonModuleManager.h"
+#endif
+
 #include <ChimeraTK/ControlSystemAdapter/ApplicationBase.h>
 #include <ChimeraTK/DeviceBackend.h>
 
@@ -88,6 +92,11 @@ namespace ChimeraTK {
      * control system adapter, or if the instance is not based on the Application class.
      */
     static Application& getInstance();
+
+    /**
+     * Check whether an instance of Application currently exists.
+     */
+    static bool hasInstance() { return instance != nullptr; }
 
     /**
      * Enable the testable mode.
@@ -171,7 +180,15 @@ namespace ChimeraTK {
       return _circularNetworkInvalidityCounters.at(circularNetworkHash);
     }
 
-    ConfigReader& getConfigReader() { return *_defaultConfigReader; }
+#ifdef CHIMERATK_APPLICATION_CORE_WITH_PYTHON
+    PythonModuleManager& getPythonModuleManager() {
+      return _pythonModuleManager;
+    }
+#endif
+
+    ConfigReader& getConfigReader() {
+      return *_defaultConfigReader;
+    }
 
    protected:
     friend class Module;
@@ -258,10 +275,16 @@ namespace ChimeraTK {
      */
     std::shared_ptr<Logger> _logger{Logger::getSharedPtr()};
 
-    std::shared_ptr<ConfigReader> _configReader;
-    ConfigReader* _defaultConfigReader{nullptr};
+    /**
+     * Manager for Python-based ApplicationModules
+     */
+#ifdef CHIMERATK_APPLICATION_CORE_WITH_PYTHON
+    PythonModuleManager _pythonModuleManager;
+#endif
 
     /// The Application-default config reader instance
+    std::shared_ptr<ConfigReader> _configReader;
+    ConfigReader* _defaultConfigReader{nullptr};
 
     friend class TestFacility; // needs access to testableMode variables
 
