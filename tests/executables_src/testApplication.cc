@@ -363,4 +363,4 @@ namespace Tests::testApplication {
     BOOST_CHECK(found_dot);
   }
 
-}; // namespace Tests::testApplication
+} // namespace Tests::testApplication
