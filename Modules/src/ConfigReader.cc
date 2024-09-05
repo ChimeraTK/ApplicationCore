@@ -266,20 +266,38 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   ConfigReader::ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
-      HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
-  : ApplicationModule(owner, applyHierarchyModifierToName(name, hierarchyModifier),
-        "Configuration read from file '" + fileName + "'", tags),
-    _fileName(fileName), _moduleTree(std::make_unique<ModuleTree>(this, ".", "")) {
-    construct(fileName);
-  }
-
-  /*********************************************************************************************************************/
-
-  ConfigReader::ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
       const std::unordered_set<std::string>& tags)
   : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", tags), _fileName(fileName),
     _moduleTree(std::make_unique<ModuleTree>(this, ".", "")) {
-    construct(fileName);
+    auto* appConfig = Application::getInstance()._defaultConfigReader;
+
+    bool replacingDefaultConfig = false;
+    if(appConfig != nullptr) {
+      // We have an appconfig (either the default one, or the first one after that to be created) and there is another
+      // one we bail out because we do not know what to do. The default one will have disabled itself (which sets the
+      // owner to nullptr)
+      if(appConfig->getOwner() != nullptr) {
+        throw ChimeraTK::logic_error("More than one explicit ConfigReader instancesfound. Do now know how to continue."
+                                     " Please update your application.");
+      }
+      std::cout << "Using your own ConfigReader module is deprecated. Please use the Application built-in config reader"
+                << " by naming your configuration file " << appConfig->_fileName << std::endl;
+      replacingDefaultConfig = true;
+      Application::getInstance()._defaultConfigReader = this;
+    }
+
+    try {
+      construct(fileName);
+    }
+    catch(ChimeraTK::runtime_error& ex) {
+      if(replacingDefaultConfig) {
+        // Re-throw error, backwards compatible
+        throw ChimeraTK::logic_error(ex.what());
+      }
+
+      disable();
+      std::cout << "Could not load configuration " << fileName << ", assuming no configuration wanted." << std::endl;
+    }
   }
 
   /*********************************************************************************************************************/
@@ -612,7 +630,7 @@ namespace ChimeraTK {
       return std::make_unique<xmlpp::DomParser>(fileName);
     }
     catch(xmlpp::exception& e) { /// @todo change exception!
-      throw ChimeraTK::logic_error("ConfigReader: Error opening the config file '" + fileName + "': " + e.what());
+      throw ChimeraTK::runtime_error("ConfigReader: Error opening the config file '" + fileName + "': " + e.what());
     }
   }
 
@@ -641,6 +659,7 @@ namespace ChimeraTK {
   }
 
   /*********************************************************************************************************************/
+
   std::string leaf(const std::string& flattened_name) {
     auto pos = flattened_name.find_last_of('/');
     return flattened_name.substr(pos + 1, flattened_name.size());

@@ -3,6 +3,7 @@
 #include "Application.h"
 
 #include "CircularDependencyDetector.h"
+#include "ConfigReader.h"
 #include "ConnectionMaker.h"
 #include "DeviceManager.h"
 #include "Utilities.h"
@@ -39,6 +40,12 @@ Application::Application(const std::string& name) : ApplicationBase(name), Modul
     throw ChimeraTK::logic_error(
         "Error: The application name may only contain alphanumeric characters and underscores.");
   }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
+  _configReader = std::make_shared<ConfigReader>(this, "/", name + "-config.xml");
+#pragma GCC diagnostic pop
+  _defaultConfigReader = _configReader.get();
 }
 
 /*********************************************************************************************************************/

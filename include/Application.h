@@ -171,6 +171,8 @@ namespace ChimeraTK {
       return _circularNetworkInvalidityCounters.at(circularNetworkHash);
     }
 
+    ConfigReader& getConfigReader() { return *_defaultConfigReader; }
+
    protected:
     friend class Module;
     friend class VariableNetwork;
@@ -256,6 +258,11 @@ namespace ChimeraTK {
      */
     std::shared_ptr<Logger> _logger{Logger::getSharedPtr()};
 
+    std::shared_ptr<ConfigReader> _configReader;
+    ConfigReader* _defaultConfigReader{nullptr};
+
+    /// The Application-default config reader instance
+
     friend class TestFacility; // needs access to testableMode variables
 
     template<typename UserType>
@@ -264,6 +271,7 @@ namespace ChimeraTK {
     friend class MetaDataPropagatingRegisterDecorator; // needs to access circularNetworkInvalidityCounters
     friend class ApplicationModule;                    // needs to access circularNetworkInvalidityCounters
     friend struct detail::CircularDependencyDetector;
+    friend struct ConfigReader; // needs access to _configReader to replace it eventually
 
     VersionNumber getCurrentVersionNumber() const override {
       throw ChimeraTK::logic_error("getCurrentVersionNumber() called on the application. This is probably "
