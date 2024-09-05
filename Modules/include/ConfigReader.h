@@ -35,12 +35,8 @@
  * }
  * \endcode
  *
- * - Configuration may be published as process variables to other application modules, the control system or devices:
- * \code
- * void Server::defineConnections() {
- *   config.connectTo(testModule);
- * }
- * \endcode
+ * Configuration will be published as process variables, according to the hierarchy constructed in the configuration
+ * file.
  *
  * \section xmlstructure XML file structure
  * - A valid configuration file may look like:
@@ -117,12 +113,8 @@ namespace ChimeraTK {
   struct ConfigReader : ApplicationModule {
     ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
         const std::unordered_set<std::string>& tags = {});
-
-    [[deprecated("Use constructor without hierarchy modifier and a qualified path "
-                 "instead")]] ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
-        HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags = {});
-
     ~ConfigReader() override;
+
     void mainLoop() override {}
     void prepare() override;
 

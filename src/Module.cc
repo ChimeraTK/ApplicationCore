@@ -249,25 +249,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   ConfigReader& Module::appConfig() {
-    size_t nConfigReaders = 0;
-    ConfigReader* instance = nullptr;
-    for(auto* mod : Application::getInstance().getSubmoduleListRecursive()) {
-      if(!dynamic_cast<ConfigReader*>(mod)) {
-        continue;
-      }
-      ++nConfigReaders;
-      instance = dynamic_cast<ConfigReader*>(mod);
-    }
-    if(nConfigReaders != 1) {
-      std::string message = "ApplicationModule::appConfig() called but " + std::to_string(nConfigReaders) +
-          " instances of ChimeraTK::ConfigReader have been found.";
-      // Printing the message as well; there is a situation when running under Boost::Test where this
-      // is caught by Boost and causes a weird destructor message from AppBase.cc instead with no means of
-      // finding out the actual error
-      std::cerr << message << std::endl;
-      throw ChimeraTK::logic_error(message);
-    }
-    return *instance;
+    return Application::getInstance().getConfigReader();
   }
 
   /********************************************************************************************************************/
