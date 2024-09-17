@@ -3,7 +3,6 @@
 #pragma once
 
 #include "ApplicationModule.h"
-#include "HierarchyModifyingGroup.h"
 #include "ScalarAccessor.h"
 
 namespace ChimeraTK {

@@ -3,7 +3,6 @@
 #pragma once
 
 #include "ApplicationModule.h"
-#include "HierarchyModifyingGroup.h"
 #include "ScalarAccessor.h"
 
 #include <chrono>
@@ -41,14 +40,6 @@ namespace ChimeraTK {
       _defaultPeriod(defaultPeriod) {}
 
     PeriodicTrigger() = default;
-
-    [[deprecated("Use PeriodicTrigger without hierarchy modifier and a qualified path "
-                 "instead")]] PeriodicTrigger(ModuleGroup* owner, const std::string& name,
-        const std::string& description, const uint32_t defaultPeriod, HierarchyModifier hierarchyModifier,
-        const std::unordered_set<std::string>& tags = {}, const std::string& periodName = "period",
-        const std::string& tickName = "tick")
-    : PeriodicTrigger(owner, applyHierarchyModifierToName(name, hierarchyModifier), description, defaultPeriod, tags,
-          periodName, tickName) {}
 
     ScalarPollInput<uint32_t> period;
     ScalarOutput<uint64_t> tick;
