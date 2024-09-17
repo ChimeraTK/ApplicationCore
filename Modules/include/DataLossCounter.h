@@ -4,7 +4,6 @@
 
 #include "Application.h"
 #include "ApplicationModule.h"
-#include "HierarchyModifyingGroup.h"
 #include "ScalarAccessor.h"
 #include "VariableGroup.h"
 
@@ -25,26 +24,6 @@ namespace ChimeraTK {
         const std::string& pathToTrigger, const std::unordered_set<std::string>& tags = {})
     : ApplicationModule(owner, name, description, tags), directTrigger(this, pathToTrigger, "", "Trigger Input"),
       trigger(directTrigger) {}
-
-    /**
-     *  Construct a DataLossCounter object.
-     *
-     *  pathToTrigger is a qualified name of the trigger source. It should start with "/" or ".." to denote an absolute
-     *  resp. relative path. Note that relative paths are relative to the DataLossCounter itself.
-     */
-    [[deprecated("Use constructor without explicit hierarchy and qualified path instead")]] DataLossCounter(
-        EntityOwner* owner, const std::string& name, const std::string& description, const std::string& pathToTrigger,
-        HierarchyModifier hierarchyModifier = HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
-    : ApplicationModule(owner, name, description, hierarchyModifier, tags),
-      directTrigger(this, pathToTrigger, "", "Trigger Input"), trigger(directTrigger) {}
-
-    /// Deprecated form of the constructor for backwards compatibility only.
-    [[deprecated("Use constructor without explicit hierarchy and qualified path instead")]] DataLossCounter(
-        EntityOwner* owner, const std::string& name, const std::string& description,
-        HierarchyModifier hierarchyModifier = HierarchyModifier::none, const std::unordered_set<std::string>& tags = {})
-    : ApplicationModule(owner, name, description, hierarchyModifier, tags),
-      triggerGroup_compat(this, "TriggerGroup", "", HierarchyModifier::hideThis), trigger(triggerGroup_compat.trigger) {
-    }
 
     DataLossCounter() {}
 

@@ -38,26 +38,6 @@ namespace ChimeraTK {
     ApplicationModule(ModuleGroup* owner, const std::string& name, const std::string& description,
         const std::unordered_set<std::string>& tags = {});
 
-    /**
-     * Deprecated form of the constructor. Use the new signature without hierarchy modifier and if necessary qualitfied
-     * names instead.
-     */
-    [[deprecated("Destructor with explicit hierarchy modifier is deprecated. Use qualified name "
-                 "instead")]] ApplicationModule(ModuleGroup* owner, const std::string& name,
-        const std::string& description, HierarchyModifier hierarchyModifier,
-        const std::unordered_set<std::string>& tags = {});
-
-    /** Deprecated form of the constructor. Use the new signature instead. */
-    [[deprecated("Destructor with explicit hierarchy modifier is deprecated. Use qualified name "
-                 "instead")]] ApplicationModule(EntityOwner* owner, const std::string& name,
-        const std::string& description, HierarchyModifier hierarchyModifier = HierarchyModifier::none,
-        const std::unordered_set<std::string>& tags = {});
-
-    /** Deprecated form of the constructor. Use the new signature instead. */
-    [[deprecated("Destructor with eliminateHierarchy is deprecated. Use qualified name "
-                 "instead")]] ApplicationModule(EntityOwner* owner, const std::string& name,
-        const std::string& description, bool eliminateHierarchy, const std::unordered_set<std::string>& tags = {});
-
     /** Default constructor: Allows late initialisation of modules (e.g. when creating arrays of modules). */
     ApplicationModule() = default;
 

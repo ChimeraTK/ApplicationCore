@@ -50,7 +50,7 @@ namespace ChimeraTK {
      *
      *  The StatusAggregator is a module with a single output, the aggregated status. For convenience, the module itself
      *  is always hidden, and the outputName is interpreted as a qualified variable name, which can be relative or
-     *  absolute. See the class description of the HierarchyModifyingGroup for more details.
+     *  absolute.
      *
      *  The mode governs how multiple unequal input status values are aggregated into a single status. See the
      *  PriorityMode class description for details.

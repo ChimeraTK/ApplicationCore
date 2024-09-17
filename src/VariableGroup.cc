@@ -26,19 +26,6 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  VariableGroup::VariableGroup(VariableGroup* owner, const std::string& name, const std::string& description,
-      HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
-  : VariableGroup(owner, applyHierarchyModifierToName(name, hierarchyModifier), description, tags) {}
-
-  /********************************************************************************************************************/
-
-  VariableGroup::VariableGroup(EntityOwner* owner, const std::string& name, const std::string& description,
-      HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
-  : VariableGroup(dynamic_cast<VariableGroup*>(owner), applyHierarchyModifierToName(name, hierarchyModifier),
-        description, tags) {}
-
-  /********************************************************************************************************************/
-
   VariableGroup::VariableGroup(ModuleGroup* owner, const std::string& name, const std::string& description,
       const std::unordered_set<std::string>& tags)
   : Module(owner, name, description, tags) {

@@ -33,24 +33,6 @@ namespace ChimeraTK {
         const std::unordered_set<std::string>& tags = {});
 
     /**
-     * Deprecated constructor with HierarchyModifier for backwards compatibility. Use constructor without
-     * HierarchyModifier and if necessary qualified names instead.
-     */
-    [[deprecated("Use constructor without hierarchy modifier and a qualified path "
-                 "instead")]] VariableGroup(VariableGroup* owner, const std::string& name,
-        const std::string& description, HierarchyModifier hierarchyModifier,
-        const std::unordered_set<std::string>& tags = {});
-
-    /**
-     * Deprecated constructor with HierarchyModifier for backwards compatibility. Use constructor without
-     * HierarchyModifier and if necessary qualified names instead.
-     */
-    [[deprecated("Use constructor without hierarchy modifier and a qualified path "
-                 "instead")]] VariableGroup(EntityOwner* owner, const std::string& name, const std::string& description,
-        HierarchyModifier hierarchyModifier = HierarchyModifier::none,
-        const std::unordered_set<std::string>& tags = {});
-
-    /**
      * Default constructor: Allows late initialisation of VariableGroups (e.g. when creating arrays of VariableGroups).
      */
     VariableGroup() = default;
@@ -78,12 +60,7 @@ namespace ChimeraTK {
 
    private:
     friend class ApplicationModule;
-    /** Constructor: Create ModuleGroup by the given name with the given description and register it with its
-     *  owner. The hierarchy will be modified according to the hierarchyModifier (when VirtualModules are created e.g.
-     *  in findTag()). The specified list of tags will be added to all elements directly or indirectly owned by this
-     *  instance.
-     *
-     *  Note: VariableGroups may only be owned by ApplicationModules or other VariableGroups. */
+
     VariableGroup(ModuleGroup* owner, const std::string& name, const std::string& description,
         const std::unordered_set<std::string>& tags = {});
   };

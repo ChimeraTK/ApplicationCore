@@ -32,27 +32,6 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
-  ApplicationModule::ApplicationModule(ModuleGroup* owner, const std::string& name, const std::string& description,
-      HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
-  : ApplicationModule(owner, applyHierarchyModifierToName(name, hierarchyModifier), description, tags) {}
-
-  /*********************************************************************************************************************/
-
-  ApplicationModule::ApplicationModule(EntityOwner* owner, const std::string& name, const std::string& description,
-      HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags)
-  : ApplicationModule(
-        dynamic_cast<ModuleGroup*>(owner), applyHierarchyModifierToName(name, hierarchyModifier), description, tags) {}
-
-  /*********************************************************************************************************************/
-
-  ApplicationModule::ApplicationModule(EntityOwner* owner, const std::string& name, const std::string& description,
-      bool eliminateHierarchy, const std::unordered_set<std::string>& tags)
-  : ApplicationModule(dynamic_cast<ModuleGroup*>(owner),
-        applyHierarchyModifierToName(name, eliminateHierarchy ? HierarchyModifier::hideThis : HierarchyModifier::none),
-        description, tags) {}
-
-  /*********************************************************************************************************************/
-
   ApplicationModule& ApplicationModule::operator=(ApplicationModule&& other) noexcept {
     assert(!_moduleThread.joinable()); // if the thread is already running, moving is no longer allowed!
 
