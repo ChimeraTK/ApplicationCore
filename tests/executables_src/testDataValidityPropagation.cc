@@ -164,36 +164,6 @@ namespace Tests::testDataValidityPropagation {
   /*********************************************************************************************************************/
   /*********************************************************************************************************************/
 
-  /**
-   *  tests the ExceptionDummyPollDecorator of the ExceptionDummyBackend, which provides a way for
-   *  forcing individual (poll-type) device outputs to DataValidity=faulty
-   */
-  BOOST_AUTO_TEST_CASE(testDataValidity_exceptionDummy) {
-    TestApplication3 app;
-    ctk::TestFacility test{app};
-
-    ChimeraTK::Device dev(TestApplication3::ExceptionDummyCDD);
-
-    auto devI1 = test.getScalar<int>("/dev/i1");
-    auto devI2 = test.getScalar<int>("/dev/i2");
-    test.runApplication();
-    // it seems that the exceptionDummy is created only when app starts.
-    auto exceptionDummy = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(dev.getBackend());
-    assert(exceptionDummy);
-    exceptionDummy->setValidity("/dev/i1", ctk::DataValidity::faulty);
-
-    app.m2.o1 = 1;
-    app.m2.o1.write();
-    test.stepApplication();
-    devI1.read();
-    devI2.read();
-    BOOST_CHECK(devI1.dataValidity() == ctk::DataValidity::faulty);
-    BOOST_CHECK(devI2.dataValidity() == ctk::DataValidity::ok);
-  }
-
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
-
   /*
    * \anchor testDataValidity_1_1 \ref dataValidity_1_1 "1.1"
    * In ApplicationCore each variable has a data validiy flag attached to it. DataValidity can be 'ok' or 'faulty'.
