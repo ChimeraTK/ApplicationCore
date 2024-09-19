@@ -19,7 +19,7 @@ namespace Tests::testVersionpropagation {
   namespace ctk = ChimeraTK;
   using Fixture = FixtureWithPollAndPushInput<false>;
 
-  BOOST_FIXTURE_TEST_SUITE(versionPropagation, Fixture)
+  BOOST_FIXTURE_TEST_SUITE(VersionPropagationPart1, Fixture)
 
   /*********************************************************************************************************************/
 
@@ -132,7 +132,10 @@ namespace Tests::testVersionpropagation {
   /*********************************************************************************************************************/
   /*********************************************************************************************************************/
 
-  BOOST_AUTO_TEST_SUITE()
+  // The EmptyFixture is required, since we cannot use an ordinary BOOST_AUTO_TEST_SUITE after a
+  // BOOST_FIXTURE_TEST_SUITE when compiling with -std=c++20 or later.
+  class EmptyFixture {};
+  BOOST_FIXTURE_TEST_SUITE(VersionPropagationPart2, EmptyFixture)
 
   struct ThePushModule : ChimeraTK::ApplicationModule {
     using ChimeraTK::ApplicationModule::ApplicationModule;
