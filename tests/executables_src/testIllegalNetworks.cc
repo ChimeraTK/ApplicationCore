@@ -184,4 +184,72 @@ namespace Tests::testIllegalNetworks {
     } testModule2{this, ".", ""};
   };
 
+  BOOST_AUTO_TEST_CASE_TEMPLATE(testDifferentZeroElementsNonVoid, T, TestTypes) {
+    TestApplication6<T> app;
+    BOOST_CHECK_THROW(ctk::TestFacility tf(app, false), ctk::logic_error);
+  }
+
+  /*********************************************************************************************************************/
+  /* test cases for modules connecting itself, either directly or via a deep C++ hierarchy */
+
+  struct CircularConnectionModule : public ctk::ApplicationModule {
+    // An application module that will have its output connect to itself
+    using ctk::ApplicationModule::ApplicationModule;
+
+    ctk::ScalarOutput<int> out{this, "/Some/out", "", "Some output"};
+    ctk::ScalarPushInput<int> in{this, "/Some/out", "", "Some input"};
+
+    void mainLoop() override {}
+  };
+
+  struct CircularConnectionModuleWithIntermediateGroup : public ctk::ApplicationModule {
+    using ctk::ApplicationModule::ApplicationModule;
+
+    struct : ctk::VariableGroup {
+      using ctk::VariableGroup::VariableGroup;
+
+      struct : ctk::VariableGroup {
+        using ctk::VariableGroup::VariableGroup;
+
+        struct : ctk::VariableGroup {
+          using ctk::VariableGroup::VariableGroup;
+
+          struct : ctk::VariableGroup {
+            using ctk::VariableGroup::VariableGroup;
+
+            ctk::ScalarOutput<int> out{this, "/Some/out", "", "Some output"};
+          } x{this, "Group", "description"};
+        } y{this, "Group", "description"};
+      } z{this, "Group", "description"};
+    } variableGroup{this, "Group", "Description"};
+
+    ctk::ScalarPushInput<int> in{this, "/Some/out", "", "Some input"};
+
+    void mainLoop() override {}
+  };
+
+  struct CircularConnectionApp : public ctk::Application {
+    using Application::Application;
+
+    ~CircularConnectionApp() override { shutdown(); }
+    CircularConnectionModule theModule{this, "CircularModule", "Description"};
+  };
+
+  struct CircularConnectionApp2 : public ctk::Application {
+    using Application::Application;
+
+    ~CircularConnectionApp2() override { shutdown(); }
+    CircularConnectionModuleWithIntermediateGroup theModule{this, "CircularModuleWithIntermediate", "Description"};
+  };
+
+  BOOST_AUTO_TEST_CASE(testCircularModule) {
+    auto app = CircularConnectionApp("CircularConnection");
+    BOOST_CHECK_THROW(ctk::TestFacility tf{app}, ctk::logic_error);
+  }
+
+  BOOST_AUTO_TEST_CASE(testCircularModule2) {
+    // Test that connecting in the same module with some internal hierarchy still is caught
+    auto app = CircularConnectionApp2("CircularConnection");
+    BOOST_CHECK_THROW(ctk::TestFacility tf{app}, ctk::logic_error);
+  }
 } // namespace Tests::testIllegalNetworks
