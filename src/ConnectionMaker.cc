@@ -15,8 +15,6 @@
 
 #include <ChimeraTK/NDRegisterAccessor.h>
 
-#include <memory>
-
 namespace ChimeraTK {
 
   /*********************************************************************************************************************/
@@ -89,6 +87,24 @@ namespace ChimeraTK {
 
       if(net.unit.empty()) {
         net.unit = node.getUnit();
+      }
+    }
+
+    if(net.feeder.getType() == NodeType::Application) {
+      auto* owner = dynamic_cast<Module*>(net.feeder.getOwningModule());
+      assert(owner != nullptr);
+      auto* feederApplicationModule = owner->findApplicationModule();
+      for(const auto& consumer : net.consumers) {
+        if(consumer.getType() != NodeType::Application) {
+          continue;
+        }
+
+        auto* module = dynamic_cast<Module*>(consumer.getOwningModule());
+        assert(module != nullptr);
+        if(feederApplicationModule == module->findApplicationModule()) {
+          throw ChimeraTK::logic_error(
+              std::string("Network for ") + consumer.getQualifiedName() + "feeds itself in the same module");
+        }
       }
     }
 

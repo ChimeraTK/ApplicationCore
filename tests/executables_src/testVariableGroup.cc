@@ -24,29 +24,40 @@ namespace Tests::testVariableGroup {
   /*********************************************************************************************************************/
   /* the ApplicationModule for the test is a template of the user type */
 
-  struct TestModule : public ctk::ApplicationModule {
+  struct InputModule : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
     struct MixedGroup : public ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
-      ctk::ScalarPushInput<int> consumingPush{this, "feedingPush", "MV/m", "Descrption"};
-      ctk::ScalarPushInput<int> consumingPush2{this, "feedingPush2", "MV/m", "Descrption"};
-      ctk::ScalarPushInput<int> consumingPush3{this, "feedingPush3", "MV/m", "Descrption"};
-      ctk::ScalarPollInput<int> consumingPoll{this, "feedingPoll", "MV/m", "Descrption"};
-      ctk::ScalarPollInput<int> consumingPoll2{this, "feedingPoll2", "MV/m", "Descrption"};
-      ctk::ScalarPollInput<int> consumingPoll3{this, "feedingPoll3", "MV/m", "Descrption"};
-    };
-    MixedGroup mixedGroup{this, ".", "A group with both push and poll inputs"};
-
-    ctk::ScalarOutput<int> feedingPush{this, "feedingPush", "MV/m", "Descrption"};
-    ctk::ScalarOutput<int> feedingPush2{this, "feedingPush2", "MV/m", "Descrption"};
-    ctk::ScalarOutput<int> feedingPush3{this, "feedingPush3", "MV/m", "Descrption"};
-    ctk::ScalarOutput<int> feedingPoll{this, "feedingPoll", "MV/m", "Descrption"};
-    ctk::ScalarOutput<int> feedingPoll2{this, "feedingPoll2", "MV/m", "Descrption"};
-    ctk::ScalarOutput<int> feedingPoll3{this, "feedingPoll3", "MV/m", "Descrption"};
+      ctk::ScalarPushInput<int> consumingPush{this, "feedingPush", "MV/m", "Description"};
+      ctk::ScalarPushInput<int> consumingPush2{this, "feedingPush2", "MV/m", "Description"};
+      ctk::ScalarPushInput<int> consumingPush3{this, "feedingPush3", "MV/m", "Description"};
+      ctk::ScalarPollInput<int> consumingPoll{this, "feedingPoll", "MV/m", "Description"};
+      ctk::ScalarPollInput<int> consumingPoll2{this, "feedingPoll2", "MV/m", "Description"};
+      ctk::ScalarPollInput<int> consumingPoll3{this, "feedingPoll3", "MV/m", "Description"};
+    } mixedGroup{this, ".", "A group with both push and poll inputs"};
 
     void prepare() override {
-      incrementDataFaultCounter(); // foce all outputs to invalid
+      incrementDataFaultCounter(); // force all outputs to invalid
+      writeAll();
+      decrementDataFaultCounter(); // validity according to input validity
+    }
+
+    void mainLoop() override {}
+  };
+
+  struct OutputModule : public ctk::ApplicationModule {
+    using ctk::ApplicationModule::ApplicationModule;
+
+    ctk::ScalarOutput<int> feedingPush{this, "feedingPush", "MV/m", "Description"};
+    ctk::ScalarOutput<int> feedingPush2{this, "feedingPush2", "MV/m", "Description"};
+    ctk::ScalarOutput<int> feedingPush3{this, "feedingPush3", "MV/m", "Description"};
+    ctk::ScalarOutput<int> feedingPoll{this, "feedingPoll", "MV/m", "Description"};
+    ctk::ScalarOutput<int> feedingPoll2{this, "feedingPoll2", "MV/m", "Description"};
+    ctk::ScalarOutput<int> feedingPoll3{this, "feedingPoll3", "MV/m", "Description"};
+
+    void prepare() override {
+      incrementDataFaultCounter(); // force all outputs to invalid
       writeAll();
       decrementDataFaultCounter(); // validity according to input validity
     }
@@ -61,7 +72,8 @@ namespace Tests::testVariableGroup {
     TestApplication() : Application("testSuite") {}
     ~TestApplication() override { shutdown(); }
 
-    TestModule testModule{this, "testModule", "The test module"};
+    InputModule in{this, "out", "The test module"};
+    OutputModule out{this, "out", "The other test module"};
   };
 
   /*********************************************************************************************************************/
@@ -76,130 +88,130 @@ namespace Tests::testVariableGroup {
 
     test.runApplication();
 
-    // single theaded test
-    app.testModule.mixedGroup.consumingPush = 666;
-    app.testModule.mixedGroup.consumingPush2 = 666;
-    app.testModule.mixedGroup.consumingPush3 = 666;
-    app.testModule.mixedGroup.consumingPoll = 666;
-    app.testModule.mixedGroup.consumingPoll2 = 666;
-    app.testModule.mixedGroup.consumingPoll3 = 666;
-    app.testModule.feedingPush = 18;
-    app.testModule.feedingPush2 = 20;
-    app.testModule.feedingPush3 = 22;
-    app.testModule.feedingPoll = 23;
-    app.testModule.feedingPoll2 = 24;
-    app.testModule.feedingPoll3 = 27;
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 666);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 666);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 666);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 666);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 666);
-    app.testModule.writeAll();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 666);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 666);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 666);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 666);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 666);
-    app.testModule.readAll();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 18);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 20);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 22);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 23);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 24);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 27);
+    // single threaded test
+    app.in.mixedGroup.consumingPush = 666;
+    app.in.mixedGroup.consumingPush2 = 666;
+    app.in.mixedGroup.consumingPush3 = 666;
+    app.in.mixedGroup.consumingPoll = 666;
+    app.in.mixedGroup.consumingPoll2 = 666;
+    app.in.mixedGroup.consumingPoll3 = 666;
+    app.out.feedingPush = 18;
+    app.out.feedingPush2 = 20;
+    app.out.feedingPush3 = 22;
+    app.out.feedingPoll = 23;
+    app.out.feedingPoll2 = 24;
+    app.out.feedingPoll3 = 27;
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 666);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 666);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 666);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 666);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 666);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 666);
+    app.out.writeAll();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 666);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 666);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 666);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 666);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 666);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 666);
+    app.in.readAll();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 18);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 20);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 22);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 23);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 24);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 27);
 
-    app.testModule.readAllNonBlocking();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 18);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 20);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 22);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 23);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 24);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 27);
+    app.in.readAllNonBlocking();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 18);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 20);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 22);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 23);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 24);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 27);
 
-    app.testModule.feedingPush2 = 30;
-    app.testModule.feedingPoll2 = 33;
-    app.testModule.writeAll();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 18);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 20);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 22);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 23);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 24);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 27);
-    app.testModule.readAllNonBlocking();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 18);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 30);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 22);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 23);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 33);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 27);
-    app.testModule.readAllNonBlocking();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 18);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 30);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 22);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 23);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 33);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 27);
+    app.out.feedingPush2 = 30;
+    app.out.feedingPoll2 = 33;
+    app.out.writeAll();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 18);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 20);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 22);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 23);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 24);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 27);
+    app.in.readAllNonBlocking();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 18);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 30);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 22);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 23);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 33);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 27);
+    app.in.readAllNonBlocking();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 18);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 30);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 22);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 23);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 33);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 27);
 
-    app.testModule.feedingPush = 35;
-    app.testModule.feedingPoll3 = 40;
-    app.testModule.writeAll();
-    app.testModule.feedingPush = 36;
-    app.testModule.feedingPoll3 = 44;
-    app.testModule.writeAll();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 18);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 30);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 22);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 23);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 33);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 27);
-    app.testModule.readAllNonBlocking();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 35);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 30);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 22);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 23);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 33);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 44);
-    app.testModule.readAllNonBlocking();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 36);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 30);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 22);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 23);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 33);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 44);
-    app.testModule.readAllNonBlocking();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 36);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 30);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 22);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 23);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 33);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 44);
+    app.out.feedingPush = 35;
+    app.out.feedingPoll3 = 40;
+    app.out.writeAll();
+    app.out.feedingPush = 36;
+    app.out.feedingPoll3 = 44;
+    app.out.writeAll();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 18);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 30);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 22);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 23);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 33);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 27);
+    app.in.readAllNonBlocking();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 35);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 30);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 22);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 23);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 33);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 44);
+    app.in.readAllNonBlocking();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 36);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 30);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 22);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 23);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 33);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 44);
+    app.in.readAllNonBlocking();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 36);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 30);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 22);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 23);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 33);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 44);
 
-    app.testModule.feedingPush = 45;
-    app.testModule.writeAll();
-    app.testModule.feedingPush = 46;
-    app.testModule.writeAll();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 36);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 30);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 22);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 23);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 33);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 44);
-    app.testModule.readAllLatest();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 46);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 30);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 22);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 23);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 33);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 44);
-    app.testModule.readAllLatest();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 46);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 30);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 22);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 23);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 33);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 44);
+    app.out.feedingPush = 45;
+    app.out.writeAll();
+    app.out.feedingPush = 46;
+    app.out.writeAll();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 36);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 30);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 22);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 23);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 33);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 44);
+    app.in.readAllLatest();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 46);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 30);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 22);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 23);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 33);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 44);
+    app.in.readAllLatest();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 46);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 30);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 22);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 23);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 33);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 44);
   }
 
   /*********************************************************************************************************************/
@@ -214,69 +226,69 @@ namespace Tests::testVariableGroup {
 
     test.runApplication();
 
-    auto group = app.testModule.mixedGroup.readAnyGroup();
+    auto group = app.in.mixedGroup.readAnyGroup();
 
-    // single theaded test
-    app.testModule.feedingPush = 0;
-    app.testModule.feedingPush2 = 42;
-    app.testModule.feedingPush3 = 120;
-    app.testModule.feedingPoll = 10;
-    app.testModule.feedingPoll2 = 11;
-    app.testModule.feedingPoll3 = 12;
-    app.testModule.feedingPoll.write();
-    app.testModule.feedingPoll2.write();
-    app.testModule.feedingPoll3.write();
+    // single threaded test
+    app.out.feedingPush = 0;
+    app.out.feedingPush2 = 42;
+    app.out.feedingPush3 = 120;
+    app.out.feedingPoll = 10;
+    app.out.feedingPoll2 = 11;
+    app.out.feedingPoll3 = 12;
+    app.out.feedingPoll.write();
+    app.out.feedingPoll2.write();
+    app.out.feedingPoll3.write();
 
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 0);
 
     // test a single write
-    app.testModule.feedingPush2.write();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 0);
+    app.out.feedingPush2.write();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 0);
     auto id = group.readAny();
-    BOOST_CHECK(id == app.testModule.mixedGroup.consumingPush2.getId());
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 42);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 10);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 11);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 12);
+    BOOST_CHECK(id == app.in.mixedGroup.consumingPush2.getId());
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 42);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 10);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 11);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 12);
 
     // two more writes
-    app.testModule.feedingPush2 = 666;
-    app.testModule.feedingPush2.write();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 42);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 10);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 11);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 12);
+    app.out.feedingPush2 = 666;
+    app.out.feedingPush2.write();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 42);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 10);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 11);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 12);
     id = group.readAny();
-    BOOST_CHECK(id == app.testModule.mixedGroup.consumingPush2.getId());
-    app.testModule.feedingPush3.write();
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 10);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 11);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 12);
+    BOOST_CHECK(id == app.in.mixedGroup.consumingPush2.getId());
+    app.out.feedingPush3.write();
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 666);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 10);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 11);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 12);
     id = group.readAny();
-    BOOST_CHECK(id == app.testModule.mixedGroup.consumingPush3.getId());
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush == 0);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush2 == 666);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPush3 == 120);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll == 10);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll2 == 11);
-    BOOST_CHECK(app.testModule.mixedGroup.consumingPoll3 == 12);
+    BOOST_CHECK(id == app.in.mixedGroup.consumingPush3.getId());
+    BOOST_CHECK(app.in.mixedGroup.consumingPush == 0);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush2 == 666);
+    BOOST_CHECK(app.in.mixedGroup.consumingPush3 == 120);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll == 10);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll2 == 11);
+    BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 12);
   }
 
 } // namespace Tests::testVariableGroup
