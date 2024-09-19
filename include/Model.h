@@ -1465,7 +1465,7 @@ namespace ChimeraTK::Model {
     // We cannot pass (non-default constructible) lambdas to the filtered_graph directly, since at least the
     // depth_first_search tried to default-construct their types at some point. Also the lifetime of the lambdas needs
     // to go beyond the scope of this function, hence we must not capture by reference!
-    [[maybe_unused]] std::function edgeFilterFunctor = [=](const Model::Edge& e) -> bool {
+    [[maybe_unused]] std::function edgeFilterFunctor = [this, edgeFilter](const Model::Edge& e) -> bool {
       Model::EdgeProperties props = _graph[e];
       return edgeFilter.evalEdgeFilter(props);
     };
