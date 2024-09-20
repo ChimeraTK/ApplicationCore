@@ -127,7 +127,7 @@ namespace ChimeraTK::Model {
      *
      * In case of depthFirstSearch, the following search option can be specified:
      * - continueSearchDisjunctTrees: Continue search even when starting object/vertex is finished. This allows to
-     *                                traverse also disjuct parts of the model.
+     *                                traverse also disjunct parts of the model.
      *
      * There are also combined search configurations which can be used to specify filters and search types at the same
      * time:
@@ -135,7 +135,7 @@ namespace ChimeraTK::Model {
      * - ownedApplicationModules: equivalent of adjacentOutSearch, keepOwnership, keepApplicationModules
      * - ownedVariableGroups: equivalent of adjacentOutSearch, keepOwnership, keepVariableGroups
      * - ownedVariables: equivalent of adjacentOutSearch, keepParenthood, keepProcessVariables
-     * - childDirectories: equivalent of adjacentOutSearch, parendhoodFilter, keepDirectories
+     * - childDirectories: equivalent of adjacentOutSearch, parenthoodFilter, keepDirectories
      * - childVariables: equivalent of adjacentOutSearch, keepParenthood, keepProcessVariables
      * - children: equivalent of adjacentOutSearch, keepParenthood
      * - getOwner: equivalent of adjacentInSearch, keepOwnership
