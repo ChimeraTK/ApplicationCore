@@ -1050,35 +1050,77 @@ namespace Tests::testModules {
               << std::endl;
     std::cout << "==> test_moveAssignmentOperator" << std::endl;
     std::cout << std::endl;
+    {
+      AssignModuleLaterApp app;
 
-    AssignModuleLaterApp app;
+      BOOST_CHECK(app.modGroupInstanceToAssignLater.getName() == "modGroupInstanceToAssignLater");
+      BOOST_CHECK(app.modGroupInstanceToAssignLater.getDescription() ==
+          "This instance of VectorModuleGroup was assigned using the operator=()");
 
-    BOOST_CHECK(app.modGroupInstanceToAssignLater.getName() == "modGroupInstanceToAssignLater");
-    BOOST_CHECK(app.modGroupInstanceToAssignLater.getDescription() ==
-        "This instance of VectorModuleGroup was assigned using the operator=()");
+      BOOST_CHECK(app.modInstanceToAssignLater.getName() == "modInstanceToAssignLater");
+      BOOST_CHECK(app.modInstanceToAssignLater.getDescription() ==
+          "This instance of VectorModule was assigned using the operator=()");
 
-    BOOST_CHECK(app.modInstanceToAssignLater.getName() == "modInstanceToAssignLater");
-    BOOST_CHECK(app.modInstanceToAssignLater.getDescription() ==
-        "This instance of VectorModule was assigned using the operator=()");
+      auto list = app.getSubmoduleList();
+      BOOST_CHECK(list.size() == 2);
 
-    auto list = app.getSubmoduleList();
-    BOOST_CHECK(list.size() == 2);
-
-    bool modGroupInstanceToAssignLater_found = false;
-    bool modInstanceToAssignLater_found = false;
-    for(const auto* mod : list) {
-      if(mod == &(app.modGroupInstanceToAssignLater)) {
-        modGroupInstanceToAssignLater_found = true;
+      bool modGroupInstanceToAssignLater_found = false;
+      bool modInstanceToAssignLater_found = false;
+      for(const auto* mod : list) {
+        if(mod == &(app.modGroupInstanceToAssignLater)) {
+          modGroupInstanceToAssignLater_found = true;
+        }
+        if(mod == &(app.modInstanceToAssignLater)) {
+          modInstanceToAssignLater_found = true;
+        }
       }
-      if(mod == &(app.modInstanceToAssignLater)) {
-        modInstanceToAssignLater_found = true;
+
+      BOOST_CHECK(modGroupInstanceToAssignLater_found);
+      BOOST_CHECK(modInstanceToAssignLater_found);
+      BOOST_CHECK_EQUAL(app.modGroupInstanceToAssignLater.getSubmoduleList().size(), 42);
+      BOOST_CHECK_EQUAL(app.modInstanceToAssignLater.getSubmoduleList().size(), 14);
+      BOOST_CHECK(app.modGroupInstanceSource.getName() == "**INVALID**");
+      BOOST_CHECK(app.modGroupInstanceSource.getSubmoduleList().size() == 0);
+      BOOST_CHECK(app.modGroupInstanceSource.vectorOfVectorModule.size() == 0);
+
+      BOOST_CHECK(app.modInstanceSource.getName() == "**INVALID**");
+      BOOST_CHECK(app.modInstanceSource.getSubmoduleList().size() == 0);
+    }
+    {
+      struct MovedTwiceAssignModuleLaterApp : public ctk::Application {
+        MovedTwiceAssignModuleLaterApp() : Application("myApp") {
+          modGroupInstanceToAssignLater = std::move(modGroupInstanceSource);
+          modInstanceToAssignLater = std::move(modInstanceSource);
+          modGroupInstanceToAssignedAfterMove = std::move(modGroupInstanceSource);
+          modInstanceToAssignedAfterMove = std::move(modInstanceSource);
+        }
+        ~MovedTwiceAssignModuleLaterApp() override { shutdown(); }
+
+        VectorModuleGroup modGroupInstanceSource{this, "modGroupInstanceToAssignLater",
+            "This instance of VectorModuleGroup was assigned using the operator=()", 42};
+        VectorModule modInstanceSource{
+            this, "modInstanceToAssignLater", "This instance of VectorModule was assigned using the operator=()", 13};
+
+        VectorModuleGroup modGroupInstanceToAssignLater;
+        VectorModule modInstanceToAssignLater;
+        VectorModuleGroup modGroupInstanceToAssignedAfterMove;
+        VectorModule modInstanceToAssignedAfterMove;
+      };
+
+      {
+        auto appAgain = std::make_unique<MovedTwiceAssignModuleLaterApp>();
+        VectorModuleGroup externalModGroup{appAgain.get(), "externalModGroup",
+            "This instance of VectorModuleGroup was created to be destroyed after the correspondig app to check for "
+            "errors and leaks",
+            42};
+        BOOST_CHECK(appAgain->modInstanceToAssignedAfterMove.getName() == "**INVALID**");
+        BOOST_CHECK(appAgain->modGroupInstanceToAssignedAfterMove.vectorOfVectorModule.size() == 0);
+        appAgain->modGroupInstanceToAssignLater = std::move(externalModGroup);
+        // destroy app before externalModGroup
+        appAgain.reset();
+        BOOST_CHECK(externalModGroup.getName() == "**INVALID**");
       }
     }
-
-    BOOST_CHECK(modGroupInstanceToAssignLater_found);
-    BOOST_CHECK(modInstanceToAssignLater_found);
-    BOOST_CHECK_EQUAL(app.modGroupInstanceToAssignLater.getSubmoduleList().size(), 42);
-    BOOST_CHECK_EQUAL(app.modInstanceToAssignLater.getSubmoduleList().size(), 14);
   }
 
 } // namespace Tests::testModules
