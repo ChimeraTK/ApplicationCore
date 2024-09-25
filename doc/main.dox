@@ -14,6 +14,7 @@ Module documentation:
 Examples:
 \li \ref example
 \li \ref statusmonitordoc
+\li \ref examplePythonModules
 
 Technical specifications:
 - \subpage spec_execptionHandling

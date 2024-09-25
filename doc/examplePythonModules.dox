@@ -1,0 +1,26 @@
+/**
+\page examplePythonModules Example how to write application modules in Python
+
+Here we show how to extend the previous example (see ExampleApp.h and FactoryInstance.cc) by application modules coded in Python.
+We will turn off the C++-coded \c SetpointRamp module by configuration and add a replacement written in Python.
+
+Currently, it is still necessary to define at least the main Application as C++ class, so it is not possible to write ApplicationCore servers only in Python.
+If that is the goal, consider using the GenericDeviceServer [https://github.com/ChimeraTK/GenericDeviceServer] as starting point to add your Python code as configuration files.
+
+\tableofcontents
+
+\section pyExample_files Changed/added files
+
+\subsection pyExample_config config to load python modules
+
+Note the \<module name="PythonModules"\> section below
+
+\include example/config/demo_example-config.xml
+
+\subsection pyExample_code python code
+
+Save the Python code as userAppModes.py and put it next to the config file.
+
+\include example/config/userAppModules.py
+
+*/
