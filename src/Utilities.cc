@@ -110,4 +110,18 @@ namespace ChimeraTK::Utilities {
 
   /********************************************************************************************************************/
 
+  std::string stripTrailingSlashes(const std::string& name) {
+    if(name.empty() || name[name.size() - 1] != '/') return name;
+    return stripTrailingSlashes(name.substr(0, name.size() - 1));
+  }
+
+  /********************************************************************************************************************/
+
+  std::string raiseIftrailingSlash(const std::string& name) {
+    if(name[name.size() - 1] == '/') throw ChimeraTK::logic_error("variable names cannot end with /");
+    return name;
+  }
+
+  /********************************************************************************************************************/
+
 } // namespace ChimeraTK::Utilities

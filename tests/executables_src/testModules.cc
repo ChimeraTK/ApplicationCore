@@ -13,6 +13,7 @@ using namespace boost::unit_test_framework;
 #include "ArrayAccessor.h"
 #include "ModuleGroup.h"
 #include "ScalarAccessor.h"
+#include "TestFacility.h"
 #include "VariableGroup.h"
 
 #include <boost/mpl/list.hpp>
@@ -1121,6 +1122,132 @@ namespace Tests::testModules {
         BOOST_CHECK(externalModGroup.getName() == "**INVALID**");
       }
     }
+  }
+
+  /*********************************************************************************************************************/
+  /* test tailing slashes in module names and group names */
+
+  struct SlashedGroup : ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarPushInput<std::string> inGroup{this, "inGroup", "", "", {}};
+    ctk::ArrayPushInput<int64_t> alsoInGroup{this, "alsoInGroup", "", 16, "", {}};
+  };
+
+  struct SlashModule : public ctk::ApplicationModule {
+    using ctk::ApplicationModule::ApplicationModule;
+
+    ctk::ScalarPushInput<int> someInput{this, "nameOfSomeInput", "", "", {}};
+    ctk::ScalarOutput<double> someOutput{this, "someOutput", "", "", {}};
+
+    SlashedGroup someGroup{this, "someGroup/", ""};
+
+    struct AnotherGroup : ctk::VariableGroup {
+      using ctk::VariableGroup::VariableGroup;
+      ctk::ScalarPushInput<uint8_t> foo{this, "foo", "", "", {}};
+
+      // variable names ending in slashes will produce a ctk::logic_error
+      ctk::ScalarPushInput<uint8_t> slash{this, "slash", "", "", {}};
+      ctk::ArrayPushInput<int64_t> slashArray{this, "array", "", 16, "", {}};
+
+    } anotherGroup{this, "anotherGroupName////", ""};
+
+    void mainLoop() override {}
+  };
+
+  // module group
+
+  struct SlashApp : public ctk::Application {
+    SlashApp() : Application("slashApp") {}
+    ~SlashApp() override { shutdown(); }
+
+    SlashModule slashModule{this, "slashModule/", ""};
+    struct slashModGroup : ctk::ModuleGroup {
+      using ctk::ModuleGroup::ModuleGroup;
+      SlashModule nestedSlashModule{this, "nestedSlashModule//", ""};
+    } slashModGroup{this, "slashModGroupName/", ""};
+  };
+
+  BOOST_AUTO_TEST_CASE(test_trailingSlashes) {
+    std::cout << "***************************************************************"
+                 "******************************************************"
+              << std::endl;
+    std::cout << "==> test_trailingSlashes" << std::endl;
+    std::cout << std::endl;
+
+    SlashApp app;
+    ctk::TestFacility tf{app};
+    tf.runApplication();
+
+    // check module name
+    BOOST_CHECK(app.slashModule.getName() == "slashModule");
+    // check variable group names
+    BOOST_CHECK(app.slashModule.someGroup.getName() == "someGroup");
+    // anotherGroupName has many slashes
+    BOOST_CHECK(app.slashModule.anotherGroup.getName() == "anotherGroupName");
+
+    // check module group names
+    BOOST_CHECK(app.slashModGroup.getName() == "slashModGroupName");
+    BOOST_CHECK(app.slashModGroup.nestedSlashModule.getName() == "nestedSlashModule");
+
+    // check variables
+    // variables will return a fully qualified name:
+    BOOST_CHECK(app.slashModule.someInput.getName() == "/slashModule/nameOfSomeInput");
+    BOOST_CHECK(app.slashModule.someOutput.getName() == "/slashModule/someOutput");
+    BOOST_CHECK(app.slashModule.someGroup.inGroup.getName() == "/slashModule/someGroup/inGroup");
+    BOOST_CHECK(app.slashModule.someGroup.alsoInGroup.getName() == "/slashModule/someGroup/alsoInGroup");
+    BOOST_CHECK(app.slashModule.anotherGroup.foo.getName() == "/slashModule/anotherGroupName/foo");
+    BOOST_CHECK(app.slashModule.anotherGroup.slash.getName() == "/slashModule/anotherGroupName/slash");
+    BOOST_CHECK(app.slashModule.anotherGroup.slashArray.getName() == "/slashModule/anotherGroupName/array");
+  }
+
+  /*********************************************************************************************************************/
+  /*  test tailing slashes in scalar variable name */
+
+  struct VariableSlashScalarApp : public ctk::Application {
+    VariableSlashScalarApp() : Application("VariableSlashScalarApp") {}
+    ~VariableSlashScalarApp() override { shutdown(); }
+
+    struct SomeModule : public ctk::ApplicationModule {
+      using ctk::ApplicationModule::ApplicationModule;
+
+      ctk::ScalarPushInput<std::string> scalar{this, "scalar/", "", "", {}};
+
+      void mainLoop() override {}
+    } someModule{this, "someModule", ""};
+  };
+
+  BOOST_AUTO_TEST_CASE(test_trailingSlashesInScalarVariableNames) {
+    std::cout << "***************************************************************"
+                 "******************************************************"
+              << std::endl;
+    std::cout << "==> test_trailingSlashesInScalarVariableNames" << std::endl;
+    std::cout << std::endl;
+    BOOST_CHECK_THROW(VariableSlashScalarApp app, ctk::logic_error);
+  }
+
+  /*********************************************************************************************************************/
+  /* test tailing slashes in variable names */
+
+  struct VariableSlashArrayApp : public ctk::Application {
+    VariableSlashArrayApp() : Application("VariableSlashArrayApp") {}
+    ~VariableSlashArrayApp() override { shutdown(); }
+
+    struct SomeModule : public ctk::ApplicationModule {
+      using ctk::ApplicationModule::ApplicationModule;
+
+      ctk::ArrayPushInput<int64_t> array{this, "array/", "", 16, "", {}};
+
+      void mainLoop() override {}
+    } someModule{this, "someModule", ""};
+  };
+
+  BOOST_AUTO_TEST_CASE(test_trailingSlashesInArrayVariableNames) {
+    std::cout << "***************************************************************"
+                 "******************************************************"
+              << std::endl;
+    std::cout << "==> test_trailingSlashesInArrayVariableNames" << std::endl;
+    std::cout << std::endl;
+    BOOST_CHECK_THROW(VariableSlashArrayApp app, ctk::logic_error);
   }
 
 } // namespace Tests::testModules

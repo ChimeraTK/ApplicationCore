@@ -6,12 +6,13 @@
 #include "ApplicationModule.h"
 #include "ConfigReader.h"
 #include "DeviceModule.h"
+#include "Utilities.h"
 
 namespace ChimeraTK {
 
   Module::Module(EntityOwner* owner, const std::string& name, const std::string& description,
       const std::unordered_set<std::string>& tags)
-  : EntityOwner(name, description, tags), _owner(owner) {
+  : EntityOwner(ChimeraTK::Utilities::stripTrailingSlashes(name), description, tags), _owner(owner) {
     if(_owner != nullptr) {
       _owner->registerModule(this);
     }
