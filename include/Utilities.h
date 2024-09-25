@@ -51,4 +51,16 @@ namespace ChimeraTK::Utilities {
    */
   void setThreadName(const std::string& name);
 
+  /**
+   * Strips trailing slashes
+   *
+   */
+  std::string stripTrailingSlashes(const std::string& name);
+
+  /**
+   * Raises logic error if name ends in a slash
+   *
+   */
+  std::string raiseIftrailingSlash(const std::string& name);
+
 } // namespace ChimeraTK::Utilities

@@ -4,6 +4,7 @@
 
 #include "Application.h"
 #include "InversionOfControlAccessor.h"
+#include "Utilities.h"
 
 #include <ChimeraTK/OneDRegisterAccessor.h>
 
@@ -200,8 +201,8 @@ namespace ChimeraTK {
   ArrayAccessor<UserType>::ArrayAccessor(Module* owner, const std::string& name, VariableDirection direction,
       std::string unit, size_t nElements, UpdateMode mode, const std::string& description,
       const std::unordered_set<std::string>& tags)
-  : InversionOfControlAccessor<ArrayAccessor<UserType>>(
-        owner, name, direction, unit, nElements, mode, description, &typeid(UserType), tags) {}
+  : InversionOfControlAccessor<ArrayAccessor<UserType>>(owner, ChimeraTK::Utilities::raiseIftrailingSlash(name),
+        direction, unit, nElements, mode, description, &typeid(UserType), tags) {}
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
@@ -210,7 +211,7 @@ namespace ChimeraTK {
   ArrayPushInput<UserType>::ArrayPushInput(Module* owner, const std::string& name, std::string unit, size_t nElements,
       const std::string& description, const std::unordered_set<std::string>& tags)
   : ArrayAccessor<UserType>(
-        owner, name, {VariableDirection::consuming, false}, unit, nElements, UpdateMode::push, description, tags) {}
+        owner, ChimeraTK::Utilities::raiseIftrailingSlash(name), {VariableDirection::consuming, false}, unit, nElements, UpdateMode::push, description, tags) {}
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
@@ -219,7 +220,7 @@ namespace ChimeraTK {
   ArrayPollInput<UserType>::ArrayPollInput(Module* owner, const std::string& name, std::string unit, size_t nElements,
       const std::string& description, const std::unordered_set<std::string>& tags)
   : ArrayAccessor<UserType>(
-        owner, name, {VariableDirection::consuming, false}, unit, nElements, UpdateMode::poll, description, tags) {}
+        owner, ChimeraTK::Utilities::raiseIftrailingSlash(name), {VariableDirection::consuming, false}, unit, nElements, UpdateMode::poll, description, tags) {}
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
@@ -228,7 +229,7 @@ namespace ChimeraTK {
   ArrayOutput<UserType>::ArrayOutput(Module* owner, const std::string& name, std::string unit, size_t nElements,
       const std::string& description, const std::unordered_set<std::string>& tags)
   : ArrayAccessor<UserType>(
-        owner, name, {VariableDirection::feeding, false}, unit, nElements, UpdateMode::push, description, tags) {}
+        owner, ChimeraTK::Utilities::raiseIftrailingSlash(name), {VariableDirection::feeding, false}, unit, nElements, UpdateMode::push, description, tags) {}
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
@@ -237,7 +238,7 @@ namespace ChimeraTK {
   ArrayPushInputWB<UserType>::ArrayPushInputWB(Module* owner, const std::string& name, std::string unit,
       size_t nElements, const std::string& description, const std::unordered_set<std::string>& tags)
   : ArrayAccessor<UserType>(
-        owner, name, {VariableDirection::consuming, true}, unit, nElements, UpdateMode::push, description, tags) {}
+        owner, ChimeraTK::Utilities::raiseIftrailingSlash(name), {VariableDirection::consuming, true}, unit, nElements, UpdateMode::push, description, tags) {}
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
@@ -245,8 +246,8 @@ namespace ChimeraTK {
   template<typename UserType>
   ArrayOutputRB<UserType>::ArrayOutputRB(Module* owner, const std::string& name, std::string unit, size_t nElements,
       const std::string& description, const std::unordered_set<std::string>& tags)
-  : ArrayAccessor<UserType>(
-        owner, name, {VariableDirection::feeding, true}, unit, nElements, UpdateMode::push, description, tags) {}
+  : ArrayAccessor<UserType>(owner, ChimeraTK::Utilities::raiseIftrailingSlash(name), {VariableDirection::feeding, true},
+        unit, nElements, UpdateMode::push, description, tags) {}
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
