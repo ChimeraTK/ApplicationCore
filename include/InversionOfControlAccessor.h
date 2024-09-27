@@ -172,8 +172,8 @@ namespace ChimeraTK {
   InversionOfControlAccessor<Derived>::InversionOfControlAccessor(Module* owner, const std::string& name,
       VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode, const std::string& description,
       const std::type_info* valueType, const std::unordered_set<std::string>& tags)
-  : _node(owner, static_cast<Derived*>(this), name, direction, unit, nElements, mode,
-        completeDescription(owner, description), valueType, tags) {
+  : _node(owner, static_cast<Derived*>(this), ChimeraTK::Utilities::raiseIftrailingSlash(name), direction, unit,
+        nElements, mode, completeDescription(owner, description), valueType, tags) {
     static_assert(std::is_base_of<InversionOfControlAccessor<Derived>, Derived>::value,
         "InversionOfControlAccessor<> must be used in a curiously recurring template pattern!");
 

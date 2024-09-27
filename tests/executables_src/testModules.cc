@@ -1158,7 +1158,8 @@ namespace Tests::testModules {
     BOOST_CHECK(app.slashModule.anotherGroup.slashArray.getName() == "/slashModule/anotherGroupName/array");
   }
 
-  /*********************************************************************************************************************/ /* test tailing slashes in scallar variable name */
+  /*********************************************************************************************************************/
+  /*  test tailing slashes in scalar variable name */
 
   struct VariableSlashScalarApp : public ctk::Application {
     VariableSlashScalarApp() : Application("VariableSlashScalarApp") {}
@@ -1182,7 +1183,8 @@ namespace Tests::testModules {
     BOOST_CHECK_THROW(VariableSlashScalarApp app, ctk::logic_error);
   }
 
-  /*********************************************************************************************************************/ /* test tailing slashes in variable names */
+  /*********************************************************************************************************************/
+  /* test tailing slashes in variable names */
 
   struct VariableSlashArrayApp : public ctk::Application {
     VariableSlashArrayApp() : Application("VariableSlashArrayApp") {}

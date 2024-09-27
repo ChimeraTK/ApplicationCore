@@ -4,7 +4,6 @@
 
 #include "Application.h"
 #include "InversionOfControlAccessor.h"
-#include "Utilities.h"
 
 #include <ChimeraTK/ScalarRegisterAccessor.h>
 
@@ -197,8 +196,8 @@ namespace ChimeraTK {
   template<typename UserType>
   ScalarAccessor<UserType>::ScalarAccessor(Module* owner, const std::string& name, VariableDirection direction,
       std::string unit, UpdateMode mode, const std::string& description, const std::unordered_set<std::string>& tags)
-  : InversionOfControlAccessor<ScalarAccessor<UserType>>(owner, ChimeraTK::Utilities::raiseIftrailingSlash(name),
-        direction, unit, 1, mode, description, &typeid(UserType), tags) {}
+  : InversionOfControlAccessor<ScalarAccessor<UserType>>(
+        owner, name, direction, unit, 1, mode, description, &typeid(UserType), tags) {}
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
@@ -206,8 +205,8 @@ namespace ChimeraTK {
   template<typename UserType>
   ScalarPushInput<UserType>::ScalarPushInput(Module* owner, const std::string& name, std::string unit,
       const std::string& description, const std::unordered_set<std::string>& tags)
-  : ScalarAccessor<UserType>(owner, ChimeraTK::Utilities::raiseIftrailingSlash(name),
-        {VariableDirection::consuming, false}, unit, UpdateMode::push, description, tags) {}
+  : ScalarAccessor<UserType>(
+        owner, name, {VariableDirection::consuming, false}, unit, UpdateMode::push, description, tags) {}
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
@@ -215,8 +214,8 @@ namespace ChimeraTK {
   template<typename UserType>
   ScalarPollInput<UserType>::ScalarPollInput(Module* owner, const std::string& name, std::string unit,
       const std::string& description, const std::unordered_set<std::string>& tags)
-  : ScalarAccessor<UserType>(owner, ChimeraTK::Utilities::raiseIftrailingSlash(name),
-        {VariableDirection::consuming, false}, unit, UpdateMode::poll, description, tags) {}
+  : ScalarAccessor<UserType>(
+        owner, name, {VariableDirection::consuming, false}, unit, UpdateMode::poll, description, tags) {}
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
@@ -224,8 +223,8 @@ namespace ChimeraTK {
   template<typename UserType>
   ScalarOutput<UserType>::ScalarOutput(Module* owner, const std::string& name, std::string unit,
       const std::string& description, const std::unordered_set<std::string>& tags)
-  : ScalarAccessor<UserType>(owner, ChimeraTK::Utilities::raiseIftrailingSlash(name),
-        {VariableDirection::feeding, false}, unit, UpdateMode::push, description, tags) {}
+  : ScalarAccessor<UserType>(
+        owner, name, {VariableDirection::feeding, false}, unit, UpdateMode::push, description, tags) {}
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
@@ -233,8 +232,8 @@ namespace ChimeraTK {
   template<typename UserType>
   ScalarPushInputWB<UserType>::ScalarPushInputWB(Module* owner, const std::string& name, std::string unit,
       const std::string& description, const std::unordered_set<std::string>& tags)
-  : ScalarAccessor<UserType>(owner, ChimeraTK::Utilities::raiseIftrailingSlash(name),
-        {VariableDirection::consuming, true}, unit, UpdateMode::push, description, tags) {}
+  : ScalarAccessor<UserType>(
+        owner, name, {VariableDirection::consuming, true}, unit, UpdateMode::push, description, tags) {}
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
@@ -242,8 +241,8 @@ namespace ChimeraTK {
   template<typename UserType>
   ScalarOutputPushRB<UserType>::ScalarOutputPushRB(Module* owner, const std::string& name, std::string unit,
       const std::string& description, const std::unordered_set<std::string>& tags)
-  : ScalarAccessor<UserType>(owner, ChimeraTK::Utilities::raiseIftrailingSlash(name),
-        {VariableDirection::feeding, true}, unit, UpdateMode::push, description, tags) {}
+  : ScalarAccessor<UserType>(
+        owner, name, {VariableDirection::feeding, true}, unit, UpdateMode::push, description, tags) {}
 
   /********************************************************************************************************************/
 
