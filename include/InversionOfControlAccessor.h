@@ -76,6 +76,29 @@ namespace ChimeraTK {
   template<typename Derived>
   InversionOfControlAccessor<Derived>::~InversionOfControlAccessor() {
     if(getOwner() != nullptr) {
+      if(static_cast<Derived*>(this)->_impl != nullptr) {
+        auto* entity = getOwner();
+
+        if(entity != nullptr) {
+          auto* owner = dynamic_cast<Module*>(entity);
+          while(owner->getOwner() != nullptr) {
+            owner = dynamic_cast<Module*>(owner->getOwner());
+          }
+
+          auto* application = dynamic_cast<Application*>(owner);
+          assert(application != nullptr);
+
+          if(application->getLifeCycleState() == LifeCycleState::run) {
+            try {
+              throw ChimeraTK::logic_error(
+                  "Variable has been destroyed with active connections while application is still running");
+            }
+            catch(ChimeraTK::logic_error&) {
+              std::terminate();
+            }
+          }
+        }
+      }
       getOwner()->unregisterAccessor(_node);
     }
     if(getModel().isValid()) {
@@ -125,7 +148,15 @@ namespace ChimeraTK {
 
   template<typename Derived>
   void InversionOfControlAccessor<Derived>::replace(Derived&& other) {
-    assert(static_cast<Derived*>(this)->_impl == nullptr && other._impl == nullptr);
+    if(static_cast<Derived*>(this)->_impl != nullptr || other._impl != nullptr) {
+      try {
+        throw ChimeraTK::logic_error(
+            "Variable has been destroyed with active connections while application is still running");
+      }
+      catch(ChimeraTK::logic_error& ex) {
+        std::terminate();
+      }
+    }
 
     // remove accessor from owning module
     if(getOwner() != nullptr) {
@@ -141,7 +172,7 @@ namespace ChimeraTK {
     _node = std::move(other._node);
     other._node = VariableNetworkNode(); // Make sure the destructor of other sees an invalid node
 
-    // update the app accesor pointer in the node
+    // update the app accessor pointer in the node
     if(_node.getType() == NodeType::Application) {
       _node.setAppAccessorPointer(static_cast<Derived*>(this));
     }
@@ -201,7 +232,9 @@ namespace ChimeraTK {
       addToOnwer(*owner_vg);
     }
     else {
-      throw ChimeraTK::logic_error("Hierarchy error!?");
+      throw ChimeraTK::logic_error("Trying to add " + name + " to " + owner->getQualifiedName() +
+          " which is neither an ApplicationModule nor a VariableGroup, but a " +
+          boost::core::demangled_name(typeid(owner)));
     }
 
     owner->registerAccessor(_node);

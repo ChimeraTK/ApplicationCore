@@ -8,12 +8,22 @@ foreach( testExecutableSrcFile ${testExecutables})
   get_filename_component(executableName ${testExecutableSrcFile} NAME_WE)
   add_executable(${executableName} ${testExecutableSrcFile} ${test_headers})
   # do not link against the boost unit test library, the tests are not written for it!
-  target_compile_definitions(${executableName} PRIVATE CHIMERATK_INSIDE_APPLICATION_CORE)
   target_link_libraries(${executableName} 
     PRIVATE ${PROJECT_NAME} ChimeraTK::ChimeraTK-ControlSystemAdapter PkgConfig::LibXML++ ${HDF5_LIBRARIES})
-    target_compile_definitions(${executableName} PRIVATE CHIMERATK_INSIDE_APPLICATION_CORE)
   add_test(${executableName} ${executableName})
 endforeach( testExecutableSrcFile )
+
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/executables_src/manual manualTestExecutables)
+foreach( testExecutableSrcFile ${manualTestExecutables})
+  #NAME_WE means the base name without path and (longest) extension
+  get_filename_component(executableName ${testExecutableSrcFile} NAME_WE)
+  add_executable(${executableName} ${testExecutableSrcFile} ${test_headers})
+  # do not link against the boost unit test library, the tests are not written for it!
+  target_link_libraries(${executableName}
+    PRIVATE ${PROJECT_NAME} ChimeraTK::ChimeraTK-ControlSystemAdapter PkgConfig::LibXML++ ${HDF5_LIBRARIES})
+endforeach( testExecutableSrcFile )
+
+add_dependencies(testConnectedDestruction testConnectedDestructionRunner)
 
 # copy config files
 FILE( COPY ${CMAKE_CURRENT_SOURCE_DIR}/test.map DESTINATION ${PROJECT_BINARY_DIR}/tests)
