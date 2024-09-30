@@ -205,16 +205,16 @@ namespace Tests::testIllegalNetworks {
   struct CircularConnectionModuleWithIntermediateGroup : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
 
-    struct : ctk::VariableGroup {
+    struct A : ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
 
-      struct : ctk::VariableGroup {
+      struct B : ctk::VariableGroup {
         using ctk::VariableGroup::VariableGroup;
 
-        struct : ctk::VariableGroup {
+        struct C : ctk::VariableGroup {
           using ctk::VariableGroup::VariableGroup;
 
-          struct : ctk::VariableGroup {
+          struct D : ctk::VariableGroup {
             using ctk::VariableGroup::VariableGroup;
 
             ctk::ScalarOutput<int> out{this, "/Some/out", "", "Some output"};
