@@ -28,7 +28,7 @@ namespace ChimeraTK {
     /** Default constructor: Allows late initialisation of modules (e.g. when
      * creating arrays of modules).
      *
-     *  This construtor also has to be here to mitigate a bug in gcc. It is needed
+     *  This constructor also has to be here to mitigate a bug in gcc. It is needed
      * to allow constructor inheritance of modules owning other modules. This
      * constructor will not actually be called then. See this bug report:
      * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054 */

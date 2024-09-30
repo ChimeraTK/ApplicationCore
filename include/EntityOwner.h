@@ -159,7 +159,7 @@ namespace ChimeraTK {
     std::string constant(T value);
 
     /**
-     * Prefix for costants created by constant().
+     * Prefix for constants created by constant().
      */
     static constexpr std::string_view namePrefixConstant{"/@CONST@"};
 

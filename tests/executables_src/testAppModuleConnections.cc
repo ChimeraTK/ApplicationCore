@@ -344,31 +344,59 @@ namespace Tests::testAppModuleConnections {
   /*********************************************************************************************************************/
   /* test case for EntityOwner::constant() */
 
+  template<typename T>
+  struct ConstantTestModule : public ctk::ApplicationModule {
+    ConstantTestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
+        const std::unordered_set<std::string>& tags = {})
+    : ApplicationModule(owner, name, description, tags), mainLoopStarted(2) {}
+
+    ctk::ScalarPushInput<T> consumingPush{this, constant(T(66)), "", ""};
+    ctk::ScalarPollInput<T> consumingPoll{this, constant(T(77)), "", ""};
+    // test a second accessor of a different type but defining the constant with the same type as before
+    ctk::ScalarPollInput<std::string> myStringConstant{this, constant(T(66)), "", ""};
+
+    // We do not use testable mode for this test, so we need this barrier to synchronise to the beginning of the
+    // mainLoop(). This is required since the mainLoopWrapper accesses the module variables before the start of the
+    // mainLoop.
+    // execute this right after the Application::run():
+    //   app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+    boost::barrier mainLoopStarted;
+
+    void prepare() override {
+      incrementDataFaultCounter(); // force all outputs  to invalid
+      writeAll();                  // write initial values
+      decrementDataFaultCounter(); // validity according to input validity
+    }
+
+    void mainLoop() override { mainLoopStarted.wait(); }
+  };
+
+  template<typename T>
+  struct ConstantTestApplication : public ctk::Application {
+    ConstantTestApplication() : Application("testSuite") {}
+    ~ConstantTestApplication() override { shutdown(); }
+
+    ConstantTestModule<T> testModule{this, "testModule", "The test module"};
+  };
+
   BOOST_AUTO_TEST_CASE_TEMPLATE(testConstants, T, test_types) {
     std::cout << "*** testConstants<" << typeid(T).name() << ">" << std::endl;
 
-    TestApplication<T> app;
-    app.testModuleConsume.consumingPush = {&app.testModuleFeed, app.testModuleFeed.constant(T(66)), "", ""};
-    app.testModuleConsume.consumingPoll = {&app.testModuleConsume, app.testModuleConsume.constant(T(77)), "", ""};
-
-    // test a second accessor of a different type but defining the constant with the same type as before
-    ctk::ScalarPollInput<std::string> myStringConstant{
-        &app.testModuleConsume, app.testModuleConsume.constant(T(66)), "", ""};
+    ConstantTestApplication<T> app;
 
     ctk::TestFacility tf{app, false};
     tf.runApplication();
-    app.testModuleFeed.mainLoopStarted.wait();    // make sure the module's mainLoop() is entered
-    app.testModuleConsume.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
+    app.testModule.mainLoopStarted.wait(); // make sure the module's mainLoop() is entered
 
-    BOOST_TEST(app.testModuleConsume.consumingPush == 66);
-    BOOST_TEST(app.testModuleConsume.consumingPoll == 77);
-    BOOST_TEST(boost::starts_with(std::string(myStringConstant), "66")); // might be 66 or 66.000000
+    BOOST_TEST(app.testModule.consumingPush == 66);
+    BOOST_TEST(app.testModule.consumingPoll == 77);
+    BOOST_TEST(boost::starts_with(std::string(app.testModule.myStringConstant), "66")); // might be 66 or 66.000000
 
-    BOOST_TEST(app.testModuleConsume.consumingPush.readNonBlocking() == false);
+    BOOST_TEST(app.testModule.consumingPush.readNonBlocking() == false);
 
-    app.testModuleConsume.consumingPoll = 0;
-    app.testModuleConsume.consumingPoll.read();
-    BOOST_TEST(app.testModuleConsume.consumingPoll == 77);
+    app.testModule.consumingPoll = 0;
+    app.testModule.consumingPoll.read();
+    BOOST_TEST(app.testModule.consumingPoll == 77);
   }
 
   /*********************************************************************************************************************/
