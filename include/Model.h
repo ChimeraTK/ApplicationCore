@@ -379,7 +379,7 @@ namespace ChimeraTK::Model {
     [[nodiscard]] const std::string& getName() const;
 
     /// Return all VariableNetworkNodes for this variable
-    [[nodiscard]] const std::vector<VariableNetworkNode>& getNodes() const;
+    [[nodiscard]] const std::vector<std::shared_ptr<VariableNetworkNode>>& getNodes() const;
 
     /// Return all tags attached to this variable
     [[nodiscard]] const std::unordered_set<std::string>& getTags() const;
@@ -540,7 +540,7 @@ namespace ChimeraTK::Model {
     };
     struct ProcessVariableProperties {
       std::string name;
-      std::vector<VariableNetworkNode> nodes;
+      std::vector<std::shared_ptr<VariableNetworkNode>> nodes;
       std::unordered_set<std::string> tags;
     };
     struct DirectoryProperties {
