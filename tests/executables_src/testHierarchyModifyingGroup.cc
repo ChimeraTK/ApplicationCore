@@ -184,7 +184,8 @@ namespace Tests::testHierarchyModifyingGroup {
     std::cout << "*** //extra//slashes////everywhere///" << std::endl;
     TestApplication app;
     app.testModule.g = {&app.testModule, "//extra//slashes////everywhere///", "Extra slashes"};
-    check(app, app.testModule.g, "");
+    app.generateXML();
+    check(app, app.testModule.g, "/everywhere");
   }
 
   /*********************************************************************************************************************/
