@@ -158,8 +158,10 @@ namespace ChimeraTK {
       Var(Module* owner, const std::string& name, T theValue)
       : accessor(owner, name, "unknown", "Configuration variable"), value(std::move(theValue)) {}
 
+      Var() = default;
+
       ScalarOutput<T> accessor;
-      T value;
+      T value{};
     };
 
     /** Class holding the values and the accessor for one configuration array */
@@ -167,6 +169,8 @@ namespace ChimeraTK {
     struct Array {
       Array(Module* owner, const std::string& name, const std::vector<T>& theValue)
       : accessor(owner, name, "unknown", theValue.size(), "Configuration array"), value(theValue) {}
+
+      Array() = default;
 
       ArrayOutput<T> accessor;
       std::vector<T> value;

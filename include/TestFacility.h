@@ -7,6 +7,7 @@
 #include <ChimeraTK/ControlSystemAdapter/ControlSystemPVManager.h>
 #include <ChimeraTK/OneDRegisterAccessor.h>
 #include <ChimeraTK/ScalarRegisterAccessor.h>
+#include <ChimeraTK/VariantUserTypes.h>
 #include <ChimeraTK/VoidRegisterAccessor.h>
 
 #include <boost/fusion/include/at_key.hpp>
@@ -105,6 +106,18 @@ namespace ChimeraTK {
     /** */
     [[nodiscard]] boost::shared_ptr<ControlSystemPVManager> getPvManager() const { return _pvManager; }
 
+    /**
+     * Set ConfigReader scalar variable for the next instantiated Applicaton
+     */
+    template<typename T>
+    static void setConfigScalar(const ChimeraTK::RegisterPath& name, const T& value);
+
+    /**
+     * Set ConfigReader array variable for the next instantiated Applicaton
+     */
+    template<typename T>
+    static void setConfigArray(const ChimeraTK::RegisterPath& name, const std::vector<T>& value);
+
    protected:
     boost::shared_ptr<ControlSystemPVManager> _pvManager;
 
@@ -122,6 +135,17 @@ namespace ChimeraTK {
     ChimeraTK::TemplateUserTypeMap<Defaults> _defaults;
 
     Application& _app;
+
+    // static storage of values set via setConfigScalar
+    static std::map<ChimeraTK::RegisterPath, ChimeraTK::UserTypeVariantNoVoid> _configScalars;
+
+    template<typename UserType>
+    using Vector = std::vector<UserType>;
+
+    // static storage of values set via setConfigArray
+    static std::map<ChimeraTK::RegisterPath, ChimeraTK::UserTypeTemplateVariantNoVoid<Vector>> _configArrays;
+
+    friend class ConfigReader;
   };
 
   /********************************************************************************************************************/
@@ -252,6 +276,20 @@ namespace ChimeraTK {
 
     // return the accessor as stored in the cache
     return boost::fusion::at_key<T>(_accessorMap.table)[name];
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename T>
+  void TestFacility::setConfigScalar(const ChimeraTK::RegisterPath& name, const T& value) {
+    _configScalars[name] = value;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename T>
+  void TestFacility::setConfigArray(const ChimeraTK::RegisterPath& name, const std::vector<T>& value) {
+    _configArrays[name] = value;
   }
 
   /********************************************************************************************************************/
