@@ -6,7 +6,7 @@
 // pybind11.h must come first
 
 #include "ConfigReader.h"
-#include "PyVariantTypeDefs.h"
+#include <ChimeraTK/VariantUserTypes.h>
 
 namespace py = pybind11;
 
@@ -21,8 +21,8 @@ namespace ChimeraTK {
     // Config reader provides this with two functions, we move it to one single function that has an optional
     // default value, and internally dispatches to either of the two get() functions depending on whether or not that
     // optional was passed in.
-    userTypeVariantNoVoid get(
-        ChimeraTK::DataType dt, const std::string& path, std::optional<userTypeVariantNoVoid> defaultValue);
+    UserTypeVariantNoVoid get(
+        ChimeraTK::DataType dt, const std::string& path, std::optional<UserTypeVariantNoVoid> defaultValue);
 
     std::list<std::string> getModules(const std::string& path) { return _reader.get().getModules(path); }
 
