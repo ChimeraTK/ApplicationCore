@@ -72,27 +72,6 @@ namespace ChimeraTK {
       output.replace(ArrayOutput<InputType>(this, outputPath, outputUnit, NELEMS, description, outputTags));
     }
 
-    [[deprecated("Use constructor without hierarchy modifier and a qualified path "
-                 "instead")]] Multiplier(EntityOwner* owner, const std::string& inputPath, const std::string& inputUnit,
-        const std::string& factorPath, const std::string& outputPath, const std::string& outputUnit,
-        const std::string& description, HierarchyModifier hierarchyModifier = HierarchyModifier::hideThis,
-        const std::unordered_set<std::string>& inputTags = {}, const std::unordered_set<std::string>& factorTags = {},
-        const std::unordered_set<std::string>& outputTags = {})
-    : ApplicationModule(owner, applyHierarchyModifierToName("Multiplier", hierarchyModifier), "") {
-      std::string factorUnit = "(" + outputUnit + ")/(" + inputUnit + ")";
-      input.replace(ArrayPushInput<InputType>(this, inputPath, inputUnit, NELEMS, description, inputTags));
-      factor.replace(ScalarPushInput<InputType>(this, factorPath, factorUnit, description, factorTags));
-      output.replace(ArrayOutput<InputType>(this, outputPath, outputUnit, NELEMS, description, outputTags));
-    }
-
-    [[deprecated("Use constructor with dedicated input and output names instead")]] Multiplier(
-        EntityOwner* owner, const std::string& name, const std::string& description)
-    : ApplicationModule(owner, name, "", HierarchyModifier::hideThis) {
-      input.replace(ArrayPushInput<InputType>(this, "input", "", NELEMS, description));
-      factor.replace(ScalarPushInput<double>(this, "factor", "", description));
-      output.replace(ArrayOutput<OutputType>(this, "factor", "", NELEMS, description));
-    }
-
     ArrayPushInput<InputType> input;
     ScalarPushInput<double> factor;
     ArrayOutput<OutputType> output;

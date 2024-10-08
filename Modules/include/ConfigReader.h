@@ -35,12 +35,8 @@
  * }
  * \endcode
  *
- * - Configuration may be published as process variables to other application modules, the control system or devices:
- * \code
- * void Server::defineConnections() {
- *   config.connectTo(testModule);
- * }
- * \endcode
+ * Configuration will be published as process variables, according to the hierarchy constructed in the configuration
+ * file.
  *
  * \section xmlstructure XML file structure
  * - A valid configuration file may look like:
@@ -117,12 +113,8 @@ namespace ChimeraTK {
   struct ConfigReader : ApplicationModule {
     ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
         const std::unordered_set<std::string>& tags = {});
-
-    [[deprecated("Use constructor without hierarchy modifier and a qualified path "
-                 "instead")]] ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
-        HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags = {});
-
     ~ConfigReader() override;
+
     void mainLoop() override {}
     void prepare() override;
 
@@ -140,6 +132,12 @@ namespace ChimeraTK {
      */
     template<typename T>
     const T& get(const std::string& variableName, const T& defaultValue) const;
+
+    /**
+     * Returns a list of names of modules which are direct children of path.
+     * If path does not exist, will return an empty list.
+     */
+    std::list<std::string> getModules(const std::string& path = {}) const;
 
    protected:
     /** Helper function to avoid code duplication in constructors **/
@@ -225,8 +223,8 @@ namespace ChimeraTK {
     friend struct FunctorGetTypeForName;
   };
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename T>
   const T& ConfigReader::get(const std::string& variableName, const T& defaultValue) const {
@@ -239,16 +237,16 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename T>
   const T& ConfigReader::get(const std::string& variableName) const {
     return getImpl(variableName, static_cast<T*>(nullptr));
   }
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename T>
   const T& ConfigReader::getImpl(const std::string& variableName, T*) const {
@@ -256,8 +254,8 @@ namespace ChimeraTK {
     return boost::fusion::at_key<T>(_variableMap.table).at(variableName).value;
   }
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename T>
   const std::vector<T>& ConfigReader::getImpl(const std::string& variableName, std::vector<T>*) const {

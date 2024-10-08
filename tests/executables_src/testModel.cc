@@ -200,9 +200,10 @@ namespace Tests::testApplicationPVModel {
     BOOST_TEST(pv.getName() == "actuator");
     auto nodes = pv.getNodes();
     BOOST_TEST(nodes.size() == 2);
-    BOOST_CHECK(nodes[0].getType() == ChimeraTK::NodeType::Device || nodes[1].getType() == ChimeraTK::NodeType::Device);
-    BOOST_CHECK(nodes[0].getType() == ChimeraTK::NodeType::Application ||
-        nodes[1].getType() == ChimeraTK::NodeType::Application);
+    BOOST_CHECK(
+        nodes[0]->getType() == ChimeraTK::NodeType::Device || nodes[1]->getType() == ChimeraTK::NodeType::Device);
+    BOOST_CHECK(nodes[0]->getType() == ChimeraTK::NodeType::Application ||
+        nodes[1]->getType() == ChimeraTK::NodeType::Application);
 
     auto checker = [](auto proxy) {
       if constexpr(isVariable(proxy)) {

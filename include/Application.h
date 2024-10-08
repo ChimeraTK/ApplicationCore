@@ -11,6 +11,10 @@
 #include "ModuleGroup.h"
 #include "TestableMode.h"
 
+#ifdef CHIMERATK_APPLICATION_CORE_WITH_PYTHON
+#  include "PythonModuleManager.h"
+#endif
+
 #include <ChimeraTK/ControlSystemAdapter/ApplicationBase.h>
 #include <ChimeraTK/DeviceBackend.h>
 
@@ -88,6 +92,11 @@ namespace ChimeraTK {
      * control system adapter, or if the instance is not based on the Application class.
      */
     static Application& getInstance();
+
+    /**
+     * Check whether an instance of Application currently exists.
+     */
+    static bool hasInstance() { return instance != nullptr; }
 
     /**
      * Enable the testable mode.
@@ -169,6 +178,16 @@ namespace ChimeraTK {
 
     size_t getCircularNetworkInvalidityCounter(size_t circularNetworkHash) const {
       return _circularNetworkInvalidityCounters.at(circularNetworkHash);
+    }
+
+#ifdef CHIMERATK_APPLICATION_CORE_WITH_PYTHON
+    PythonModuleManager& getPythonModuleManager() {
+      return _pythonModuleManager;
+    }
+#endif
+
+    ConfigReader& getConfigReader() {
+      return *_defaultConfigReader;
     }
 
    protected:
@@ -256,6 +275,17 @@ namespace ChimeraTK {
      */
     std::shared_ptr<Logger> _logger{Logger::getSharedPtr()};
 
+    /**
+     * Manager for Python-based ApplicationModules
+     */
+#ifdef CHIMERATK_APPLICATION_CORE_WITH_PYTHON
+    PythonModuleManager _pythonModuleManager;
+#endif
+
+    /// The Application-default config reader instance
+    std::shared_ptr<ConfigReader> _configReader;
+    ConfigReader* _defaultConfigReader{nullptr};
+
     friend class TestFacility; // needs access to testableMode variables
 
     template<typename UserType>
@@ -264,6 +294,7 @@ namespace ChimeraTK {
     friend class MetaDataPropagatingRegisterDecorator; // needs to access circularNetworkInvalidityCounters
     friend class ApplicationModule;                    // needs to access circularNetworkInvalidityCounters
     friend struct detail::CircularDependencyDetector;
+    friend struct ConfigReader; // needs access to _configReader to replace it eventually
 
     VersionNumber getCurrentVersionNumber() const override {
       throw ChimeraTK::logic_error("getCurrentVersionNumber() called on the application. This is probably "

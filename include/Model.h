@@ -379,7 +379,7 @@ namespace ChimeraTK::Model {
     [[nodiscard]] const std::string& getName() const;
 
     /// Return all VariableNetworkNodes for this variable
-    [[nodiscard]] const std::vector<VariableNetworkNode>& getNodes() const;
+    [[nodiscard]] const std::vector<std::shared_ptr<VariableNetworkNode>>& getNodes() const;
 
     /// Return all tags attached to this variable
     [[nodiscard]] const std::unordered_set<std::string>& getTags() const;
@@ -540,7 +540,7 @@ namespace ChimeraTK::Model {
     };
     struct ProcessVariableProperties {
       std::string name;
-      std::vector<VariableNetworkNode> nodes;
+      std::vector<std::shared_ptr<VariableNetworkNode>> nodes;
       std::unordered_set<std::string> tags;
     };
     struct DirectoryProperties {
@@ -1465,7 +1465,7 @@ namespace ChimeraTK::Model {
     // We cannot pass (non-default constructible) lambdas to the filtered_graph directly, since at least the
     // depth_first_search tried to default-construct their types at some point. Also the lifetime of the lambdas needs
     // to go beyond the scope of this function, hence we must not capture by reference!
-    [[maybe_unused]] std::function edgeFilterFunctor = [=](const Model::Edge& e) -> bool {
+    [[maybe_unused]] std::function edgeFilterFunctor = [this, edgeFilter](const Model::Edge& e) -> bool {
       Model::EdgeProperties props = _graph[e];
       return edgeFilter.evalEdgeFilter(props);
     };

@@ -58,10 +58,6 @@ namespace ChimeraTK {
         const std::unordered_set<std::string>& tags = {})
     : VoidAccessor(owner, name, {VariableDirection::consuming, false}, UpdateMode::push, description, tags) {}
 
-    [[deprecated("Use signature without 'unit' argument")]] VoidInput(Module* owner, const std::string& name,
-        std::string unit, const std::string& description, const std::unordered_set<std::string>& tags = {})
-    : VoidAccessor(owner, name, {VariableDirection::consuming, false}, unit, UpdateMode::push, description, tags) {}
-
     VoidInput() = default;
     using VoidAccessor::operator=;
   };
@@ -73,10 +69,6 @@ namespace ChimeraTK {
     VoidOutput(Module* owner, const std::string& name, const std::string& description,
         const std::unordered_set<std::string>& tags = {})
     : VoidAccessor(owner, name, {VariableDirection::feeding, false}, UpdateMode::push, description, tags) {}
-
-    [[deprecated("Use signature without 'unit' argument")]] VoidOutput(Module* owner, const std::string& name,
-        std::string unit, const std::string& description, const std::unordered_set<std::string>& tags = {})
-    : VoidAccessor(owner, name, {VariableDirection::feeding, false}, unit, UpdateMode::push, description, tags) {}
 
     VoidOutput() = default;
     using VoidAccessor::operator=;

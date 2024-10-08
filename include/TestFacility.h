@@ -34,13 +34,6 @@ namespace ChimeraTK {
   /** Helper class to facilitate tests of applications based on ApplicationCore */
   class TestFacility {
    public:
-    /** The constructor will internally obtain the instance of the application, so
-     * the instance of the TestFacility must not be created before the application
-     * (i.e. usually not before the main() routine). The application will
-     *  automatically be put into the testable mode and initialised. */
-    [[deprecated("Use TestFacility(Application&, bool) instead")]] explicit TestFacility(
-        bool enableTestableMode = true);
-
     /** The passed application will
      *  automatically be put into the testable mode and initialised. */
     explicit TestFacility(Application& app, bool enableTestableMode = true);

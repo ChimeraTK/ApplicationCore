@@ -24,16 +24,16 @@ namespace ChimeraTK {
     // Sanity check for the type and lengths of the nodes, extract the feeding node if any
 
     for(const auto& node : proxy.getNodes()) {
-      if(node.getDirection().withReturn) {
+      if(node->getDirection().withReturn) {
         net.numberOfBidirectionalNodes++;
       }
-      if(node.getDirection().dir == VariableDirection::feeding) {
+      if(node->getDirection().dir == VariableDirection::feeding) {
         std::stringstream ss;
-        node.dump(ss);
+        node->dump(ss);
         debug("    Feeder:   ", ss.str());
 
         if(net.feeder.getType() == NodeType::invalid) {
-          net.feeder = node;
+          net.feeder = *node;
         }
         else {
           throw ChimeraTK::logic_error(
@@ -41,16 +41,16 @@ namespace ChimeraTK {
         }
 
         // feeding a constant (created with ApplicationModule::constant()) is not allowed
-        if(boost::starts_with(node.getName(), ApplicationModule::namePrefixConstant)) {
-          throw ChimeraTK::logic_error("Feeding a constant is not allowed (" + node.getQualifiedName() + ")");
+        if(boost::starts_with(node->getName(), ApplicationModule::namePrefixConstant)) {
+          throw ChimeraTK::logic_error("Feeding a constant is not allowed (" + node->getQualifiedName() + ")");
         }
       }
-      else if(node.getDirection().dir == VariableDirection::consuming) {
+      else if(node->getDirection().dir == VariableDirection::consuming) {
         std::stringstream ss;
-        node.dump(ss);
+        node->dump(ss);
         debug("    Consumer: ", ss.str());
-        net.consumers.push_back(node);
-        if(node.getMode() == UpdateMode::poll) {
+        net.consumers.push_back(*node);
+        if(node->getMode() == UpdateMode::poll) {
           net.numberOfPollingConsumers++;
         }
       }
@@ -60,21 +60,21 @@ namespace ChimeraTK {
       }
 
       if(*net.valueType == typeid(AnyType)) {
-        net.valueType = &node.getValueType();
+        net.valueType = &node->getValueType();
       }
       else {
-        if(*net.valueType != node.getValueType() && node.getValueType() != typeid(AnyType)) {
+        if(*net.valueType != node->getValueType() && node->getValueType() != typeid(AnyType)) {
           throw ChimeraTK::logic_error("Variable network " + proxy.getFullyQualifiedPath() +
               " contains nodes with different types: " + boost::core::demangle(net.valueType->name()) +
-              " != " + boost::core::demangle(node.getValueType().name()));
+              " != " + boost::core::demangle(node->getValueType().name()));
         }
       }
 
       if(net.valueLength == 0) {
-        net.valueLength = node.getNumberOfElements();
+        net.valueLength = node->getNumberOfElements();
       }
       else {
-        if(net.valueLength != node.getNumberOfElements() && node.getNumberOfElements() != 0) {
+        if(net.valueLength != node->getNumberOfElements() && node->getNumberOfElements() != 0) {
           throw ChimeraTK::logic_error(
               "Variable network " + proxy.getFullyQualifiedPath() + " contains nodes with different sizes");
         }
@@ -82,11 +82,11 @@ namespace ChimeraTK {
 
       // Get unit and description of network from nodes. First one wins
       if(net.description.empty()) {
-        net.description = node.getDescription();
+        net.description = node->getDescription();
       }
 
       if(net.unit.empty()) {
-        net.unit = node.getUnit();
+        net.unit = node->getUnit();
       }
     }
 

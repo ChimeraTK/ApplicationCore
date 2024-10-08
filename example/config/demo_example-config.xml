@@ -1,8 +1,15 @@
 <configuration>
 
   <module name="Configuration">
-    <variable name="enableSetpointRamping" type="boolean" value="true"/>
+    <variable name="enableSetpointRamping" type="boolean" value="false"/>
     <variable name="heaterMode" type="uint8" value="2"/>
+  </module>
+  <!-- this defines user-defined python application modules to load at server start.
+    List all your python modules as <module>. In our case, userAppModules.py defines a drop-in replacement for SetpointRamp -->
+  <module name="PythonModules">
+        <module name="UserAppModules">
+            <variable name="path" type="string" value="userAppModules" />
+        </module>
   </module>
 
   <module name="Information">

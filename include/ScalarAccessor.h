@@ -49,6 +49,8 @@ namespace ChimeraTK {
 
     void setAndWrite(UserType newValue);
 
+    using value_type = UserType;
+
    protected:
     friend class InversionOfControlAccessor<ScalarAccessor<UserType>>;
 

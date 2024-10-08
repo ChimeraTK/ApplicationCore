@@ -378,7 +378,7 @@ namespace ChimeraTK::Model {
 
   /********************************************************************************************************************/
 
-  const std::vector<VariableNetworkNode>& ProcessVariableProxy::getNodes() const {
+  const std::vector<std::shared_ptr<VariableNetworkNode>>& ProcessVariableProxy::getNodes() const {
     return std::get<VertexProperties::ProcessVariableProperties>(_d->impl->_graph[_d->vertex].p).nodes;
   }
 
@@ -415,7 +415,7 @@ namespace ChimeraTK::Model {
     // remove node from the list of nodes in the PV's vertex properties
     try {
       auto& nodes = std::get<VertexProperties::ProcessVariableProperties>(_d->impl->_graph[_d->vertex].p).nodes;
-      auto it = std::find(nodes.begin(), nodes.end(), node);
+      auto it = std::find_if(nodes.begin(), nodes.end(), [&](auto pn) { return *pn == node; });
       if(it == nodes.end()) {
         return;
       }
@@ -733,7 +733,7 @@ namespace ChimeraTK::Model {
 
     // add node to variable
     auto& props = std::get<VertexProperties::ProcessVariableProperties>(_graph[vertex].p);
-    props.nodes.emplace_back(node);
+    props.nodes.emplace_back(std::make_shared<VariableNetworkNode>(node));
 
     // add tags
     const auto& tags = node.getTags();

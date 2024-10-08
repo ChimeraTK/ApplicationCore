@@ -101,9 +101,9 @@ namespace ChimeraTK {
 
                 // find the right node (belonging to our device) to remove
                 for(auto& proxyNode : proxy.getNodes()) {
-                  if(proxyNode.getType() == NodeType::Device && proxyNode.getDeviceAlias() == getDeviceAliasOrURI()) {
+                  if(proxyNode->getType() == NodeType::Device && proxyNode->getDeviceAlias() == getDeviceAliasOrURI()) {
                     theProxy = proxy;
-                    theNode = proxyNode;
+                    theNode = *proxyNode;
                     break;
                   }
                 }

@@ -25,23 +25,6 @@ namespace ChimeraTK {
     ModuleGroup(ModuleGroup* owner, const std::string& name, const std::string& description,
         const std::unordered_set<std::string>& tags = {});
 
-    /** Deprecated form of the constructor. Use the new signature without hierarchy modifier and if necessary qualified
-     * names instead. */
-    [[deprecated("Use constructor without hierarchy modifier and a qualified path "
-                 "instead")]] ModuleGroup(ModuleGroup* owner, const std::string& name, const std::string& description,
-        HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags = {});
-
-    /** Deprecated form of the constructor. Use the new signature instead. */
-    [[deprecated("Use constructor without hierarchy modifier and a qualified path "
-                 "instead")]] ModuleGroup(EntityOwner* owner, const std::string& name, const std::string& description,
-        HierarchyModifier hierarchyModifier = HierarchyModifier::none,
-        const std::unordered_set<std::string>& tags = {});
-
-    /** Very Deprecated form of the constructor. Use the new signature instead. */
-    [[deprecated("Use constructor without hierarchy modifier and a qualified path "
-                 "instead")]] ModuleGroup(EntityOwner* owner, const std::string& name, const std::string& description,
-        bool eliminateHierarchy, const std::unordered_set<std::string>& tags);
-
     /// Default constructor to allow late initialisation of module groups
     ModuleGroup() = default;
 

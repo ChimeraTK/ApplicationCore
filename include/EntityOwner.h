@@ -164,14 +164,6 @@ namespace ChimeraTK {
     static constexpr std::string_view namePrefixConstant{"/@CONST@"};
 
    protected:
-    /** Convert HierarchyModifier into path qualification (for backwards compatibility only!) */
-    // Silence annoying warnings here. The calling functions are deprecated as well, it is enoug
-    // to get the warning from the callers of that code
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    static std::string applyHierarchyModifierToName(std::string name, HierarchyModifier hierarchyModifier);
-#pragma GCC diagnostic pop
-
     /** The name of this instance */
     std::string _name;
 

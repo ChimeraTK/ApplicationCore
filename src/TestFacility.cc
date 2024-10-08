@@ -7,9 +7,6 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  TestFacility::TestFacility(bool enableTestableMode) : TestFacility(Application::getInstance(), enableTestableMode) {}
-
-  /********************************************************************************************************************/
   TestFacility::TestFacility(Application& application, bool enableTestableMode) : _app(application) {
     auto pvManagers = createPVManager();
     _pvManager = pvManagers.first;

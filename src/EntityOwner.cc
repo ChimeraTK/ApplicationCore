@@ -142,24 +142,6 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  std::string EntityOwner::applyHierarchyModifierToName(std::string name, HierarchyModifier hierarchyModifier) {
-    if(hierarchyModifier == HierarchyModifier::hideThis) {
-      name = ".";
-    }
-    else if(hierarchyModifier == HierarchyModifier::moveToRoot) {
-      name = "/" + name;
-    }
-    else if(hierarchyModifier == HierarchyModifier::oneLevelUp) {
-      name = "../" + name;
-    }
-    else if(hierarchyModifier == HierarchyModifier::oneUpAndHide) {
-      name = "..";
-    }
-    return name;
-  }
-
-  /********************************************************************************************************************/
-
   std::string negateTag(const std::string& tag) {
     if(!tag.empty() && tag[0] == '!') {
       return tag.substr(1);
