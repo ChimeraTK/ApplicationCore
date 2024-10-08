@@ -7,6 +7,12 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  std::map<ChimeraTK::RegisterPath, ChimeraTK::UserTypeVariantNoVoid> TestFacility::_configScalars;
+  std::map<ChimeraTK::RegisterPath, ChimeraTK::UserTypeTemplateVariantNoVoid<TestFacility::Vector>>
+      TestFacility::_configArrays;
+
+  /********************************************************************************************************************/
+
   TestFacility::TestFacility(Application& application, bool enableTestableMode) : _app(application) {
     auto pvManagers = createPVManager();
     _pvManager = pvManagers.first;

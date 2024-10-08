@@ -8,8 +8,9 @@
 #include "ArrayAccessor.h"
 #include "PyOwnershipManagement.h"
 #include "PyTransferElement.h"
-#include <ChimeraTK/VariantUserTypes.h>
 #include <pybind11/numpy.h>
+
+#include <ChimeraTK/VariantUserTypes.h>
 
 namespace py = pybind11;
 

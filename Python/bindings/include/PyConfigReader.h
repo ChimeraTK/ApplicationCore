@@ -6,6 +6,7 @@
 // pybind11.h must come first
 
 #include "ConfigReader.h"
+
 #include <ChimeraTK/VariantUserTypes.h>
 
 namespace py = pybind11;

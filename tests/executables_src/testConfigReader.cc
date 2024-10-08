@@ -151,7 +151,7 @@ namespace Tests::testConfigReader {
   /* dummy application */
 
   struct TestApplication : public ctk::Application {
-    TestApplication() : Application("valid") {}
+    TestApplication(const std::string& name = "valid") : Application(name) {}
     ~TestApplication() override { shutdown(); }
 
     TestModule testModule{this, "/", "The test module"};
@@ -340,5 +340,55 @@ namespace Tests::testConfigReader {
 
     BOOST_TEST(config.getModules("this/should/not/exist") == std::list<std::string>());
   }
+
+  /********************************************************************************************************************/
+
+  BOOST_AUTO_TEST_CASE(testOverrideTestFacility) {
+    std::cout << "==> testOverrideTestFacility" << std::endl;
+    {
+      // Case 1: Config file exists
+      ctk::TestFacility::setConfigScalar<int8_t>("var8", 12); // override existing scalar value
+      ctk::TestFacility::setConfigScalar<std::string>("varString", "another overridden value");
+
+      ctk::TestFacility::setConfigScalar<int8_t>("newVar8", -42); // add new scalar
+
+      std::vector<int> ref({1, 2, 4, 8, 16, 32, 64, 128, 256, 512});
+      ctk::TestFacility::setConfigArray<int>("module1/submodule/intArray", ref);
+
+      TestApplication app;
+      auto& config = app.getConfigReader();
+
+      BOOST_TEST(config.get<int8_t>("var8") == 12);
+      BOOST_TEST(config.get<uint8_t>("var8u") == 34); // not overridden
+      BOOST_TEST(config.get<std::string>("varString") == "another overridden value");
+      BOOST_TEST(config.get<int8_t>("newVar8") == -42);
+
+      auto arrayValue = config.get<std::vector<int>>("module1/submodule/intArray");
+      BOOST_TEST(arrayValue == ref);
+    }
+    {
+      // Case 2: Config file does not exist exists
+      ctk::TestFacility::setConfigScalar<int8_t>("var8", 12); // override existing scalar value
+      ctk::TestFacility::setConfigScalar<std::string>("varString", "another overridden value");
+
+      ctk::TestFacility::setConfigScalar<int8_t>("newVar8", -42); // add new scalar
+
+      std::vector<int> ref({1, 2, 4, 8, 16, 32, 64, 128, 256, 512});
+      ctk::TestFacility::setConfigArray<int>("module1/submodule/intArray", ref);
+
+      TestApplication app("AppWithoutConfigFile");
+      auto& config = app.getConfigReader();
+
+      BOOST_TEST(config.get<int8_t>("var8") == 12);
+      BOOST_CHECK_THROW(config.get<uint8_t>("var8u"), ChimeraTK::logic_error); // not overridden
+      BOOST_TEST(config.get<std::string>("varString") == "another overridden value");
+      BOOST_TEST(config.get<int8_t>("newVar8") == -42);
+
+      auto arrayValue = config.get<std::vector<int>>("module1/submodule/intArray");
+      BOOST_TEST(arrayValue == ref);
+    }
+  }
+
+  /********************************************************************************************************************/
 
 } // namespace Tests::testConfigReader

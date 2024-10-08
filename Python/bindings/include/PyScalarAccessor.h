@@ -7,8 +7,9 @@
 
 #include "PyOwnershipManagement.h"
 #include "PyTransferElement.h"
-#include <ChimeraTK/VariantUserTypes.h>
 #include "ScalarAccessor.h"
+
+#include <ChimeraTK/VariantUserTypes.h>
 
 namespace py = pybind11;
 

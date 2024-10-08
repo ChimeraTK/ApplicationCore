@@ -5,7 +5,6 @@
 #include <pybind11/pybind11.h>
 // pybind11.h must come first
 
-
 #include <ChimeraTK/TransferElementAbstractor.h>
 
 namespace py = pybind11;
