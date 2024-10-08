@@ -25,7 +25,7 @@ namespace ChimeraTK {
       std::function<void(const std::unique_ptr<PyModuleGroup>&)> onMainGroupChangeCallback;
     };
 
-    /********************************************************************************************************************/
+    /******************************************************************************************************************/
 
     struct __attribute__((visibility("hidden"))) PythonModuleManagerImpl {
       static std::unique_ptr<PythonModuleManagerStatics> statics;

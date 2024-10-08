@@ -7,7 +7,7 @@
 
 #include "PyOwnershipManagement.h"
 #include "PyTransferElement.h"
-#include "PyVariantTypeDefs.h"
+#include <ChimeraTK/VariantUserTypes.h>
 #include "ScalarAccessor.h"
 
 namespace py = pybind11;
@@ -19,7 +19,7 @@ namespace ChimeraTK {
   class PyScalarAccessor : public PyTransferElement<PyScalarAccessor>, public PyOwnedObject {
     // Helper for constructor - note: we can move templates to the .cc file if we use them only in the same .cc file
     template<template<typename> class AccessorType>
-    static userTypeTemplateVariantNoVoid<ScalarAccessor> createAccessor(ChimeraTK::DataType type, Module* owner,
+    static UserTypeTemplateVariantNoVoid<ScalarAccessor> createAccessor(ChimeraTK::DataType type, Module* owner,
         const std::string& name, const std::string& unit, const std::string& description,
         const std::unordered_set<std::string>& tags);
 
@@ -34,15 +34,15 @@ namespace ChimeraTK {
 
     ~PyScalarAccessor();
 
-    userTypeVariantNoVoid readAndGet();
+    UserTypeVariantNoVoid readAndGet();
 
-    userTypeVariantNoVoid get() const;
+    UserTypeVariantNoVoid get() const;
 
-    void writeIfDifferent(userTypeVariantNoVoid val);
+    void writeIfDifferent(UserTypeVariantNoVoid val);
 
-    void setAndWrite(userTypeVariantNoVoid val);
+    void setAndWrite(UserTypeVariantNoVoid val);
 
-    void set(userTypeVariantNoVoid val);
+    void set(UserTypeVariantNoVoid val);
 
     std::string repr(py::object& acc);
 
@@ -50,7 +50,7 @@ namespace ChimeraTK {
 
     // Needs to be mutable to have a const get function, despite a non-const getHighLevelImplElement function
     // get has to be const so it can be used in operator== which is expected by pibind11 to have const arguments.
-    mutable userTypeTemplateVariantNoVoid<ScalarAccessor> _accessor;
+    mutable UserTypeTemplateVariantNoVoid<ScalarAccessor> _accessor;
   };
 
   /********************************************************************************************************************/

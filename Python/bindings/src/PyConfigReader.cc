@@ -14,9 +14,9 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  userTypeVariantNoVoid PyConfigReader::get(
-      ChimeraTK::DataType dt, const std::string& path, std::optional<userTypeVariantNoVoid> defaultValue) {
-    std::optional<userTypeVariantNoVoid> rv;
+  UserTypeVariantNoVoid PyConfigReader::get(
+      ChimeraTK::DataType dt, const std::string& path, std::optional<UserTypeVariantNoVoid> defaultValue) {
+    std::optional<UserTypeVariantNoVoid> rv;
     ChimeraTK::callForTypeNoVoid(dt.getAsTypeInfo(), [&](auto t) {
       using UserType = decltype(t);
 

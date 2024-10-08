@@ -12,10 +12,10 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<template<typename> class AccessorType>
-  userTypeTemplateVariantNoVoid<ArrayAccessor> PyArrayAccessor::createAccessor(ChimeraTK::DataType type, Module* owner,
+  UserTypeTemplateVariantNoVoid<ArrayAccessor> PyArrayAccessor::createAccessor(ChimeraTK::DataType type, Module* owner,
       const std::string& name, std::string unit, size_t nElements, const std::string& description,
       const std::unordered_set<std::string>& tags) {
-    std::optional<userTypeTemplateVariantNoVoid<ArrayAccessor>> rv;
+    std::optional<UserTypeTemplateVariantNoVoid<ArrayAccessor>> rv;
     ChimeraTK::callForTypeNoVoid(type, [&](auto t) {
       using UserType = decltype(t);
       AccessorType<UserType> acc(owner, name, unit, nElements, description, tags);
@@ -33,7 +33,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void PyArrayAccessor::setAndWrite(const userTypeTemplateVariantNoVoid<Vector>& vec) {
+  void PyArrayAccessor::setAndWrite(const UserTypeTemplateVariantNoVoid<Vector>& vec) {
     set(vec);
     write();
   }
@@ -46,7 +46,7 @@ namespace ChimeraTK {
   }
   /********************************************************************************************************************/
 
-  void PyArrayAccessor::set(const userTypeTemplateVariantNoVoid<Vector>& vec) {
+  void PyArrayAccessor::set(const UserTypeTemplateVariantNoVoid<Vector>& vec) {
     std::visit(
         [&](auto& acc) {
           using ACC = typename std::remove_reference<decltype(acc)>::type;
@@ -94,7 +94,7 @@ namespace ChimeraTK {
   }
   /********************************************************************************************************************/
 
-  void PyArrayAccessor::setitem(size_t index, const userTypeVariantNoVoid& val) {
+  void PyArrayAccessor::setitem(size_t index, const UserTypeVariantNoVoid& val) {
     std::visit(
         [&](auto& acc) {
           std::visit(
