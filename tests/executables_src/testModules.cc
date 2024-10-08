@@ -1149,7 +1149,7 @@ namespace Tests::testModules {
       ctk::ScalarPushInput<uint8_t> slash{this, "slash", "", "", {}};
       ctk::ArrayPushInput<int64_t> slashArray{this, "array", "", 16, "", {}};
 
-    } anotherGroup{this, "anotherGroupName////", ""};
+    } anotherGroup{this, "anotherGroupName/", ""};
 
     void mainLoop() override {}
   };
@@ -1163,7 +1163,7 @@ namespace Tests::testModules {
     SlashModule slashModule{this, "slashModule/", ""};
     struct slashModGroup : ctk::ModuleGroup {
       using ctk::ModuleGroup::ModuleGroup;
-      SlashModule nestedSlashModule{this, "nestedSlashModule//", ""};
+      SlashModule nestedSlashModule{this, "nestedSlashModule/", ""};
     } slashModGroup{this, "slashModGroupName/", ""};
   };
 
@@ -1248,6 +1248,115 @@ namespace Tests::testModules {
     std::cout << "==> test_trailingSlashesInArrayVariableNames" << std::endl;
     std::cout << std::endl;
     BOOST_CHECK_THROW(VariableSlashArrayApp app, ctk::logic_error);
+  }
+
+  /********************************************************************************************************************* /
+    /* test slash as variable name */
+
+  struct OnySlashNameArrayApp : public ctk::Application {
+    OnySlashNameArrayApp() : Application("OnySlashNameArrayApp") {}
+    ~OnySlashNameArrayApp() override { shutdown(); }
+
+    struct SomeModule : public ctk::ApplicationModule {
+      using ctk::ApplicationModule::ApplicationModule;
+
+      ctk::ArrayPushInput<int64_t> array{this, "/", "", 16, "", {}};
+
+      void mainLoop() override {}
+    } someModule{this, "someModule", ""};
+  };
+
+  BOOST_AUTO_TEST_CASE(test_onlySlashAsVariableName) {
+    std::cout << "***************************************************************"
+                 "******************************************************"
+              << std::endl;
+    std::cout << "==> test_trailingSlashesInArrayVariableNames" << std::endl;
+    std::cout << std::endl;
+    BOOST_CHECK_THROW(OnySlashNameArrayApp app, ctk::logic_error);
+  }
+
+  /********************************************************************************************************************* /
+  /* test tailing slash as module name */
+
+  struct OnlySlashModuleName : public ctk::Application {
+    OnlySlashModuleName() : Application("OnlySlashModuleName") {}
+    ~OnlySlashModuleName() override { shutdown(); }
+
+    struct SomeModule : public ctk::ApplicationModule {
+      using ctk::ApplicationModule::ApplicationModule;
+
+      ctk::ArrayPushInput<int64_t> array{this, "someArray", "", 16, "", {}};
+
+      void mainLoop() override {}
+    } someModule{this, "/", ""};
+  };
+
+  BOOST_AUTO_TEST_CASE(test_onlySlashasModuleName) {
+    std::cout << "***************************************************************"
+                 "******************************************************"
+              << std::endl;
+    std::cout << "==> test_trailingSlashesInArrayVariableNames" << std::endl;
+    std::cout << std::endl;
+
+    OnlySlashModuleName app;
+    ctk::TestFacility tf{app};
+    tf.runApplication();
+    BOOST_CHECK(app.someModule.getName() == "/");
+    BOOST_CHECK(app.someModule.array.getName() == "/someArray");
+  }
+
+  /********************************************************************************************************************* /
+/* test multiple slashes in module name */
+
+  struct MultiSlashModule : public ctk::Application {
+    MultiSlashModule() : Application("MultiSlashModule") {}
+    ~MultiSlashModule() override { shutdown(); }
+
+    struct SomeModule : public ctk::ApplicationModule {
+      using ctk::ApplicationModule::ApplicationModule;
+
+      ctk::ArrayPushInput<int64_t> array{this, "someArray", "", 16, "", {}};
+
+      void mainLoop() override {}
+    } someModule{this, "aModule//withSlahsesInTheName/", ""};
+  };
+
+  BOOST_AUTO_TEST_CASE(test_multipleSlashesInModuleName) {
+    std::cout << "***************************************************************"
+                 "******************************************************"
+              << std::endl;
+    std::cout << "==> test_trailingSlashesInArrayVariableNames" << std::endl;
+    std::cout << std::endl;
+
+    BOOST_CHECK_THROW(MultiSlashModule app, ctk::logic_error);
+    ;
+  }
+
+  /********************************************************************************************************************* /
+/* test multiple slashes in variable name */
+
+  struct MultiSlashVarModule : public ctk::Application {
+    MultiSlashVarModule() : Application("MultiSlashVarModule") {}
+    ~MultiSlashVarModule() override { shutdown(); }
+
+    struct SomeModule : public ctk::ApplicationModule {
+      using ctk::ApplicationModule::ApplicationModule;
+
+      ctk::ArrayPushInput<int64_t> array{this, "someArray/with//multiple///slashes", "", 16, "", {}};
+
+      void mainLoop() override {}
+    } someModule{this, "someModule", ""};
+  };
+
+  BOOST_AUTO_TEST_CASE(test_multipleSlashesInVariableName) {
+    std::cout << "***************************************************************"
+                 "******************************************************"
+              << std::endl;
+    std::cout << "==> test_trailingSlashesInArrayVariableNames" << std::endl;
+    std::cout << std::endl;
+
+    BOOST_CHECK_THROW(MultiSlashVarModule app, ctk::logic_error);
+    ;
   }
 
 } // namespace Tests::testModules
