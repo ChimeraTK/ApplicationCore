@@ -12,10 +12,10 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<template<typename> class AccessorType>
-  userTypeTemplateVariantNoVoid<ScalarAccessor> PyScalarAccessor::createAccessor(ChimeraTK::DataType type,
+  UserTypeTemplateVariantNoVoid<ScalarAccessor> PyScalarAccessor::createAccessor(ChimeraTK::DataType type,
       Module* owner, const std::string& name, const std::string& unit, const std::string& description,
       const std::unordered_set<std::string>& tags) {
-    std::optional<userTypeTemplateVariantNoVoid<ScalarAccessor>> rv;
+    std::optional<UserTypeTemplateVariantNoVoid<ScalarAccessor>> rv;
     ChimeraTK::callForTypeNoVoid(type, [&](auto t) {
       using UserType = decltype(t);
       AccessorType<UserType> acc(owner, name, unit, description, tags);
@@ -42,8 +42,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  userTypeVariantNoVoid PyScalarAccessor::readAndGet() {
-    std::optional<userTypeVariantNoVoid> rv;
+  UserTypeVariantNoVoid PyScalarAccessor::readAndGet() {
+    std::optional<UserTypeVariantNoVoid> rv;
     py::gil_scoped_release release;
     std::visit([&](auto& acc) { rv = acc.readAndGet(); }, _accessor);
     return rv.value();
@@ -51,8 +51,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  userTypeVariantNoVoid PyScalarAccessor::get() const {
-    std::optional<userTypeVariantNoVoid> rv;
+  UserTypeVariantNoVoid PyScalarAccessor::get() const {
+    std::optional<UserTypeVariantNoVoid> rv;
     std::visit(
         [&](auto& acc) {
           using ACC = typename std::remove_reference<decltype(acc)>::type;
@@ -67,7 +67,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void PyScalarAccessor::writeIfDifferent(userTypeVariantNoVoid val) {
+  void PyScalarAccessor::writeIfDifferent(UserTypeVariantNoVoid val) {
     std::visit(
         [&](auto& acc) {
           using ACC = typename std::remove_reference<decltype(acc)>::type;
@@ -80,7 +80,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void PyScalarAccessor::setAndWrite(userTypeVariantNoVoid val) {
+  void PyScalarAccessor::setAndWrite(UserTypeVariantNoVoid val) {
     std::visit(
         [&](auto& acc) {
           using ACC = typename std::remove_reference<decltype(acc)>::type;
@@ -92,7 +92,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void PyScalarAccessor::set(userTypeVariantNoVoid val) {
+  void PyScalarAccessor::set(UserTypeVariantNoVoid val) {
     std::visit(
         [&](auto& acc) {
           using ACC = typename std::remove_reference<decltype(acc)>::type;
