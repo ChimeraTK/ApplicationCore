@@ -12,7 +12,7 @@ namespace ChimeraTK {
 
   Module::Module(EntityOwner* owner, const std::string& name, const std::string& description,
       const std::unordered_set<std::string>& tags)
-  : EntityOwner(ChimeraTK::Utilities::stripTrailingSlashes(name), description, tags), _owner(owner) {
+  : EntityOwner(ChimeraTK::Utilities::raiseIftrailingSlash(name, true), description, tags), _owner(owner) {
     if(_owner != nullptr) {
       _owner->registerModule(this);
     }
