@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "ConfigReader.h"
 
+#include "TestFacility.h"
 #include "VariableGroup.h"
 #include <libxml++/libxml++.h>
 
@@ -295,6 +296,8 @@ namespace ChimeraTK {
       Application::getInstance()._defaultConfigReader = this;
     }
 
+    bool doDisable = false;
+
     try {
       construct(fileName);
     }
@@ -304,8 +307,48 @@ namespace ChimeraTK {
         throw ChimeraTK::logic_error(ex.what());
       }
 
-      disable();
+      doDisable = true;
+
       std::cout << "Could not load configuration " << fileName << ", assuming no configuration wanted." << std::endl;
+    }
+
+    // Create scalar variables set via TestFacility
+    for(auto& pairPathnameValue : TestFacility::_configScalars) {
+      auto pathname = std::string(pairPathnameValue.first).substr(1); // strip leading slash from RegisterPath
+      auto value = pairPathnameValue.second;
+      doDisable = false;
+      std::visit(
+          [&](auto v) {
+            using UserType = decltype(v);
+            auto moduleName = branch(pathname);
+            auto varName = leaf(pathname);
+            auto* varOwner = _moduleTree->lookup(moduleName);
+            auto& theMap = boost::fusion::at_key<UserType>(_variableMap.table);
+            theMap[pathname] = ConfigReader::Var<UserType>(varOwner, varName, v);
+          },
+          value);
+    }
+    TestFacility::_configScalars.clear();
+
+    // Create array variables set via TestFacility
+    for(auto& pairPathnameValue : TestFacility::_configArrays) {
+      auto pathname = std::string(pairPathnameValue.first).substr(1);
+      auto& value = pairPathnameValue.second;
+      doDisable = false;
+      std::visit(
+          [&](const auto& v) {
+            using UserType = typename std::remove_reference<decltype(v)>::type::value_type;
+            auto moduleName = branch(pathname);
+            auto arrayName = leaf(pathname);
+            auto* arrayOwner = _moduleTree->lookup(moduleName);
+            auto& theMap = boost::fusion::at_key<UserType>(_arrayMap.table);
+            theMap[pathname] = ConfigReader::Array<UserType>(arrayOwner, arrayName, v);
+          },
+          value);
+    }
+
+    if(doDisable) {
+      disable();
     }
   }
 
@@ -346,6 +389,7 @@ namespace ChimeraTK {
 
   // workaround for std::unique_ptr static assert.
   ConfigReader::~ConfigReader() = default;
+
   /********************************************************************************************************************/
 
   void ConfigReader::parsingError(const std::string& message) {
