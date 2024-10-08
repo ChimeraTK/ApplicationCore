@@ -52,15 +52,9 @@ namespace ChimeraTK::Utilities {
   void setThreadName(const std::string& name);
 
   /**
-   * Strips trailing slashes
-   *
+   * Raises logic error if name ends in a slash, or if it contains consecutive slashes.
+   * Modules are allowed to be named "/", if the bool isModule is true.
    */
-  std::string stripTrailingSlashes(const std::string& name);
-
-  /**
-   * Raises logic error if name ends in a slash
-   *
-   */
-  std::string raiseIftrailingSlash(const std::string& name);
+  std::string raiseIftrailingSlash(const std::string& name, bool isModule);
 
 } // namespace ChimeraTK::Utilities
