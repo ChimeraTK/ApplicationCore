@@ -28,7 +28,7 @@ endif()
 FIND_PACKAGE(ChimeraTK-ControlSystemAdapter 02.11 REQUIRED)
 
 # Find the DeviceAccess
-FIND_PACKAGE(ChimeraTK-DeviceAccess 03.14 REQUIRED)
+FIND_PACKAGE(ChimeraTK-DeviceAccess 03.16 REQUIRED)
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)
