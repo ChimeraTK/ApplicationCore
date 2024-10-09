@@ -110,15 +110,31 @@ namespace ChimeraTK::Utilities {
 
   /********************************************************************************************************************/
 
+  // raises a logic error if the name has multiple consecutive slashes
+  void raiseIfdoublelash(const std::string& name) {
+    if(name.find("//") != std::string::npos) {
+      throw ChimeraTK::logic_error(name + " variable names cannot contain consecutive slashes");
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  // strip trailing slashes unless the name consists of a single slash
+  // will raise a logic_error, if there are consecutive slashes
+  // Uses to unify module names
   std::string stripTrailingSlashes(const std::string& name) {
-    if(name.empty() || name[name.size() - 1] != '/') return name;
+    if(name.size() <= 1 || name[name.size() - 1] != '/') return name;
+    raiseIfdoublelash(name);
     return stripTrailingSlashes(name.substr(0, name.size() - 1));
   }
 
   /********************************************************************************************************************/
 
+  // removes trailing slashes, used for variable names
+  // raises for multiple slashes
   std::string raiseIftrailingSlash(const std::string& name) {
-    if(name[name.size() - 1] == '/') throw ChimeraTK::logic_error("variable names cannot end with /");
+    if(name[name.size() - 1] == '/') throw ChimeraTK::logic_error(name + " variable names cannot end with /");
+    raiseIfdoublelash(name);
     return name;
   }
 
