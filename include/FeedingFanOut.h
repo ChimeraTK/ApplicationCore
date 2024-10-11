@@ -24,10 +24,6 @@ namespace ChimeraTK {
         size_t numberOfElements, bool withReturn,
         ConsumerImplementationPairs<UserType> const& consumerImplementationPairs);
 
-    /** Add a slave to the FanOut. Only sending end-points of a consuming node may
-     * be added. */
-    void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode&) override;
-
     [[nodiscard]] bool isReadable() const override { return _withReturn; }
 
     [[nodiscard]] bool isReadOnly() const override { return false; }
@@ -63,13 +59,12 @@ namespace ChimeraTK {
     void interrupt() override;
 
    protected:
+    /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
+    void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode&) override;
+
     /// Flag whether this FeedingFanOut has a return channel. Is specified in the
     /// constructor
     bool _withReturn;
-
-    /// Used if _withReturn is true: flag whether the corresponding slave with the
-    /// return channel has already been added.
-    bool _hasReturnSlave{false};
 
     /// The slave with return channel
     boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _returnSlave;
@@ -89,7 +84,10 @@ namespace ChimeraTK {
     ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D.resize(1);
     ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
 
-    this->_readQueue = cppext::future_queue<void>(3);
+    if(_withReturn) {
+      this->_readQueue = cppext::future_queue<void>(3);
+      this->_accessModeFlags = {AccessMode::wait_for_new_data};
+    }
 
     // Add the consuming accessors
     // TODO FanOut constructors and addSlave should get refactoring
@@ -121,7 +119,7 @@ namespace ChimeraTK {
     // handle return channels
     if(_withReturn) {
       if(node.getDirection().withReturn) {
-        if(_hasReturnSlave) {
+        if(_returnSlave) {
           throw ChimeraTK::logic_error("FeedingFanOut: Cannot add multiple slaves with return channel!");
         }
 
@@ -129,7 +127,6 @@ namespace ChimeraTK {
         assert(slave->isReadable());
         assert(slave->getAccessModeFlags().has(AccessMode::wait_for_new_data));
 
-        _hasReturnSlave = true;
         _returnSlave = slave;
 
         // Set the readQeue from the return slave
@@ -148,7 +145,7 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void FeedingFanOut<UserType>::doReadTransferSynchronously() {
-    if(this->_disabled) {
+    if(this->_disabled || !_returnSlave) {
       return;
     }
     assert(_withReturn);
@@ -162,7 +159,7 @@ namespace ChimeraTK {
     if(!_withReturn) {
       throw ChimeraTK::logic_error("Read operation called on write-only variable.");
     }
-    if(this->_disabled) {
+    if(this->_disabled || !_returnSlave) {
       return;
     }
     _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
@@ -173,11 +170,10 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void FeedingFanOut<UserType>::doPostRead(TransferType type, bool hasNewData) {
-    if(this->_disabled) {
+    if(this->_disabled || !_returnSlave) {
       return;
     }
     assert(_withReturn);
-    assert(_hasReturnSlave);
 
     auto _ = cppext::finally([&] {
       if(!hasNewData || TransferElement::_activeException) {
@@ -321,7 +317,7 @@ namespace ChimeraTK {
   void FeedingFanOut<UserType>::interrupt() {
     // call the interrut sequences of the fan out (interrupts for fan input and all outputs), and the ndRegisterAccessor
     FanOut<UserType>::interrupt();
-    if(_withReturn) {
+    if(_returnSlave) {
       _returnSlave->interrupt();
     }
   }
