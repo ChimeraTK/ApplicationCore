@@ -286,7 +286,7 @@ namespace ChimeraTK {
       // one we bail out because we do not know what to do. The default one will have disabled itself (which sets the
       // owner to nullptr)
       if(appConfig->getOwner() != nullptr) {
-        throw ChimeraTK::logic_error("More than one explicit ConfigReader instancesfound. Do now know how to continue."
+        throw ChimeraTK::logic_error("More than one explicit ConfigReader instances found. Unclear how to continue."
                                      " Please update your application.");
       }
       std::cout << "Using your own ConfigReader module is deprecated. Please use the Application built-in config reader"
