@@ -183,8 +183,16 @@ namespace Tests::testHierarchyModifyingGroup {
   BOOST_AUTO_TEST_CASE(extra_slashes_everywhere) {
     std::cout << "*** //extra//slashes////everywhere///" << std::endl;
     TestApplication app;
-    app.testModule.g = {&app.testModule, "//extra//slashes////everywhere///", "Extra slashes"};
-    check(app, app.testModule.g, "");
+    BOOST_CHECK_THROW((app.testModule.g = {&app.testModule, "//extra//slashes////everywhere///", "Extra slashes"}),
+        ChimeraTK::logic_error);
+    BOOST_CHECK_THROW((app.testModule.g = {&app.testModule, "/extra/slashes/everywhere/", "Extra slashs at the end"}),
+        ChimeraTK::logic_error);
+    BOOST_CHECK_THROW((app.testModule.g = {&app.testModule, "/extra/slashes//everywhere", "Extra slash in the middle"}),
+        ChimeraTK::logic_error);
+    BOOST_CHECK_THROW(
+        (app.testModule.g = {&app.testModule, "//extra/slashes/everywhere", "Extra slash in the beginning"}),
+        ChimeraTK::logic_error);
+    BOOST_CHECK_NO_THROW((app.testModule.g = {&app.testModule, "/extra/slashes/everywhere", "No extra slash"}));
   }
 
   /*********************************************************************************************************************/
