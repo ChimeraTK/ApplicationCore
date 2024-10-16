@@ -4,6 +4,7 @@
 
 #include "EntityOwner.h"
 
+#include <boost/algorithm/algorithm.hpp>
 #include <boost/format.hpp>
 
 #include <cassert>
@@ -116,13 +117,12 @@ namespace ChimeraTK::Utilities {
     if(isModule && name == "/") {
       return name;
     }
-    if(name[name.size() - 1] == '/') {
+    if(boost::ends_with(name, "/")) {
       throw ChimeraTK::logic_error(name + ": " + (isModule ? "module" : "variable") + " names cannot end with /");
     }
     if(name.find("//") != std::string::npos) {
       throw ChimeraTK::logic_error(name + " variable names cannot contain consecutive slashes");
     }
-    bool a = true ?: false;
     return name;
   }
 
