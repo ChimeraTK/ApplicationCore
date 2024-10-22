@@ -237,12 +237,13 @@ namespace ChimeraTK {
             myLog << "ofwk";
             break;
         };
-        myLog << ") " << _output._status.getModel().getFullyQualifiedPath() << " debug info:" << std::endl;
+        myLog << ") " << static_cast<VariableNetworkNode>(_output._status).getQualifiedName()
+              << " debug info:" << std::endl;
         for(auto& inputPair : _inputs) {
           StatusPushInput& input = inputPair._status;
-          myLog << input.getModel().getFullyQualifiedPath() << " = " << input;
+          myLog << static_cast<VariableNetworkNode>(input).getQualifiedName() << " = " << input;
           if(inputPair.hasMessageSource) {
-            myLog << " ; " << inputPair._message.getModel().getFullyQualifiedPath() << " = "
+            myLog << " ; " << static_cast<VariableNetworkNode>(inputPair._message).getQualifiedName() << " = "
                   << std::string(inputPair._message);
           }
           myLog << std::endl;
