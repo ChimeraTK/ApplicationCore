@@ -6,6 +6,7 @@
 #include "VariableGroup.h"
 #include <libxml++/libxml++.h>
 
+#include <filesystem>
 #include <iostream>
 
 namespace ChimeraTK {
@@ -712,11 +713,17 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   std::unique_ptr<xmlpp::DomParser> createDomParser(const std::string& fileName) {
+    // Check beforehand to avoid weird unsuppressable "I/O Warning" message from libxml2
+
+    if(!std::filesystem::exists(fileName)) {
+      throw ChimeraTK::runtime_error("ConfigReader: " + fileName + " does not exist");
+    }
+
     try {
       return std::make_unique<xmlpp::DomParser>(fileName);
     }
     catch(xmlpp::exception& e) { /// @todo change exception!
-      throw ChimeraTK::runtime_error("ConfigReader: Error opening the config file '" + fileName + "': " + e.what());
+      throw ChimeraTK::logic_error("ConfigReader: Error opening the config file '" + fileName + "': " + e.what());
     }
   }
 
