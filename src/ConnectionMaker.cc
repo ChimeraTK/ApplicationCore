@@ -23,6 +23,8 @@ namespace ChimeraTK {
     NetworkInformation net{&proxy};
     // Sanity check for the type and lengths of the nodes, extract the feeding node if any
 
+    VariableNetworkNode firstNodeWithType; // used for helpful error message only
+
     for(const auto& node : proxy.getNodes()) {
       if(node->getDirection().withReturn) {
         net.numberOfBidirectionalNodes++;
@@ -36,8 +38,12 @@ namespace ChimeraTK {
           net.feeder = *node;
         }
         else {
-          throw ChimeraTK::logic_error(
-              "Variable network " + proxy.getFullyQualifiedPath() + " has more than one feeder");
+          std::stringstream ss1;
+          net.feeder.dump(ss1);
+          std::stringstream ss2;
+          node->dump(ss2);
+          throw ChimeraTK::logic_error("Variable network " + proxy.getFullyQualifiedPath() +
+              " has more than one feeder:\n" + ss1.str() + ss2.str());
         }
 
         // feeding a constant (created with ApplicationModule::constant()) is not allowed
@@ -61,12 +67,17 @@ namespace ChimeraTK {
 
       if(*net.valueType == typeid(AnyType)) {
         net.valueType = &node->getValueType();
+        firstNodeWithType = *node;
       }
       else {
         if(*net.valueType != node->getValueType() && node->getValueType() != typeid(AnyType)) {
+          std::stringstream ss1;
+          firstNodeWithType.dump(ss1);
+          std::stringstream ss2;
+          node->dump(ss2);
           throw ChimeraTK::logic_error("Variable network " + proxy.getFullyQualifiedPath() +
               " contains nodes with different types: " + boost::core::demangle(net.valueType->name()) +
-              " != " + boost::core::demangle(node->getValueType().name()));
+              " != " + boost::core::demangle(node->getValueType().name()) + "\n" + ss1.str() + ss2.str());
         }
       }
 
