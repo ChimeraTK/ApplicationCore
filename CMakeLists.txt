@@ -11,7 +11,7 @@ include(cmake/set_version_numbers.cmake)
 option(BUILD_TESTS "Build tests." ON)
 
 set(PYBIND11_FINDPYTHON ON)
-find_package(pybind11 2.11)
+find_package(pybind11 2.10)
 
 if(${pybind11_FOUND})
   find_program(STUBGEN stubgen)
