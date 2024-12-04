@@ -113,14 +113,10 @@ namespace ChimeraTK {
   template<typename UserType>
   void FanOut<UserType>::interrupt() {
     if(_impl) {
-      if(_impl->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
-        _impl->interrupt();
-      }
+      _impl->interrupt();
     }
     for(auto& slave : _slaves) {
-      if(slave->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
-        slave->interrupt();
-      }
+      slave->interrupt();
     }
   }
 
