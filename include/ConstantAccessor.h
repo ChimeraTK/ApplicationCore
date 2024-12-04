@@ -51,7 +51,11 @@ namespace ChimeraTK {
 
     std::list<boost::shared_ptr<ChimeraTK::TransferElement>> getInternalElements() override { return {}; }
 
-    void interrupt() override { TransferElement::interrupt_impl(this->_readQueue); }
+    void interrupt() override {
+      if(TransferElement::_accessModeFlags.has(AccessMode::wait_for_new_data)) {
+        TransferElement::interrupt_impl(this->_readQueue);
+      }
+    }
 
    protected:
     std::vector<UserType> _value;

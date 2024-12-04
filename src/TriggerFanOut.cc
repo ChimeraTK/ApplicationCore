@@ -40,9 +40,7 @@ namespace ChimeraTK {
     try {
       if(_thread.joinable()) {
         _thread.interrupt();
-        if(_externalTrigger->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
-          _externalTrigger->interrupt();
-        }
+        _externalTrigger->interrupt();
         _thread.join();
       }
       assert(!_thread.joinable());

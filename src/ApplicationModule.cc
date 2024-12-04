@@ -68,9 +68,7 @@ namespace ChimeraTK {
         // if thread is not yet joined, send interrupt() to all variables.
         for(auto& var : getAccessorListRecursive()) {
           auto el{var.getAppAccessorNoType().getHighLevelImplElement()};
-          if(el->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
-            el->interrupt();
-          }
+          el->interrupt();
         }
         // it may not suffice to send interrupt() once, as the exception might get
         // overwritten in the queue, thus we repeat this until the thread was

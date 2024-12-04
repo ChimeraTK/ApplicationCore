@@ -60,9 +60,7 @@ namespace ChimeraTK {
     while(_myThread.attr("is_alive")().cast<bool>()) {
       for(auto& var : getAccessorListRecursive()) {
         auto el{var.getAppAccessorNoType().getHighLevelImplElement()};
-        if(el->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
-          el->interrupt();
-        }
+        el->interrupt();
       }
 
       _myThread.attr("join")(0.01);
