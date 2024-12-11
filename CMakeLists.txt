@@ -109,8 +109,9 @@ if(${pybind11_FOUND})
 
   # Python module stub
   if((NOT ${CMAKE_BUILD_TYPE} STREQUAL "asan") AND(NOT ${CMAKE_BUILD_TYPE} STREQUAL "tsan"))
+    configure_file(cmake/runStubgen.sh.in ${CMAKE_CURRENT_BINARY_DIR}/runStubgen.sh)
     add_custom_target(PyApplicationCoreInterface ALL
-      COMMAND ${STUBGEN} --include-docstrings -m PyApplicationCore -o .
+      COMMAND ./runStubgen.sh
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       DEPENDS PyApplicationCore
       BYPRODUCTS {CMAKE_CURRENT_BINARY_DIR}/PyApplicationCore.pyi
