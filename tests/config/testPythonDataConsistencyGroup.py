@@ -91,7 +91,7 @@ class Receiver(ac.ApplicationModule):
             self.testError.setAndWrite("ok")
 
         except AssertionError as e:
-            print(f"Exception: {"\n".join(traceback.format_exception(e))}")
+            print("Exception: "+"\n".join(traceback.format_exception(e)))
             sys.stdout.flush()
             self.testError.setAndWrite("\n".join(traceback.format_exception(e)))
 
