@@ -4,14 +4,14 @@ PROJECT(ChimeraTK-ApplicationCore)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 04)
-set(${PROJECT_NAME}_MINOR_VERSION 00)
+set(${PROJECT_NAME}_MINOR_VERSION 01)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
 option(BUILD_TESTS "Build tests." ON)
 
 set(PYBIND11_FINDPYTHON ON)
-find_package(pybind11 2.11)
+find_package(pybind11 2.10)
 
 if(${pybind11_FOUND})
   find_program(STUBGEN stubgen)
@@ -28,7 +28,7 @@ endif()
 FIND_PACKAGE(ChimeraTK-ControlSystemAdapter 02.11 REQUIRED)
 
 # Find the DeviceAccess
-FIND_PACKAGE(ChimeraTK-DeviceAccess 03.16 REQUIRED)
+FIND_PACKAGE(ChimeraTK-DeviceAccess 03.18 REQUIRED)
 
 # Find the XML parser library libxml++
 FIND_PACKAGE(PkgConfig REQUIRED)
@@ -109,8 +109,9 @@ if(${pybind11_FOUND})
 
   # Python module stub
   if((NOT ${CMAKE_BUILD_TYPE} STREQUAL "asan") AND(NOT ${CMAKE_BUILD_TYPE} STREQUAL "tsan"))
+    configure_file(cmake/runStubgen.sh.in ${CMAKE_CURRENT_BINARY_DIR}/runStubgen.sh)
     add_custom_target(PyApplicationCoreInterface ALL
-      COMMAND ${STUBGEN} --include-docstrings -m PyApplicationCore -o .
+      COMMAND ./runStubgen.sh
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       DEPENDS PyApplicationCore
       BYPRODUCTS {CMAKE_CURRENT_BINARY_DIR}/PyApplicationCore.pyi

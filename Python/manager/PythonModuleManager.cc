@@ -10,7 +10,6 @@
 #include "PythonModuleManager.h"
 
 #include <filesystem>
-#include <format>
 
 namespace py = pybind11;
 
