@@ -4,6 +4,8 @@
 
 #include "Module.h"
 
+#include <boost/core/demangle.hpp>
+
 #include <cassert>
 #include <fstream>
 #include <iostream>
@@ -147,6 +149,12 @@ namespace ChimeraTK {
       return tag.substr(1);
     }
     return '!' + tag;
+  }
+
+  /********************************************************************************************************************/
+
+  std::string EntityOwner::getQualifiedNameWithType() const {
+    return getQualifiedName() + "<" + boost::core::demangle(typeid(*this).name()) + ">";
   }
 
   /********************************************************************************************************************/

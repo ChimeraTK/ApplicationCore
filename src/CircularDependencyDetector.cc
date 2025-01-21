@@ -63,11 +63,12 @@ namespace ChimeraTK::detail {
                   << std::endl;
         std::cerr << std::endl;
 
-        std::cerr << dependent->getQualifiedName() << " waits for " << node.getQualifiedName() << " from:" << std::endl;
+        std::cerr << dependent->getQualifiedNameWithType() << " waits for " << node.getQualifiedName()
+                  << " from:" << std::endl;
         auto* depdep2 = dependency;
         while(_waitMap.find(depdep2) != _waitMap.end()) {
           auto waitsFor = _awaitedVariables[depdep2];
-          std::cerr << depdep2->getQualifiedName();
+          std::cerr << depdep2->getQualifiedNameWithType();
           if(depdep2 == dependent) {
             break;
           }
@@ -98,8 +99,8 @@ namespace ChimeraTK::detail {
     }
     stream << "The following modules are still waiting for initial values:" << std::endl;
     for(auto& waiters : _waitMap) {
-      stream << waiters.first->getQualifiedName() << " waits for " << _awaitedVariables[waiters.first] << " from "
-             << waiters.second->getQualifiedName() << std::endl;
+      stream << waiters.first->getQualifiedNameWithType() << " waits for " << _awaitedVariables[waiters.first]
+             << " from " << waiters.second->getQualifiedNameWithType() << std::endl;
     }
     stream << "(end of list)" << std::endl;
   }
@@ -155,7 +156,7 @@ namespace ChimeraTK::detail {
         if(!appModule) {
           // only ApplicationModule can have hasReachedTestableMode() == true, so it should not happen
           logger(Logger::Severity::warning, "CircularDependencyDetector")
-              << "found non-application module: " << module->getQualifiedName() << std::endl;
+              << "found non-application module: " << module->getQualifiedNameWithType() << std::endl;
           continue;
         }
 
@@ -165,7 +166,7 @@ namespace ChimeraTK::detail {
           auto visitor = [&](auto proxy) {
             if constexpr(Model::isApplicationModule(proxy)) {
               // fed by other ApplicationModule: check if that one is waiting, too
-              Module* feedingAppModule = &proxy.getApplicationModule();
+              auto* feedingAppModule = dynamic_cast<ApplicationModule*>(&proxy.getApplicationModule());
               if(feedingAppModule->hasReachedTestableMode()) {
                 // the feeding module has started its mainLoop(), but not sent us an initial value
                 // FIXME: There is a race condition, if the situation has right now resolved and the feeding module just
@@ -173,9 +174,9 @@ namespace ChimeraTK::detail {
                 if(_modulesWeHaveWarnedAbout.find(feedingAppModule) == _modulesWeHaveWarnedAbout.end()) {
                   _modulesWeHaveWarnedAbout.insert(feedingAppModule);
                   logger(Logger::Severity::warning, "CircularDependencyDetector")
-                      << "Note: ApplicationModule " << appModule->getQualifiedName() << " is waiting for an "
-                      << "initial value, because " << feedingAppModule->getQualifiedName() << " has not yet sent one."
-                      << std::endl;
+                      << "Note: ApplicationModule " << appModule->getQualifiedNameWithType() << " is waiting for an "
+                      << "initial value, because " << feedingAppModule->getQualifiedNameWithType()
+                      << " has not yet sent one." << std::endl;
                 }
                 return;
               }
@@ -193,8 +194,8 @@ namespace ChimeraTK::detail {
                 if(_modulesWeHaveWarnedAbout.find(feedingAppModule) == _modulesWeHaveWarnedAbout.end()) {
                   _modulesWeHaveWarnedAbout.insert(feedingAppModule);
                   logger(Logger::Severity::warning, "CircularDependencyDetector")
-                      << "Note: ApplicationModule " << appModule->getQualifiedName() << " and "
-                      << feedingAppModule->getQualifiedName()
+                      << "Note: ApplicationModule " << appModule->getQualifiedNameWithType() << " and "
+                      << feedingAppModule->getQualifiedNameWithType()
                       << " are both waiting, on initial value provided directly or indirectly by the other."
                       << std::endl;
                 }
@@ -218,7 +219,7 @@ namespace ChimeraTK::detail {
             else {
               // fed by anything else?
               logger(Logger::Severity::warning, "CircularDependencyDetector")
-                  << "At least one ApplicationModule (" << appModule->getQualifiedName() << " is waiting for an "
+                  << "At least one ApplicationModule " << appModule->getQualifiedNameWithType() << " is waiting for an "
                   << "initial value from an unexpected source."
                   << "\n"
                   << "This is probably a BUG in the ChimeraTK framework.";
