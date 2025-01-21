@@ -62,6 +62,9 @@ namespace ChimeraTK {
      * containing all module names further up in the hierarchy. */
     virtual std::string getQualifiedName() const = 0;
 
+    /** Get the fully qualified name of the module instance, followed by the C++ data type (in pointy brackets) */
+    std::string getQualifiedNameWithType() const;
+
     /** Get the description of the module instance */
     const std::string& getDescription() const { return _description; }
 
