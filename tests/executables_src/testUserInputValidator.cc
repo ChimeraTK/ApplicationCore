@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
-#include <future>
 
 #define BOOST_TEST_MODULE testUserInputValidator
 
@@ -17,9 +16,9 @@ namespace Tests::testUserInputValidator {
   using namespace boost::unit_test_framework;
   namespace ctk = ChimeraTK;
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Test module with a single validated input, used stand alone or as a downstream module *****************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct ModuleA : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -32,8 +31,7 @@ namespace Tests::testUserInputValidator {
 
     void prepare() override {
       in1ErrorMessage = "(" + getName() + ") in1 needs to be smaller than 10";
-      validator.add(
-          in1ErrorMessage, [&] { return in1 < 10; }, in1);
+      validator.add(in1ErrorMessage, [&] { return in1 < 10; }, in1);
     }
 
     void mainLoop() override {
@@ -41,15 +39,14 @@ namespace Tests::testUserInputValidator {
       ctk::TransferElementID change;
       while(true) {
         validator.validate(change);
-
         change = group.readAny();
       }
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Variant of ModuleA with a second input ****************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct ModuleAwithSecondInput : public ModuleA {
     using ModuleA::ModuleA;
@@ -61,14 +58,13 @@ namespace Tests::testUserInputValidator {
     void prepare() override {
       ModuleA::prepare();
       in2ErrorMessage = "(" + getName() + ") in2 needs to be bigger than 10";
-      validator.add(
-          in2ErrorMessage, [&] { return in2 > 10; }, in2);
+      validator.add(in2ErrorMessage, [&] { return in2 > 10; }, in2);
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Test module with a single validated input and one output for connection to another validated input ****************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct UpstreamSingleOut : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -79,8 +75,7 @@ namespace Tests::testUserInputValidator {
     ctk::UserInputValidator validator;
 
     void prepare() override {
-      validator.add(
-          "(" + getName() + ") in1 needs to be smaller than 20", [&] { return in1 < 20; }, in1);
+      validator.add("(" + getName() + ") in1 needs to be smaller than 20", [&] { return in1 < 20; }, in1);
     }
 
     void mainLoop() override {
@@ -88,16 +83,14 @@ namespace Tests::testUserInputValidator {
       ctk::TransferElementID change;
       while(true) {
         validator.validate(change);
-
         out1.writeIfDifferent(in1 + 1);
-
         change = group.readAny();
       }
     }
   };
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Test module with a single validated input and two outputs for connection to another validated input ***************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct UpstreamTwinOut : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -109,8 +102,7 @@ namespace Tests::testUserInputValidator {
     ctk::UserInputValidator validator;
 
     void prepare() override {
-      validator.add(
-          "(" + getName() + ") in1 needs to be smaller than 20", [&] { return in1 < 20; }, in1);
+      validator.add("(" + getName() + ") in1 needs to be smaller than 20", [&] { return in1 < 20; }, in1);
     }
 
     void mainLoop() override {
@@ -127,9 +119,9 @@ namespace Tests::testUserInputValidator {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Test cases ********************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testSingleVariable) {
     std::cout << "testSingleVariable" << std::endl;
@@ -159,7 +151,7 @@ namespace Tests::testUserInputValidator {
     BOOST_TEST(app.moduleA.in1 == 8);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testFallback) {
     std::cout << "testFallback" << std::endl;
@@ -191,7 +183,7 @@ namespace Tests::testUserInputValidator {
     BOOST_TEST(app.moduleA.in1 == 7);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testMultipleVariablesDifferentChecks) {
     std::cout << "testMultipleVariablesDifferentChecks" << std::endl;
@@ -248,7 +240,7 @@ namespace Tests::testUserInputValidator {
     BOOST_TEST(!in1.readLatest());
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testMultipleVariablesSameCheck) {
     std::cout << "testMultipleVariablesSameCheck" << std::endl;
@@ -323,7 +315,7 @@ namespace Tests::testUserInputValidator {
     BOOST_TEST(!in1.readLatest());
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testMultipleChecksSameVariable) {
     std::cout << "testMultipleChecksSameVariable" << std::endl;
@@ -334,8 +326,7 @@ namespace Tests::testUserInputValidator {
 
       void prepare() override {
         ModuleA::prepare(); // defines check for in1 < 10
-        validator.add(
-            "in1 needs to be greater than -5", [&] { return in1 > -5; }, in1);
+        validator.add("in1 needs to be greater than -5", [&] { return in1 > -5; }, in1);
       }
     };
 
@@ -374,7 +365,7 @@ namespace Tests::testUserInputValidator {
     BOOST_TEST(app.moduleA.in1 == 9);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testSetErrorFunction) {
     std::cout << "testSetErrorFunction" << std::endl;
@@ -421,7 +412,7 @@ namespace Tests::testUserInputValidator {
     BOOST_TEST(errorMessage == app.moduleA.in2ErrorMessage);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testBackwardsPropagationSingleDownstream) {
     std::cout << "testBackwardsPropagationSingleDownstream" << std::endl;
@@ -464,7 +455,7 @@ namespace Tests::testUserInputValidator {
     BOOST_TEST(downstrIn == 6);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testBackwardsPropagationTwoDownstream) {
     std::cout << "testBackwardsPropagationTwoDownstream" << std::endl;
@@ -513,12 +504,12 @@ namespace Tests::testUserInputValidator {
     BOOST_TEST(downstr2In == 7);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
-  BOOST_AUTO_TEST_CASE(testFunnel) {
-    std::cout << "testFunnel" << std::endl;
-    // Two modules both having the same PV as an input (with return channel) which is validated
-    // Note: This is new functionality implemeted as part of #11558
+  BOOST_AUTO_TEST_CASE(testFunnelThreadedFanOut) {
+    std::cout << "testFunnelThreadedFanOut" << std::endl;
+    // Similar to testFunnelThreadedFanOut but with an upstream module the return channel is funneled into rather
+    // than the control system
 
     struct TestApplication : public ctk::Application {
       using ctk::Application::Application;
@@ -544,7 +535,39 @@ namespace Tests::testUserInputValidator {
     BOOST_TEST(app.module2.in1 == 5);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  BOOST_AUTO_TEST_CASE(testFunnelFeedingFanOut) {
+    std::cout << "testFunnelFeedingFanOut" << std::endl;
+    // Two modules both having the same PV as an input (with return channel) which is validated
+    // Note: This is new functionality implemeted as part of #11558
+
+    struct TestApplication : public ctk::Application {
+      using ctk::Application::Application;
+      ~TestApplication() override { shutdown(); }
+      UpstreamSingleOut upstream{this, "Upstream", ""};
+      ModuleA module1{this, "Downstream", ""};
+      ModuleA module2{this, "Downstream", ""};
+    };
+
+    TestApplication app("TestApp");
+    ctk::TestFacility test(app);
+
+    auto in1 = test.getScalar<int>("/Upstream/in1");
+
+    test.setScalarDefault<int>("/Upstream/in1", 5);
+
+    test.runApplication();
+
+    in1.setAndWrite(30);
+    test.stepApplication();
+    BOOST_TEST(in1.readNonBlocking());
+    BOOST_TEST(in1 == 5);
+    BOOST_TEST(app.module1.in1 == 6);
+    BOOST_TEST(app.module2.in1 == 6);
+  }
+
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testDeepBackwardsPropagation) {
     std::cout << "testDeepBackwardsPropagation" << std::endl;
@@ -654,6 +677,6 @@ namespace Tests::testUserInputValidator {
     BOOST_TEST(upstrIn == 3);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace Tests::testUserInputValidator
