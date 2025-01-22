@@ -134,7 +134,9 @@ namespace ChimeraTK {
     std::string getFullDescription() const override { return ""; }
 
     /**
-     * Enable debug output for a given variable.
+     * Enable debug output for a given variable. Note, the debug output will have the logger severity "trace" and
+     * hence will not be visible by default. Enable trace output as follows:
+     *   Logger::getInstance().setMinSeverity(Logger::Severity::trace);
      */
     void enableVariableDebugging(const VariableNetworkNode& node) {
       _debugMode_variableList.insert(node.getUniqueId());

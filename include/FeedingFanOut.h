@@ -4,11 +4,6 @@
 
 #include "FanOut.h"
 
-#include <ChimeraTK/NDRegisterAccessor.h>
-
-#include <functional>
-#include <sstream>
-
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
@@ -54,20 +49,26 @@ namespace ChimeraTK {
 
     void replaceTransferElement(boost::shared_ptr<ChimeraTK::TransferElement>) override;
 
-    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> getReturnSlave() { return _returnSlave; }
-
     void interrupt() override;
 
    protected:
     /** Add a slave to the FanOut. Only sending end-points of a consuming node may be added. */
     void addSlave(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode&) override;
 
-    /// Flag whether this FeedingFanOut has a return channel. Is specified in the
-    /// constructor
+    /// Finalise the return channel
+    void finalise();
+
+    /// Flag whether this FeedingFanOut has a return channel. Is specified in the constructor
     bool _withReturn;
 
-    /// The slave with return channel
-    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _returnSlave;
+    /// Flag whether finalise() has been called
+    bool _finalised{false};
+
+    /// list of return slaves, if any
+    std::vector<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>> _returnSlaves;
+
+    /// index to _returnSlaves for the last update
+    size_t _idxLastUpdate{std::numeric_limits<size_t>::max()};
   };
 
   /********************************************************************************************************************/
@@ -94,6 +95,8 @@ namespace ChimeraTK {
     for(auto el : consumerImplementationPairs) {
       FeedingFanOut<UserType>::addSlave(el.first, el.second);
     }
+
+    finalise();
   }
 
   /********************************************************************************************************************/
@@ -101,6 +104,7 @@ namespace ChimeraTK {
   template<typename UserType>
   void FeedingFanOut<UserType>::addSlave(
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> slave, VariableNetworkNode& node) {
+    assert(!_finalised);
     // check if array shape is compatible, unless the receiver is a trigger
     // node, so no data is expected
     if(slave->getNumberOfSamples() != 0 &&
@@ -119,21 +123,10 @@ namespace ChimeraTK {
     // handle return channels
     if(_withReturn) {
       if(node.getDirection().withReturn) {
-        if(_returnSlave) {
-          throw ChimeraTK::logic_error("FeedingFanOut: Cannot add multiple slaves with return channel!");
-        }
-
         // These assumptions should be guaranteed by the connection making code which created the PV
         assert(slave->isReadable());
         assert(slave->getAccessModeFlags().has(AccessMode::wait_for_new_data));
-
-        _returnSlave = slave;
-
-        // Set the readQeue from the return slave
-        // As this becomes the implemention of the feeding output, the flags are determined by that slave accessor
-        // If not _withReturn, the queue is not relevant because the feeding node is on output which is never read
-        this->_readQueue = _returnSlave->getReadQueue();
-        this->_accessModeFlags = _returnSlave->getAccessModeFlags();
+        _returnSlaves.push_back(slave);
       }
     }
 
@@ -144,12 +137,37 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  void FeedingFanOut<UserType>::doReadTransferSynchronously() {
-    if(this->_disabled || !_returnSlave) {
-      return;
+  void FeedingFanOut<UserType>::finalise() {
+    // create read queue as when-any continuation from all return slave read queues
+    std::vector<cppext::future_queue<void>> queueList;
+    for(auto& slave : _returnSlaves) {
+      queueList.push_back(slave->getReadQueue());
     }
-    assert(_withReturn);
-    _returnSlave->readTransfer();
+
+    auto notificationQueue = cppext::when_any(queueList.begin(), queueList.end());
+    this->_readQueue = notificationQueue.then<void>(
+        [this](size_t idx) {
+          _idxLastUpdate = idx;
+          try {
+            _returnSlaves[idx]->getReadQueue().pop_wait();
+          }
+          catch(detail::DiscardValueException&) {
+            // This value should never be actually exposed anywhere since the read transfer will be retried,
+            // but we set it anyway to make sure the logic is correct (would trigger asserts if not).
+            _idxLastUpdate = std::numeric_limits<size_t>::max() - 1;
+            throw;
+          }
+        },
+        std::launch::deferred);
+
+    _finalised = true;
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  void FeedingFanOut<UserType>::doReadTransferSynchronously() {
+    assert(false);
   }
 
   /********************************************************************************************************************/
@@ -159,43 +177,54 @@ namespace ChimeraTK {
     if(!_withReturn) {
       throw ChimeraTK::logic_error("Read operation called on write-only variable.");
     }
-    if(this->_disabled || !_returnSlave) {
+    if(this->_disabled) {
       return;
     }
-    _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
-    _returnSlave->preRead(type);
+
+    assert(_idxLastUpdate != std::numeric_limits<size_t>::max() - 1);
+    if(_idxLastUpdate == std::numeric_limits<size_t>::max()) {
+      for(auto& slave : _returnSlaves) {
+        slave->preRead(TransferType::read);
+      }
+    }
+    else {
+      _returnSlaves[_idxLastUpdate]->preRead(type);
+    }
   }
 
   /********************************************************************************************************************/
 
   template<typename UserType>
   void FeedingFanOut<UserType>::doPostRead(TransferType type, bool hasNewData) {
-    if(this->_disabled || !_returnSlave) {
+    assert(_withReturn);
+    if(this->_disabled) {
       return;
     }
-    assert(_withReturn);
+
+    assert(_idxLastUpdate < std::numeric_limits<size_t>::max() - 1);
 
     auto _ = cppext::finally([&] {
       if(!hasNewData || TransferElement::_activeException) {
         return;
       }
-      _returnSlave->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
+      _returnSlaves[_idxLastUpdate]->accessChannel(0).swap(ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0]);
       // distribute return-channel update to the other slaves
+
       for(auto& slave : FanOut<UserType>::_slaves) { // send out copies to slaves
-        if(slave == _returnSlave) {
+        if(slave == _returnSlaves[_idxLastUpdate]) {
           continue;
         }
         if(slave->getNumberOfSamples() != 0) { // do not send copy if no data is expected (e.g. trigger)
           slave->accessChannel(0) = ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0];
         }
-        slave->writeDestructively(_returnSlave->getVersionNumber());
+        slave->writeDestructively(this->_versionNumber);
       }
     });
 
-    _returnSlave->postRead(type, hasNewData);
+    _returnSlaves[_idxLastUpdate]->postRead(type, hasNewData);
 
-    this->_versionNumber = _returnSlave->getVersionNumber();
-    this->_dataValidity = _returnSlave->dataValidity();
+    this->_versionNumber = _returnSlaves[_idxLastUpdate]->getVersionNumber();
+    this->_dataValidity = _returnSlaves[_idxLastUpdate]->dataValidity();
   }
 
   /********************************************************************************************************************/
@@ -248,6 +277,7 @@ namespace ChimeraTK {
         dataLost = true;
       }
     }
+
     return dataLost;
   }
 
@@ -317,8 +347,8 @@ namespace ChimeraTK {
   void FeedingFanOut<UserType>::interrupt() {
     // call the interrut sequences of the fan out (interrupts for fan input and all outputs), and the ndRegisterAccessor
     FanOut<UserType>::interrupt();
-    if(_returnSlave) {
-      _returnSlave->interrupt();
+    for(auto returnSlave : _returnSlaves) {
+      returnSlave->interrupt();
     }
   }
 
