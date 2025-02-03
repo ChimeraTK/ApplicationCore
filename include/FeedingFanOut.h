@@ -201,6 +201,12 @@ namespace ChimeraTK {
       return;
     }
 
+    if(!hasNewData && type != TransferType::read) {
+      // No post read handling for readNonBlocking and readLatest if there was no new data, since there was actually no
+      // corresponding read operation on any of the unterlying accessors (just checking the notification queue).
+      return;
+    }
+
     assert(_idxLastUpdate < std::numeric_limits<size_t>::max() - 1);
 
     auto _ = cppext::finally([&] {
