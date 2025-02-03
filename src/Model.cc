@@ -931,4 +931,9 @@ namespace ChimeraTK::Model {
 
   /********************************************************************************************************************/
 
+  DeviceModule& DeviceModuleProxy::getDeviceModule() const {
+    return std::get<VertexProperties::DeviceModuleProperties>(_d->impl->_graph[_d->vertex].p).module;
+  }
+  /********************************************************************************************************************/
+
 } // namespace ChimeraTK::Model
