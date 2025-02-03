@@ -362,6 +362,8 @@ namespace ChimeraTK::Model {
 
     void addVariable(ProcessVariableProxy& variable, VariableNetworkNode& node);
 
+    [[nodiscard]] DeviceModule& getDeviceModule() const;
+
    private:
     using Proxy::Proxy;
     friend struct VertexProperties;
