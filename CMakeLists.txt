@@ -114,7 +114,7 @@ if(${pybind11_FOUND})
       COMMAND ./runStubgen.sh
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       DEPENDS PyApplicationCore
-      BYPRODUCTS {CMAKE_CURRENT_BINARY_DIR}/PyApplicationCore.pyi
+      BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/PyApplicationCore.pyi
       COMMENT "Use stubgen to create .pyi for statement completion")
   else()
     # stubgen would fail to run due to missing asan/tsan symbols
