@@ -15,6 +15,7 @@
 #include "ScalarAccessor.h"
 
 #include <ChimeraTK/ControlSystemAdapter/StatusAccessorBase.h>
+#include <ChimeraTK/SystemTags.h>
 
 namespace ChimeraTK {
 
@@ -30,9 +31,6 @@ namespace ChimeraTK {
     StatusAccessor() = default;
 
     using ACCESSOR::ACCESSOR;
-
-    /** Reserved tag which is used to mark status outputs */
-    constexpr static auto tagStatusOutput = "_ChimeraTK_StatusOutput_statusOutput";
 
     /** Implicit type conversion to user type T to access the value. */
     // We want thhs to be implicit, disable the linting here, also need reinterpret cast for now
@@ -69,7 +67,7 @@ namespace ChimeraTK {
     StatusOutput(Module* owner, const std::string& name, const std::string& description,
         const std::unordered_set<std::string>& tags = {})
     : StatusAccessor<ScalarOutput<int32_t>>(owner, name, "", description, tags) {
-      addTag(tagStatusOutput);
+      addTag(ChimeraTK::SystemTags::statusOutput);
       addTag(explicitDataValidityTag);
     }
     StatusOutput() = default;
