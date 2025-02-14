@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "StatusAggregator.h"
 
+#include <ChimeraTK/SystemTags.h>
+
 #include <list>
 #include <regex>
 #include <utility>
@@ -84,7 +86,7 @@ namespace ChimeraTK {
         }
 
         // find status output - this is potential candidate to be aggregated
-        if(tags.find(StatusOutput::tagStatusOutput) != tags.end()) {
+        if(tags.find(ChimeraTK::SystemTags::statusOutput) != tags.end()) {
           for(const auto& tagToAgregate : _tagsToAggregate) {
             // ATTENTION. This loop is implementing a logical AND.
             // There is a design decision pending whether this is the wanted behaviour (#13256).
