@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#include <ChimeraTK/SystemTags.h>
+
 #include <future>
 
 #define BOOST_TEST_MODULE testStatusMonitor
@@ -40,7 +42,7 @@ namespace Tests::testStatusMonitor {
 
     // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
     auto tags = ctk::VariableNetworkNode(app.monitor.status).getTags();
-    BOOST_CHECK(tags.find(ctk::StatusOutput::tagStatusOutput) != tags.end());
+    BOOST_CHECK(tags.find(ctk::SystemTags::statusOutput) != tags.end());
 
     ctk::TestFacility test(app);
     test.runApplication();
@@ -185,7 +187,7 @@ namespace Tests::testStatusMonitor {
 
     // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
     auto tags = ctk::VariableNetworkNode(app.monitor.status).getTags();
-    BOOST_CHECK(tags.find(ctk::StatusOutput::tagStatusOutput) != tags.end());
+    BOOST_CHECK(tags.find(ctk::SystemTags::statusOutput) != tags.end());
 
     ctk::TestFacility test(app);
     test.runApplication();
@@ -331,7 +333,7 @@ namespace Tests::testStatusMonitor {
 
     // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
     auto tags = ctk::VariableNetworkNode(app.monitor.status).getTags();
-    BOOST_CHECK(tags.find(ctk::StatusOutput::tagStatusOutput) != tags.end());
+    BOOST_CHECK(tags.find(ctk::SystemTags::statusOutput) != tags.end());
 
     ctk::TestFacility test(app);
     test.runApplication();
@@ -555,7 +557,7 @@ namespace Tests::testStatusMonitor {
 
     // check that the reserved StatusOutput tag is present at the output, required for StatusAggregator integration
     auto tags = ctk::VariableNetworkNode(app.monitor.status).getTags();
-    BOOST_CHECK(tags.find(ctk::StatusOutput::tagStatusOutput) != tags.end());
+    BOOST_CHECK(tags.find(ctk::SystemTags::statusOutput) != tags.end());
 
     ctk::TestFacility test(app);
     test.runApplication();
