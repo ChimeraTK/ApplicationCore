@@ -16,9 +16,9 @@
 #include <ChimeraTK/Device.h>
 
 #include <boost/mpl/list.hpp>
-//#define BOOST_NO_EXCEPTIONS
+// #define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
-//#undef BOOST_NO_EXCEPTIONS
+// #undef BOOST_NO_EXCEPTIONS
 #include <boost/thread/barrier.hpp>
 
 namespace Tests::testTestFacilities {

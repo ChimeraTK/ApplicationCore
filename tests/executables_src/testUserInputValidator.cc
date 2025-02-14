@@ -31,8 +31,7 @@ namespace Tests::testUserInputValidator {
 
     void prepare() override {
       in1ErrorMessage = "(" + getName() + ") in1 needs to be smaller than 10";
-      validator.add(
-          in1ErrorMessage, [&] { return in1 < 10; }, in1);
+      validator.add(in1ErrorMessage, [&] { return in1 < 10; }, in1);
     }
 
     void mainLoop() override {
@@ -59,8 +58,7 @@ namespace Tests::testUserInputValidator {
     void prepare() override {
       ModuleA::prepare();
       in2ErrorMessage = "(" + getName() + ") in2 needs to be bigger than 10";
-      validator.add(
-          in2ErrorMessage, [&] { return in2 > 10; }, in2);
+      validator.add(in2ErrorMessage, [&] { return in2 > 10; }, in2);
     }
   };
 
@@ -77,8 +75,7 @@ namespace Tests::testUserInputValidator {
     ctk::UserInputValidator validator;
 
     void prepare() override {
-      validator.add(
-          "(" + getName() + ") in1 needs to be smaller than 20", [&] { return in1 < 20; }, in1);
+      validator.add("(" + getName() + ") in1 needs to be smaller than 20", [&] { return in1 < 20; }, in1);
     }
 
     void mainLoop() override {
@@ -105,8 +102,7 @@ namespace Tests::testUserInputValidator {
     ctk::UserInputValidator validator;
 
     void prepare() override {
-      validator.add(
-          "(" + getName() + ") in1 needs to be smaller than 20", [&] { return in1 < 20; }, in1);
+      validator.add("(" + getName() + ") in1 needs to be smaller than 20", [&] { return in1 < 20; }, in1);
     }
 
     void mainLoop() override {
@@ -330,8 +326,7 @@ namespace Tests::testUserInputValidator {
 
       void prepare() override {
         ModuleA::prepare(); // defines check for in1 < 10
-        validator.add(
-            "in1 needs to be greater than -5", [&] { return in1 > -5; }, in1);
+        validator.add("in1 needs to be greater than -5", [&] { return in1 > -5; }, in1);
       }
     };
 

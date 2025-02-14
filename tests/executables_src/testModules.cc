@@ -921,14 +921,14 @@ namespace Tests::testModules {
           {
             const auto* a = &(static_cast<ctk::VariableNetworkNode>(
                 app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].inGroup)
-                                  .getAppAccessorNoType());
+                    .getAppAccessorNoType());
             const auto* b = &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].inGroup);
             BOOST_CHECK(a == b);
           }
           {
             const auto* a = &(static_cast<ctk::VariableNetworkNode>(
                 app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].alsoInGroup)
-                                  .getAppAccessorNoType());
+                    .getAppAccessorNoType());
             const auto* b =
                 &(app.vectorOfVectorModuleGroup[i].vectorOfVectorModule[k].vectorOfSomeGroup[m].alsoInGroup);
             BOOST_CHECK(a == b);

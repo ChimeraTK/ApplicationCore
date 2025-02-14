@@ -69,10 +69,14 @@ namespace Tests::testApplication {
     }
 
     // all allowed characters in the name
-    { TestApp app("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz_1234567890"); }
+    {
+      TestApp app("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz_1234567890");
+    }
 
     // repeated characters are allowed
-    { TestApp app("AAAAAAA"); }
+    {
+      TestApp app("AAAAAAA");
+    }
 
     // Two apps at the same time are not allowed
     TestApp app1("FirstInstance");

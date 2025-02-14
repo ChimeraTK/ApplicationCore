@@ -101,8 +101,8 @@ namespace Tests::testCircularDependencyFaultyFlags {
         }
 
       } // while(true)
-    }   // mainLoop
-  };    // ModuleA
+    } // mainLoop
+  }; // ModuleA
 
   /// ModuleC has a trigger together with a readAll.; (it's a trigger for the circle because there is always something
   /// at the circular inputs)

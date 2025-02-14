@@ -232,9 +232,10 @@ namespace Tests::testDeviceInitialisationHandler {
                             ctk::Utilities::escapeName(deviceCDD.data(), false) / "status"),
         1, 10000);
     // First we see the message from the failing write
-    BOOST_CHECK(!test.readScalar<std::string>(ctk::RegisterPath("/Devices") /
-                         ctk::Utilities::escapeName(deviceCDD.data(), false) / "status_message")
-                     .empty());
+    BOOST_CHECK(!test
+            .readScalar<std::string>(
+                ctk::RegisterPath("/Devices") / ctk::Utilities::escapeName(deviceCDD.data(), false) / "status_message")
+            .empty());
     dummyBackend->throwExceptionWrite = false;
     // Afterwards we see a message from the failing initialisation (which we can now distinguish from the original write
     // exception because write does not throw any more)

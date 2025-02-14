@@ -277,8 +277,12 @@ namespace Tests::testConfigReader {
 
   BOOST_AUTO_TEST_CASE(testExceptions) {
     std::cout << "==> testExceptions" << std::endl;
-    { BOOST_CHECK_THROW(std::make_unique<TestApplicationTwoConfigs>(), ctk::logic_error); }
-    { BOOST_CHECK_THROW(std::make_unique<TestApplicationInvalidConfig>(), ctk::logic_error); }
+    {
+      BOOST_CHECK_THROW(std::make_unique<TestApplicationTwoConfigs>(), ctk::logic_error);
+    }
+    {
+      BOOST_CHECK_THROW(std::make_unique<TestApplicationInvalidConfig>(), ctk::logic_error);
+    }
     {
       TestApplication app;
       auto& config = app.getConfigReader();
