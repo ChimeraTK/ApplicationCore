@@ -949,8 +949,8 @@ namespace ChimeraTK::Model {
   /******************************************************************************************************************/
 
   template<EdgeProperties::Type RELATIONSHIP>
-  [[maybe_unused]] static constexpr auto relationshipFilter = EdgeFilter(
-      [](const EdgeProperties& e) -> bool { return e.type == RELATIONSHIP; });
+  [[maybe_unused]] static constexpr auto relationshipFilter =
+      EdgeFilter([](const EdgeProperties& e) -> bool { return e.type == RELATIONSHIP; });
 
   /******************************************************************************************************************/
 
@@ -1493,8 +1493,8 @@ namespace ChimeraTK::Model {
       // not stopped. The stopping is realised by throwing a DfsVisitor::StopException.
       explicit VisitorHelper(VISITOR& visitor, std::shared_ptr<Impl> impl, FILTER& filter, Vertex stopAfterVertex,
           ValueHolder<detail::VisitorReturnType<VISITOR, FILTER>>& rv, VisitOrder& visitOrder)
-      : _visitor(visitor), _filter(filter), _stopAfterVertex(stopAfterVertex), _impl(std::move(impl)),
-        _rv(rv), _visitOrder{visitOrder} {}
+      : _visitor(visitor), _filter(filter), _stopAfterVertex(stopAfterVertex), _impl(std::move(impl)), _rv(rv),
+        _visitOrder{visitOrder} {}
 
       // This is a required function by boost::graph - disable naming check
       template<class Vertex, class Graph>

@@ -69,7 +69,7 @@ namespace ChimeraTK::detail {
       logger(Logger::Severity::debug, "TestableMode")
           << "Application::testableModeLock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
           << " tries to obtain lock for " << name;                      // LCOV_EXCL_LINE (only cout)
-    }                                                                   // LCOV_EXCL_LINE (only cout)
+    } // LCOV_EXCL_LINE (only cout)
 
     // if last lock was obtained repeatedly by the same thread, sleep a short time
     // before obtaining the lock to give the other threads a chance to get the
@@ -94,7 +94,7 @@ namespace ChimeraTK::detail {
 
       // throw a specialised exception to make sure whoever catches it really knows what he does...
       terminateTestStalled(); // LCOV_EXCL_LINE
-    }                         // LCOV_EXCL_LINE
+    } // LCOV_EXCL_LINE
 
     // check if the last owner of the mutex was this thread, which may be a hint
     // that no other thread is waiting for the lock
@@ -106,7 +106,7 @@ namespace ChimeraTK::detail {
                   << " repeatedly obtained lock successfully for "          // LCOV_EXCL_LINE (only cout)
                   << name                                                   // LCOV_EXCL_LINE (only cout)
                   << ". Further messages will be suppressed." << std::endl; // LCOV_EXCL_LINE (only cout)
-      }                                                                     // LCOV_EXCL_LINE (only cout)
+      } // LCOV_EXCL_LINE (only cout)
 
       // increase counter for stall detection
       _repeatingMutexOwner++;
@@ -160,7 +160,7 @@ namespace ChimeraTK::detail {
         logger(Logger::Severity::debug, "TestableMode")
             << "TestableMode::lock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
             << " obtained lock successfully for " << name;     // LCOV_EXCL_LINE (only cout)
-      }                                                        // LCOV_EXCL_LINE (only cout)
+      } // LCOV_EXCL_LINE (only cout)
     }
   }
 

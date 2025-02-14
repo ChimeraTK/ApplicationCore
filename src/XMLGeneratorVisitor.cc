@@ -25,8 +25,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   XMLGenerator::XMLGenerator(Application& app)
-  : NetworkVisitor{app}, _doc{std::make_shared<xmlpp::Document>()}, _rootElement{_doc->create_root_node("application",
-                                                                        ::detail::AC_NAMESPACE_URL.data())} {}
+  : NetworkVisitor{app}, _doc{std::make_shared<xmlpp::Document>()},
+    _rootElement{_doc->create_root_node("application", ::detail::AC_NAMESPACE_URL.data())} {}
   /********************************************************************************************************************/
 
   void XMLGenerator::run() {

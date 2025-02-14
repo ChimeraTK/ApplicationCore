@@ -183,14 +183,10 @@ namespace ChimeraTK {
     }
 
 #ifdef CHIMERATK_APPLICATION_CORE_WITH_PYTHON
-    PythonModuleManager& getPythonModuleManager() {
-      return _pythonModuleManager;
-    }
+    PythonModuleManager& getPythonModuleManager() { return _pythonModuleManager; }
 #endif
 
-    ConfigReader& getConfigReader() {
-      return *_defaultConfigReader;
-    }
+    ConfigReader& getConfigReader() { return *_defaultConfigReader; }
 
    protected:
     friend class Module;
