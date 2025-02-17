@@ -14,6 +14,7 @@
 #include "TriggerFanOut.h"
 
 #include <ChimeraTK/NDRegisterAccessor.h>
+#include <ChimeraTK/SystemTags.h>
 
 namespace ChimeraTK {
 
@@ -867,6 +868,8 @@ namespace ChimeraTK {
           auto dev = deviceManager->getDevice().getBackend();
           auto impl =
               dev->getRegisterAccessor<UserType>(consumer.getRegisterName(), consumer.getNumberOfElements(), 0, {});
+          auto catalog = deviceManager->getDevice().getRegisterCatalogue();
+          auto tags = catalog.getRegister(consumer.getRegisterName()).getTags();
 
           // Set the value
           impl->accessChannel(0) =
@@ -876,8 +879,11 @@ namespace ChimeraTK {
           // version number and have a recovery accessors (RecoveryHelper to be exact) which we can register at the
           // DeviceModule. As this is a constant we don't need to change it later and don't have to store it somewhere
           // else.
-          deviceManager->addRecoveryAccessor(
-              boost::make_shared<RecoveryHelper>(impl, VersionNumber(), deviceManager->writeOrder()));
+
+          if(!tags.contains(ChimeraTK::SystemTags::skipOnDeviceRecovery)) {
+            deviceManager->addRecoveryAccessor(
+                boost::make_shared<RecoveryHelper>(impl, VersionNumber(), deviceManager->writeOrder()));
+          }
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           throw ChimeraTK::logic_error("Using constants as triggers is not supported!");
