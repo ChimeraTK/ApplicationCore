@@ -4,6 +4,8 @@
 
 #include "DeviceManager.h"
 
+#include <ChimeraTK/SystemTags.h>
+
 #include <functional>
 
 namespace ChimeraTK {
@@ -43,7 +45,8 @@ namespace ChimeraTK {
       // add recovery accessor to DeviceManager so the last known value is restored during device recovery, unless
       // the data type is Void, in which case there is no value to recover and writing will likely trigger some unwanted
       // action.
-      if(!std::is_same<UserType, ChimeraTK::Void>::value) {
+      if(!std::is_same<UserType, ChimeraTK::Void>::value &&
+          !networkNode.getTags().contains(ChimeraTK::SystemTags::skipOnDeviceRecovery)) {
         deviceManager->addRecoveryAccessor(_recoveryHelper);
       }
     }
