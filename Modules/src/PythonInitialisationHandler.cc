@@ -64,6 +64,7 @@ namespace ChimeraTK {
       )",
           py::globals(), locals);
 
+      py::print(locals);
       auto logHandler = locals["init_script_log"];
       auto output = logHandler.attr("getvalue")().cast<std::string>();
       auto exitCode = locals["exit_code"].cast<int>();
