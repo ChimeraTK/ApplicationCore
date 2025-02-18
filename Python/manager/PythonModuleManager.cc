@@ -9,6 +9,8 @@
 #include "PyModuleGroup.h"
 #include "PythonModuleManager.h"
 
+#include <ChimeraTK/Exception.h>
+
 #include <filesystem>
 
 namespace py = pybind11;
@@ -42,6 +44,11 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void PythonModuleManager::init() {
+    if(Application::getInstance().getLifeCycleState() != LifeCycleState::initialisation) {
+      throw ChimeraTK::logic_error(
+          "PythonModuleManager::init() must only be called in Application LifeCycleState initialisation.");
+    }
+
     if(_impl) {
       return;
     }

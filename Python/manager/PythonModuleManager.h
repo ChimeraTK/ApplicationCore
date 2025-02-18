@@ -43,9 +43,15 @@ namespace ChimeraTK {
      */
     void setOnMainGroupChange(std::function<void(const std::unique_ptr<PyModuleGroup>&)> callback);
 
-   private:
+    /**
+     * Initialise the python interpreter without registering modules.
+     * This function must only be called while the application is still single threaded (i.e.
+     * LifeCycleState == initialisation).
+     * It will throw a logig error if this is not the case.
+     */
     void init();
 
+   private:
     std::unique_ptr<detail::PythonModuleManagerImpl> _impl;
   };
 
