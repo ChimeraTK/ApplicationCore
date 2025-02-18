@@ -19,6 +19,7 @@ namespace ChimeraTK {
    protected:
     bool _lastFailed{false};
     std::string _script;
+    std::string _moduleName; // the script name without the .py
     std::string _deviceAlias;
     std::string _outputName;
     unsigned int _errorGracePeriod; // additional sleep time before a retry after an error
