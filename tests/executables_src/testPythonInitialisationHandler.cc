@@ -45,7 +45,6 @@ namespace Tests::testPythonInitialisationHandler {
   /********************************************************************************************************************/
 
   BOOST_FIXTURE_TEST_CASE(testSuccess, Fixture) {
-    (void)std::filesystem::remove("pythonDevice1Init.success");
     (void)std::filesystem::remove("continuePythonDevice1Init");
     (void)std::filesystem::remove("producePythonDevice1InitError");
     (void)std::filesystem::remove("producePythonDevice2InitError");
@@ -54,6 +53,7 @@ namespace Tests::testPythonInitialisationHandler {
     // testApp.dumpConnections();
 
     auto initMessage = testFacility.getScalar<std::string>("/Devices/Dummy0/initScriptOutput");
+    auto deviceStatus = testFacility.getScalar<int>("/Devices/Dummy0/status");
 
     initMessage.read();
     std::string referenceString; // currently emtpy
@@ -70,9 +70,7 @@ namespace Tests::testPythonInitialisationHandler {
     auto secondInitMessage = testFacility.getScalar<std::string>("/Devices/Dummy0/secondInitScriptOutput");
     referenceString = "just a second script\nDummy0 initialisation SUCCESS!";
     CHECK_TIMEOUT((secondInitMessage.readLatest(), std::string(secondInitMessage) == referenceString), 20000);
-
-    // cleanup
-    (void)std::filesystem::remove("device1Init.success");
+    CHECK_TIMEOUT((deviceStatus.readLatest(), deviceStatus == 0), 500);
   }
 
   /********************************************************************************************************************/
