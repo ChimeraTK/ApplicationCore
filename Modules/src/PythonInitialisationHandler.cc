@@ -44,6 +44,8 @@ namespace ChimeraTK {
     pybind11::gil_scoped_acquire gil;
 
     auto locals = py::dict("loggername"_a = _deviceAlias);
+    int exitCode{};
+    std::string output;
     try {
       locals["script"] = py::module_::import(_moduleName.c_str());
 
@@ -66,31 +68,32 @@ namespace ChimeraTK {
 
       py::print(locals);
       auto logHandler = locals["init_script_log"];
-      auto output = logHandler.attr("getvalue")().cast<std::string>();
-      auto exitCode = locals["exit_code"].cast<int>();
-
-      if(exitCode != 0) {
-        output += "!!! " + _deviceAlias + " initialisation FAILED!";
-        _scriptOutput = output;
-        _scriptOutput.write();
-        if(!_lastFailed) {
-          ChimeraTK::logger(Logger::Severity::error, "Device " + _deviceAlias) << output << std::endl;
-        }
-        _lastFailed = true;
-        std::this_thread::sleep_for(std::chrono::seconds(_errorGracePeriod));
-        throw ChimeraTK::runtime_error(_deviceAlias + " initialisation failed.");
-      }
-
-      output += _deviceAlias + " initialisation SUCCESS!";
-      _scriptOutput = output;
-      _scriptOutput.write();
-      ChimeraTK::logger(Logger::Severity::info, "Device " + _deviceAlias) << output << std::endl;
-      _lastFailed = false;
+      output = logHandler.attr("getvalue")().cast<std::string>();
+      exitCode = locals["exit_code"].cast<int>();
+      std::cout << "DEBUG: PyInitHandler exit code: " << exitCode << std::endl;
     }
     catch(std::exception& e) {
       throw ChimeraTK::logic_error(
           "Caught exception while executing \"" + _script + "\" for device " + _deviceAlias + ": " + e.what());
     }
+
+    if(exitCode != 0) {
+      output += "!!! " + _deviceAlias + " initialisation FAILED!";
+      _scriptOutput = output;
+      _scriptOutput.write();
+      if(!_lastFailed) {
+        ChimeraTK::logger(Logger::Severity::error, "Device " + _deviceAlias) << output << std::endl;
+      }
+      _lastFailed = true;
+      std::this_thread::sleep_for(std::chrono::seconds(_errorGracePeriod));
+      throw ChimeraTK::runtime_error(_deviceAlias + " initialisation failed.");
+    }
+
+    output += _deviceAlias + " initialisation SUCCESS!";
+    _scriptOutput = output;
+    _scriptOutput.write();
+    ChimeraTK::logger(Logger::Severity::info, "Device " + _deviceAlias) << output << std::endl;
+    _lastFailed = false;
   }
 
   /**********************************************************************************************************************/

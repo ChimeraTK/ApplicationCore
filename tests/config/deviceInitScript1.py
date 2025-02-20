@@ -8,7 +8,8 @@ def initDevice(logger=logging.getLogger()):
   logger.info('starting device1 init')
 
   if os.path.exists('producePythonDevice1InitError'):
-    logger.error('error initialising device')
+    f = open('producePythonDevice1InitError', 'r')
+    logger.error('error initialising device: '+f.read())
     return 1
 
   logger.info('device1 init successful')

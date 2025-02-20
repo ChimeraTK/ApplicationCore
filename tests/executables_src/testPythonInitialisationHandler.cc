@@ -76,40 +76,40 @@ namespace Tests::testPythonInitialisationHandler {
   /********************************************************************************************************************/
 
   BOOST_FIXTURE_TEST_CASE(testError, Fixture) {
-    return;
     std::ofstream produceErrorFile; // If the file exists, the script produces an error
-    produceErrorFile.open("produceDevice2InitError", std::ios::out);
-
-    // let script1 finish
-    std::ofstream continueFile;
-    continueFile.open("continueDevice1Init", std::ios::out);
+    produceErrorFile.open("producePythonDevice1InitError", std::ios::out);
 
     testFacility.runApplication();
 
     // testApp.dumpConnections();
-    auto secondInitMessage = testFacility.getScalar<std::string>("/Devices/Dummy0/secondInitScriptOutput");
+    auto initMessage = testFacility.getScalar<std::string>("/Devices/Dummy0/initScriptOutput");
+    auto deviceStatus = testFacility.getScalar<int>("/Devices/Dummy0/status");
 
     // let the script run three times, check that always the output of the last run is visible in the control system
     auto startTime = std::chrono::steady_clock::now();
     for(int i = 0; i < 3; ++i) {
       produceErrorFile.seekp(0);
       produceErrorFile << i << std::flush;
-      std::string referenceString =
-          "Simulating error in second script: " + std::to_string(i) + "\n!!! Dummy0 initialisation FAILED!";
-      CHECK_TIMEOUT((secondInitMessage.readLatest(), std::string(secondInitMessage)) == referenceString, 20000);
+      std::string referenceString = "starting device1 init\n"
+                                    "error initialising device: " +
+          std::to_string(i) +
+          "\n"
+          "!!! Dummy0 initialisation FAILED!";
+      CHECK_TIMEOUT((initMessage.readLatest(), std::string(initMessage) == referenceString), 20000);
+      BOOST_TEST(std::string(initMessage) == referenceString);
+      BOOST_CHECK((deviceStatus.readLatest(), deviceStatus == 1));
+      std::cout << "device status " << deviceStatus << std::endl;
     }
 
-    (void)std::filesystem::remove("produceDevice2InitError");
+    (void)std::filesystem::remove("producePythonDevice1InitError");
 
     // recovery
-    std::string referenceString = "just a second script\nDummy0 initialisation SUCCESS!";
-    CHECK_TIMEOUT((secondInitMessage.readLatest(), std::string(secondInitMessage)) == referenceString, 20000);
+    std::string referenceString = "starting device1 init\ndevice1 init successful\nDummy0 initialisation SUCCESS!";
+    CHECK_TIMEOUT((initMessage.readLatest(), std::string(initMessage)) == referenceString, 20000);
     // at least three failure grace periods
     auto stopTime = std::chrono::steady_clock::now();
     BOOST_CHECK(std::chrono::duration_cast<std::chrono::seconds>(stopTime - startTime).count() >= 3);
-
-    (void)std::filesystem::remove("device1Init.success");
-    (void)std::filesystem::remove("continueDevice1Init");
+    CHECK_TIMEOUT((deviceStatus.readLatest(), deviceStatus == 0), 500);
   }
 
   /********************************************************************************************************************/
