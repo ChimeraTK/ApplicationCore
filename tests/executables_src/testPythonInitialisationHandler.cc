@@ -46,8 +46,8 @@ namespace Tests::testPythonInitialisationHandler {
 
   BOOST_FIXTURE_TEST_CASE(testSuccess, Fixture) {
     (void)std::filesystem::remove("continuePythonDevice1Init");
-    (void)std::filesystem::remove("producePythonDevice1InitError");
-    (void)std::filesystem::remove("producePythonDevice2InitError");
+    (void)std::filesystem::remove("producePythonDeviceInitError1");
+    (void)std::filesystem::remove("producePythonDeviceInitError2");
 
     testFacility.runApplication();
     // testApp.dumpConnections();
@@ -75,9 +75,9 @@ namespace Tests::testPythonInitialisationHandler {
 
   /********************************************************************************************************************/
 
-  BOOST_FIXTURE_TEST_CASE(testError, Fixture) {
+  BOOST_FIXTURE_TEST_CASE(testException, Fixture) {
     std::ofstream produceErrorFile; // If the file exists, the script produces an error
-    produceErrorFile.open("producePythonDevice1InitError", std::ios::out);
+    produceErrorFile.open("producePythonDeviceInitError1", std::ios::out);
 
     testFacility.runApplication();
 
