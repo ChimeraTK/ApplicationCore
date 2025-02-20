@@ -118,4 +118,35 @@ namespace Tests::testPythonInitialisationHandler {
 
   /********************************************************************************************************************/
 
+  BOOST_FIXTURE_TEST_CASE(testExit, Fixture) {
+    std::ofstream produceErrorFile; // If the file exists, the script produces an error
+    produceErrorFile.open("producePythonDeviceInitError2", std::ios::out);
+
+    testFacility.runApplication();
+
+    // testApp.dumpConnections();
+    auto initMessage = testFacility.getScalar<std::string>("/Devices/Dummy0/initScriptOutput");
+    auto deviceStatus = testFacility.getScalar<int>("/Devices/Dummy0/status");
+
+    // The response string also contains information about the absolute file name in the file system
+    // and the line number, which we don't want to test. So we check for the beginning and the end separately.
+    std::string referenceStringStart = "starting device1 init\n"
+                                       "SystemExit: 1";
+    std::string referenceStringEnd = "!!! Dummy0 initialisation FAILED!";
+    CHECK_TIMEOUT((initMessage.readLatest(), std::string(initMessage).find(referenceStringStart) == 0), 20000);
+    BOOST_CHECK(std::string(initMessage).rfind(referenceStringEnd) ==
+        std::string(initMessage).size() - referenceStringEnd.size());
+
+    BOOST_CHECK((deviceStatus.readLatest(), deviceStatus == 1));
+
+    (void)std::filesystem::remove("producePythonDeviceInitError2");
+
+    // recovery
+    std::string referenceString = "starting device1 init\ndevice1 init successful\nDummy0 initialisation SUCCESS!";
+    CHECK_TIMEOUT((initMessage.readLatest(), std::string(initMessage)) == referenceString, 20000);
+    CHECK_TIMEOUT((deviceStatus.readLatest(), deviceStatus == 0), 500);
+  }
+
+  /********************************************************************************************************************/
+
 } // namespace Tests::testPythonInitialisationHandler
