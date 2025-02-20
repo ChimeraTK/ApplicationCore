@@ -90,18 +90,22 @@ namespace Tests::testPythonInitialisationHandler {
     for(int i = 0; i < 3; ++i) {
       produceErrorFile.seekp(0);
       produceErrorFile << i << std::flush;
-      std::string referenceString = "starting device1 init\n"
-                                    "error initialising device: " +
-          std::to_string(i) +
-          "\n"
-          "!!! Dummy0 initialisation FAILED!";
-      CHECK_TIMEOUT((initMessage.readLatest(), std::string(initMessage) == referenceString), 20000);
-      BOOST_TEST(std::string(initMessage) == referenceString);
+
+      // The response string also contains information about the absolute file name in the file system
+      // and the line number, which we don't want to test. So we check for the beginning and the end separately.
+      std::string referenceStringStart = "starting device1 init\n"
+                                         "specific error information\n"
+                                         "RuntimeError: error initialising device: " +
+          std::to_string(i);
+      std::string referenceStringEnd = "!!! Dummy0 initialisation FAILED!";
+      CHECK_TIMEOUT((initMessage.readLatest(), std::string(initMessage).find(referenceStringStart) == 0), 20000);
+      BOOST_CHECK(std::string(initMessage).rfind(referenceStringEnd) ==
+          std::string(initMessage).size() - referenceStringEnd.size());
+
       BOOST_CHECK((deviceStatus.readLatest(), deviceStatus == 1));
-      std::cout << "device status " << deviceStatus << std::endl;
     }
 
-    (void)std::filesystem::remove("producePythonDevice1InitError");
+    (void)std::filesystem::remove("producePythonDeviceInitError1");
 
     // recovery
     std::string referenceString = "starting device1 init\ndevice1 init successful\nDummy0 initialisation SUCCESS!";

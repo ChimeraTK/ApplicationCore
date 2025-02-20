@@ -44,7 +44,6 @@ namespace ChimeraTK {
     pybind11::gil_scoped_acquire gil;
 
     auto locals = py::dict("loggername"_a = _deviceAlias);
-    int exitCode{};
     std::string output;
     try {
       locals["script"] = py::module_::import(_moduleName.c_str());
@@ -62,22 +61,17 @@ namespace ChimeraTK {
         init_script_log = io.StringIO()
         l.addHandler(logging.StreamHandler(init_script_log))
 
-        exit_code = script.initDevice(l)
+        script.initDevice(l)
       )",
           py::globals(), locals);
 
-      py::print(locals);
       auto logHandler = locals["init_script_log"];
       output = logHandler.attr("getvalue")().cast<std::string>();
-      exitCode = locals["exit_code"].cast<int>();
-      std::cout << "DEBUG: PyInitHandler exit code: " << exitCode << std::endl;
     }
     catch(std::exception& e) {
-      throw ChimeraTK::logic_error(
-          "Caught exception while executing \"" + _script + "\" for device " + _deviceAlias + ": " + e.what());
-    }
-
-    if(exitCode != 0) {
+      auto logHandler = locals["init_script_log"];
+      output = logHandler.attr("getvalue")().cast<std::string>();
+      output += e.what();
       output += "!!! " + _deviceAlias + " initialisation FAILED!";
       _scriptOutput = output;
       _scriptOutput.write();
