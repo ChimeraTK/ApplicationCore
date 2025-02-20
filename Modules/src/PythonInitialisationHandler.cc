@@ -7,11 +7,9 @@
 #include <pybind11/gil.h>
 
 #include <ChimeraTK/Exception.h>
+
 namespace py = pybind11;
 using namespace py::literals;
-
-// #include <functional>
-// #include <utility>
 
 namespace ChimeraTK {
 

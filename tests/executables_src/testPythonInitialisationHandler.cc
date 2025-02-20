@@ -6,6 +6,7 @@
 #include "DeviceModule.h"
 #include "PythonInitialisationHandler.h"
 #include "TestFacility.h"
+#include <pybind11/embed.h>
 
 #include <boost/test/included/unit_test.hpp>
 
@@ -45,7 +46,7 @@ namespace Tests::testPythonInitialisationHandler {
   /********************************************************************************************************************/
 
   BOOST_FIXTURE_TEST_CASE(testSuccess, Fixture) {
-    (void)std::filesystem::remove("continuePythonDevice1Init");
+    std::cout << "======= testSuccess =======" << std::endl;
     (void)std::filesystem::remove("producePythonDeviceInitError1");
     (void)std::filesystem::remove("producePythonDeviceInitError2");
 
@@ -76,12 +77,12 @@ namespace Tests::testPythonInitialisationHandler {
   /********************************************************************************************************************/
 
   BOOST_FIXTURE_TEST_CASE(testException, Fixture) {
+    std::cout << "======= testException =======" << std::endl;
     std::ofstream produceErrorFile; // If the file exists, the script produces an error
     produceErrorFile.open("producePythonDeviceInitError1", std::ios::out);
 
     testFacility.runApplication();
 
-    // testApp.dumpConnections();
     auto initMessage = testFacility.getScalar<std::string>("/Devices/Dummy0/initScriptOutput");
     auto deviceStatus = testFacility.getScalar<int>("/Devices/Dummy0/status");
 
@@ -119,12 +120,12 @@ namespace Tests::testPythonInitialisationHandler {
   /********************************************************************************************************************/
 
   BOOST_FIXTURE_TEST_CASE(testExit, Fixture) {
+    std::cout << "======= testExit =======" << std::endl;
     std::ofstream produceErrorFile; // If the file exists, the script produces an error
     produceErrorFile.open("producePythonDeviceInitError2", std::ios::out);
 
     testFacility.runApplication();
 
-    // testApp.dumpConnections();
     auto initMessage = testFacility.getScalar<std::string>("/Devices/Dummy0/initScriptOutput");
     auto deviceStatus = testFacility.getScalar<int>("/Devices/Dummy0/status");
 
@@ -142,6 +143,49 @@ namespace Tests::testPythonInitialisationHandler {
     (void)std::filesystem::remove("producePythonDeviceInitError2");
 
     // recovery
+    std::string referenceString = "starting device1 init\ndevice1 init successful\nDummy0 initialisation SUCCESS!";
+    CHECK_TIMEOUT((initMessage.readLatest(), std::string(initMessage)) == referenceString, 20000);
+    CHECK_TIMEOUT((deviceStatus.readLatest(), deviceStatus == 0), 500);
+  }
+
+  /********************************************************************************************************************/
+
+  BOOST_FIXTURE_TEST_CASE(testGil, Fixture) {
+    std::cout << "======= testGil =======" << std::endl;
+    std::ofstream produceErrorFile; // If the file exists, the script produces an error
+    produceErrorFile.open("producePythonDeviceInitError2", std::ios::out);
+
+    testFacility.runApplication();
+
+    auto initMessage = testFacility.getScalar<std::string>("/Devices/Dummy0/initScriptOutput");
+    auto deviceStatus = testFacility.getScalar<int>("/Devices/Dummy0/status");
+
+    // pre-check: device is in failing state
+    std::string referenceStringEnd = "!!! Dummy0 initialisation FAILED!";
+    CHECK_TIMEOUT((initMessage.readLatest(),
+                      std::string(initMessage).rfind(referenceStringEnd) ==
+                          std::string(initMessage).size() - referenceStringEnd.size()),
+        20000);
+    BOOST_CHECK((deviceStatus.readLatest(), deviceStatus == 1));
+
+    // The actual check: Test that we can acquire the GIL
+    std::atomic<bool> gilAcquired{false};
+    auto gilGetter = std::async(std::launch::async, [&]() {
+      pybind11::gil_scoped_acquire gil;
+      gilAcquired = true;
+    });
+    CHECK_TIMEOUT(gilAcquired, 20000);
+    if(!gilAcquired) {
+      std::cout << "Could not get the python global interpreter lock.\n"
+                << " Terminating now as there is no way of properly ending this test without waiting forever."
+                << std::endl;
+      std::terminate();
+    }
+    gilGetter.wait();
+
+    // recovery
+    (void)std::filesystem::remove("producePythonDeviceInitError2");
+
     std::string referenceString = "starting device1 init\ndevice1 init successful\nDummy0 initialisation SUCCESS!";
     CHECK_TIMEOUT((initMessage.readLatest(), std::string(initMessage)) == referenceString, 20000);
     CHECK_TIMEOUT((deviceStatus.readLatest(), deviceStatus == 0), 500);

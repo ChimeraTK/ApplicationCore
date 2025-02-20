@@ -16,7 +16,7 @@ foreach(testExecutableSrcFile ${testExecutables})
   # do not link against the boost unit test library, the tests are not written for it!
   target_compile_definitions(${executableName} PRIVATE CHIMERATK_INSIDE_APPLICATION_CORE)
   target_link_libraries(${executableName}
-    PRIVATE ${PROJECT_NAME} ChimeraTK::ChimeraTK-ControlSystemAdapter PkgConfig::LibXML++ ${HDF5_LIBRARIES})
+    PRIVATE ${PROJECT_NAME} ChimeraTK::ChimeraTK-ControlSystemAdapter PkgConfig::LibXML++ ${HDF5_LIBRARIES}pybind11::embed)
   target_compile_definitions(${executableName} PRIVATE CHIMERATK_INSIDE_APPLICATION_CORE)
   add_test(${executableName} ${executableName})
 endforeach(testExecutableSrcFile)
@@ -31,6 +31,7 @@ foreach(testExecutableSrcFile ${manualTestExecutables})
   # do not link against the boost unit test library, the tests are not written for it!
   target_link_libraries(${executableName}
     PRIVATE ${PROJECT_NAME} ChimeraTK::ChimeraTK-ControlSystemAdapter PkgConfig::LibXML++ ${HDF5_LIBRARIES})
+
   target_compile_definitions(${executableName} PRIVATE CHIMERATK_INSIDE_APPLICATION_CORE)
 endforeach(testExecutableSrcFile)
 
