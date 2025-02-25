@@ -5,7 +5,10 @@
 #include "Application.h"
 #include "RecoveryHelper.h"
 
+#include <ChimeraTK/NDRegisterAccessor.h>
 #include <ChimeraTK/NDRegisterAccessorDecorator.h>
+
+#include <boost/smart_ptr/shared_ptr.hpp>
 
 namespace ChimeraTK {
 
@@ -15,7 +18,7 @@ namespace ChimeraTK {
   class ExceptionHandlingDecorator : public ChimeraTK::NDRegisterAccessorDecorator<UserType> {
    public:
     /**
-     * Decorate the accessors which is handed in the constuctor.
+     * Decorate the accessors which is handed in the constructor.
      * All information to get the DeviceModule and to create a recovery accessor are
      * taken from the VariableNetworkNode.
      */

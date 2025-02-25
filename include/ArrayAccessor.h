@@ -6,6 +6,7 @@
 #include "InversionOfControlAccessor.h"
 
 #include <ChimeraTK/OneDRegisterAccessor.h>
+#include <ChimeraTK/SystemTags.h>
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/thread.hpp>
@@ -131,6 +132,15 @@ namespace ChimeraTK {
     using ArrayAccessor<UserType>::operator=;
   };
 
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  struct ArrayOutputReverseRecovery : public ArrayAccessor<UserType> {
+    [[deprecated]] ArrayOutputReverseRecovery(Module* owner, const std::string& name, std::string unit,
+        size_t nElements, const std::string& description, const std::unordered_set<std::string>& tags = {});
+    ArrayOutputReverseRecovery() = default;
+    using ArrayAccessor<UserType>::operator=;
+  };
   /********************************************************************************************************************/
   /********************************************************************************************************************/
   /* Implementations below this point                                                                                 */
@@ -269,6 +279,17 @@ namespace ChimeraTK {
       const std::string& description, const std::unordered_set<std::string>& tags)
   : ArrayAccessor<UserType>(
         owner, name, {VariableDirection::feeding, true}, unit, nElements, UpdateMode::push, description, tags) {}
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  ArrayOutputReverseRecovery<UserType>::ArrayOutputReverseRecovery(Module* owner, const std::string& name,
+      std::string unit, size_t nElements, const std::string& description, const std::unordered_set<std::string>& tags)
+  : ArrayAccessor<UserType>(
+        owner, name, {VariableDirection::feeding, true}, unit, nElements, UpdateMode::push, description, tags) {
+    this->addTag(ChimeraTK::SystemTags::reverseRecovery);
+  }
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/

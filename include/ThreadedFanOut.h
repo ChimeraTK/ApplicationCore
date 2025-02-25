@@ -5,9 +5,16 @@
 #include "Application.h"
 #include "FanOut.h"
 #include "InternalModule.h"
+#include "ReverseRecoveryDecorator.h"
 
 #include <ChimeraTK/NDRegisterAccessor.h>
 #include <ChimeraTK/ReadAnyGroup.h>
+#include <ChimeraTK/SupportedUserTypes.h>
+#include <ChimeraTK/SystemTags.h>
+
+#include <boost/smart_ptr/shared_ptr.hpp>
+
+#include <string>
 
 namespace ChimeraTK {
 
@@ -32,7 +39,7 @@ namespace ChimeraTK {
      * separate thread. */
     virtual void run();
 
-    VersionNumber readInitialValues();
+    VersionNumber readInitialValues(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor);
 
    protected:
     /** Thread handling the synchronisation, if needed */
@@ -60,6 +67,7 @@ namespace ChimeraTK {
     /** Thread handling the synchronisation, if needed */
     boost::thread _thread;
 
+    boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> _initialValueProvider;
     std::vector<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>> _inputChannels;
 
     // using ThreadedFanOut<UserType>::_network;
@@ -130,7 +138,7 @@ namespace ChimeraTK {
     _testableModeReached = true;
 
     ChimeraTK::VersionNumber version{nullptr};
-    version = readInitialValues();
+    version = readInitialValues(FanOut<UserType>::_impl);
     while(true) {
       // send out copies to slaves
       boost::this_thread::interruption_point();
@@ -156,13 +164,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  VersionNumber ThreadedFanOut<UserType>::readInitialValues() {
+  VersionNumber ThreadedFanOut<UserType>::readInitialValues(
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor) {
     Application::getInstance().getTestableMode().unlock("readInitialValues");
-    FanOut<UserType>::_impl->read();
+    accessor->read();
     if(!Application::getInstance().getTestableMode().testLock()) {
       Application::getInstance().getTestableMode().lock("readInitialValues");
     }
-    return FanOut<UserType>::_impl->getVersionNumber();
+    return accessor->getVersionNumber();
   }
 
   /********************************************************************************************************************/
@@ -174,6 +183,8 @@ namespace ChimeraTK {
       ConsumerImplementationPairs<UserType> const& consumerImplementationPairs)
   : ThreadedFanOut<UserType>(feedingImpl, consumerImplementationPairs) {
     _inputChannels.push_back(feedingImpl);
+    // By default, we take the initial value from the feeder
+    _initialValueProvider = feedingImpl;
     for(auto el : consumerImplementationPairs) {
       ThreadedFanOutWithReturn<UserType>::addSlave(el.first, el.second);
     }
@@ -187,6 +198,12 @@ namespace ChimeraTK {
     // TODO Adding slaves is currently by done by the ThreadedFanOut base class constructor.
     //      Refactor constructors and addSlaves for all FanOuts?
     // FanOut<UserType>::addSlave(slave, consumer);
+
+    if(consumer.getTags().contains(ChimeraTK::SystemTags::reverseRecovery)) {
+      _initialValueProvider = slave;
+      // FIXME: Do we need to check here that there is only one reverse recovery accessor
+    }
+
     if(consumer.getDirection().withReturn) {
       _inputChannels.push_back(slave);
     }
@@ -206,10 +223,9 @@ namespace ChimeraTK {
     }
     accessors[FanOut<UserType>::_impl->getId()] = FanOut<UserType>::_impl;
 
-    TransferElementID changedVariable = FanOut<UserType>::_impl->getId();
-    VersionNumber version{nullptr};
+    TransferElementID changedVariable = _initialValueProvider->getId();
 
-    version = readInitialValues();
+    auto version = readInitialValues(_initialValueProvider);
 
     ReadAnyGroup group(_inputChannels.begin(), _inputChannels.end());
 
@@ -227,6 +243,7 @@ namespace ChimeraTK {
         }
 
         bool dataLoss = accessor->writeDestructively(version);
+
         if(dataLoss) {
           Application::incrementDataLossCounter(accessor->getName());
         }

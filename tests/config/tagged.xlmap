@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<logicalNameMap>
+  <redirectedRegister name="taggedReadOnly">
+    <targetDevice>baseDevice</targetDevice>
+    <targetRegister>readOnly</targetRegister>
+    <plugin name="tagModifier">
+      <parameter name="set">_ChimeraTK_DeviceRegister_reverseRecovery</parameter>
+    </plugin>
+  </redirectedRegister>
+  <redirectedRegister name="taggedReadWrite">
+    <targetDevice>baseDevice</targetDevice>
+    <targetRegister>readWrite</targetRegister>
+    <plugin name="tagModifier">
+      <parameter name="set">_ChimeraTK_DeviceRegister_reverseRecovery</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="taggedWriteOnly">
+    <targetDevice>baseDevice</targetDevice>
+    <targetRegister>writeOnly</targetRegister>
+    <plugin name="tagModifier">
+      <parameter name="set">_ChimeraTK_DeviceRegister_reverseRecovery</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="untagged">
+    <targetDevice>baseDevice</targetDevice>
+    <targetRegister>secondReadWrite</targetRegister>
+  </redirectedRegister>
+</logicalNameMap>
