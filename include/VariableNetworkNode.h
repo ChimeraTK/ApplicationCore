@@ -246,7 +246,7 @@ namespace ChimeraTK {
     /** Pointer to the module owning this node */
     EntityOwner* owningModule{nullptr};
 
-    /** Hash which idientifies a circular network. 0 if the node is not part if a circular dependency. */
+    /** Hash which identifies a circular network. 0 if the node is not part if a circular dependency. */
     size_t circularNetworkHash{0};
 
     /** Model representation of this variable */
