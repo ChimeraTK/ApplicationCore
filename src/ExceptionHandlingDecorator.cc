@@ -3,10 +3,10 @@
 #include "ExceptionHandlingDecorator.h"
 
 #include "DeviceManager.h"
+#include "RecoveryHelper.h"
 
 #include <ChimeraTK/SystemTags.h>
-
-#include <functional>
+#include <ChimeraTK/TransferElement.h>
 
 namespace ChimeraTK {
 
@@ -45,9 +45,16 @@ namespace ChimeraTK {
       // add recovery accessor to DeviceManager so the last known value is restored during device recovery, unless
       // the data type is Void, in which case there is no value to recover and writing will likely trigger some unwanted
       // action.
-      if(!std::is_same<UserType, ChimeraTK::Void>::value &&
-          !networkNode.getTags().contains(ChimeraTK::SystemTags::skipOnDeviceRecovery)) {
+      if(networkNode.getTags().contains(ChimeraTK::SystemTags::reverseRecovery)) {
+        _recoveryHelper->recoveryDirection = RecoveryHelper::Direction::fromDevice;
+      }
+
+      if(!std::is_same<UserType, ChimeraTK::Void>::value) {
         deviceManager->addRecoveryAccessor(_recoveryHelper);
+      }
+
+      if(_direction.withReturn && _recoveryAccessor->isReadable()) {
+        deviceManager->_readRegisterPaths.emplace_back(registerName);
       }
     }
     else if(_direction.dir == VariableDirection::feeding) {
@@ -129,7 +136,7 @@ namespace ChimeraTK {
         {
           auto recoverylock{deviceManager->getRecoverySharedLock()};
           // the transfer was successful or doPostRead did not throw and we reach this point,
-          // so we matk these data as written
+          // so we mark these data as written
           _recoveryHelper->wasWritten = true;
         } // end scope for recovery lock
       }
