@@ -11,9 +11,11 @@
 
 #include <boost/thread/latch.hpp>
 
+#include <barrier>
+
 namespace ChimeraTK {
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Implements access to a ChimeraTK::Device.
    */
@@ -33,15 +35,21 @@ namespace ChimeraTK {
      * when trying to interact with this device. It is primarily used by the ExceptionHandlingDecorator, but also user
      * modules can report exception and trigger the recovery mechanism like this.
      */
-    void reportException(std::string errMsg);
+    void reportException(const std::string& errMsg);
 
     void prepare() override;
+
+    /**
+     * Wrapper around the actual main loop implementation to add unsubscribing from the barrier to allow a clean
+     * application termination.
+     */
+    void mainLoop() override;
 
     /**
      * This functions tries to open the device and set the deviceError. Once done it notifies the waiting thread(s).
      * The function is running an endless loop inside its own thread (moduleThread).
      */
-    void mainLoop() override;
+    void mainLoopImpl();
 
     DataValidity getDataValidity() const override { return DataValidity::ok; }
 
@@ -197,8 +205,36 @@ namespace ChimeraTK {
 
     template<typename UserType>
     friend class ExceptionHandlingDecorator;
+
+    /**
+     * The shared state of a group of devices which are recovered together.
+     */
+    struct RecoveryGroup {
+      /**
+       *  A barrier is used to ensure that each stage of the recovery process is completed
+       * by all DeviceManagers in the recovery group before the next stage is started.
+       * \li Detection of the error condition
+       * \li Re-opening of the device
+       * \li Running the initialisation handlers
+       * \li Writing the recovery accessors
+       */
+      std::shared_ptr<std::barrier<>> recoveryBarrier;
+      std::atomic<size_t> errorAtStage{0};                   ///< Flag whether recovery has to be repeated.
+      std::set<DeviceBackend::BackendID> recoveryBackendIDs; ///< All backend ID in this recovery group
+      Application* app{nullptr}; ///< Pointer to the application to access the recovery lock.
+
+      // Wait at the barrier for a stage to complete.
+      // Returns 'true' if the stage was completed successfully.
+      bool waitForRecoveryStage(size_t stage);
+
+      void setErrorAtStage(size_t stage);
+
+      // contains a barrier to wait that all threads have seen the change.
+      void resetErrorStage();
+    };
+    std::shared_ptr<RecoveryGroup> _recoveryGroup;
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK

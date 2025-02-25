@@ -1,0 +1,14 @@
+<logicalNameMap>
+  <module name="Integers">
+    <redirectedRegister name="signed16">
+      <targetDevice><par>target1</par></targetDevice>
+      <targetRegister>/Integers/signed16</targetRegister>
+      <plugin name="forceReadOnly"/>
+    </redirectedRegister>
+    <redirectedRegister name="unsigned16">
+      <targetDevice><par>target2</par></targetDevice>
+      <targetRegister>/Integers/unsigned16</targetRegister>
+      <plugin name="forceReadOnly"/>
+    </redirectedRegister>
+  </module>
+</logicalNameMap>

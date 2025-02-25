@@ -1,0 +1,15 @@
+Raw1 (ExceptionDummy:1?map=test3.map)
+Raw2 (ExceptionDummy:2?map=test3.map)
+Raw3 (ExceptionDummy:3?map=test3.map)
+Raw4 (ExceptionDummy:4?map=test3.map)
+Raw5 (ExceptionDummy:5?map=test3.map)
+
+Use1 (logicalNameMap?map=oneTarget.xlmap&target=Raw1)
+Use2 (logicalNameMap?map=oneTarget.xlmap&target=Raw2)
+Use3 (logicalNameMap?map=oneTarget.xlmap&target=Raw3)
+Use4 (logicalNameMap?map=oneTarget.xlmap&target=Raw4)
+Use5 (logicalNameMap?map=oneTarget.xlmap&target=Raw5)
+
+Use12  (logicalNameMap?map=twoTargets.xlmap&target1=Raw1&target2=Raw2)
+Use34  (logicalNameMap?map=twoTargetsRO.xlmap&target1=Raw3&target2=Raw4)
+Use23  (logicalNameMap?map=twoTargets.xlmap&target1=Raw2&target2=Raw3)
