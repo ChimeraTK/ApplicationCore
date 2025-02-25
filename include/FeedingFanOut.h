@@ -86,7 +86,6 @@ namespace ChimeraTK {
     ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D[0].resize(numberOfElements);
 
     if(_withReturn) {
-      this->_readQueue = cppext::future_queue<void>(3);
       this->_accessModeFlags = {AccessMode::wait_for_new_data};
     }
 
@@ -203,7 +202,7 @@ namespace ChimeraTK {
 
     if(!hasNewData && type != TransferType::read) {
       // No post read handling for readNonBlocking and readLatest if there was no new data, since there was actually no
-      // corresponding read operation on any of the unterlying accessors (just checking the notification queue).
+      // corresponding read operation on any of the underlying accessors (just checking the notification queue).
       return;
     }
 

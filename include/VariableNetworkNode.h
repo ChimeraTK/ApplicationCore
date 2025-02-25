@@ -50,7 +50,7 @@ namespace ChimeraTK {
 
     /** Constructor for a Device node */
     VariableNetworkNode(const std::string& name, const std::string& devAlias, const std::string& regName,
-        UpdateMode mode, VariableDirection direction, const std::type_info& valTyp = typeid(AnyType),
+        UpdateMode mode, VariableDirection direction, bool isReadable, const std::type_info& valTyp = typeid(AnyType),
         size_t nElements = 0);
 
     /** Constructor for a ControlSystem node */
@@ -138,6 +138,7 @@ namespace ChimeraTK {
     void setNumberOfElements(size_t nElements) const;
     [[nodiscard]] size_t getNumberOfElements() const;
     [[nodiscard]] ChimeraTK::TransferElementAbstractor& getAppAccessorNoType() const;
+    [[nodiscard]] bool isReadable() const;
 
     [[nodiscard]] Model::ProcessVariableProxy getModel() const;
 
@@ -179,7 +180,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  /** Special tag to designate that an output should not automatically take over DataValidity of its owning module.
+  /** Special tag to designate that a node should not automatically take over DataValidity of its owning module.
    *  Use e.g. for a StatusOutput which should indicate errors. */
   constexpr auto explicitDataValidityTag = "_ChimeraTK_NodeHasExplicitDataValidity";
 
@@ -236,11 +237,12 @@ namespace ChimeraTK {
     /** Device information if type == Device */
     std::string deviceAlias;
     std::string registerName;
+    bool isReadable{true};
 
     /** Number of elements in the variable. 0 means not yet decided. */
     size_t nElements{0};
 
-    /** Set of tags  if type == Application */
+    /** Set of tags if type == Application || type == Device */
     std::unordered_set<std::string> tags;
 
     /** Map to store triggered versions of this node. The map key is the trigger
@@ -250,7 +252,7 @@ namespace ChimeraTK {
     /** Pointer to the module owning this node */
     EntityOwner* owningModule{nullptr};
 
-    /** Hash which idientifies a circular network. 0 if the node is not part if a circular dependency. */
+    /** Hash which identifies a circular network. 0 if the node is not part if a circular dependency. */
     size_t circularNetworkHash{0};
 
     /** Model representation of this variable */
