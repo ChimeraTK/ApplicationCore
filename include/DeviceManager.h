@@ -233,6 +233,13 @@ namespace ChimeraTK {
       void resetErrorStage();
     };
     std::shared_ptr<RecoveryGroup> _recoveryGroup;
+
+    /**
+     * The globalDeviceOpenMutex is a work around for backends which do not implement open() in a thread-safe
+     *  manner. This seems to be the case for most backends currently, hence it was decided to implement this
+     * workaround for now (see g).
+     */
+    static std::mutex globalDeviceOpenMutex;
   };
 
   /********************************************************************************************************************/
