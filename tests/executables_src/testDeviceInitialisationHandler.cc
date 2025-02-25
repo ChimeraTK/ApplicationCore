@@ -55,7 +55,7 @@ namespace Tests::testDeviceInitialisationHandler {
     ctk::DeviceModule dev{this, deviceCDD.data(), "", &initialiseReg1};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
     std::cout << "testBasicInitialisation" << std::endl;
@@ -102,6 +102,8 @@ namespace Tests::testDeviceInitialisationHandler {
     // ****************************************************************
     BOOST_CHECK_EQUAL(var1, 42);
   }
+
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
     std::cout << "testMultipleInitialisationHandlers" << std::endl;
@@ -152,6 +154,8 @@ namespace Tests::testDeviceInitialisationHandler {
     BOOST_CHECK_EQUAL(var2, 47); // the initialiser used reg1+5, so order matters
     BOOST_CHECK_EQUAL(var3, 52); // the initialiser used reg2+5, so order matters
   }
+
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testInitialisationException) {
     std::cout << "testInitialisationException" << std::endl;
@@ -257,6 +261,30 @@ namespace Tests::testDeviceInitialisationHandler {
         "", 10000);
     // Finally check that the 20 arrives on the device
     CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/REG4"), 20, 10000);
+  }
+
+  /********************************************************************************************************************/
+  /**
+   * \anchor testExceptionHandling_b_3_2_2_1 \ref exceptionHandling_b_3_2_2_1 "B.3.2.2.1"
+   * The device is closed before the initialisation handler is called.
+   */
+
+  BOOST_AUTO_TEST_CASE(TestDeviceClosedInInitHandler) {
+    // Check that the device has been closed when the init handler is called.
+    std::cout << "TestDeviceClosedInInitHandler" << std::endl;
+
+    TestApplication app;
+    // Cache the opened state in the init handler in a variable. BOOST_CHECK is not threat safe and
+    // cannot directly be used in the handler.
+    bool isOpenedInInitHandler{
+        true}; // We expect false, so we set the starting value to true to know the test is sensitive.
+    app.dev.addInitialisationHandler([&](ctk::Device& d) { isOpenedInInitHandler = d.isOpened(); });
+
+    ctk::TestFacility testFacility(app);
+    testFacility.runApplication();
+    // The testFacility in testable mode guarantees that the device has been opened at this point. So we know the init
+    // handler with the test has been run at this point.
+    BOOST_CHECK(!isOpenedInInitHandler);
   }
 
 } // namespace Tests::testDeviceInitialisationHandler

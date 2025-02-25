@@ -172,7 +172,7 @@ namespace ChimeraTK {
      * Version number of the last exception. Only access under the error mutex. Intentionally not initialised with
      * nullptr. It is propagated as long as the device is not successfully opened.
      */
-    VersionNumber _exceptionVersionNumber = {};
+    VersionNumber _exceptionVersionNumber;
 
     /** The error flag whether the device is functional. protected by the errorMutex. */
     bool _deviceHasError{true};
@@ -251,6 +251,17 @@ namespace ChimeraTK {
 
       /** Indicate that all DeviceManagers in the group should terminate their main loop. */
       std::atomic<bool> shutdown{false};
+
+      /**
+       * Protect the device open/close actions in a group. It ensures that no other DeviceManager can perform an open
+       * or close action while this lock is being held. This is needed in several places:
+       *
+       * 1. Devices are closed when running init handlers, and no other DeviceManager must close the device to run its
+       *    init handler while an initi handler is accessing the device.
+       * 2. In backends, open() and close() are not thread safe. This prevents from concurrent open() calls, concurrent
+       *    close() calls, and calling open()/close() a the same time from different threads.
+       */
+      std::mutex deviceOpenCloseMutex;
 
       // Wait at the barrier for a stage to complete.
       // Returns 'true' if the stage was completed successfully.

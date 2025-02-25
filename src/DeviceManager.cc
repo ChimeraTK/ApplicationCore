@@ -186,11 +186,7 @@ namespace ChimeraTK {
         _owner->getTestableMode().lock("Attempt open/recover device");
 
         try {
-          // The globalDeviceOpenMutex is a work around for backends which do not implement open() in a thread-safe
-          // manner. This seems to be the case for most backends currently, hence it was decided to implement this
-          // workaround for now (see #11478).
-          static std::mutex globalDeviceOpenMutex;
-          std::lock_guard<std::mutex> globalDeviceOpenLock(globalDeviceOpenMutex);
+          std::lock_guard<std::mutex> deviceOpenLock(_recoveryGroup->deviceOpenCloseMutex);
           _device.open();
         }
         catch(ChimeraTK::runtime_error& e) {
@@ -244,7 +240,14 @@ namespace ChimeraTK {
       // [Spec: 2.3.2] Run initialisation handlers
       try {
         for(auto& initHandler : _initialisationHandlers) {
-          initHandler(_device);
+          {
+            // Hold the open/close lock while executing the init handler, so no other
+            // DeviceManager closes the device while the init handler is running.
+            std::lock_guard<std::mutex> openCloseLock(_recoveryGroup->deviceOpenCloseMutex);
+            _device.close();
+            initHandler(_device);
+            _device.open();
+          }
         }
       }
       catch(ChimeraTK::runtime_error& e) {
@@ -494,8 +497,6 @@ namespace ChimeraTK {
     }
     assert(!_moduleThread.joinable());
   }
-
-  /********************************************************************************************************************/
 
   /********************************************************************************************************************/
 
