@@ -158,7 +158,7 @@ namespace Tests::testExceptionHandling {
    * \anchor testExceptionHandling_b_2_2_3 \ref exceptionHandling_b_2_2_3 "B.2.2.3"
    *
    * "Read operations without AccessMode::wait_for_new_data are skipped until the device is fully recovered again (cf.
-   * 3.1). The first skipped read operation will have a new VersionNumber."
+   * B.3.2). The first skipped read operation will have a new VersionNumber."
    *
    * Test directly inside ApplicationModule
    */
@@ -194,7 +194,7 @@ namespace Tests::testExceptionHandling {
    * \anchor testExceptionHandling_b_2_2_3_TrFO \ref exceptionHandling_b_2_2_3 "B.2.2.3"
    *
    * "Read operations without AccessMode::wait_for_new_data are skipped until the device is fully recovered again (cf.
-   * 3.1). The first skipped read operation will have a new VersionNumber."
+   * B.3.2). The first skipped read operation will have a new VersionNumber."
    *
    * Test inside a TriggerFanOut. This is mainly necessary to make sure the ExceptionHandlingDecorator is used for
    * variables inside the TriggerFanOut.
@@ -523,8 +523,8 @@ namespace Tests::testExceptionHandling {
   /**
    * \anchor testExceptionHandling_b_2_2_4_3 \ref exceptionHandling_b_2_2_4_3 "B.2.2.4.3"
    *
-   * "After the device is fully recovered (cf. 3.1), the current value is (synchronously) read from the device. This is
-   * the first value received by the accessor after an exception."
+   * "After the device is fully recovered (cf. B.3.2), the current value is (synchronously) read from the device. This
+   * is the first value received by the accessor after an exception."
    */
   BOOST_FIXTURE_TEST_CASE(B_2_2_4_3, Fixture) {
     std::cout << "B_2_2_4_3 - value after recovery" << std::endl;
@@ -654,7 +654,7 @@ namespace Tests::testExceptionHandling {
    * \anchor testExceptionHandling_b_2_3_5 \ref exceptionHandling_b_2_3_5 "B.2.3.5"
    *
    * "It is guaranteed that the write takes place before the device is considered fully recovered again and other
-   * transfers are allowed (cf. 3.1)."
+   * transfers are allowed (cf. B.3.2)."
    */
   BOOST_FIXTURE_TEST_CASE(B_2_3_5, Fixture) {
     std::cout << "B_2_3_5 - write before deviceBecameFunctional" << std::endl;
@@ -704,19 +704,19 @@ namespace Tests::testExceptionHandling {
 
   /**********************************************************************************************************************/
   /**
-   * \anchor testExceptionHandling_b_3_1_1 \ref exceptionHandling_b_3_1_1 "B.3.1.1"
+   * \anchor testExceptionHandling_b_3_2_2 \ref exceptionHandling_b_3_2_2 "B.3.2.2"
    *
-   * [The recovery procedure involves] "the execution of so-called initialisation handlers (see 3.2)."
+   * [The recovery procedure involves] "the execution of so-called initialisation handlers (see 3.3)."
    *
-   * \anchor testExceptionHandling_b_3_2 \ref exceptionHandling_b_3_2 "B.3.2"
+   * \anchor testExceptionHandling_b_3_3 \ref exceptionHandling_b_3_3 "B.3.3"
    *
    * "Any number of initialisation handlers can be added to the DeviceModule in the user code. Initialisation handlers
    * are callback functions which will be executed when a device is opened for the first time and after a device
    * recovers from an exception, before any application-initiated transfers are executed (including delayed write
    * transfers). See DeviceModule::addInitialisationHandler()."
    */
-  BOOST_FIXTURE_TEST_CASE(B_3_1_1, Fixture_initHandlers) {
-    std::cout << "B_3_1_1 - initialisation handlers" << std::endl;
+  BOOST_FIXTURE_TEST_CASE(B_3_2_2, Fixture_initHandlers) {
+    std::cout << "B_3_2_2 - initialisation handlers" << std::endl;
 
     // device opened for first time
     BOOST_CHECK(initHandler1Called);
@@ -754,14 +754,14 @@ namespace Tests::testExceptionHandling {
 
   /**********************************************************************************************************************/
   /**
-   * \anchor testExceptionHandling_b_3_1_2 \ref exceptionHandling_b_3_1_2 "B.3.1.2"
+   * \anchor testExceptionHandling_b_3_2_3 \ref exceptionHandling_b_3_2_3 "B.3.2.3"
    *
    * [After calling the initialisation handlers are called, the recovery procedure involves] "restoring all registers
    * that have been written since the start of the application with their latest values. The register values are
    * restored in the same order they were written. Registers of the type ChimeraTK::Void are not written."
    */
-  BOOST_FIXTURE_TEST_CASE(B_3_1_2, Fixture_initHandlers) {
-    std::cout << "B_3_1_2 - delayed writes" << std::endl;
+  BOOST_FIXTURE_TEST_CASE(B_3_2_3, Fixture_initHandlers) {
+    std::cout << "B_3_2_3 - delayed writes" << std::endl;
 
     // trigger runtime error
     deviceBackend->throwExceptionOpen = true;
@@ -826,13 +826,13 @@ namespace Tests::testExceptionHandling {
 
   /**********************************************************************************************************************/
   /**
-   * \anchor testExceptionHandling_b_3_1_3 \ref exceptionHandling_b_3_1_3 "B.3.1.3"
+   * \anchor testExceptionHandling_b_3_2_5\ref exceptionHandling_b_3_2_5 "B.3.2.5"
    *
    * [During recovery,] "the asynchronous read transfers of the device are (re-)activated by calling
    * Device::activateAsyncReads()" [after the delayed writes are executed.]
    */
-  BOOST_FIXTURE_TEST_CASE(B_3_1_3, Fixture_initHandlers) {
-    std::cout << "B_3_1_3 - reactivate async reads" << std::endl;
+  BOOST_FIXTURE_TEST_CASE(B_3_2_5, Fixture_initHandlers) {
+    std::cout << "B_3_2_5 - reactivate async reads" << std::endl;
 
     // Test async read after first open
     BOOST_CHECK(deviceBackend->asyncReadActivated());
@@ -862,13 +862,13 @@ namespace Tests::testExceptionHandling {
 
   /**********************************************************************************************************************/
   /**
-   * \anchor testExceptionHandling_b_3_1_4 \ref exceptionHandling_b_3_1_4 "B.3.1.4"
+   * \anchor testExceptionHandling_b_3_2_6 \ref exceptionHandling_b_3_2_6 "B.3.2.6"
    *
    * [As last part of the recovery,] "Devices/<alias>/deviceBecameFunctional is written to inform any module subscribing
    * to this variable about the finished recovery."
    */
-  BOOST_FIXTURE_TEST_CASE(B_3_1_4, Fixture_initHandlers) {
-    std::cout << "B_3_1_4 - deviceBecameFunctional" << std::endl;
+  BOOST_FIXTURE_TEST_CASE(B_3_2_6, Fixture_initHandlers) {
+    std::cout << "B_3_2_6 - deviceBecameFunctional" << std::endl;
 
     // (Note: deviceBecameFunctional is read inside the fixture for the first time!)
     BOOST_CHECK(deviceBackend->asyncReadActivated());
