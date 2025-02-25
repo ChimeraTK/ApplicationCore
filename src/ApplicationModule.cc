@@ -5,8 +5,10 @@
 
 #include "Application.h"
 #include "CircularDependencyDetector.h"
+#include "Flags.h"
 #include "ModuleGroup.h"
 
+#include <ChimeraTK/SystemTags.h>
 #include <ChimeraTK/Utilities.h>
 
 #include <iterator>
@@ -122,10 +124,17 @@ namespace ChimeraTK {
         }
       }
     }
+
     for(auto& variable : getAccessorListRecursive()) {
-      if(variable.getDirection().dir != VariableDirection::consuming) {
+      // According to spec, readback values are not considered in the distribution of initial values
+      // However, if they are declared as providing reverse recovery, they have to be considered.
+      auto doNotSkipInIvDistribution = variable.getDirection().dir == VariableDirection::feeding &&
+          variable.getDirection().withReturn && variable.getTags().contains(ChimeraTK::SystemTags::reverseRecovery);
+
+      if(!doNotSkipInIvDistribution && variable.getDirection().dir != VariableDirection::consuming) {
         continue;
       }
+
       if(variable.getMode() == UpdateMode::push) {
         Application::getInstance().getTestableMode().unlock("Initial value read for push-type " + variable.getName());
         Application::getInstance()._circularDependencyDetector.registerDependencyWait(variable);
