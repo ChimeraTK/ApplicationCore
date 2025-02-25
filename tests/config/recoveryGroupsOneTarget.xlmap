@@ -1,0 +1,18 @@
+<logicalNameMap>
+  <module name="MyModule">
+    <redirectedRegister name="readBack">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>/MyModule/readBack</targetRegister>
+    </redirectedRegister>
+  </module>
+  <module name="Integers">
+    <redirectedRegister name="unsigned32">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>/Integers/unsigned32</targetRegister>
+    </redirectedRegister>
+    <redirectedRegister name="pushedSigned32">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>/PushType/signed32</targetRegister>
+    </redirectedRegister>
+   </module>
+</logicalNameMap>

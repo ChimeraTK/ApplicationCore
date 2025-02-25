@@ -11,9 +11,12 @@
 
 #include <boost/thread/latch.hpp>
 
+#include <barrier>
+#include <memory>
+
 namespace ChimeraTK {
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Implements access to a ChimeraTK::Device.
    */
@@ -33,15 +36,21 @@ namespace ChimeraTK {
      * when trying to interact with this device. It is primarily used by the ExceptionHandlingDecorator, but also user
      * modules can report exception and trigger the recovery mechanism like this.
      */
-    void reportException(std::string errMsg);
+    void reportException(const std::string& errMsg);
 
     void prepare() override;
+
+    /**
+     * Wrapper around the actual main loop implementation to add unsubscribing from the barrier to allow a clean
+     * application termination.
+     */
+    void mainLoop() override;
 
     /**
      * This functions tries to open the device and set the deviceError. Once done it notifies the waiting thread(s).
      * The function is running an endless loop inside its own thread (moduleThread).
      */
-    void mainLoop() override;
+    void mainLoopImpl();
 
     DataValidity getDataValidity() const override { return DataValidity::ok; }
 
@@ -197,8 +206,67 @@ namespace ChimeraTK {
 
     template<typename UserType>
     friend class ExceptionHandlingDecorator;
+
+    /**
+     * The shared state of a group of DeviceManagers which are recovering together.
+     */
+    struct RecoveryGroup {
+      enum class RecoveryStage { NO_ERROR, DETECTION, OPEN, INIT_HANDLERS, RECOVERY_ACCESSORS, CLEAR_ERROR };
+      static constexpr const char* stageToString(RecoveryStage stage) {
+        switch(stage) {
+          case RecoveryStage::NO_ERROR:
+            return "RecoveryStage::NO_ERROR";
+          case RecoveryStage::DETECTION:
+            return "RecoveryStage::DETECTION";
+          case RecoveryStage::OPEN:
+            return "RecoveryStage::OPEN";
+          case RecoveryStage::INIT_HANDLERS:
+            return "RecoveryStage::INIT_HANDLERS";
+          case RecoveryStage::RECOVERY_ACCESSORS:
+            return "RecoveryStage::RECOVERY_ACCESSORS";
+          case RecoveryStage::CLEAR_ERROR:
+            return "RecoveryStage::CLEAR_ERROR";
+        }
+        throw ChimeraTK::logic_error("Unknown recovery stage, cannot convert to string.");
+      }
+
+      std::set<DeviceBackend::BackendID> recoveryBackendIDs; ///< All backend ID in this recovery group
+      Application* app{nullptr}; ///< Pointer to the application to access the recovery lock.
+
+      /**
+       * A barrier is used to ensure that each stage of the recovery process is completed
+       * by all DeviceManagers in the recovery group before the next stage is started.
+       * \li Detection of the error condition
+       * \li Re-opening of the device
+       * \li Running the initialisation handlers
+       * \li Writing the recovery accessors
+       */
+      std::barrier<> recoveryBarrier{1};
+
+      /** Indicator whether recovery has to be repeated, and from which barrier.
+       * It is important to specify at which stage the error has occured to avoid a race condition (see code comment in
+       * the \ref waitForRecoveryStage_comment waitForRecoveryStage implementation).
+       */
+      std::atomic<RecoveryStage> errorAtStage{RecoveryStage::NO_ERROR};
+
+      /** Indicate that all DeviceManagers in the group should terminate their main loop. */
+      std::atomic<bool> shutdown{false};
+
+      // Wait at the barrier for a stage to complete.
+      // Returns 'true' if the stage was completed successfully.
+      bool waitForRecoveryStage(RecoveryStage stage);
+
+      void setErrorAtStage(RecoveryStage stage);
+
+      // contains a barrier to wait that all threads have seen the change.
+      void resetErrorAtStage();
+    };
+    std::shared_ptr<RecoveryGroup> _recoveryGroup;
+
+    /// Helper function for better error messages
+    std::string stageToString(RecoveryGroup::RecoveryStage stage);
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK

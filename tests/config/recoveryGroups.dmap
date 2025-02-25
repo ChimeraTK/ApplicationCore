@@ -1,0 +1,10 @@
+Raw1 (WriteBlockingDummy:1?map=recoveryGroups.map)
+Raw2 (WriteBlockingDummy:2?map=recoveryGroups.map)
+Raw3 (ExceptionDummy:3?map=recoveryGroups.map)
+
+Use1 (OpenCountingLmapBackend?map=recoveryGroupsOneTarget.xlmap&target=Raw1)
+Use2 (OpenCountingLmapBackend?map=recoveryGroupsOneTarget.xlmap&target=Raw2)
+Use3 (logicalNameMap?map=recoveryGroupsOneTarget.xlmap&target=Raw3)
+
+Use12  (OpenCountingLmapBackend?map=recoveryGroupsTwoTargets.xlmap&target1=Raw1&target2=Raw2)
+Use12ReadOnly  (OpenCountingLmapBackend?map=recoveryGroupsTwoTargetsRO.xlmap&target1=Raw1&target2=Raw2)

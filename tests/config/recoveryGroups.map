@@ -1,0 +1,9 @@
+# both registers have the same address, so whatever we write to actuator we can read back from readBack
+/MyModule/actuator                1  0 4 1 32 0 1 RW
+/MyModule/readBack                1  4 4 1 32 0 1 RO
+/Integers/signed32                1  8 4 1 32 0 1 RW
+/Integers/unsigned32              1 12 4 1 32 0 0 RW
+/Integers/signed16                1 16 4 1 16 0 1 RW
+/Integers/unsigned16              1 20 4 1 16 0 0 RW
+# Push type needed for testRecoveryGroups
+/PushType/signed32                1 24 4 1 32 0 1 INTERRUPT0
