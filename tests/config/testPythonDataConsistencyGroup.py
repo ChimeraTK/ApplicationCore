@@ -41,6 +41,10 @@ class Sender(ac.ApplicationModule):
         self.setCurrentVersionNumber(ac.VersionNumber())
         self.out2.write()
 
+        # for last part of test, with MatchingMode.historized
+        self.out2.write()
+        self.out1.write()
+
 
 class Receiver(ac.ApplicationModule):
 
@@ -88,7 +92,16 @@ class Receiver(ac.ApplicationModule):
             change = rag.readAny()
             isValid = dg.update(change)
             assert not isValid
+
+            # Note, it is fine to create a DataConsistencyGroup with MatchingMode.historized after MatchingMode.exact,
+            # but the other way round would not be valid.
+            dgh = ac.DataConsistencyGroup(self.in1, self.in2, mode=ac.MatchingMode.historized, histLen = 1)
+            change = rag.readAny()
+            isValid = dgh.update(change)
+            assert isValid
+
             self.testError.setAndWrite("ok")
+
 
         except AssertionError as e:
             print("Exception: "+"\n".join(traceback.format_exception(e)))
