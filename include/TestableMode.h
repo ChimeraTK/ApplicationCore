@@ -143,6 +143,14 @@ namespace ChimeraTK::detail {
 
       void doPostRead(TransferType type, bool hasNewData) override;
 
+      [[nodiscard]] boost::shared_ptr<NDRegisterAccessor<UserType>> decorateDeepInside(
+          [[maybe_unused]] std::function<boost::shared_ptr<NDRegisterAccessor<UserType>>(
+              const boost::shared_ptr<NDRegisterAccessor<UserType>>&)> factory) override {
+        // By returning nullptr, we forbid that DataConsistencyDecorator is put inside of this decorator.
+        // It would mess up our data updates counting scheme.
+        return {};
+      }
+
      protected:
       using ChimeraTK::NDRegisterAccessor<UserType>::buffer_2D;
       using ChimeraTK::NDRegisterAccessorDecorator<UserType>::_target;
