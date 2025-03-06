@@ -23,6 +23,8 @@ namespace ChimeraTK {
     for(const auto& [alias, existingDeviceManager] : Application::getInstance().getDeviceManagerMap()) {
       for(auto backendID : involvedBackends) {
         if(existingDeviceManager->_recoveryGroup->recoveryBackendIDs.contains(backendID)) {
+          // Note: The next line modifies involvedBackends while iterating over it.
+          // This is only allowed because the iteration is terminated with a break below!
           involvedBackends.merge(existingDeviceManager->_recoveryGroup->recoveryBackendIDs);
           existingDeviceManager->_recoveryGroup = _recoveryGroup;
           ++recoveryGroupSize;

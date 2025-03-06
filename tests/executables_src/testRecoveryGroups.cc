@@ -94,17 +94,6 @@ struct TestApp1 : ctk::Application {
 };
 
 /**********************************************************************************************************************/
-struct TestApp2 : public TestApp1 {
-  TestApp2() : TestApp1("twoRecoveryGroups") {}
-  ~TestApp2() override { shutdown(); }
-
-  // Add another device which "connects" the two recovery groups in App1.
-  // Now there is no device which has both the backends raw1 and raw4, but they are in the same
-  // recovery group.
-  DeviceModuleWithPath mappedDev23{this, "Use23"};
-};
-
-/**********************************************************************************************************************/
 
 template<class APP>
 struct Fixture {
@@ -192,6 +181,18 @@ BOOST_FIXTURE_TEST_CASE(Test3RecoveryGroups, Fixture<TestApp1>) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
   }
 }
+
+/**********************************************************************************************************************/
+
+struct TestApp2 : public TestApp1 {
+  TestApp2() : TestApp1("twoRecoveryGroups") {}
+  ~TestApp2() override { shutdown(); }
+
+  // Add another device which "connects" the two recovery groups in App1.
+  // Now there is no device which has both the backends raw1 and raw4, but they are in the same
+  // recovery group.
+  DeviceModuleWithPath mappedDev23{this, "Use23"};
+};
 
 /**********************************************************************************************************************/
 
