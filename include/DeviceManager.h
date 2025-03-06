@@ -211,7 +211,7 @@ namespace ChimeraTK {
      */
     struct RecoveryGroup {
       /**
-       *  A barrier is used to ensure that each stage of the recovery process is completed
+       * A barrier is used to ensure that each stage of the recovery process is completed
        * by all DeviceManagers in the recovery group before the next stage is started.
        * \li Detection of the error condition
        * \li Re-opening of the device
