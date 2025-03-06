@@ -16,7 +16,7 @@ namespace ChimeraTK {
     _device(deviceAliasOrCDD), _deviceAliasOrCDD(deviceAliasOrCDD), _owner{application} {
     auto involvedBackends = _device.getInvolvedBackendIDs();
     _recoveryGroup =
-        std::make_shared<RecoveryGroup>(std::make_shared<std::barrier<>>(1), true, involvedBackends, _owner);
+        std::make_shared<RecoveryGroup>(std::make_unique<std::barrier<>>(1), true, involvedBackends, _owner);
 
     // loop all already existing DeviceManagers and look for shared backends
     size_t recoveryGroupSize{1};
@@ -34,7 +34,7 @@ namespace ChimeraTK {
     if(recoveryGroupSize > 1) {
       // update the recovery group
       _recoveryGroup->recoveryBackendIDs = involvedBackends;
-      _recoveryGroup->recoveryBarrier = std::make_shared<std::barrier<>>(recoveryGroupSize);
+      _recoveryGroup->recoveryBarrier = std::make_unique<std::barrier<>>(recoveryGroupSize);
     }
   }
 

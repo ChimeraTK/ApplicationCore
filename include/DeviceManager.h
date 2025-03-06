@@ -12,6 +12,7 @@
 #include <boost/thread/latch.hpp>
 
 #include <barrier>
+#include <memory>
 
 namespace ChimeraTK {
 
@@ -218,7 +219,7 @@ namespace ChimeraTK {
        * \li Running the initialisation handlers
        * \li Writing the recovery accessors
        */
-      std::shared_ptr<std::barrier<>> recoveryBarrier;
+      std::unique_ptr<std::barrier<>> recoveryBarrier;
       std::atomic<size_t> errorAtStage{0};                   ///< Flag whether recovery has to be repeated.
       std::set<DeviceBackend::BackendID> recoveryBackendIDs; ///< All backend ID in this recovery group
       Application* app{nullptr}; ///< Pointer to the application to access the recovery lock.
