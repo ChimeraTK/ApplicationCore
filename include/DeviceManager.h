@@ -211,6 +211,24 @@ namespace ChimeraTK {
      * The shared state of a group of DeviceManagers which are recovering together.
      */
     struct RecoveryGroup {
+      enum class RecoveryStage { NO_ERROR, DETECTION, OPEN, INIT_HANDERS, RECOVERY_ACCESSORS };
+      static constexpr const char* stageToString(RecoveryStage stage) {
+        switch(stage) {
+          case RecoveryStage::NO_ERROR:
+            return "RecoveryStage::NO_ERROR";
+          case RecoveryStage::DETECTION:
+            return "RecoveryStage::DETECTION";
+          case RecoveryStage::OPEN:
+            return "RecoveryStage::OPEN";
+          case RecoveryStage::INIT_HANDERS:
+            return "RecoveryStage::INIT_HANDLERS";
+          case RecoveryStage::RECOVERY_ACCESSORS:
+            return "RecoveryStage::RECOVERY_ACCESSORS";
+          default:
+            return "";
+        }
+      }
+
       /**
        * A barrier is used to ensure that each stage of the recovery process is completed
        * by all DeviceManagers in the recovery group before the next stage is started.
@@ -220,7 +238,10 @@ namespace ChimeraTK {
        * \li Writing the recovery accessors
        */
       std::unique_ptr<std::barrier<>> recoveryBarrier;
-      std::atomic<size_t> errorAtStage{0};                   ///< Flag whether recovery has to be repeated.
+
+      /** Indicator whether recovery has to be repeated, and from which barrier. */
+      std::atomic<RecoveryStage> errorAtStage{RecoveryStage::NO_ERROR};
+
       std::set<DeviceBackend::BackendID> recoveryBackendIDs; ///< All backend ID in this recovery group
       Application* app{nullptr}; ///< Pointer to the application to access the recovery lock.
 
@@ -237,14 +258,17 @@ namespace ChimeraTK {
 
       // Wait at the barrier for a stage to complete.
       // Returns 'true' if the stage was completed successfully.
-      bool waitForRecoveryStage(size_t stage);
+      bool waitForRecoveryStage(RecoveryStage stage);
 
-      void setErrorAtStage(size_t stage);
+      void setErrorAtStage(RecoveryStage stage);
 
       // contains a barrier to wait that all threads have seen the change.
-      void resetErrorStage();
+      void resetErrorAtStage();
     };
     std::shared_ptr<RecoveryGroup> _recoveryGroup;
+
+    /// Helper function for better error messages
+    std::string stageToString(RecoveryGroup::RecoveryStage stage);
   };
 
   /********************************************************************************************************************/

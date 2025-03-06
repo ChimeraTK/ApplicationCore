@@ -15,8 +15,8 @@ namespace ChimeraTK {
   : ApplicationModule(application, "/Devices/" + Utilities::escapeName(deviceAliasOrCDD, false), ""),
     _device(deviceAliasOrCDD), _deviceAliasOrCDD(deviceAliasOrCDD), _owner{application} {
     auto involvedBackends = _device.getInvolvedBackendIDs();
-    _recoveryGroup =
-        std::make_shared<RecoveryGroup>(std::make_unique<std::barrier<>>(1), true, involvedBackends, _owner);
+    _recoveryGroup = std::make_shared<RecoveryGroup>(
+        std::make_unique<std::barrier<>>(1), RecoveryGroup::RecoveryStage::NO_ERROR, involvedBackends, _owner);
 
     // loop all already existing DeviceManagers and look for shared backends
     size_t recoveryGroupSize{1};
@@ -162,13 +162,13 @@ namespace ChimeraTK {
 
     while(true) {
       /****************************************************************************************************************/
-      // Sync point (stage 1 complete):
+      // Sync point DETECTION:
       // The manager has seen an error and (re)starts recovery. Wait until all
       // involved DeviceManagers have seen it.
       /****************************************************************************************************************/
-      _recoveryGroup->waitForRecoveryStage(1);
-      // Reset error stage to 0. Contains a barrier to make sure all threads have seen it.
-      _recoveryGroup->resetErrorStage();
+      _recoveryGroup->waitForRecoveryStage(RecoveryGroup::RecoveryStage::DETECTION);
+      // Reset error stage to NO_ERROR. Contains a barrier to make sure all threads have seen it.
+      _recoveryGroup->resetErrorAtStage();
 
       // Starting stage 2
       // [Spec: 2.3.1] (Re)-open the device.
@@ -221,14 +221,15 @@ namespace ChimeraTK {
       }
 
       /****************************************************************************************************************/
-      // Sync point (stage 2 complete): Device opened. Synchronise before stating init scripts.
+      // Sync point (stage OPEN complete): Device opened. Synchronise before stating init scripts.
       /****************************************************************************************************************/
-      assert(_recoveryGroup->errorAtStage == 0); // no other thread must have modified the flag until here.
+      assert(_recoveryGroup->errorAtStage ==
+          RecoveryGroup::RecoveryStage::NO_ERROR); // no other thread must have modified the flag until here.
 
-      // no need to check the return value. No error reported in stage 2
-      _recoveryGroup->waitForRecoveryStage(2);
+      // no need to check the return value. No error reported in the OPEN stage.
+      _recoveryGroup->waitForRecoveryStage(RecoveryGroup::RecoveryStage::OPEN);
 
-      // Starting stage 3
+      // Starting stage INIT_HANDLERS
       // [Spec: 2.3.2] Run initialisation handlers
       try {
         for(auto& initHandler : _initialisationHandlers) {
@@ -252,21 +253,22 @@ namespace ChimeraTK {
         }
         // Mark recovery as failed. All DeviceManagers will return to the beginning of the recovery after the next
         // synchronisation point
-        _recoveryGroup->setErrorAtStage(3);
+        _recoveryGroup->setErrorAtStage(RecoveryGroup::RecoveryStage::INIT_HANDERS);
       }
 
       /****************************************************************************************************************/
-      // Sync point (stage 3 complete): Wait until all init scripts are done before writing recovery accessors.
+      // Sync point (stage INIT_HANDLERS complete): Wait until all init scripts are done before writing recovery
+      // accessors.
       /****************************************************************************************************************/
-      if(!_recoveryGroup->waitForRecoveryStage(3)) {
-        // If another thread has already continued and set an error for recovery stage 4,
-        // waitForRecoveryStage(3) will still return 'true', so all threads arrive at the
-        // barrier for stage 4.
-        // If there was error in stage 3, all threads will see it here and continue.
+      if(!_recoveryGroup->waitForRecoveryStage(RecoveryGroup::RecoveryStage::INIT_HANDERS)) {
+        // If another thread has already continued and set an error for recovery stage RECOVERY_ACCESSORS,
+        // waitForRecoveryStage(INIT_HANDLERS) will still return 'true', so all threads arrive at the
+        // barrier for stage RECOVERY_ACCESSORS.
+        // If there was error in stage INIT_HANDLERS, all threads will see it here and continue.
         continue;
       }
 
-      // Starting stage 4
+      // Starting stage RECOVERY_ACCESSORS
       // Write all recovery accessors
       // We are now entering the critical recovery section. It is protected by the recovery mutex until the
       // deviceHasError flag has been cleared.
@@ -292,13 +294,13 @@ namespace ChimeraTK {
         }
         // Mark recovery as failed. All DeviceManagers will return to the beginning of the recovery after the next
         // synchronisation point
-        _recoveryGroup->setErrorAtStage(4);
+        _recoveryGroup->setErrorAtStage(RecoveryGroup::RecoveryStage::RECOVERY_ACCESSORS);
       }
 
       /****************************************************************************************************************/
-      // Sync point (stage 4 complete): All recovery accessors written.
+      // Sync point (stage RECOVERY_ACCESSORS complete): All recovery accessors have been written.
       /****************************************************************************************************************/
-      if(!_recoveryGroup->waitForRecoveryStage(4)) {
+      if(!_recoveryGroup->waitForRecoveryStage(RecoveryGroup::RecoveryStage::RECOVERY_ACCESSORS)) {
         // In case of error, jump back to the beginning of the recovery/open procedure
         continue;
       }
@@ -476,11 +478,12 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  bool DeviceManager::RecoveryGroup::waitForRecoveryStage(size_t stage) {
-    app->getTestableMode().unlock("Sync after after " + std::to_string(stage));
+  bool DeviceManager::RecoveryGroup::waitForRecoveryStage(RecoveryStage stage) {
+    app->getTestableMode().unlock(std::string("DeviceManager: Sync device recovery after ") + stageToString(stage));
     recoveryBarrier->arrive_and_wait();
     boost::this_thread::interruption_point();
-    app->getTestableMode().lock("Starting stage " + std::to_string(stage + 1));
+    app->getTestableMode().lock(
+        std::string("DeviceManager: Starting next device recovery stage after ") + stageToString(stage));
 
     // Return false if errorAtStage is the current stage.
     return !(errorAtStage == stage);
@@ -488,20 +491,20 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void DeviceManager::RecoveryGroup::setErrorAtStage(size_t stage) {
-    assert((errorAtStage == 0) || (errorAtStage == stage));
+  void DeviceManager::RecoveryGroup::setErrorAtStage(RecoveryStage stage) {
+    assert((errorAtStage == RecoveryStage::NO_ERROR) || (errorAtStage == stage));
     errorAtStage = stage;
   }
 
   /********************************************************************************************************************/
 
-  void DeviceManager::RecoveryGroup::resetErrorStage() {
-    errorAtStage = 0;
+  void DeviceManager::RecoveryGroup::resetErrorAtStage() {
+    errorAtStage = RecoveryStage::NO_ERROR;
 
-    app->getTestableMode().unlock("Sync before resetting recovery group stage");
+    app->getTestableMode().unlock("DeviceManager: Sync after resetting recovery group stage");
     recoveryBarrier->arrive_and_wait();
     boost::this_thread::interruption_point();
-    app->getTestableMode().lock("Starting recovery");
+    app->getTestableMode().lock("DeviceManager: Starting recovery");
   }
 
 } // namespace ChimeraTK
