@@ -278,6 +278,9 @@ BOOST_FIXTURE_TEST_CASE(TestRecoverySteps, Fixture<TestApp1>) {
   raw1.open();
   raw2.open();
 
+  // CHECK_TIMEOUT contains a "!" in the macro, which together with the following expression could be simplified
+  // according to  DeMorgan's theorem, and clang-tidy complains...
+  // NOLINTNEXTLINE readability-simplify-boolean-expr
   CHECK_TIMEOUT(
       (raw1.read<int32_t>("MyModule/actuator") == 1) || (raw2.read<int32_t>("MyModule/actuator") == 1), 10000);
   usleep(100000); // Wait 110 ms for the recovery values. It should not happen, so don't wait too long...
