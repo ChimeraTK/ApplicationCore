@@ -207,7 +207,7 @@ namespace ChimeraTK {
     friend class ExceptionHandlingDecorator;
 
     /**
-     * The shared state of a group of devices which are recovered together.
+     * The shared state of a group of DeviceManagers which are recovering together.
      */
     struct RecoveryGroup {
       /**
