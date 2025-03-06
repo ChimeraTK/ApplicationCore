@@ -224,10 +224,12 @@ namespace ChimeraTK {
             return "RecoveryStage::INIT_HANDLERS";
           case RecoveryStage::RECOVERY_ACCESSORS:
             return "RecoveryStage::RECOVERY_ACCESSORS";
-          default:
-            return "";
         }
+        throw ChimeraTK::logic_error("Unknown recovery stage, cannot convert to string.");
       }
+
+      std::set<DeviceBackend::BackendID> recoveryBackendIDs; ///< All backend ID in this recovery group
+      Application* app{nullptr}; ///< Pointer to the application to access the recovery lock.
 
       /**
        * A barrier is used to ensure that each stage of the recovery process is completed
@@ -237,13 +239,10 @@ namespace ChimeraTK {
        * \li Running the initialisation handlers
        * \li Writing the recovery accessors
        */
-      std::unique_ptr<std::barrier<>> recoveryBarrier;
+      std::barrier<> recoveryBarrier{1};
 
       /** Indicator whether recovery has to be repeated, and from which barrier. */
       std::atomic<RecoveryStage> errorAtStage{RecoveryStage::NO_ERROR};
-
-      std::set<DeviceBackend::BackendID> recoveryBackendIDs; ///< All backend ID in this recovery group
-      Application* app{nullptr}; ///< Pointer to the application to access the recovery lock.
 
       /**
        * Protect the device open/close actions in a group. It ensures that no other DeviceManager can perform an open

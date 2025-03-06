@@ -15,11 +15,11 @@ namespace ChimeraTK {
   : ApplicationModule(application, "/Devices/" + Utilities::escapeName(deviceAliasOrCDD, false), ""),
     _device(deviceAliasOrCDD), _deviceAliasOrCDD(deviceAliasOrCDD), _owner{application} {
     auto involvedBackends = _device.getInvolvedBackendIDs();
-    _recoveryGroup = std::make_shared<RecoveryGroup>(
-        std::make_unique<std::barrier<>>(1), RecoveryGroup::RecoveryStage::NO_ERROR, involvedBackends, _owner);
+    // Create a recovery group with barrier size 1.
+    _recoveryGroup = std::make_shared<RecoveryGroup>(involvedBackends, _owner);
 
     // loop all already existing DeviceManagers and look for shared backends
-    size_t recoveryGroupSize{1};
+    int64_t recoveryGroupSize{1};
     for(const auto& [alias, existingDeviceManager] : Application::getInstance().getDeviceManagerMap()) {
       for(auto backendID : involvedBackends) {
         if(existingDeviceManager->_recoveryGroup->recoveryBackendIDs.contains(backendID)) {
@@ -36,7 +36,10 @@ namespace ChimeraTK {
     if(recoveryGroupSize > 1) {
       // update the recovery group
       _recoveryGroup->recoveryBackendIDs = involvedBackends;
-      _recoveryGroup->recoveryBarrier = std::make_unique<std::barrier<>>(recoveryGroupSize);
+      // The barrier does not allow modification of the number of participants.
+      // We put a placement new to replace it. Before this, we have to call the constructor of the old instance.
+      _recoveryGroup->recoveryBarrier.~barrier();
+      new(&_recoveryGroup->recoveryBarrier) std::barrier(recoveryGroupSize);
     }
   }
 
@@ -142,7 +145,7 @@ namespace ChimeraTK {
       mainLoopImpl();
     }
     catch(...) {
-      _recoveryGroup->recoveryBarrier->arrive_and_drop();
+      _recoveryGroup->recoveryBarrier.arrive_and_drop();
       throw;
     }
   }
@@ -480,7 +483,7 @@ namespace ChimeraTK {
 
   bool DeviceManager::RecoveryGroup::waitForRecoveryStage(RecoveryStage stage) {
     app->getTestableMode().unlock(std::string("DeviceManager: Sync device recovery after ") + stageToString(stage));
-    recoveryBarrier->arrive_and_wait();
+    recoveryBarrier.arrive_and_wait();
     boost::this_thread::interruption_point();
     app->getTestableMode().lock(
         std::string("DeviceManager: Starting next device recovery stage after ") + stageToString(stage));
@@ -502,7 +505,7 @@ namespace ChimeraTK {
     errorAtStage = RecoveryStage::NO_ERROR;
 
     app->getTestableMode().unlock("DeviceManager: Sync after resetting recovery group stage");
-    recoveryBarrier->arrive_and_wait();
+    recoveryBarrier.arrive_and_wait();
     boost::this_thread::interruption_point();
     app->getTestableMode().lock("DeviceManager: Starting recovery");
   }
