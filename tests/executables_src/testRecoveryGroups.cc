@@ -25,14 +25,10 @@ namespace ctk = ChimeraTK;
 #include <string>
 
 // A test application with 7 devices in 3 recovery groups.
-// It also contains intialisation handlers to test the barriers which ensure
-// that each recovery step completes for all devices before continuing with the next step.
-struct TestApp1 : ctk::Application {
-  explicit TestApp1(std::string const& name = "threeRecoveryGroups") : Application(name) {
-    // FIXME: Split the app into individual use cases. It has become to cluttered and complex.
-    singleDev2.dev.addInitialisationHandler([&](ctk::Device&) { init1("Raw2"); });
-  }
-  ~TestApp1() override { shutdown(); }
+// It is used in all tests, and extended with initialisation handlers and further backends where needed.
+struct BasicTestApp : ctk::Application {
+  explicit BasicTestApp(const std::string& name = "BasicTestApp") : Application(name) {}
+  ~BasicTestApp() override { shutdown(); }
 
   ctk::SetDMapFilePath path{"recoveryGroups.dmap"};
 
@@ -45,43 +41,9 @@ struct TestApp1 : ctk::Application {
     ctk::DeviceModule dev{this, cdd, "/somepath/dummyTrigger", initHandler};
   };
 
-  // The execution of the first init functions can be blocked.
-  // The first init handler will run through, the second one will block.
-  std::atomic<bool> blockInit{false};
-  std::atomic<size_t> initCounter{0};
-  std::barrier<> arrivedInInitHandler{2};
-  void init1(const std::string& device) {
-    // cheap implementation with busy waiting
-    if(blockInit) {
-      if(++initCounter == 2) {
-        (void)arrivedInInitHandler.arrive();
-
-        while(blockInit) {
-          usleep(100);
-        }
-      }
-    }
-    ctk::Device d{device};
-    d.open();
-    d.write("/MyModule/actuator", 1);
-  }
-
-  // The second init function writes a 2 without waiting.
-  std::atomic<bool> failInit2{false};
-  std::atomic<size_t> failCounter{0};
-  void init2() {
-    if(failInit2) {
-      throw ctk::runtime_error("Intentional failure " + std::to_string(++TestApp1::failCounter) + " in init2()");
-    }
-    // will be overwritten, but keep because for the restructuring
-    ctk::Device d{"Raw2"};
-    d.open();
-    d.write("/MyModule/actuator", 2);
-  }
-
   // First recovery group: Two devices with one backend each, and a logical name map which uses them both.
-  DeviceModuleWithPath singleDev1{this, "Use1", [&](ctk::Device&) { init1("Raw1"); }};
-  DeviceModuleWithPath singleDev2{this, "Use2", [&](ctk::Device&) { init2(); }};
+  DeviceModuleWithPath singleDev1{this, "Use1"};
+  DeviceModuleWithPath singleDev2{this, "Use2"};
   DeviceModuleWithPath mappedDev12{this, "Use12"};
 
   // Second recovery group with use3 and use4
@@ -113,7 +75,7 @@ struct Fixture {
 /**********************************************************************************************************************/
 
 // Test that App1 actually has three different recovery groups: [Use1, Use2, Use12], [Use3, Use4, Use34] and [Use5]
-BOOST_FIXTURE_TEST_CASE(Test3RecoveryGroups, Fixture<TestApp1>) {
+BOOST_FIXTURE_TEST_CASE(Test3RecoveryGroups, Fixture<BasicTestApp>) {
   // wait until all devices are ok
   for(auto const* dev : {"Use1", "Use2", "Use3", "Use4", "Use5", "Use12", "Use34"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
@@ -184,8 +146,8 @@ BOOST_FIXTURE_TEST_CASE(Test3RecoveryGroups, Fixture<TestApp1>) {
 
 /**********************************************************************************************************************/
 
-struct TestApp2 : public TestApp1 {
-  TestApp2() : TestApp1("twoRecoveryGroups") {}
+struct TestApp2 : public BasicTestApp {
+  TestApp2() : BasicTestApp("twoRecoveryGroups") {}
   ~TestApp2() override { shutdown(); }
 
   // Add another device which "connects" the two recovery groups in App1.
@@ -225,10 +187,40 @@ BOOST_FIXTURE_TEST_CASE(Test2RecoveryGroups, Fixture<TestApp2>) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
   }
 }
+/**********************************************************************************************************************/
+
+struct TestStepsApp : BasicTestApp {
+  explicit TestStepsApp() : BasicTestApp("TestStepApp") {
+    singleDev1.dev.addInitialisationHandler([&](ctk::Device&) { init1("Raw1"); });
+    singleDev2.dev.addInitialisationHandler([&](ctk::Device&) { init1("Raw2"); });
+  }
+  ~TestStepsApp() override { shutdown(); }
+
+  // The execution of the first init functions can be blocked.
+  // The first init handler will run through, the second one will block.
+  std::atomic<bool> blockInit{false};
+  std::atomic<size_t> initCounter{0};
+  std::barrier<> arrivedInInitHandler{2};
+  void init1(const std::string& device) {
+    // cheap implementation with busy waiting
+    if(blockInit) {
+      if(++initCounter == 2) {
+        (void)arrivedInInitHandler.arrive();
+
+        while(blockInit) {
+          usleep(100);
+        }
+      }
+    }
+    ctk::Device d{device};
+    d.open();
+    d.write("/MyModule/actuator", 1);
+  }
+};
 
 /**********************************************************************************************************************/
 
-BOOST_FIXTURE_TEST_CASE(TestRecoverySteps, Fixture<TestApp1>) {
+BOOST_FIXTURE_TEST_CASE(TestRecoverySteps, Fixture<TestStepsApp>) {
   // pre-condition: all (relevant) devices OK
   for(auto const* dev : {"Use1", "Use2"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
@@ -300,8 +292,25 @@ BOOST_FIXTURE_TEST_CASE(TestRecoverySteps, Fixture<TestApp1>) {
 }
 
 /**********************************************************************************************************************/
+struct InitFailureApp : BasicTestApp {
+  explicit InitFailureApp() : BasicTestApp("InitFailureApp") {
+    singleDev2.dev.addInitialisationHandler([&](ctk::Device&) { init2(); });
+  }
+  ~InitFailureApp() override { shutdown(); }
 
-BOOST_FIXTURE_TEST_CASE(TestInitFailure, Fixture<TestApp1>) {
+  // InitFunction to raise an error
+  std::atomic<bool> failInit2{false};
+  std::atomic<size_t> failCounter{0};
+  void init2() {
+    if(failInit2) {
+      throw ctk::runtime_error("Intentional failure " + std::to_string(++failCounter) + " in init2()");
+    }
+  }
+};
+
+/**********************************************************************************************************************/
+
+BOOST_FIXTURE_TEST_CASE(TestInitFailure, Fixture<InitFailureApp>) {
   // This test is checking that the error condition of a failure in the init handler does
   // not confuse the barrier order and lock up the manager.
 
@@ -338,7 +347,7 @@ BOOST_FIXTURE_TEST_CASE(TestInitFailure, Fixture<TestApp1>) {
 
 /**********************************************************************************************************************/
 
-BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<TestApp1>) {
+BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<BasicTestApp>) {
   // This test is checking that the error condition of a failure when writing the recovery accessors do
   // not confuse the barrier order and lock up the manager.
 
