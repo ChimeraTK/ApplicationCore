@@ -66,7 +66,7 @@ struct Fixture {
 /**********************************************************************************************************************/
 
 // Test that App1 actually has two different recovery groups: [Use1, Use2, Use12], [Use3]
-BOOST_FIXTURE_TEST_CASE(Test3RecoveryGroups, Fixture<BasicTestApp>) {
+BOOST_FIXTURE_TEST_CASE(TestRecoveryGroups, Fixture<BasicTestApp>) {
   // Pre-condition: wait until all devices are ok
   // Necessary because we are not using the testable mode
   for(auto const* dev : {"Use1", "Use2", "Use3", "Use12"}) {
@@ -92,6 +92,43 @@ BOOST_FIXTURE_TEST_CASE(Test3RecoveryGroups, Fixture<BasicTestApp>) {
   dummy1->throwExceptionRead = false;
 
   for(auto const* dev : {"Use1", "Use2", "Use12", "Use3"}) {
+    CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
+  }
+}
+
+/**********************************************************************************************************************/
+// Spec ????: all devices have to succesfully complete the OPEN stage before any one starts the init handlers.
+BOOST_FIXTURE_TEST_CASE(TestRecoveryStepOpen, Fixture<BasicTestApp>) {
+  // pre-condition: all (relevant) devices OK
+  for(auto const* dev : {"Use1", "Use2"}) {
+    CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
+  }
+  // set different value for the register written by the init handler, so we can see if the hander ran.
+  raw2.write<int32_t>("/MyModule/actuator", 16);
+
+  // Test preparation: Put backend 1 into an error state with read error.
+  auto dummy1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(raw1.getBackend());
+  dummy1->throwExceptionOpen = true;
+  dummy1->throwExceptionRead = true;
+
+  trigger.write();
+  // wait until the errors have been seen.
+  for(auto const* dev : {"Use1", "Use2"}) {
+    CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 1, 10000);
+  }
+
+  // Wait for the device 2 backend to become ok, so we know that the according DeviceManager has run the OPEN stage.
+  CHECK_TIMEOUT(raw2.isFunctional(), 10000);
+  usleep(100000); // Wait 100 ms for the init handler. It should not happen, so don't wait too long...
+
+  // The actual test: The init script of Use2 has not run.
+  BOOST_TEST(raw2.read<int32_t>("MyModule/actuator") == 16);
+
+  // Cleanup: Resolve the error and see that everything recovers.
+  dummy1->throwExceptionOpen = false;
+  dummy1->throwExceptionRead = false;
+
+  for(auto const* dev : {"Use1", "Use2"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
   }
 }
@@ -128,14 +165,15 @@ struct TestStepsApp : BasicTestApp {
 };
 
 /**********************************************************************************************************************/
-
-BOOST_FIXTURE_TEST_CASE(TestRecoverySteps, Fixture<TestStepsApp>) {
+// Spec ????: all devices have to succesfully complete the init handlers before any one starts writing recovery
+// accessors (without error in one of the init handlers)
+BOOST_FIXTURE_TEST_CASE(TestRecoveryStepInitHandlers, Fixture<TestStepsApp>) {
   // pre-condition: all (relevant) devices OK
   for(auto const* dev : {"Use1", "Use2"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
   }
 
-  // Set values for some variables. They are restored during the recovery process.
+  // While everything is functional, set values for some variables. They are restored during the recovery process.
   testFacility.writeScalar<uint32_t>("/Use1/Integers/unsigned32", 17);
   testFacility.writeScalar<uint32_t>("/Use2/Integers/unsigned32", 18);
 
@@ -144,8 +182,6 @@ BOOST_FIXTURE_TEST_CASE(TestRecoverySteps, Fixture<TestStepsApp>) {
   CHECK_TIMEOUT(raw2.read<uint32_t>("/Integers/unsigned32") == 18, 10000);
   raw1.write<uint32_t>("/Integers/unsigned32", 13);
   raw2.write<uint32_t>("/Integers/unsigned32", 14);
-  raw1.write<int32_t>("/MyModule/actuator", 15);
-  raw2.write<int32_t>("/MyModule/actuator", 16);
 
   // Block the init handler, set an error condition on 1 and trigger a read.
   testApp.blockInit = true;
@@ -162,16 +198,11 @@ BOOST_FIXTURE_TEST_CASE(TestRecoverySteps, Fixture<TestStepsApp>) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 1, 10000);
   }
 
-  // Stage 1: Although device 2 is ok, the init handler does not run because it is waiting at the barrier before the
-  // init handlers (all backends must be successfully opened)
-  CHECK_TIMEOUT(raw2.isFunctional(), 10000);
-  usleep(100000); // Wait 100 ms for the init handler. It should not happen, so don't wait too long...
-  BOOST_TEST(raw2.read<int32_t>("MyModule/actuator") == 16);
-
-  // Stage 2: Resolve the error. Check that init handler 2 goes through, but no inital values are written yet.
+  // Stage 2: Resolve the error.
   dummy1->throwExceptionOpen = false;
   dummy1->throwExceptionRead = false;
-  // wait until Use1 is in the init handler
+
+  // wait until one init handler has run, and the other is blocking
   testApp.arrivedInInitHandler.arrive_and_wait();
   assert(testApp.initCounter == 2);
   // We know one of the backends is closed when entering the init handler, so we have to re-open it.
@@ -179,14 +210,9 @@ BOOST_FIXTURE_TEST_CASE(TestRecoverySteps, Fixture<TestStepsApp>) {
   raw1.open();
   raw2.open();
 
-  // CHECK_TIMEOUT contains a "!" in the macro, which together with the following expression could be simplified
-  // according to  DeMorgan's theorem, and clang-tidy complains...
-  // NOLINTNEXTLINE readability-simplify-boolean-expr
-  CHECK_TIMEOUT(
-      (raw1.read<int32_t>("MyModule/actuator") == 1) || (raw2.read<int32_t>("MyModule/actuator") == 1), 10000);
-  usleep(100000); // Wait 110 ms for the recovery values. It should not happen, so don't wait too long...
-  BOOST_TEST(raw1.read<int32_t>("Integers/unsigned32") == 13); // recovery values not written
-  BOOST_TEST(raw2.read<int32_t>("Integers/unsigned32") == 14); // recovery values not written
+  // The actual test: none of the recovery values has been written
+  BOOST_TEST(raw1.read<int32_t>("Integers/unsigned32") == 13);
+  BOOST_TEST(raw2.read<int32_t>("Integers/unsigned32") == 14);
 
   // Stage 3: Release the blocking init handler and check that the initial values are restored.
   testApp.blockInit = false;
@@ -194,10 +220,6 @@ BOOST_FIXTURE_TEST_CASE(TestRecoverySteps, Fixture<TestStepsApp>) {
   for(auto const* dev : {"Use1", "Use2"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
   }
-  BOOST_TEST(raw2.read<int32_t>("MyModule/actuator") == 1);
-  BOOST_TEST(raw1.read<int32_t>("MyModule/actuator") == 1);
-  BOOST_TEST(raw1.read<int32_t>("Integers/unsigned32") == 17);
-  BOOST_TEST(raw2.read<int32_t>("Integers/unsigned32") == 18);
 }
 
 /**********************************************************************************************************************/
@@ -218,6 +240,8 @@ struct InitFailureApp : BasicTestApp {
 };
 
 /**********************************************************************************************************************/
+// Test Spec ???: All members of the recovery group must pass the init handlers step before any of them is writing init
+// handlers
 
 BOOST_FIXTURE_TEST_CASE(TestInitFailure, Fixture<InitFailureApp>) {
   // This test is checking that the error condition of a failure in the init handler does
@@ -269,7 +293,8 @@ struct RecoveryFailureTestApp : ctk::Application {
 };
 
 /**********************************************************************************************************************/
-
+// Test Spec ???: All members of the recovery group must pass the recovery accessors step before recovery is reported as
+// complete in any of them.
 BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<RecoveryFailureTestApp>) {
   // This test is checking that the error condition of a failure when writing the recovery accessors do
   // not confuse the barrier order and lock up the manager.
