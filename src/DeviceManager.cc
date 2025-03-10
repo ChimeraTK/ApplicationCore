@@ -224,7 +224,7 @@ namespace ChimeraTK {
       }
 
       /****************************************************************************************************************/
-      // Sync point (stage OPEN complete): Device opened. Synchronise before stating init scripts.
+      // Sync point (stage OPEN complete): Device opened. Synchronise before starting init scripts.
       /****************************************************************************************************************/
       assert(_recoveryGroup->errorAtStage ==
           RecoveryGroup::RecoveryStage::NO_ERROR); // no other thread must have modified the flag until here.

@@ -32,8 +32,8 @@ struct DeviceModuleWithPath : public ctk::ModuleGroup {
   ctk::DeviceModule dev;
 };
 
-// A test application with 7 devices in 3 recovery groups.
-// It is used in all tests, and extended with initialisation handlers and further backends where needed.
+// A test application with 4 devices in 2 recovery groups.
+// It is used in most tests, and extended with initialisation handlers where needed.
 struct BasicTestApp : ctk::Application {
   explicit BasicTestApp(const std::string& name = "BasicTestApp") : Application(name) {}
   ~BasicTestApp() override { shutdown(); }
@@ -65,7 +65,10 @@ struct Fixture {
 
 /**********************************************************************************************************************/
 
-// Test that App1 actually has two different recovery groups: [Use1, Use2, Use12], [Use3]
+// Spec XXX: Devices which have common backends are recovered together
+// Spec XXY: Devices which don't share backends are recovered independently
+//
+// Note: the tests are done together because test XXY requires exactly the same lines of code as the XXX test
 BOOST_FIXTURE_TEST_CASE(TestRecoveryGroups, Fixture<BasicTestApp>) {
   // Pre-condition: wait until all devices are ok
   // Necessary because we are not using the testable mode
@@ -80,11 +83,12 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryGroups, Fixture<BasicTestApp>) {
 
   trigger.write();
 
-  // The actual test: Check that Use1, Use2 and Use12 are in error state, while Use3 is still working
+  // The actual test: XXX Check that Use1, Use2 and Use12 are in the same recovery group and thus have seen the error
   for(auto const* dev : {"Use1", "Use2", "Use12"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 1, 10000);
   }
 
+  // Test XXY: Use3 is in a different recovery and still OK
   CHECK_TIMEOUT(testFacility.readScalar<int>("Devices/Use3/status") == 0, 10000);
 
   // Remove error condition on raw1 and recover everything
@@ -97,7 +101,7 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryGroups, Fixture<BasicTestApp>) {
 }
 
 /**********************************************************************************************************************/
-// Spec ????: all devices have to succesfully complete the OPEN stage before any one starts the init handlers.
+// Spec ????: all devices have to succesfully completed the OPEN stage before any one starts the init handlers.
 BOOST_FIXTURE_TEST_CASE(TestRecoveryStepOpen, Fixture<BasicTestApp>) {
   // pre-condition: all (relevant) devices OK
   for(auto const* dev : {"Use1", "Use2"}) {
