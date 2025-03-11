@@ -15,6 +15,7 @@
 #include <ChimeraTK/NDRegisterAccessor.h>
 #include <ChimeraTK/ScalarRegisterAccessor.h>
 #include <ChimeraTK/VoidRegisterAccessor.h>
+
 namespace ctk = ChimeraTK;
 
 #include <boost/smart_ptr/shared_ptr.hpp>
@@ -358,6 +359,69 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<RecoveryFailureTestApp
   for(auto const* dev : {"Use1", "Use2"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
   }
+}
+
+/**********************************************************************************************************************/
+
+struct IncompleteRecoveryTestApp : ctk::Application {
+  explicit IncompleteRecoveryTestApp() : Application("IncompleteRecoveryTestApp") {}
+  ~IncompleteRecoveryTestApp() override { shutdown(); }
+
+  ctk::SetDMapFilePath path{"recoveryGroups.dmap"};
+
+  std::atomic<bool> throwInInit{false};
+  std::atomic<size_t> initCounter{0};
+  std::barrier<> aboutToThrow{2};
+  void init() {
+    // cheap implementation with busy waiting
+    if(throwInInit) {
+      if(++initCounter == 2) {
+        // The other init handler has passed this point already. Wait a bit to be pretty sure it has reached
+        // the INIT_HANDLER barrier.
+        usleep(100000); // 100 ms
+
+        // Tell the test thread that we are here, about to throw the exception
+        (void)aboutToThrow.arrive();
+
+        // Jump out of the DeviceManager main loop with a thread_interrupted exception, just like all other
+        // breadpoints do
+        throw boost::thread_interrupted(); // NOLINT hicpp-exception-baseclass
+      }
+    }
+  }
+
+  // recovery group with Use1 and Use2
+  DeviceModuleWithPath singleDev1{this, "Use1"};
+  DeviceModuleWithPath singleDev2{this, "Use2"};
+  DeviceModuleWithPath mappedDev12{this, "Use12ReadOnly"};
+};
+
+/**********************************************************************************************************************/
+
+// Test Spec ???: Application exits cleanly if recovery is incomplete, in particular if a DeviceManager is waiting at
+// a barrier, and another DeviceManager in the same recovery group quits the main loop.
+BOOST_AUTO_TEST_CASE(TestIncompleteRecovery) {
+  { // open a new scope so we can test after the app goes out of scope
+    IncompleteRecoveryTestApp testApp;
+    ChimeraTK::TestFacility testFacility{testApp, /* enableTestableMode */ false};
+    testFacility.runApplication();
+
+    // pre-condition: all (relevant) devices OK
+    for(auto const* dev : {"Use1", "Use2"}) {
+      CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
+    }
+
+    testApp.throwInInit = true;
+    testApp.singleDev1.dev.reportException("reported from test");
+
+    // Wait until the init handler which will throw told us it has reached that point, so we don't end the application
+    // scope before the test is sensitive.
+    testApp.aboutToThrow.arrive_and_wait();
+
+    // now end the scope of the application
+  }
+  // The actual test: We reached this point, the test did not block
+  BOOST_CHECK(true);
 }
 
 /**********************************************************************************************************************/
