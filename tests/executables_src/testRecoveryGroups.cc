@@ -66,10 +66,16 @@ struct Fixture {
 
 /**********************************************************************************************************************/
 
-// Spec XXX: Devices which have common backends are recovered together
-// Spec XXY: Devices which don't share backends are recovered independently
-//
-// Note: the tests are done together because test XXY requires exactly the same lines of code as the XXX test
+/**
+ * \anchor testExceptionHandling_a_5_1 \ref exceptionHandling_b_5_1 "A.5.1"
+ * Devices which access the same backends form a recovery group. They commonly see exceptions and are recovered
+ * together.
+ *
+ * \anchor testExceptionHandling_a_5_2 \ref exceptionHandling_b_5_2 "A.5.2"
+ *  Recovery groups which don't share any backends behave independently.
+ *
+ * Note: the tests are done together because test A.5.2 requires exactly the same lines of code as the A.5.1 test
+ */
 BOOST_FIXTURE_TEST_CASE(TestRecoveryGroups, Fixture<BasicTestApp>) {
   // Pre-condition: wait until all devices are ok
   // Necessary because we are not using the testable mode
@@ -84,12 +90,13 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryGroups, Fixture<BasicTestApp>) {
 
   trigger.write();
 
-  // The actual test: XXX Check that Use1, Use2 and Use12 are in the same recovery group and thus have seen the error
+  // The actual test A.5.1: Check that Use1, Use2 and Use12 are in the same recovery group and thus have seen the error.
+  // Requirement for A.5.2
   for(auto const* dev : {"Use1", "Use2", "Use12"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 1, 10000);
   }
 
-  // Test XXY: Use3 is in a different recovery and still OK
+  // Test A.5.2: Use3 is in a different recovery and still OK
   CHECK_TIMEOUT(testFacility.readScalar<int>("Devices/Use3/status") == 0, 10000);
 
   // Remove error condition on raw1 and recover everything
@@ -102,7 +109,12 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryGroups, Fixture<BasicTestApp>) {
 }
 
 /**********************************************************************************************************************/
-// Spec ????: all devices have to succesfully completed the OPEN stage before any one starts the init handlers.
+
+/**
+ * \anchor testExceptionHandling_b_3_1_0 \ref exceptionHandling_b_3_1_0 "B.3.1.0"
+ * devices wait until all involved devices successfully complete the open step before starting the initialisation
+ * handler
+ */
 BOOST_FIXTURE_TEST_CASE(TestRecoveryStepOpen, Fixture<BasicTestApp>) {
   // pre-condition: all (relevant) devices OK
   for(auto const* dev : {"Use1", "Use2"}) {
@@ -140,12 +152,12 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryStepOpen, Fixture<BasicTestApp>) {
 
 /**********************************************************************************************************************/
 
-struct TestStepsApp : BasicTestApp {
-  explicit TestStepsApp() : BasicTestApp("TestStepApp") {
+struct BlockInitTestApp : BasicTestApp {
+  explicit BlockInitTestApp() : BasicTestApp("TestStepApp") {
     singleDev1.dev.addInitialisationHandler([&](ctk::Device&) { init1("Raw1"); });
     singleDev2.dev.addInitialisationHandler([&](ctk::Device&) { init1("Raw2"); });
   }
-  ~TestStepsApp() override { shutdown(); }
+  ~BlockInitTestApp() override { shutdown(); }
 
   // The execution of the first init functions can be blocked.
   // The first init handler will run through, the second one will block.
@@ -170,9 +182,12 @@ struct TestStepsApp : BasicTestApp {
 };
 
 /**********************************************************************************************************************/
-// Spec ????: all devices have to succesfully complete the init handlers before any one starts writing recovery
-// accessors (without error in one of the init handlers)
-BOOST_FIXTURE_TEST_CASE(TestRecoveryStepInitHandlers, Fixture<TestStepsApp>) {
+/**
+ * \anchor testExceptionHandling_b_3_1_1_2 \ref exceptionHandling_b_3_1_1_2 "B.3.1.1.2"
+ * DeviceManagers wait until all involved DeviceManagers successfully complete the init handler step before restoring
+ * register values
+ */
+BOOST_FIXTURE_TEST_CASE(TestRecoveryStepInitHandlers, Fixture<BlockInitTestApp>) {
   // pre-condition: all (relevant) devices OK
   for(auto const* dev : {"Use1", "Use2"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
@@ -219,7 +234,7 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryStepInitHandlers, Fixture<TestStepsApp>) {
   BOOST_TEST(raw1.read<int32_t>("Integers/unsigned32") == 13);
   BOOST_TEST(raw2.read<int32_t>("Integers/unsigned32") == 14);
 
-  // Stage 3: Release the blocking init handler and check that the initial values are restored.
+  // Stage 3: Release the blocking init handler and check that the device recovers.
   testApp.blockInit = false;
 
   for(auto const* dev : {"Use1", "Use2"}) {
@@ -245,11 +260,14 @@ struct InitFailureApp : BasicTestApp {
 };
 
 /**********************************************************************************************************************/
-// Test Spec ???: All members of the recovery group must pass the init handlers step before any of them is writing init
-// handlers
-
+/**
+ * \anchor testExceptionHandling_b_3_1_0b \ref exceptionHandling_b_3_1_0 "B.3.1.0"
+ * devices wait until all involved devices successfully complete the init handler step before restoring register values
+ * (test with failure in the init handler step, which is a different code path than TestRecoveryStepInitHandlers
+ *  because the recovery has to start over)
+ */
 BOOST_FIXTURE_TEST_CASE(TestInitFailure, Fixture<InitFailureApp>) {
-  // This test is checking that the error condition of a failure in the init handler does
+  // This test is also checking that the error condition of a failure in the init handler does
   // not confuse the barrier order and lock up the manager.
 
   // pre-condition: all (relevant) devices OK
