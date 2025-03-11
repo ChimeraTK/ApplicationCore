@@ -570,7 +570,6 @@ namespace Tests::testExceptionHandling {
     ctk::VersionNumber someVersionBeforeReporting = {};
     deviceBackend->throwExceptionOpen = true; // required to make sure device stays down
     application.group1.device.reportException("explicit report by test");
-    deviceBackend->setException("explicit report by test"); // FIXME: should this be called by reportException()??
     ctk::VersionNumber someVersionAfterReporting = {};
 
     //  Check push variable
@@ -925,6 +924,49 @@ namespace Tests::testExceptionHandling {
     // make sure test is effective (device2 is still in error condition)
     status2.readLatest();
     assert(status2 == 1);
+  }
+
+  /**********************************************************************************************************************/
+  /**
+   * \anchor testExceptionHandling_b_5 \ref exceptionHandling_b_5 "B.5"
+   *
+   * "Exceptions can be reported manually."
+   */
+  BOOST_FIXTURE_TEST_CASE(B_5, Fixture) {
+    std::cout << "B_5 - Manual exception reporting" << std::endl;
+
+    status.readLatest();
+
+    // Go to exception state, report it explicitly
+    application.group1.device.reportException("explicit report by test");
+
+    // Check that the device went into the error state
+    BOOST_CHECK(status.readAndGet() == 1);
+
+    // As the device itself did not have an error, it recovers immediatelystate
+    BOOST_CHECK(status.readAndGet() == 0);
+  }
+
+  /**********************************************************************************************************************/
+  /**
+   * \anchor testExceptionHandling_b_5_1 \ref exceptionHandling_b_5_1 "B.5.1"
+   *
+   * "Manually reporting an exception calls Device::setException()."
+   */
+  BOOST_FIXTURE_TEST_CASE(B_5_1, Fixture) {
+    std::cout << "B_5_1 - Manual reporting calls setException()" << std::endl;
+
+    pushVariable.readLatest();
+
+    // Go to exception state, report it explicitly
+    application.group1.device.reportException("explicit report by test");
+
+    // Check push variable. It must see one with invalid data, and as we have not prevented immediate recovery,
+    // see the new initial value.
+    pushVariable.read();
+    BOOST_CHECK(pushVariable.dataValidity() == ChimeraTK::DataValidity::faulty);
+    pushVariable.read();
+    BOOST_CHECK(pushVariable.dataValidity() == ChimeraTK::DataValidity::ok);
   }
 
   /**********************************************************************************************************************/

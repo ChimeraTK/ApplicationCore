@@ -85,6 +85,7 @@ namespace ChimeraTK {
         }
       } // else do nothing. There are plenty of errors reported already: The queue is full.
       // set the error flag and notify the other threads
+      _device.setException(errMsg);
       _deviceHasError = true;
       _exceptionVersionNumber = {}; // generate a new exception version number
       errorLock.unlock();
