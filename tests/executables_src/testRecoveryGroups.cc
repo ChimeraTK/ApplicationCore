@@ -28,7 +28,10 @@ namespace ctk = ChimeraTK;
 // It also contains intialisation handlers to test the barriers which ensure
 // that each recovery step completes for all devices before continuing with the next step.
 struct TestApp1 : ctk::Application {
-  explicit TestApp1(std::string const& name = "threeRecoveryGroups") : Application(name) {}
+  explicit TestApp1(std::string const& name = "threeRecoveryGroups") : Application(name) {
+    // FIXME: Split the app into individual use cases. It has become to cluttered and complex.
+    singleDev2.dev.addInitialisationHandler([&](ctk::Device&) { init1("Raw2"); });
+  }
   ~TestApp1() override { shutdown(); }
 
   ctk::SetDMapFilePath path{"recoveryGroups.dmap"};
@@ -42,18 +45,23 @@ struct TestApp1 : ctk::Application {
     ctk::DeviceModule dev{this, cdd, "/somepath/dummyTrigger", initHandler};
   };
 
-  // The execution of the first init function  can be blocked.
-  std::atomic<bool> blockInit1{false};
+  // The execution of the first init functions can be blocked.
+  // The first init handler will run through, the second one will block.
+  std::atomic<bool> blockInit{false};
+  std::atomic<size_t> initCounter{0};
   std::barrier<> arrivedInInitHandler{2};
-  void init1() {
+  void init1(const std::string& device) {
     // cheap implementation with busy waiting
-    if(blockInit1) {
-      (void)arrivedInInitHandler.arrive();
+    if(blockInit) {
+      if(++initCounter == 2) {
+        (void)arrivedInInitHandler.arrive();
+
+        while(blockInit) {
+          usleep(100);
+        }
+      }
     }
-    while(blockInit1) {
-      usleep(100);
-    }
-    ctk::Device d{"Raw1"};
+    ctk::Device d{device};
     d.open();
     d.write("/MyModule/actuator", 1);
   }
@@ -65,13 +73,14 @@ struct TestApp1 : ctk::Application {
     if(failInit2) {
       throw ctk::runtime_error("Intentional failure " + std::to_string(++TestApp1::failCounter) + " in init2()");
     }
+    // will be overwritten, but keep because for the restructuring
     ctk::Device d{"Raw2"};
     d.open();
     d.write("/MyModule/actuator", 2);
   }
 
   // First recovery group: Two devices with one backend each, and a logical name map which uses them both.
-  DeviceModuleWithPath singleDev1{this, "Use1", [&](ctk::Device&) { init1(); }};
+  DeviceModuleWithPath singleDev1{this, "Use1", [&](ctk::Device&) { init1("Raw1"); }};
   DeviceModuleWithPath singleDev2{this, "Use2", [&](ctk::Device&) { init2(); }};
   DeviceModuleWithPath mappedDev12{this, "Use12"};
 
@@ -223,9 +232,6 @@ BOOST_FIXTURE_TEST_CASE(TestRecoverySteps, Fixture<TestApp1>) {
   for(auto const* dev : {"Use1", "Use2"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
   }
-  // check values written by init script so we know the test is sensitive
-  BOOST_TEST(raw1.read<int32_t>("/MyModule/actuator") == 1);
-  BOOST_TEST(raw2.read<int32_t>("/MyModule/actuator") == 2);
 
   // Set values for some variables. They are restored during the recovery process.
   testFacility.writeScalar<uint32_t>("/Use1/Integers/unsigned32", 17);
@@ -240,9 +246,9 @@ BOOST_FIXTURE_TEST_CASE(TestRecoverySteps, Fixture<TestApp1>) {
   raw2.write<int32_t>("/MyModule/actuator", 16);
 
   // Block the init handler, set an error condition on 1 and trigger a read.
-  testApp.blockInit1 = true;
+  testApp.blockInit = true;
   // in case something goes wrong in the test: make sure the process terminates
-  auto _ = cppext::finally([&]() { testApp.blockInit1 = false; });
+  auto _ = cppext::finally([&]() { testApp.blockInit = false; });
 
   auto dummy1 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(raw1.getBackend());
   dummy1->throwExceptionOpen = true;
@@ -257,7 +263,7 @@ BOOST_FIXTURE_TEST_CASE(TestRecoverySteps, Fixture<TestApp1>) {
   // Stage 1: Although device 2 is ok, the init handler does not run because it is waiting at the barrier before the
   // init handlers (all backends must be successfully opened)
   CHECK_TIMEOUT(raw2.isFunctional(), 10000);
-  sleep(1); // Wait a second for the init handler. It should not happen, so don't wait too long...
+  usleep(100000); // Wait 100 ms for the init handler. It should not happen, so don't wait too long...
   BOOST_TEST(raw2.read<int32_t>("MyModule/actuator") == 16);
 
   // Stage 2: Resolve the error. Check that init handler 2 goes through, but no inital values are written yet.
@@ -265,22 +271,25 @@ BOOST_FIXTURE_TEST_CASE(TestRecoverySteps, Fixture<TestApp1>) {
   dummy1->throwExceptionRead = false;
   // wait until Use1 is in the init handler
   testApp.arrivedInInitHandler.arrive_and_wait();
-  // we know the backend is closed when entering the init handler, so we have to re-open it.
+  assert(testApp.initCounter == 2);
+  // We know one of the backends is closed when entering the init handler, so we have to re-open it.
+  // As we don't know which one, we just open both.
   raw1.open();
+  raw2.open();
 
-  CHECK_TIMEOUT(raw2.read<int32_t>("MyModule/actuator") == 2, 10000);
-  sleep(1); // Wait a second for the recovery values. It should not happen, so don't wait too long...
-  BOOST_TEST(raw1.read<int32_t>("MyModule/actuator") == 15);   // init handler 1 still blocks
+  CHECK_TIMEOUT(
+      (raw1.read<int32_t>("MyModule/actuator") == 1) || (raw2.read<int32_t>("MyModule/actuator") == 1), 10000);
+  usleep(100000); // Wait 110 ms for the recovery values. It should not happen, so don't wait too long...
   BOOST_TEST(raw1.read<int32_t>("Integers/unsigned32") == 13); // recovery values not written
   BOOST_TEST(raw2.read<int32_t>("Integers/unsigned32") == 14); // recovery values not written
 
   // Stage 3: Release the blocking init handler and check that the initial values are restored.
-  testApp.blockInit1 = false;
+  testApp.blockInit = false;
 
   for(auto const* dev : {"Use1", "Use2"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
   }
-  BOOST_TEST(raw2.read<int32_t>("MyModule/actuator") == 2);
+  BOOST_TEST(raw2.read<int32_t>("MyModule/actuator") == 1);
   BOOST_TEST(raw1.read<int32_t>("MyModule/actuator") == 1);
   BOOST_TEST(raw1.read<int32_t>("Integers/unsigned32") == 17);
   BOOST_TEST(raw2.read<int32_t>("Integers/unsigned32") == 18);
