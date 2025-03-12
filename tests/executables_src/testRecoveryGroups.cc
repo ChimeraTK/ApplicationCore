@@ -446,7 +446,7 @@ struct IncompleteRecoveryTestApp : ctk::Application {
         usleep(100000); // 100 ms
 
         // Tell the test thread that we are here, about to throw the exception
-        (void)aboutToThrow.arrive();
+        aboutToThrow.arrive_and_wait();
 
         // Jump out of the DeviceManager main loop with a thread_interrupted exception, just like all other
         // breadpoints do
