@@ -1,9 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_execptionHandling Technical specification: Exception handling for device runtime errors V1.0
-
-> This version is identical to V1.0RC2WIP.
+\page spec_execptionHandling Technical specification: Exception handling for device runtime errors V1.1RC1WIP
 
 > **NOTICE FOR FUTURE RELEASES: AVOID CHANGING THE NUMBERING!** The tests refer to the sections, incl. links and unlinked references from tests or other parts of the specification. These break, or even worse become wrong, when they are not changed consistenty!
 
@@ -82,7 +80,8 @@ namespace ChimeraTK {
   - \anchor b_4_2 4.2 Initial values are correctly propagated after a device is opened. See the \link spec_initialValuePropagation Technical specification: propagation of initial values\endlink. Especially, all read operations (even readNonBlocking/readLatest or without AccessMode::wait_for_new_data) will be _frozen_ until an initial value has been successfully read. \ref comment_b_4_2 "(*)" [test in other spec]
 
 \subsection spec_execptionHandling_behaviour_forced_recovery Forced Recovery
-- \anchor b_5 5. Any ApplicationModule can explicitly report a problem with the device by calling DeviceModule::reportException(). This allows the reinitialisation of a device e.g. after a reboot of the device which didn't result in an exception (e.g. because it was too quick to be noticed, or rebooting the device takes place without interrupting the communication).
+- \anchor testExceptionHandling_b_5 5. Any ApplicationModule can explicitly report a problem with the device by calling DeviceModule::reportException(). This allows the reinitialisation of a device e.g. after a reboot of the device which didn't result in an exception (e.g. because it was too quick to be noticed, or rebooting the device takes place without interrupting the communication). [\ref testExceptionHandling_b_5 "T"]
+  - \anchor exceptionHandling_b_5_1 5.1 DeviceModule::reportException() internally calls Device::setException(), such that the Device itselfs is aware of the error condition and all accessors with AccessMode::wait_for_new_data see an exception (resulting in a read with DataValidity::faulty due to the exception handling decorator). [\ref testExceptionHandling_b_5_1 "T"]
 
 \subsection spec_execptionHandling_behaviour_comments (*) Comments
 
