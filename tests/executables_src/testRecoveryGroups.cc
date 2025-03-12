@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
-#include <ChimeraTK/Exception.h>
 #define BOOST_TEST_MODULE testRecoveryGroups
 
 #include "Application.h"
@@ -11,6 +10,7 @@
 
 #include <ChimeraTK/BackendFactory.h>
 #include <ChimeraTK/cppext/finally.hpp>
+#include <ChimeraTK/Exception.h>
 #include <ChimeraTK/ExceptionDummyBackend.h>
 #include <ChimeraTK/NDRegisterAccessor.h>
 #include <ChimeraTK/ScalarRegisterAccessor.h>
