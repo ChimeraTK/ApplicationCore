@@ -177,7 +177,7 @@ namespace ChimeraTK {
         _owner->getTestableMode().lock("Attempt open/recover device");
 
         try {
-          std::lock_guard<std::mutex> globalDeviceOpenLock(globalDeviceOpenMutex);
+          std::lock_guard<std::mutex> deviceOpenLock(_recoveryGroup->deviceOpenCloseMutex);
           _device.open();
         }
         catch(ChimeraTK::runtime_error& e) {
@@ -231,12 +231,11 @@ namespace ChimeraTK {
       try {
         for(auto& initHandler : _initialisationHandlers) {
           {
-            std::lock_guard<std::mutex> globalDeviceOpenLock(globalDeviceOpenMutex);
+            // Hold the open/close lock while executing the init handler, so no other
+            // DeviceManager closes the device while the init handler is running.
+            std::lock_guard<std::mutex> openCloseLock(_recoveryGroup->deviceOpenCloseMutex);
             _device.close();
-          }
-          initHandler(_device);
-          {
-            std::lock_guard<std::mutex> globalDeviceOpenLock(globalDeviceOpenMutex);
+            initHandler(_device);
             _device.open();
           }
         }
@@ -472,11 +471,6 @@ namespace ChimeraTK {
     }
     assert(!_moduleThread.joinable());
   }
-
-  /********************************************************************************************************************/
-
-  // static variables
-  std::mutex DeviceManager::globalDeviceOpenMutex;
 
   /********************************************************************************************************************/
 
