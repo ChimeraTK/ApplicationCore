@@ -3,7 +3,13 @@
 
 #include "DeviceManager.h"
 
+#include "RecoveryHelper.h"
 #include "Utilities.h"
+
+#include <ChimeraTK/NDRegisterAccessor.h>
+#include <ChimeraTK/SupportedUserTypes.h>
+
+#include <boost/smart_ptr/shared_ptr.hpp>
 
 namespace ChimeraTK {
 
@@ -48,9 +54,16 @@ namespace ChimeraTK {
       // find minimum type required to represent data
       const auto* valTyp = &(reg.getDataDescriptor().minimumDataType().getAsTypeInfo());
 
+      if(reg.getTags().contains(SystemTags::reverseRecovery) && reg.isReadable()) {
+        direction.withReturn = true;
+      }
+
       // create node and add to list
       rv.emplace_back(reg.getRegisterName(), _deviceAliasOrCDD, reg.getRegisterName(), updateMode, direction, *valTyp,
           reg.getNumberOfElements());
+      for(const auto& tag : reg.getTags()) {
+        rv.back().addTag(tag);
+      }
     }
 
     return rv;
@@ -65,9 +78,9 @@ namespace ChimeraTK {
 
     // The error queue must only be modified when holding both mutexes (error mutex and testable mode mutex), because
     // the testable mode counter must always be consistent with the content of the queue.
-    // To avoid deadlocks you must always first aquire the testable mode mutex if you need both.
+    // To avoid deadlocks you must always first acquire the testable mode mutex if you need both.
     // You can hold the error mutex without holding the testable mode mutex (for instance for checking the error
-    // predicate), but then you must not try to aquire the testable mode mutex!
+    // predicate), but then you must not try to acquire the testable mode mutex!
     boost::unique_lock<boost::shared_mutex> errorLock(_errorMutex);
 
     if(!_deviceHasError) { // only report new errors if the device does not have reported errors already
@@ -187,9 +200,16 @@ namespace ChimeraTK {
           return a->writeOrder < b->writeOrder;
         });
         for(auto& recoveryHelper : _recoveryHelpers) {
-          if(recoveryHelper->versionNumber != VersionNumber{nullptr}) {
-            recoveryHelper->accessor->write();
-            recoveryHelper->wasWritten = true;
+          if(recoveryHelper->recoveryDirection == RecoveryHelper::Direction::toDevice) {
+            if(recoveryHelper->versionNumber != VersionNumber{nullptr}) {
+              recoveryHelper->accessor->write();
+              recoveryHelper->wasWritten = true;
+            }
+          }
+          else if(recoveryHelper->recoveryDirection == RecoveryHelper::Direction::fromDevice) {
+            if(recoveryHelper->accessor->isReadable()) {
+              recoveryHelper->notificationQueue.push();
+            }
           }
         }
       }
