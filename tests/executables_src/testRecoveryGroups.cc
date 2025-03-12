@@ -4,6 +4,7 @@
 
 #include "Application.h"
 #include "check_timeout.h"
+#include "DeviceManager.h"
 #include "DeviceModule.h"
 #include "ModuleGroup.h"
 #include "TestFacility.h"
@@ -68,11 +69,11 @@ struct Fixture {
 
 /**
  * \anchor testExceptionHandling_a_5_1 \ref exceptionHandling_b_5_1 "A.5.1"
- * Devices which access the same backends form a recovery group. They commonly see exceptions and are recovered
- * together.
+ * DeviceManagers with at least one common involved backend ID (see DeviceBackend::getInvolvedBackendIDs()) form a
+ * recovery group. They collectively see exceptions and are recovered together.
  *
  * \anchor testExceptionHandling_a_5_2 \ref exceptionHandling_b_5_2 "A.5.2"
- *  Recovery groups which don't share any backends behave independently.
+ *  Recovery groups which don't share any backend IDs behave independently.
  *
  * Note: the tests are done together because test A.5.2 requires exactly the same lines of code as the A.5.1 test
  */
@@ -111,9 +112,29 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryGroups, Fixture<BasicTestApp>) {
 /**********************************************************************************************************************/
 
 /**
+ * \anchor testExceptionHandling_a_5_3 \ref exceptionHandling_b_5_1 "A.5.3"
+ * Two DeviceManagers which are not sharing any involved backend IDs will end up in the same recovery group if there is
+ * one other DeviceManager sharing an involved backend ID with each of them.
+ */
+BOOST_FIXTURE_TEST_CASE(TestRecoveryGroupMerging, Fixture<BasicTestApp>) {
+  // Just check that Use1 and Use2 are do not share any backend IDs. That they are in the same recovery group is already
+  // tested in testExceptionHandling_a_5_1
+  auto& dm1 = testApp.singleDev1.dev.getDeviceManager();
+  auto& dm2 = testApp.singleDev2.dev.getDeviceManager();
+
+  auto ids1 = dm1.getDevice().getInvolvedBackendIDs();
+  auto ids2 = dm2.getDevice().getInvolvedBackendIDs();
+  for(auto id : ids1) {
+    BOOST_CHECK(!ids2.contains(id));
+  }
+}
+
+/**********************************************************************************************************************/
+
+/**
  * \anchor testExceptionHandling_b_3_1_0 \ref exceptionHandling_b_3_1_0 "B.3.1.0"
- * devices wait until all involved devices successfully complete the open step before starting the initialisation
- * handler
+ * DeviceManagers wait until all involved DeviceManagers successfully complete the open step before starting the
+ * initialisation handler
  */
 BOOST_FIXTURE_TEST_CASE(TestRecoveryStepOpen, Fixture<BasicTestApp>) {
   // pre-condition: all (relevant) devices OK
@@ -184,8 +205,8 @@ struct BlockInitTestApp : BasicTestApp {
 /**********************************************************************************************************************/
 /**
  * \anchor testExceptionHandling_b_3_1_1_2 \ref exceptionHandling_b_3_1_1_2 "B.3.1.1.2"
- * DeviceManagers wait until all involved DeviceManagers successfully complete the init handler step before restoring
- * register values
+ * DeviceManagers wait until all involved DeviceManagers complete the init handler step before restoring
+ * register values.
  */
 BOOST_FIXTURE_TEST_CASE(TestRecoveryStepInitHandlers, Fixture<BlockInitTestApp>) {
   // pre-condition: all (relevant) devices OK
@@ -261,10 +282,9 @@ struct InitFailureApp : BasicTestApp {
 
 /**********************************************************************************************************************/
 /**
- * \anchor testExceptionHandling_b_3_1_0b \ref exceptionHandling_b_3_1_0 "B.3.1.0"
- * devices wait until all involved devices successfully complete the init handler step before restoring register values
- * (test with failure in the init handler step, which is a different code path than TestRecoveryStepInitHandlers
- *  because the recovery has to start over)
+ * \anchor testExceptionHandling_b_3_1_1_3 \ref exceptionHandling_b_3_1_1_3 "B.3.1.1.3"
+ * If any DeviceManager sees an exception in one of its initialisation handlers, *all* DeviceManagers in the recovery
+ * group restart the recovery procedure after the POST-INIT-HANDLER barrier.
  */
 BOOST_FIXTURE_TEST_CASE(TestInitFailure, Fixture<InitFailureApp>) {
   // This test is also checking that the error condition of a failure in the init handler does
@@ -290,8 +310,13 @@ BOOST_FIXTURE_TEST_CASE(TestInitFailure, Fixture<InitFailureApp>) {
   dummy1->throwExceptionOpen = false;
   dummy1->throwExceptionRead = false;
 
-  // Wait until the failure counter is larger than 1 , i.e. the DeviceManager has actually failed at the place we want,
-  // and the recovery process has restarted after it at least once (by checking that it failed twice).
+  // Wait until the failure counter is larger than 1 , i.e. the DeviceManager has actually failed at the place we
+  // want, and the recovery process has restarted after it at least once (by checking that it failed twice).
+  // FIXME: This does not check that
+  // - all device managers retry
+  // - the recovery restarts with open (could only be the init step)
+  // - the recovery only happens after the init barrier
+  BOOST_CHECK(false);
   CHECK_TIMEOUT(testApp.failCounter > 1, 10000);
 
   // Resolve the error condition and wait until everything has recovered.
@@ -316,11 +341,33 @@ struct RecoveryFailureTestApp : ctk::Application {
 };
 
 /**********************************************************************************************************************/
-// Test Spec ???: All members of the recovery group must pass the recovery accessors step before recovery is reported as
-// complete in any of them.
-BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<RecoveryFailureTestApp>) {
+
+/**
+ * \anchor testExceptionHandling_b_3_1_2_1 \ref exceptionHandling_b_3_1_2_1 "B.3.1.2.1"
+ * DeviceManagers wait until all involved DeviceManagers complete the register value restoring before activating the
+ * synchronous read.
+ */
+
+BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteBarrier, Fixture<RecoveryFailureTestApp>) {
+  // FIXME This test is mixing B.3.1.2.1 and B.3.1.2.2, and does none of them cleanly.
   // This test is checking that the error condition of a failure when writing the recovery accessors do
   // not confuse the barrier order and lock up the manager.
+  BOOST_CHECK(false);
+}
+
+/**********************************************************************************************************************/
+
+/**
+ * \anchor testExceptionHandling_b_3_1_2_2 \ref exceptionHandling_b_3_1_2_2 "B.3.1.2.2"
+ * If any DeviceManager sees an exception while restoring register values, *all* DeviceManagers in the
+ * recovery group restart the recovery procedure after the POST-WRITE-RECOVERY barrier.
+ */
+
+BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<RecoveryFailureTestApp>) {
+  // FIXME This test is mixing B.3.1.2.1 and B.3.1.2.2, and does none of them cleanly.
+  // This test is checking that the error condition of a failure when writing the recovery accessors do
+  // not confuse the barrier order and lock up the manager.
+  BOOST_CHECK(false);
 
   // pre-condition: all (relevant) devices OK
   for(auto const* dev : {"Use1", "Use2"}) {
@@ -416,8 +463,10 @@ struct IncompleteRecoveryTestApp : ctk::Application {
 
 /**********************************************************************************************************************/
 
-// Test Spec ???: Application exits cleanly if recovery is incomplete, in particular if a DeviceManager is waiting at
-// a barrier, and another DeviceManager in the same recovery group quits the main loop.
+/**
+ * \anchor testExceptionHandling_b_3_1_2_2 \ref exceptionHandling_b_3_1_2_2 "B.3.1.2.2" The application terminates
+ * cleanly, even if the recovery is waiting at one of the barriers mentioned in \ref b_3_1 "3.1"
+ */
 BOOST_AUTO_TEST_CASE(TestIncompleteRecovery) {
   { // open a new scope so we can test after the app goes out of scope
     IncompleteRecoveryTestApp testApp;
