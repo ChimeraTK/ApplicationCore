@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_execptionHandling Technical specification: Exception handling for device runtime errors V1.1RC1WIP
+\page spec_execptionHandling Technical specification: Exception handling for device runtime errors V1.1RC2WIP
 
 > **NOTICE FOR FUTURE RELEASES: AVOID CHANGING THE NUMBERING!** The tests refer to the sections, incl. links and unlinked references from tests or other parts of the specification. These break, or even worse become wrong, when they are not changed consistenty!
 
@@ -9,10 +9,12 @@ namespace ChimeraTK {
 
 - 1. Exceptions are handled by ApplicationCore in a way that the application developer does not need to care much about it.
 
-- 2. ChimeraTK::runtime_error exceptions are caught by the framework and are reported to the DeviceModule.
-- 3. The DeviceModule handles this exception and periodically tries to reopen the device.
+- 2. ChimeraTK::runtime_error exceptions are caught by the framework and are reported to the DeviceManager.
+- 3. The DeviceManager handles this exception and periodically tries to reopen the device.
 - 4. Communication with the faulty device is _skipped_, _frozen_ or _delayed_ until the device is functional again (see \ref spec_exceptionHandling_intro_terminology "A.9").
-- 5. In case of several devices only the faulty device is affected.
+- \anchor exceptionHandling_a_5 5 DeviceManagers with at least one common involved backend ID (see DeviceBackend::getInvolvedBackendIDs()) form a recovery group. They collectively see exceptions and are recovered together. [link to test]
+  - \anchor exceptionHandling_a_5_1 5.1 Recovery groups which don't share any backend IDs behave independently. [link to test]
+  - \anchor exceptionHandling_a_5_2 5.2 Two DeviceManagers which are not sharing any involved backend IDs will end up in the same recovery group if there is one other DeviceManager sharing an involved backend ID with each of them.
 - 6. Faulty devices do not prevent the application from starting, only the parts of the application that depend on the fault device are waiting for the device to come up.
 
 - 7. Input variables of ApplicationModules which cannot be read due to a faulty device will set and propagate the DataValidity::faulty flag (see also the \link spec_dataValidityPropagation Technical specification: data validity propagation\endlink).
@@ -67,12 +69,20 @@ namespace ChimeraTK {
 
 \subsection spec_execptionHandling_behaviour_recovery Recovery
 - 3. The framework tries to resolve an exception state by periodically re-opening the faulty device.
-  - \anchor b_3_1 3.1 After successfully re-opening the device, a recovery procedure is executed before allowing any read/write operations from the ApplicationModules and FanOuts again. This recovery procedure involves:
-    - \anchor exceptionHandling_b_3_1_1 3.1.1 the execution of so-called initialisation handlers (see \ref exceptionHandling_b_3_2 "3.2") [\ref testExceptionHandling_b_3_1_1 "T"], and
-    - \anchor exceptionHandling_b_3_1_2 3.1.2 restoring all registers that have been written since the start of the application with their latest values. The register values are restored in the same order they were written. Registers of the type ChimeraTK::Void are not written. \ref comment_b_3_1_2 "(*)" [\ref testExceptionHandling_b_3_1_2 "T"]
+  - \anchor b_3_0 3.0 In a recovery group (see \ref exceptionHandling_a_5_1 "A.5.1"), DeviceManagers wait until all involved DeviceManagers have seen the error condition before trying to re-open ("barrier POST-DETECT"). [not testable?]
+  - \anchor b_3_1 3.1 After successfully re-opening the device, a recovery procedure is executed before allowing any read/write operations from the ApplicationModules and FanOuts again. This recovery procedure involves the following steps:
+    - \anchor exceptionHandling_b_3_1_0 3.1.0 In a recovery group, DeviceManagers wait until all involved DeviceManagers successfully complete the open step before starting the initialisation handler in B.3.1.1 ("barrier POST-OPEN"). [link to test]
+    - \anchor exceptionHandling_b_3_1_1 3.1.1 The so-called initialisation handlers are executed (see \ref exceptionHandling_b_3_2 "3.2") [\ref testExceptionHandling_b_3_1_1 "T"].
+      - \anchor exceptionHandling_b_3_1_1_1 3.1.1.1 The device is closed before the initialisation handler is called, and reopened afterwards. This allows devices which can only be opened once to use external init handler scripts. \ref exceptionHandling_comment_b_3_1_1_1 "(*)" [link to test]
+      - \anchor exceptionHandling_b_3_1_1_2 3.1.1.2 In a recovery group, DeviceManagers wait until all involved DeviceManagers complete the initialisation handler step before restoring register values in B.3.1.2 ("barrier POST-INIT-HANDLER"). [link to test]
+      - \anchor exceptionHandling_b_3_1_1_3 3.1.1.3 If any DeviceManager sees an exception in one of its initialisation handlers, *all* DeviceManagers in the recovery group restart the recovery procedure after the POST-INIT-HANDLER barrier.
+    - \anchor exceptionHandling_b_3_1_2 3.1.2 All registers that have been written since the start of the application are restored with their latest values. The register values are restored in the same order they were written. Registers of the type ChimeraTK::Void are not written. \ref comment_b_3_1_2 "(*)" [\ref testExceptionHandling_b_3_1_2 "T"]
+      - \anchor exceptionHandling_b_3_1_2_1 3.1.2.1 In a recovery group, DeviceManagers wait until all involved DeviceManagers complete the register value restoring before activating the asynchronous read in B.3.1.3 ("barrier POST-WRITE-RECOVERY"). [link to test]
+      - \anchor exceptionHandling_b_3_1_2_2 3.1.2.2 If any DeviceManager sees an exception while restoring register values, *all* DeviceManagers in the recovery group restart the recovery procedure after the POST-WRITE-RECOVERY barrier.
     - \anchor exceptionHandling_b_3_1_3 3.1.3 The asynchronous read transfers of the device are (re-)activated by calling Device::activateAsyncReads(). [\ref testExceptionHandling_b_3_1_3 "T"]
     - \anchor exceptionHandling_b_3_1_4 3.1.4 Finally, \c Devices/\<alias\>/deviceBecameFunctional is written to inform any module subscribing to this variable about the finished recovery. \ref comment_b_3_1_4 "(*)" [\ref testExceptionHandling_b_3_1_4 "T"]
-  - \anchor exceptionHandling_b_3_2 3.2 Any number of initialisation handlers can be added to the DeviceModule in the user code. Initialisation handlers are callback functions which will be executed when a device is opened for the first time and after a device recovers from an exception, before any application-initiated transfers are executed (including delayed write transfers). See DeviceModule::addInitialisationHandler(). [\ref testExceptionHandling_b_3_2 "T"]
+  - \anchor exceptionHandling_b_3_2 3.2 Any number of initialisation handlers can be added to the DeviceManager in the user code via the DeviceModule. Initialisation handlers are callback functions which will be executed when a device is opened for the first time and after a device recovers from an exception, before any application-initiated transfers are executed (including delayed write transfers). See DeviceModule::addInitialisationHandler(). [\ref testExceptionHandling_b_3_2 "T"]
+  - \anchor exceptionHandling_b_3_3 3.3 The application terminates cleanly, even if the recovery is waiting at one of the barriers mentioned in \ref b_3_1 "3.1" [link to test]
 
 \subsection spec_execptionHandling_behaviour_startup Startup
 - 4. The behaviour at application start (at which all devices are still closed at first) is similar to the case of a later received exception. The only differences are mentioned in \ref b_4_2 "4.2".
@@ -100,6 +110,8 @@ namespace ChimeraTK {
 - \anchor exceptionHandling_comment_b_2_5 \ref exceptionHandling_b_2_5 "2.5" These functions can throw runtime errors if the behaviour has to be determined from the running device. In this case readability and writeability can change on the device (cf. <a href="https://chimeratk.github.io/DeviceAccess/master/spec__transfer_element.html">TransferElement specification</a> C.5.3). Suppressing the exception and allowing the operation does not pose the risk of getting a ChimeraTK::logic_error in the preXxx() phase of the
 operation because all transfer elements are tested for this during device recovery (cf. \ref exceptionHandling_c_3_3_3 "C.3.3.3").
 
+- \anchor exceptionHandling_comment_b_3_1_1_1 \ref exceptionHandling_b_3_1_1_1 "3.1.1.1" The closed backend must be protected from being accessed by other threads.
+
 - \anchor comment_b_3_1_2 \ref exceptionHandling_b_3_1_2 "3.1.2" For some applications, the order of writes may be important, e.g. if firmware expects this. Please note that the VersionNumber is insufficient as a sorting criteria, since many writes may have been done with the same VersionNumber (in an ApplicationModule, the VersionNumber used for the writes is determined by the largest VersionNumber of the inputs).
 
 - \anchor comment_b_4_2 \ref b_4_2 "4.2" DataValidity::faulty is initially set by default, so there is no need to propagate this flag initially. To prevent race conditions and undefined behaviour (especially in automated tests), it even needs to be made sure that the flag is not propagated unnecessarily. The behaviour of non-blocking reads presents a slight asymmetry between the initial device opening and a later recovery. This will in particular be visible when restarting a server while a device is offline. If a module only uses readLatest()/readNonBlocking() (= read() for poll-type inputs) for the offline device, the module was still running before the server restart using the last known values for the dysfunctional registers (and flagging all outputs as faulty). After the restart, the module has to wait for the initial value and hence will not run until the device becomes functional again. To make this behaviour symmetric, one would need to persist the values of device inputs. Since this only affects a corner case in which likely no usable output is produced anyway, this slight inconsistency is considered acceptable.
@@ -110,6 +122,9 @@ A so-called ExceptionHandlingDecorator is placed around all device register acce
 
 
 \subsection spec_execptionHandling_high_level_implmentation_interface C.1 Internal interface between ExceptionHandlingDecorator and DeviceModule
+
+FIXME: This section is outdated as it does not reflect the introduction of the DeviceManager. In most places it should read "DeviceManager" instead of "DeviceModule", and some of the data members mentioned do not exist any mode.
+This section needs a review.
 
 Note: This section defines the internal interface on a low level. Helper functions, like getters and setters, are intenionally not mentioned here, since those are (in this context) unimportant details which can be chosen at will to structure the code conveniently. The entire interface between the ExceptionHandlingDecorator and the DeviceModule should be protected and the two classes should be friends, to prevent interference with the interface from other entities. Only DeviceModule::reportException() is public, see \ref b_5 "B.5".
 
