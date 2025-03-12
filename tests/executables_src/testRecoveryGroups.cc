@@ -429,7 +429,10 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<RecoveryFailureTestApp
 /**********************************************************************************************************************/
 
 struct IncompleteRecoveryTestApp : ctk::Application {
-  explicit IncompleteRecoveryTestApp() : Application("IncompleteRecoveryTestApp") {}
+  explicit IncompleteRecoveryTestApp() : Application("IncompleteRecoveryTestApp") {
+    singleDev1.dev.addInitialisationHandler([&](ctk::Device&) { init(); });
+    singleDev2.dev.addInitialisationHandler([&](ctk::Device&) { init(); });
+  }
   ~IncompleteRecoveryTestApp() override { shutdown(); }
 
   ctk::SetDMapFilePath path{"recoveryGroups.dmap"};
@@ -484,8 +487,6 @@ BOOST_AUTO_TEST_CASE(TestIncompleteRecovery) {
     // Wait until the init handler which will throw told us it has reached that point, so we don't end the application
     // scope before the test is sensitive.
     testApp.aboutToThrow.arrive_and_wait();
-
-    // now end the scope of the application
   }
   // The actual test: We reached this point, the test did not block
   BOOST_CHECK(true);
