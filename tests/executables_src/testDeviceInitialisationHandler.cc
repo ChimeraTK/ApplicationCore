@@ -270,12 +270,17 @@ namespace Tests::testDeviceInitialisationHandler {
     std::cout << "TestDeviceClosedInInitHandler" << std::endl;
 
     TestApplication app;
-    app.dev.addInitialisationHandler([](ctk::Device& d) { BOOST_CHECK(!d.isOpened()); });
+    // Cache the opened state in the init handler in a variable. BOOST_CHECK is not threat safe and
+    // cannot directly be used in the handler.
+    bool isOpenedInInitHandler{
+        true}; // We expect false, so we set the starting value to true to know the test is sensitive.
+    app.dev.addInitialisationHandler([&](ctk::Device& d) { isOpenedInInitHandler = d.isOpened(); });
 
     ctk::TestFacility testFacility(app);
     testFacility.runApplication();
     // The testFacility in testable mode guarantees that the device has been opened at this point. So we know the init
     // handler with the test has been run at this point.
+    BOOST_CHECK(!isOpenedInInitHandler);
   }
 
 } // namespace Tests::testDeviceInitialisationHandler
