@@ -126,7 +126,7 @@ A so-called ExceptionHandlingDecorator is placed around all device register acce
 FIXME: This section is outdated as it does not reflect the introduction of the DeviceManager. In most places it should read "DeviceManager" instead of "DeviceModule", and some of the data members mentioned do not exist any mode.
 This section needs a review.
 
-Note: This section defines the internal interface on a low level. Helper functions, like getters and setters, are intenionally not mentioned here, since those are (in this context) unimportant details which can be chosen at will to structure the code conveniently. The entire interface between the ExceptionHandlingDecorator and the DeviceModule should be protected and the two classes should be friends, to prevent interference with the interface from other entities. Only DeviceModule::reportException() is public, see \ref b_5 "B.5".
+Note: This section defines the internal interface on a low level. Helper functions, like getters and setters, are intenionally not mentioned here, since those are (in this context) unimportant details which can be chosen at will to structure the code conveniently. The entire interface between the ExceptionHandlingDecorator and the DeviceModule should be protected and the two classes should be friends, to prevent interference with the interface from other entities. Only DeviceModule::reportException() is public, see \ref exceptionHandling_b_5 "B.5".
 
 - 1.1 The boolean flag DeviceModule::deviceHasError
   - 1.1.1 is used by the ExceptionHandlingDecorator to detect prevailing error conditions, to know when transfers have to be skipped or delayed (cf. \ref c_2_4 "2.4").
