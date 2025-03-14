@@ -38,8 +38,39 @@ struct DeviceModuleWithPath : public ctk::ModuleGroup {
   ctk::DeviceModule dev;
 };
 
+// Test backend which allows to block write operations.
+struct WriteBlockingDummy : public ChimeraTK::ExceptionDummy {
+  using ExceptionDummy::ExceptionDummy;
+
+  std::atomic<bool> blockWriteOnce{false};     // Only use the following barrier if true.
+  std::barrier<> blockWriteArrivedBarrier{2};  // Tell the test thread that we are there
+  std::barrier<> blockWriteContinueBarrier{2}; // Wait for the test to tell us to continue.
+
+  void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override {
+    if(blockWriteOnce) {
+      blockWriteOnce = false;
+      (void)blockWriteArrivedBarrier.arrive();     // Notify the test.
+      blockWriteContinueBarrier.arrive_and_wait(); // Wait for the test to tell us to continue.
+    }
+    ExceptionDummy::write(bar, address, data, sizeInBytes);
+  }
+
+  // NOLINTNEXTLINE performance-unnecessary-value-param (signature required like this by BackendFactory)
+  static boost::shared_ptr<DeviceBackend> creatorFunction(std::string, std::map<std::string, std::string> parameters) {
+    return boost::make_shared<WriteBlockingDummy>(parameters["map"]);
+  }
+
+  struct Registerer {
+    Registerer() {
+      ctk::BackendFactory::getInstance().registerBackendType("WriteBlockingDummy", WriteBlockingDummy::creatorFunction);
+    }
+  };
+};
+
+static WriteBlockingDummy::Registerer writeBlockingBackendRegisterer;
+
 // Test backend which counts the number of open() calls and allows to block write operations.
-struct RecoveryGroupTestBackend : public ChimeraTK::LogicalNameMappingBackend {
+struct OpenCountingLmapBackend : public ChimeraTK::LogicalNameMappingBackend {
   using LogicalNameMappingBackend::LogicalNameMappingBackend;
   std::atomic<size_t> openCounter{0};
   void open() override {
@@ -49,7 +80,7 @@ struct RecoveryGroupTestBackend : public ChimeraTK::LogicalNameMappingBackend {
 
   // NOLINTNEXTLINE performance-unnecessary-value-param (signature required like this by BackendFactory)
   static boost::shared_ptr<DeviceBackend> creatorFunction(std::string, std::map<std::string, std::string> parameters) {
-    auto ptr = boost::make_shared<RecoveryGroupTestBackend>(parameters["map"]);
+    auto ptr = boost::make_shared<OpenCountingLmapBackend>(parameters["map"]);
     parameters.erase(parameters.find("map"));
     ptr->_parameters = parameters;
     return boost::static_pointer_cast<DeviceBackend>(ptr);
@@ -58,12 +89,12 @@ struct RecoveryGroupTestBackend : public ChimeraTK::LogicalNameMappingBackend {
   struct Registerer {
     Registerer() {
       ctk::BackendFactory::getInstance().registerBackendType(
-          "RecoveryGroupTestBackend", RecoveryGroupTestBackend::creatorFunction);
+          "OpenCountingLmapBackend", OpenCountingLmapBackend::creatorFunction);
     }
   };
 };
 
-static RecoveryGroupTestBackend::Registerer testBackendRegisterer;
+static OpenCountingLmapBackend::Registerer testLmapBackendRegisterer;
 
 // A test application with 4 devices in 2 recovery groups.
 // It is used in most tests, and extended with initialisation handlers where needed.
@@ -308,7 +339,6 @@ struct InitFailureApp : BasicTestApp {
   std::barrier<> blockInitContinueBarrier{2};
   std::atomic<bool> failInit{false};
   std::atomic<size_t> initCounter{0};
-  std::atomic<size_t> initFailCounter{0};
   std::atomic<size_t> initSuccessCounter{0};
   std::barrier<> aboutToFail{2};     // notify the test where we are. It has to do some checks
   std::barrier<> proceedWithFail{2}; // wait for the test to complete its checks
@@ -323,8 +353,7 @@ struct InitFailureApp : BasicTestApp {
         // This branch will be only hit once because the counter is higher afterwards.
         (void)aboutToFail.arrive();        // notify the test that it can do the preparation
         proceedWithFail.arrive_and_wait(); // wait for the test to complete the preparation
-        std::cout << "TRHOWING!!!" << std::endl;
-        throw ctk::runtime_error("Intentional failure " + std::to_string(++initFailCounter) + " in init2()");
+        throw ctk::runtime_error("Intentional failure in init()");
       }
     }
     ++initSuccessCounter;
@@ -380,19 +409,17 @@ BOOST_FIXTURE_TEST_CASE(TestInitFailure, Fixture<InitFailureApp>) {
   // - The other init handler is waiting in the init handler
   // - The successful init handler has a higher open count because the device is re-opened after the init handler
   // But we don't know which device is in which state.
-  // So we store both open counters.
-  auto testLmap1 = boost::dynamic_pointer_cast<RecoveryGroupTestBackend>(
+  // So we store all open counters.
+  auto testLmap1 = boost::dynamic_pointer_cast<OpenCountingLmapBackend>(
       testApp.singleDev1.dev.getDeviceManager().getDevice().getBackend());
-  auto testLmap2 = boost::dynamic_pointer_cast<RecoveryGroupTestBackend>(
+  auto testLmap2 = boost::dynamic_pointer_cast<OpenCountingLmapBackend>(
       testApp.singleDev2.dev.getDeviceManager().getDevice().getBackend());
-  auto testLmap12 = boost::dynamic_pointer_cast<RecoveryGroupTestBackend>(
+  auto testLmap12 = boost::dynamic_pointer_cast<OpenCountingLmapBackend>(
       testApp.mappedDev12.dev.getDeviceManager().getDevice().getBackend());
   size_t openCount1 = testLmap1->openCounter;
   size_t openCount2 = testLmap2->openCounter;
   size_t openCount12 = testLmap12->openCounter;
 
-  std::cout << "1 openCounter " << testLmap1->openCounter << ", 2 openCounter " << testLmap2->openCounter
-            << ", 12 openCounter " << testLmap12->openCounter << std::endl;
   // Also block the execution of newly starting init handlers so we know that at this point only
   // the open step has happened. This simplifies testing.
   testApp.blockInitOnce = true;
@@ -406,9 +433,6 @@ BOOST_FIXTURE_TEST_CASE(TestInitFailure, Fixture<InitFailureApp>) {
   BOOST_TEST(testLmap1->openCounter == openCount1 + 1);
   BOOST_TEST(testLmap2->openCounter == openCount2 + 1);
   BOOST_TEST(testLmap12->openCounter == openCount12 + 1);
-
-  std::cout << "1 openCounter " << testLmap1->openCounter << ", 2 openCounter " << testLmap2->openCounter
-            << ", 12 openCounter " << testLmap12->openCounter << std::endl;
 
   // Check 3: The recover actually restarted after the POST-INIT-HANDLER and no write recovery was done.
   // We know that one of the init handlers is blocking, so one of the devices is closed,
@@ -426,8 +450,6 @@ BOOST_FIXTURE_TEST_CASE(TestInitFailure, Fixture<InitFailureApp>) {
   for(auto const* dev : {"Use1", "Use2"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
   }
-  std::cout << "1 openCounter " << testLmap1->openCounter << ", 2 openCounter " << testLmap2->openCounter
-            << ", 12 openCounter " << testLmap12->openCounter << std::endl;
 }
 
 /**********************************************************************************************************************/
@@ -441,6 +463,8 @@ struct RecoveryFailureTestApp : ctk::Application {
   // recovery group with Use1 and Use2
   DeviceModuleWithPath singleDev1{this, "Use1"};
   DeviceModuleWithPath singleDev2{this, "Use2"};
+  // Use the combining xlmap file which does not use write registers.
+  // The test below requires that there is only one register written on backend 2.
   DeviceModuleWithPath mappedDev12{this, "Use12ReadOnly"};
 };
 
@@ -468,10 +492,13 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteBarrier, Fixture<RecoveryFailureTestApp
  */
 
 BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<RecoveryFailureTestApp>) {
-  // FIXME This test is mixing B.3.1.2.1 and B.3.1.2.2, and does none of them cleanly.
-  // This test is checking that the error condition of a failure when writing the recovery accessors do
+  // Side effect: This test is checking that the error condition of a failure when writing the recovery accessors do
   // not confuse the barrier order and lock up the manager.
-  BOOST_CHECK(false);
+
+  // This test contains three checks:
+  //  1. *All* device managers restart the recovery.
+  //  2. The recovery restarts with *open* (not only the init step is repeated).
+  //  3. The recovery happens *after the POST-WRITE-RECOVERY barrier*.
 
   // pre-condition: all (relevant) devices OK
   for(auto const* dev : {"Use1", "Use2"}) {
@@ -479,52 +506,65 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<RecoveryFailureTestApp
   }
 
   // Write something to Use1 so we can check when its recovery accessor writing is through.
-  // We take Use1 this time because it does not have an init handler, so the DeviceManager
-  // does not inadvertently close the device while we want to read it in the test.
-  // In addition, Use12ReadOnly has only read-only registers, so it does not cause errors in recovery,
-  // which would set the device 1 back into error state.
   testFacility.writeScalar<uint32_t>("/Use1/Integers/unsigned32", 18);
   CHECK_TIMEOUT(raw1.read<uint32_t>("Integers/unsigned32") == 18, 10000);
+  // Change the value on the device to detect that the writing is through.
+  raw1.write("Integers/unsigned32", 0);
 
-  // create an error condition which also thrown when writing (the recovery accessors)
-  auto dummy4 = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(raw2.getBackend());
-  dummy4->throwExceptionOpen = true;
-  dummy4->throwExceptionRead = true;
-  dummy4->throwExceptionWrite = true;
-  trigger.write();
+  // create an error condition which throws when writing (the recovery accessors)
+  auto dummy2 = boost::dynamic_pointer_cast<WriteBlockingDummy>(raw2.getBackend());
+  dummy2->throwExceptionWrite = true;
+  dummy2->blockWriteOnce = true;
+  testApp.singleDev2.dev.reportException("reported from test");
 
-  // Wait until the error has been detected, then clean the recovery value on Use1 and
-  // resolve the open/read errors, but keep the write error.
-  for(auto const* dev : {"Use1", "Use2"}) {
-    CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 1, 10000);
-  }
-  // Get the status accessors to check that Use1 does not report ready, although it
-  // got through with its recovery.
+  // Wait until Use2 is blocking and Use1 has restored the write values.
+  dummy2->blockWriteArrivedBarrier.arrive_and_wait();
+  CHECK_TIMEOUT(raw1.read<uint32_t>("Integers/unsigned32") == 18, 10000);
+  // sleep a bit so we can be pretty sure that Use1 has arrived at the POST-WRITE-RECOVERY barrier
+
+  // Take a snapshot of the open counters for checks 1 and 2.
+  auto testLmap1 = boost::dynamic_pointer_cast<OpenCountingLmapBackend>(
+      testApp.singleDev1.dev.getDeviceManager().getDevice().getBackend());
+  auto testLmap2 = boost::dynamic_pointer_cast<OpenCountingLmapBackend>(
+      testApp.singleDev2.dev.getDeviceManager().getDevice().getBackend());
+  auto testLmap12 = boost::dynamic_pointer_cast<OpenCountingLmapBackend>(
+      testApp.mappedDev12.dev.getDeviceManager().getDevice().getBackend());
+  size_t openCount1 = testLmap1->openCounter;
+  size_t openCount2 = testLmap2->openCounter;
+  size_t openCount12 = testLmap12->openCounter;
+
+  // preparation for check 3: no status changes or deviceBecameFunctional has not been trigged, although the
+  // recovery write section went through
   auto Use1Status = testFacility.getScalar<int32_t>("Devices/Use1/status");
   Use1Status.readLatest(); // just empty the queue
   auto Use1BecameFunctional = testFacility.getVoid("Devices/Use1/deviceBecameFunctional");
   Use1BecameFunctional.readLatest(); // just empty the queue
 
-  // now clear the opening error.
-  dummy4->throwExceptionOpen = false;
-  dummy4->throwExceptionRead = false;
+  // Now let Use2 continue and throw the write exception. Already request to
+  // stop at the next write.
+  dummy2->blockWriteOnce = true;
+  (void)dummy2->blockWriteContinueBarrier.arrive();
+  // Now the recovery should see an error and continue from the beginning.
+  // Wait again until Use2 blocks when writing.
+  dummy2->blockWriteArrivedBarrier.arrive_and_wait();
 
-  // Wait until we can read/write from raw1 without error.
-  CHECK_TIMEOUT(raw1.isFunctional(), 10000);
-  raw1.write("Integers/unsigned32", 0);
-  // Wait until we have seen the recovery section of Use1 run through, then clear it and wait again.
-  // Like this we make sure that the error condition in Use2 has been hit at least once.
-  CHECK_TIMEOUT(raw1.read<uint32_t>("Integers/unsigned32") == 18, 10000);
+  // Check 1 and 2: *All* DeviceManagers have *restarted* the  recovery procedure.
+  // The restart of the recovery procedure is detected by looking at the open counter.
+  BOOST_TEST(testLmap1->openCounter == openCount1 + 1);
+  BOOST_TEST(testLmap2->openCounter == openCount2 + 1);
+  BOOST_TEST(testLmap12->openCounter == openCount12 + 1);
 
-  raw1.write("Integers/unsigned32", 0);
-  CHECK_TIMEOUT(raw1.read<uint32_t>("Integers/unsigned32") == 18, 10000);
-
-  // No changing status has been reported in the mean time
+  // Check 3: After seeing the exception in Use2, Use1 has not completed the
+  // recovery after the POST-WRITE-RECOVERY barrier and changing status has been reported in the mean time.
+  // Note: The next thing after the barrier actually is activating the asynchronous reads. This
+  // test considers this as part of the "finish the recovery" section, and the order in there is
+  // tested separately.
   BOOST_TEST(!Use1Status.readNonBlocking());
   BOOST_TEST(!Use1BecameFunctional.readNonBlocking());
 
   // Finally, resolve the error condition and wait until everything recovers.
-  dummy4->throwExceptionWrite = false;
+  dummy2->throwExceptionWrite = false;
+  (void)dummy2->blockWriteContinueBarrier.arrive();
   for(auto const* dev : {"Use1", "Use2"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
   }

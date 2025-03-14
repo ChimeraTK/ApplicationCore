@@ -6,10 +6,6 @@
     </redirectedRegister>
   </module>
   <module name="Integers">
-    <redirectedRegister name="signed32">
-      <targetDevice><par>target</par></targetDevice>
-      <targetRegister>/Integers/signed32</targetRegister>
-    </redirectedRegister>
     <redirectedRegister name="unsigned32">
       <targetDevice><par>target</par></targetDevice>
       <targetRegister>/Integers/unsigned32</targetRegister>

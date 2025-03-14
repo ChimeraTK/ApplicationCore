@@ -1,10 +1,10 @@
-Raw1 (ExceptionDummy:1?map=test3.map)
-Raw2 (ExceptionDummy:2?map=test3.map)
+Raw1 (WriteBlockingDummy:1?map=test3.map)
+Raw2 (WriteBlockingDummy:2?map=test3.map)
 Raw3 (ExceptionDummy:3?map=test3.map)
 
-Use1 (RecoveryGroupTestBackend?map=oneTarget.xlmap&target=Raw1)
-Use2 (RecoveryGroupTestBackend?map=oneTarget.xlmap&target=Raw2)
+Use1 (OpenCountingLmapBackend?map=oneTarget.xlmap&target=Raw1)
+Use2 (OpenCountingLmapBackend?map=oneTarget.xlmap&target=Raw2)
 Use3 (logicalNameMap?map=oneTarget.xlmap&target=Raw3)
 
-Use12  (RecoveryGroupTestBackend?map=twoTargets.xlmap&target1=Raw1&target2=Raw2)
-Use12ReadOnly  (logicalNameMap?map=twoTargetsRO.xlmap&target1=Raw1&target2=Raw2)
+Use12  (OpenCountingLmapBackend?map=twoTargets.xlmap&target1=Raw1&target2=Raw2)
+Use12ReadOnly  (OpenCountingLmapBackend?map=twoTargetsRO.xlmap&target1=Raw1&target2=Raw2)
