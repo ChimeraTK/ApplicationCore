@@ -5,6 +5,8 @@
 
 #include "Utilities.h"
 
+#include <ChimeraTK/cppext/finally.hpp>
+
 #include <string>
 
 namespace ChimeraTK {
@@ -257,14 +259,20 @@ namespace ChimeraTK {
         }
         // Mark recovery as failed. All DeviceManagers will return to the beginning of the recovery after the next
         // synchronisation point
-        _recoveryGroup->setErrorAtStage(RecoveryGroup::RecoveryStage::INIT_HANDERS);
+        _recoveryGroup->setErrorAtStage(RecoveryGroup::RecoveryStage::INIT_HANDLERS);
+      }
+      catch(...) {
+        // This will terminate this DeviceManager main loop, but we have to let the other DeviceManagers know that
+        // this stage failed before we drop out.
+        _recoveryGroup->setErrorAtStage(RecoveryGroup::RecoveryStage::INIT_HANDLERS);
+        throw;
       }
 
       /****************************************************************************************************************/
       // Sync point (stage INIT_HANDLERS complete): Wait until all init scripts are done before writing recovery
       // accessors.
       /****************************************************************************************************************/
-      if(!_recoveryGroup->waitForRecoveryStage(RecoveryGroup::RecoveryStage::INIT_HANDERS)) {
+      if(!_recoveryGroup->waitForRecoveryStage(RecoveryGroup::RecoveryStage::INIT_HANDLERS)) {
         // If another thread has already continued and set an error for recovery stage RECOVERY_ACCESSORS,
         // waitForRecoveryStage(INIT_HANDLERS) will still return 'true', so all threads arrive at the
         // barrier for stage RECOVERY_ACCESSORS.
@@ -299,6 +307,12 @@ namespace ChimeraTK {
         // Mark recovery as failed. All DeviceManagers will return to the beginning of the recovery after the next
         // synchronisation point
         _recoveryGroup->setErrorAtStage(RecoveryGroup::RecoveryStage::RECOVERY_ACCESSORS);
+      }
+      catch(...) {
+        // This will terminate this DeviceManager main loop, but we have to let the other DeviceManagers know that
+        // this stage failed before we drop out.
+        _recoveryGroup->setErrorAtStage(RecoveryGroup::RecoveryStage::RECOVERY_ACCESSORS);
+        throw;
       }
 
       /****************************************************************************************************************/

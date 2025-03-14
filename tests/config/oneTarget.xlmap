@@ -10,5 +10,9 @@
       <targetDevice><par>target</par></targetDevice>
       <targetRegister>/Integers/unsigned32</targetRegister>
     </redirectedRegister>
-  </module>
+    <redirectedRegister name="pushedSigned32">
+      <targetDevice><par>target</par></targetDevice>
+      <targetRegister>/PushType/signed32</targetRegister>
+    </redirectedRegister>
+   </module>
 </logicalNameMap>

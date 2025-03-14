@@ -211,7 +211,7 @@ namespace ChimeraTK {
      * The shared state of a group of DeviceManagers which are recovering together.
      */
     struct RecoveryGroup {
-      enum class RecoveryStage { NO_ERROR, DETECTION, OPEN, INIT_HANDERS, RECOVERY_ACCESSORS };
+      enum class RecoveryStage { NO_ERROR, DETECTION, OPEN, INIT_HANDLERS, RECOVERY_ACCESSORS };
       static constexpr const char* stageToString(RecoveryStage stage) {
         switch(stage) {
           case RecoveryStage::NO_ERROR:
@@ -220,7 +220,7 @@ namespace ChimeraTK {
             return "RecoveryStage::DETECTION";
           case RecoveryStage::OPEN:
             return "RecoveryStage::OPEN";
-          case RecoveryStage::INIT_HANDERS:
+          case RecoveryStage::INIT_HANDLERS:
             return "RecoveryStage::INIT_HANDLERS";
           case RecoveryStage::RECOVERY_ACCESSORS:
             return "RecoveryStage::RECOVERY_ACCESSORS";

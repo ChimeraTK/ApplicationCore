@@ -454,9 +454,9 @@ BOOST_FIXTURE_TEST_CASE(TestInitFailure, Fixture<InitFailureApp>) {
 
 /**********************************************************************************************************************/
 
-struct RecoveryFailureTestApp : ctk::Application {
-  explicit RecoveryFailureTestApp() : Application("RecoveryFailureTestApp") {}
-  ~RecoveryFailureTestApp() override { shutdown(); }
+struct WriteRecoveryTestApp : ctk::Application {
+  explicit WriteRecoveryTestApp() : Application("RecoveryFailureTestApp") {}
+  ~WriteRecoveryTestApp() override { shutdown(); }
 
   ctk::SetDMapFilePath path{"recoveryGroups.dmap"};
 
@@ -464,7 +464,7 @@ struct RecoveryFailureTestApp : ctk::Application {
   DeviceModuleWithPath singleDev1{this, "Use1"};
   DeviceModuleWithPath singleDev2{this, "Use2"};
   // Use the combining xlmap file which does not use write registers.
-  // The test below requires that there is only one register written on backend 2.
+  // The tests below require that there is only one register written on backend 2.
   DeviceModuleWithPath mappedDev12{this, "Use12ReadOnly"};
 };
 
@@ -476,11 +476,41 @@ struct RecoveryFailureTestApp : ctk::Application {
  * synchronous read.
  */
 
-BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteBarrier, Fixture<RecoveryFailureTestApp>) {
-  // FIXME This test is mixing B.3.1.2.1 and B.3.1.2.2, and does none of them cleanly.
-  // This test is checking that the error condition of a failure when writing the recovery accessors do
-  // not confuse the barrier order and lock up the manager.
-  BOOST_CHECK(false);
+BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteBarrier, Fixture<WriteRecoveryTestApp>) {
+  // pre-condition: all devices OK
+  for(auto const* dev : {"Use1", "Use2", "Use12ReadOnly"}) {
+    CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
+  }
+  // Write something to Use1 so we can check when its recovery accessor writing is through.
+  testFacility.writeScalar<uint32_t>("/Use1/Integers/unsigned32", 18);
+  CHECK_TIMEOUT(raw1.read<uint32_t>("Integers/unsigned32") == 18, 10000);
+  // Change the value on the device to detect when the recovery writing is through.
+  raw1.write("Integers/unsigned32", 0);
+  auto pushedSigned32 = testFacility.getScalar<int32_t>("/Use1/Integers/pushedSigned32");
+  pushedSigned32.readLatest(); // just empty the queue
+
+  // Block Use2 and trigger a recovery
+  auto dummy2 = boost::dynamic_pointer_cast<WriteBlockingDummy>(raw2.getBackend());
+  dummy2->blockWriteOnce = true;
+  testApp.singleDev2.dev.reportException("reported from test");
+  pushedSigned32.read(); // Data marked as faulty due to the exception. Just to empty the queue.
+  assert(pushedSigned32.dataValidity() == ctk::DataValidity::faulty);
+
+  // Wait until Use2 is blocking
+  dummy2->blockWriteArrivedBarrier.arrive_and_wait();
+
+  // The actual test: Nothing has been written to the push-type register yet.
+  // Even though Use1 has completed the recovery write step, it has not yet activated the async read.
+  CHECK_TIMEOUT(raw1.read<uint32_t>("Integers/unsigned32") == 18, 10000);
+  // Wait a bit (100 ms) for data to arrive, but not too long as we don't expect anything.
+  usleep(100000);
+  BOOST_CHECK(!pushedSigned32.readNonBlocking());
+
+  // Let Use2 continue and complete the recovery.
+  (void)dummy2->blockWriteContinueBarrier.arrive();
+  for(auto const* dev : {"Use1", "Use2", "Use12ReadOnly"}) {
+    CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
+  }
 }
 
 /**********************************************************************************************************************/
@@ -491,7 +521,7 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteBarrier, Fixture<RecoveryFailureTestApp
  * recovery group restart the recovery procedure after the POST-WRITE-RECOVERY barrier.
  */
 
-BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<RecoveryFailureTestApp>) {
+BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<WriteRecoveryTestApp>) {
   // Side effect: This test is checking that the error condition of a failure when writing the recovery accessors do
   // not confuse the barrier order and lock up the manager.
 
@@ -500,8 +530,8 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<RecoveryFailureTestApp
   //  2. The recovery restarts with *open* (not only the init step is repeated).
   //  3. The recovery happens *after the POST-WRITE-RECOVERY barrier*.
 
-  // pre-condition: all (relevant) devices OK
-  for(auto const* dev : {"Use1", "Use2"}) {
+  // pre-condition: all devices OK
+  for(auto const* dev : {"Use1", "Use2", "Use12ReadOnly"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
   }
 
@@ -565,7 +595,7 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<RecoveryFailureTestApp
   // Finally, resolve the error condition and wait until everything recovers.
   dummy2->throwExceptionWrite = false;
   (void)dummy2->blockWriteContinueBarrier.arrive();
-  for(auto const* dev : {"Use1", "Use2"}) {
+  for(auto const* dev : {"Use1", "Use2", "Use12ReadOnly"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
   }
 }
