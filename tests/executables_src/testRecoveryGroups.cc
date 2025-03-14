@@ -78,8 +78,20 @@ static WriteBlockingDummy::Registerer writeBlockingBackendRegisterer;
 // Test backend which counts the number of open() calls and allows to block write operations.
 struct OpenCountingLmapBackend : public ChimeraTK::LogicalNameMappingBackend {
   using LogicalNameMappingBackend::LogicalNameMappingBackend;
+
   std::atomic<size_t> openCounter{0};
+
+  std::barrier<> aboutToThrowArrivedBarrier{2};    // Tell the test thread that we are there
+  std::barrier<> aboutToThrowContinueBarrier{2};   // Wait for the test to tell us to continue.
+  std::atomic<bool> throwThreadInterrupted{false}; // Throw a boost::thread_interrupted exception.
+
   void open() override {
+    if(throwThreadInterrupted) {
+      (void)aboutToThrowArrivedBarrier.arrive();
+      aboutToThrowContinueBarrier.arrive_and_wait();
+      throw boost::thread_interrupted(); // NOLINT hicpp-exception-baseclass
+    }
+
     ++openCounter;
     ChimeraTK::LogicalNameMappingBackend::open();
   }
@@ -603,6 +615,46 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<WriteRecoveryTestApp>)
   for(auto const* dev : {"Use1", "Use2", "Use12ReadOnly"}) {
     CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
   }
+}
+
+/**********************************************************************************************************************/
+
+/**
+ * \anchor testExceptionHandling_b_3_3_open \ref exceptionHandling_b_3_3 "B.3.3" The application terminates
+ * cleanly, even if the recovery is waiting at one of the barriers mentioned in \ref b_3_1 "3.1"
+ *
+ * Test at the POST-OPEN barrier.
+ */
+BOOST_AUTO_TEST_CASE(TestIncompleteRecoveryOpen) {
+  { // open a new scope so we can test after the app goes out of scope
+    BasicTestApp testApp;
+    ChimeraTK::TestFacility testFacility{testApp, /* enableTestableMode */ false};
+    testFacility.runApplication();
+
+    // pre-condition: all (relevant) devices OK
+    for(auto const* dev : {"Use1", "Use2"}) {
+      CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
+    }
+
+    // Prepare throwing in thread_interrupted in open
+    auto testLmap2 = boost::dynamic_pointer_cast<OpenCountingLmapBackend>(
+        testApp.singleDev2.dev.getDeviceManager().getDevice().getBackend());
+    testLmap2->throwThreadInterrupted = true;
+    testApp.singleDev1.dev.reportException("reported from test");
+
+    // Wait until the dummy backend told us it is about to throw.
+    testLmap2->aboutToThrowArrivedBarrier.arrive_and_wait();
+
+    // wait until the other DeviceManager has opened its backend, then sleep a bit to be pretty sure
+    // it has reached the barrier
+    CHECK_TIMEOUT(testApp.singleDev1.dev.getDeviceManager().getDevice().isFunctional(), 10000);
+    usleep(100000);
+
+    // once we let dummy2 continue it will throw.
+    (void)testLmap2->aboutToThrowContinueBarrier.arrive();
+  }
+  // The actual test: We reached this point, the test did not block
+  BOOST_CHECK(true);
 }
 
 /**********************************************************************************************************************/
