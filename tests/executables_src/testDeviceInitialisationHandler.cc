@@ -264,6 +264,10 @@ namespace Tests::testDeviceInitialisationHandler {
   }
 
   /********************************************************************************************************************/
+  /**
+   * \anchor testExceptionHandling_b_3_1_1_1 \ref exceptionHandling_b_3_1_1_1 "B.3.1.1.1"
+   * The device is closed before the initialisation handler is called.
+   */
 
   BOOST_AUTO_TEST_CASE(TestDeviceClosedInInitHandler) {
     // Check that the device has been closed when the init handler is called.
