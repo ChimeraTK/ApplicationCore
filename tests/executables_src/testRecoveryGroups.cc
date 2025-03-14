@@ -3,6 +3,7 @@
 #include <ChimeraTK/Device.h>
 
 #include <boost/smart_ptr/make_shared_object.hpp>
+#include <boost/thread/exceptions.hpp>
 #define BOOST_TEST_MODULE testRecoveryGroups
 
 #include "Application.h"
@@ -42,16 +43,21 @@ struct DeviceModuleWithPath : public ctk::ModuleGroup {
 struct WriteBlockingDummy : public ChimeraTK::ExceptionDummy {
   using ExceptionDummy::ExceptionDummy;
 
-  std::atomic<bool> blockWriteOnce{false};     // Only use the following barrier if true.
-  std::barrier<> blockWriteArrivedBarrier{2};  // Tell the test thread that we are there
-  std::barrier<> blockWriteContinueBarrier{2}; // Wait for the test to tell us to continue.
+  std::atomic<bool> blockWriteOnce{false};         // Only use the following barrier if true.
+  std::barrier<> blockWriteArrivedBarrier{2};      // Tell the test thread that we are there
+  std::barrier<> blockWriteContinueBarrier{2};     // Wait for the test to tell us to continue.
+  std::atomic<bool> throwThreadInterrupted{false}; // Throw a boost::thread_interrupted exception.
 
   void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override {
     if(blockWriteOnce) {
       blockWriteOnce = false;
       (void)blockWriteArrivedBarrier.arrive();     // Notify the test.
       blockWriteContinueBarrier.arrive_and_wait(); // Wait for the test to tell us to continue.
+      if(throwThreadInterrupted) {
+        throw boost::thread_interrupted(); // NOLINT hicpp-exception-baseclass
+      }
     }
+
     ExceptionDummy::write(bar, address, data, sizeInBytes);
   }
 
@@ -640,10 +646,12 @@ struct IncompleteRecoveryTestApp : ctk::Application {
 /**********************************************************************************************************************/
 
 /**
- * \anchor testExceptionHandling_b_3_3 \ref exceptionHandling_b_3_3 "B.3.3" The application terminates
+ * \anchor testExceptionHandling_b_3_3_init \ref exceptionHandling_b_3_3 "B.3.3" The application terminates
  * cleanly, even if the recovery is waiting at one of the barriers mentioned in \ref b_3_1 "3.1"
+ *
+ * Test at the POST-INIT-HANDLER barrier.
  */
-BOOST_AUTO_TEST_CASE(TestIncompleteRecovery) {
+BOOST_AUTO_TEST_CASE(TestIncompleteRecoveryInit) {
   { // open a new scope so we can test after the app goes out of scope
     IncompleteRecoveryTestApp testApp;
     ChimeraTK::TestFacility testFacility{testApp, /* enableTestableMode */ false};
@@ -662,6 +670,57 @@ BOOST_AUTO_TEST_CASE(TestIncompleteRecovery) {
     // The second init handler which is run does the blocking, and sleeps a bit before arriving here, so we are pretty
     // sure that the other init handler has reached the barrier.
     testApp.aboutToThrow.arrive_and_wait();
+  }
+  // The actual test: We reached this point, the test did not block
+  BOOST_CHECK(true);
+}
+
+/**********************************************************************************************************************/
+
+/**
+ * \anchor testExceptionHandling_b_3_3_writeRecovery \ref exceptionHandling_b_3_3 "B.3.3" The application terminates
+ * cleanly, even if the recovery is waiting at one of the barriers mentioned in \ref b_3_1 "3.1"
+ *
+ * Test at the POST-INIT-HANDLER barrier.
+ */
+BOOST_AUTO_TEST_CASE(TestIncompleteWriteRecovery) {
+  { // open a new scope so we can test after the app goes out of scope
+    BasicTestApp testApp;
+    ChimeraTK::TestFacility testFacility{testApp, /* enableTestableMode */ false};
+    testFacility.runApplication();
+
+    // pre-condition: all (relevant) devices OK
+    for(auto const* dev : {"Use1", "Use2"}) {
+      CHECK_TIMEOUT(testFacility.readScalar<int>(std::string("Devices/") + dev + "/status") == 0, 10000);
+    }
+
+    ctk::Device raw1{"Raw1"};
+    raw1.open();
+
+    // Write something to Use1 so we can check when its recovery accessor writing is through.
+    testFacility.writeScalar<uint32_t>("/Use1/Integers/unsigned32", 18);
+    CHECK_TIMEOUT(raw1.read<uint32_t>("Integers/unsigned32") == 18, 10000);
+    // Change the value on the device to detect that the writing is through.
+    raw1.write("Integers/unsigned32", 0);
+
+    // Prepare throwing in thread_interrupted in the read recovery
+    ctk::Device raw2{"Raw2"};
+    raw2.open();
+    auto dummy2 = boost::dynamic_pointer_cast<WriteBlockingDummy>(raw2.getBackend());
+    dummy2->blockWriteOnce = true;
+    dummy2->throwThreadInterrupted = true;
+    testApp.singleDev1.dev.reportException("reported from test");
+
+    // Wait until the dummy backend told us it is about to throw.
+    dummy2->blockWriteArrivedBarrier.arrive_and_wait();
+
+    // wait until the other DeviceManager has written its values, then sleep a bit to be pretty sure
+    // it has reached the barrier
+    CHECK_TIMEOUT(raw1.read<uint32_t>("Integers/unsigned32") == 18, 10000);
+    usleep(100000);
+
+    // once we let dummy2 continue it will throw.
+    (void)dummy2->blockWriteContinueBarrier.arrive();
   }
   // The actual test: We reached this point, the test did not block
   BOOST_CHECK(true);
