@@ -10,3 +10,5 @@
 /FixedPoint/value                 1 32 4 1 32 8 1 RW
 /Deep/Hierarchies/Need/Tests/As/well  1 36 4 1 32 0 1 RW
 /Deep/Hierarchies/Need/Another/test   1 40 4 1 32 0 1 RW
+# Push type needed for testRecoveryGroups
+/PushType/signed32                1 44 4 1 32 0 1 INTERRUPT0

@@ -165,6 +165,9 @@ namespace ChimeraTK {
      */
     boost::shared_ptr<DeviceManager> getDeviceManager(const std::string& aliasOrCDD);
 
+    /** Access the device manager map. */
+    std::map<std::string, boost::shared_ptr<DeviceManager>> const& getDeviceManagerMap() { return _deviceManagerMap; }
+
     /**
      * Get the current LifeCycleState of the application.
      */

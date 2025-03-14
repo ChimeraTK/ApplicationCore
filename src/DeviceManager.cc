@@ -5,15 +5,47 @@
 
 #include "Utilities.h"
 
+#include <ChimeraTK/cppext/finally.hpp>
+
+#include <string>
+
 namespace ChimeraTK {
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   DeviceManager::DeviceManager(Application* application, const std::string& deviceAliasOrCDD)
   : ApplicationModule(application, "/Devices/" + Utilities::escapeName(deviceAliasOrCDD, false), ""),
-    _device(deviceAliasOrCDD), _deviceAliasOrCDD(deviceAliasOrCDD), _owner{application} {}
+    _device(deviceAliasOrCDD), _deviceAliasOrCDD(deviceAliasOrCDD), _owner{application} {
+    auto involvedBackends = _device.getInvolvedBackendIDs();
+    // Create a recovery group with barrier size 1.
+    _recoveryGroup = std::make_shared<RecoveryGroup>(involvedBackends, _owner);
 
-  /*********************************************************************************************************************/
+    // loop all already existing DeviceManagers and look for shared backends
+    int64_t recoveryGroupSize{1};
+    for(const auto& [alias, existingDeviceManager] : Application::getInstance().getDeviceManagerMap()) {
+      for(auto backendID : involvedBackends) {
+        if(existingDeviceManager->_recoveryGroup->recoveryBackendIDs.contains(backendID)) {
+          // Note: The next line modifies involvedBackends while iterating over it.
+          // This is only allowed because the iteration is terminated with a break below!
+          involvedBackends.merge(existingDeviceManager->_recoveryGroup->recoveryBackendIDs);
+          existingDeviceManager->_recoveryGroup = _recoveryGroup;
+          ++recoveryGroupSize;
+          break;
+        }
+      }
+    }
+
+    if(recoveryGroupSize > 1) {
+      // update the recovery group
+      _recoveryGroup->recoveryBackendIDs = involvedBackends;
+      // The barrier does not allow modification of the number of participants.
+      // We put a placement new to replace it. Before this, we have to call the constructor of the old instance.
+      _recoveryGroup->recoveryBarrier.~barrier();
+      new(&_recoveryGroup->recoveryBarrier) std::barrier(recoveryGroupSize);
+    }
+  }
+
+  /********************************************************************************************************************/
 
   std::vector<VariableNetworkNode> DeviceManager::getNodesList() const {
     std::vector<VariableNetworkNode> rv;
@@ -56,9 +88,9 @@ namespace ChimeraTK {
     return rv;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
-  void DeviceManager::reportException(std::string errMsg) {
+  void DeviceManager::reportException(const std::string& errMsg) {
     if(_owner->getTestableMode().isEnabled()) {
       assert(_owner->getTestableMode().testLock());
     }
@@ -71,7 +103,7 @@ namespace ChimeraTK {
     boost::unique_lock<boost::shared_mutex> errorLock(_errorMutex);
 
     if(!_deviceHasError) { // only report new errors if the device does not have reported errors already
-      if(_errorQueue.push(std::move(errMsg))) {
+      if(_errorQueue.push(errMsg)) {
         if(_owner->getTestableMode().isEnabled()) {
           ++_owner->getTestableMode()._counter;
         }
@@ -80,23 +112,50 @@ namespace ChimeraTK {
       _device.setException(errMsg);
       _deviceHasError = true;
       _exceptionVersionNumber = {}; // generate a new exception version number
+
+      // Release the error lock before notifying the other device managers in the recovery group.
+      // They will re-inform us, and holding the lock would deadlock trying to re-acquire this error mutex.
       errorLock.unlock();
-    }
-    else {
-      errorLock.unlock();
+
+      // Inform the other DeviceManagers in the recovery group.
+      for(auto const& [cdd, deviceManager] : _owner->getDeviceManagerMap()) {
+        if(deviceManager.get() == this) {
+          continue;
+        }
+        if(deviceManager->_recoveryGroup == _recoveryGroup) {
+          // Only append a device info to the recovery message if there is none.
+          auto deviceInfo =
+              (errMsg.find("[in device ") == std::string::npos) ? "[in device " + _deviceAliasOrCDD + "]" : "";
+          deviceManager->reportException(errMsg + deviceInfo);
+        }
+      }
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   VersionNumber DeviceManager::getExceptionVersionNumber() {
     boost::shared_lock<boost::shared_mutex> errorLock(_errorMutex);
     return _exceptionVersionNumber;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void DeviceManager::mainLoop() {
+    // Whenever the loop is left, we have to drop the barrier so the other DeviceManagers are not blocked indefinitely.
+    // They could never terminate in this situation, and hence the whole application could never terminate.
+    try {
+      mainLoopImpl();
+    }
+    catch(...) {
+      _recoveryGroup->recoveryBarrier.arrive_and_drop();
+      throw;
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  void DeviceManager::mainLoopImpl() {
     Application::registerThread("DM_" + getName());
     std::string error;
 
@@ -108,18 +167,25 @@ namespace ChimeraTK {
     bool firstSuccess = true;
 
     while(true) {
+      /****************************************************************************************************************/
+      // Sync point DETECTION:
+      // The manager has seen an error and (re)starts recovery. Wait until all
+      // involved DeviceManagers have seen it.
+      /****************************************************************************************************************/
+      _recoveryGroup->waitForRecoveryStage(RecoveryGroup::RecoveryStage::DETECTION);
+      // Reset error stage to NO_ERROR. Contains a barrier to make sure all threads have seen it.
+      _recoveryGroup->resetErrorAtStage();
+
+      // Starting stage 2
       // [Spec: 2.3.1] (Re)-open the device.
       do {
         _owner->getTestableMode().unlock("Wait before open/recover device");
         usleep(500000);
         boost::this_thread::interruption_point();
         _owner->getTestableMode().lock("Attempt open/recover device");
+
         try {
-          // The globalDeviceOpenMutex is a work around for backends which do not implement open() in a thread-safe
-          // manner. This seems to be the case for most backends currently, hence it was decided to implement this
-          // workaround for now (see #11478).
-          static std::mutex globalDeviceOpenMutex;
-          std::lock_guard<std::mutex> globalDeviceOpenLock(globalDeviceOpenMutex);
+          std::lock_guard<std::mutex> deviceOpenLock(_recoveryGroup->deviceOpenCloseMutex);
           _device.open();
         }
         catch(ChimeraTK::runtime_error& e) {
@@ -130,6 +196,7 @@ namespace ChimeraTK {
             setCurrentVersionNumber({});
             _deviceError.write(StatusOutput::Status::FAULT, e.what());
           }
+
           continue; // should not be necessary because isFunctional() should return false. But no harm in leaving it in.
         }
       } while(!_device.isFunctional());
@@ -159,10 +226,27 @@ namespace ChimeraTK {
         }
       }
 
+      /****************************************************************************************************************/
+      // Sync point (stage OPEN complete): Device opened. Synchronise before starting init scripts.
+      /****************************************************************************************************************/
+      assert(_recoveryGroup->errorAtStage ==
+          RecoveryGroup::RecoveryStage::NO_ERROR); // no other thread must have modified the flag until here.
+
+      // no need to check the return value. No error reported in the OPEN stage.
+      _recoveryGroup->waitForRecoveryStage(RecoveryGroup::RecoveryStage::OPEN);
+
+      // Starting stage INIT_HANDLERS
       // [Spec: 2.3.2] Run initialisation handlers
       try {
         for(auto& initHandler : _initialisationHandlers) {
-          initHandler(_device);
+          {
+            // Hold the open/close lock while executing the init handler, so no other
+            // DeviceManager closes the device while the init handler is running.
+            std::lock_guard<std::mutex> openCloseLock(_recoveryGroup->deviceOpenCloseMutex);
+            _device.close();
+            initHandler(_device);
+            _device.open();
+          }
         }
       }
       catch(ChimeraTK::runtime_error& e) {
@@ -173,10 +257,30 @@ namespace ChimeraTK {
           setCurrentVersionNumber({});
           _deviceError.write(StatusOutput::Status::FAULT, e.what());
         }
-        // Jump back to re-opening the device
+        // Mark recovery as failed. All DeviceManagers will return to the beginning of the recovery after the next
+        // synchronisation point
+        _recoveryGroup->setErrorAtStage(RecoveryGroup::RecoveryStage::INIT_HANDLERS);
+      }
+      catch(...) {
+        // This will terminate this DeviceManager main loop, but we have to let the other DeviceManagers know that
+        // this stage failed before we drop out.
+        _recoveryGroup->setErrorAtStage(RecoveryGroup::RecoveryStage::INIT_HANDLERS);
+        throw;
+      }
+
+      /****************************************************************************************************************/
+      // Sync point (stage INIT_HANDLERS complete): Wait until all init scripts are done before writing recovery
+      // accessors.
+      /****************************************************************************************************************/
+      if(!_recoveryGroup->waitForRecoveryStage(RecoveryGroup::RecoveryStage::INIT_HANDLERS)) {
+        // If another thread has already continued and set an error for recovery stage RECOVERY_ACCESSORS,
+        // waitForRecoveryStage(INIT_HANDLERS) will still return 'true', so all threads arrive at the
+        // barrier for stage RECOVERY_ACCESSORS.
+        // If there was error in stage INIT_HANDLERS, all threads will see it here and continue.
         continue;
       }
 
+      // Starting stage RECOVERY_ACCESSORS
       // Write all recovery accessors
       // We are now entering the critical recovery section. It is protected by the recovery mutex until the
       // deviceHasError flag has been cleared.
@@ -200,10 +304,26 @@ namespace ChimeraTK {
           setCurrentVersionNumber({});
           _deviceError.write(StatusOutput::Status::FAULT, e.what());
         }
-        // Jump back to re-opening the device
+        // Mark recovery as failed. All DeviceManagers will return to the beginning of the recovery after the next
+        // synchronisation point
+        _recoveryGroup->setErrorAtStage(RecoveryGroup::RecoveryStage::RECOVERY_ACCESSORS);
+      }
+      catch(...) {
+        // This will terminate this DeviceManager main loop, but we have to let the other DeviceManagers know that
+        // this stage failed before we drop out.
+        _recoveryGroup->setErrorAtStage(RecoveryGroup::RecoveryStage::RECOVERY_ACCESSORS);
+        throw;
+      }
+
+      /****************************************************************************************************************/
+      // Sync point (stage RECOVERY_ACCESSORS complete): All recovery accessors have been written.
+      /****************************************************************************************************************/
+      if(!_recoveryGroup->waitForRecoveryStage(RecoveryGroup::RecoveryStage::RECOVERY_ACCESSORS)) {
+        // In case of error, jump back to the beginning of the recovery/open procedure
         continue;
       }
 
+      // complete the recovery, then wait for the exception
       errorLock.lock();
       _deviceHasError = false;
       errorLock.unlock();
@@ -278,7 +398,7 @@ namespace ChimeraTK {
     } // while(true)
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void DeviceManager::prepare() {
     // Set initial status to error
@@ -293,41 +413,41 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void DeviceManager::addInitialisationHandler(std::function<void(ChimeraTK::Device&)> initialisationHandler) {
     _initialisationHandlers.push_back(std::move(initialisationHandler));
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void DeviceManager::addRecoveryAccessor(boost::shared_ptr<RecoveryHelper> recoveryAccessor) {
     _recoveryHelpers.push_back(std::move(recoveryAccessor));
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   uint64_t DeviceManager::writeOrder() {
     return ++_writeOrderCounter;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   boost::shared_lock<boost::shared_mutex> DeviceManager::getRecoverySharedLock() {
     return boost::shared_lock<boost::shared_mutex>(_recoveryMutex);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void DeviceManager::waitForInitialValues() {
     _initialValueLatch.wait();
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   std::list<EntityOwner*> DeviceManager::getInputModulesRecursively(std::list<EntityOwner*> startList) {
-    // The DeviceManager does not process the device registers, and hence circular networks involving the DeviceManager
-    // are not truly circular. Hence no real circular network checking is done here.
+    // The DeviceManager does not process the device registers, and hence circular networks involving the
+    // DeviceManager are not truly circular. Hence no real circular network checking is done here.
 
     // If the startList is empty, the recursion scan might be about the status/control variables of the DeviceManager.
     // Hence we add the DeviceManager to the empty list.
@@ -337,27 +457,27 @@ namespace ChimeraTK {
     return startList;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   size_t DeviceManager::getCircularNetworkHash() const {
     return 0; // The device module is never part of a circular network
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void DeviceManager::incrementDataFaultCounter() {
     throw ChimeraTK::logic_error("incrementDataFaultCounter() called on a DeviceManager. This is probably "
                                  "caused by incorrect ownership of variables/accessors or VariableGroups.");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void DeviceManager::decrementDataFaultCounter() {
     throw ChimeraTK::logic_error("decrementDataFaultCounter() called on a DeviceManager. This is probably "
                                  "caused by incorrect ownership of variables/accessors or VariableGroups.");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void DeviceManager::terminate() {
     if(_moduleThread.joinable()) {
@@ -374,6 +494,35 @@ namespace ChimeraTK {
     assert(!_moduleThread.joinable());
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  bool DeviceManager::RecoveryGroup::waitForRecoveryStage(RecoveryStage stage) {
+    app->getTestableMode().unlock(std::string("DeviceManager: Sync device recovery after ") + stageToString(stage));
+    recoveryBarrier.arrive_and_wait();
+    boost::this_thread::interruption_point();
+    app->getTestableMode().lock(
+        std::string("DeviceManager: Starting next device recovery stage after ") + stageToString(stage));
+
+    // Return false if errorAtStage is the current stage.
+    return !(errorAtStage == stage);
+  }
+
+  /********************************************************************************************************************/
+
+  void DeviceManager::RecoveryGroup::setErrorAtStage(RecoveryStage stage) {
+    assert((errorAtStage == RecoveryStage::NO_ERROR) || (errorAtStage == stage));
+    errorAtStage = stage;
+  }
+
+  /********************************************************************************************************************/
+
+  void DeviceManager::RecoveryGroup::resetErrorAtStage() {
+    errorAtStage = RecoveryStage::NO_ERROR;
+
+    app->getTestableMode().unlock("DeviceManager: Sync after resetting recovery group stage");
+    recoveryBarrier.arrive_and_wait();
+    boost::this_thread::interruption_point();
+    app->getTestableMode().lock("DeviceManager: Starting recovery");
+  }
 
 } // namespace ChimeraTK
