@@ -551,6 +551,7 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<WriteRecoveryTestApp>)
   dummy2->blockWriteArrivedBarrier.arrive_and_wait();
   CHECK_TIMEOUT(raw1.read<uint32_t>("Integers/unsigned32") == 18, 10000);
   // sleep a bit so we can be pretty sure that Use1 has arrived at the POST-WRITE-RECOVERY barrier
+  usleep(100000); // 100 ms
 
   // Take a snapshot of the open counters for checks 1 and 2.
   auto testLmap1 = boost::dynamic_pointer_cast<OpenCountingLmapBackend>(
@@ -563,12 +564,12 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<WriteRecoveryTestApp>)
   size_t openCount2 = testLmap2->openCounter;
   size_t openCount12 = testLmap12->openCounter;
 
-  // preparation for check 3: no status changes or deviceBecameFunctional has not been trigged, although the
-  // recovery write section went through
-  auto Use1Status = testFacility.getScalar<int32_t>("Devices/Use1/status");
-  Use1Status.readLatest(); // just empty the queue
-  auto Use1BecameFunctional = testFacility.getVoid("Devices/Use1/deviceBecameFunctional");
-  Use1BecameFunctional.readLatest(); // just empty the queue
+  // preparation for check 3: recovery started directly after the POST-WRITE-RECOVERY barrier
+  // Get an asynchronous variable from Use1. It must not have seen any data after the exception
+  auto pushedSigned32 = testFacility.getScalar<int32_t>("/Use1/Integers/pushedSigned32");
+  pushedSigned32.readLatest(); // just empty the queue.
+  // The last thing we should have seen is the exception, so data validity is faulty.
+  BOOST_CHECK(pushedSigned32.dataValidity() == ctk::DataValidity::faulty);
 
   // Now let Use2 continue and throw the write exception. Already request to
   // stop at the next write.
@@ -585,12 +586,10 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<WriteRecoveryTestApp>)
   BOOST_TEST(testLmap12->openCounter == openCount12 + 1);
 
   // Check 3: After seeing the exception in Use2, Use1 has not completed the
-  // recovery after the POST-WRITE-RECOVERY barrier and changing status has been reported in the mean time.
-  // Note: The next thing after the barrier actually is activating the asynchronous reads. This
-  // test considers this as part of the "finish the recovery" section, and the order in there is
-  // tested separately.
-  BOOST_TEST(!Use1Status.readNonBlocking());
-  BOOST_TEST(!Use1BecameFunctional.readNonBlocking());
+  // recovery after the POST-WRITE-RECOVERY barrier and hence async read is not turned on yet.
+  // Wait a bit (100 ms) for data to arrive, but not too long as we don't expect anything.
+  usleep(100000);
+  BOOST_CHECK(!pushedSigned32.readNonBlocking());
 
   // Finally, resolve the error condition and wait until everything recovers.
   dummy2->throwExceptionWrite = false;
