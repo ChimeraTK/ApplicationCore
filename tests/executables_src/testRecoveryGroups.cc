@@ -621,7 +621,7 @@ BOOST_FIXTURE_TEST_CASE(TestRecoveryWriteFailure, Fixture<WriteRecoveryTestApp>)
 
 /**
  * \anchor testExceptionHandling_b_3_3_open \ref exceptionHandling_b_3_3 "B.3.3" The application terminates
- * cleanly, even if the recovery is waiting at one of the barriers mentioned in \ref b_3_1 "3.1"
+ * cleanly, even if the recovery is waiting at one of the barriers mentioned in \ref exceptionHandling_b_3_1 "3.1"
  *
  * Test at the POST-OPEN barrier.
  */
@@ -699,7 +699,7 @@ struct IncompleteRecoveryTestApp : ctk::Application {
 
 /**
  * \anchor testExceptionHandling_b_3_3_init \ref exceptionHandling_b_3_3 "B.3.3" The application terminates
- * cleanly, even if the recovery is waiting at one of the barriers mentioned in \ref b_3_1 "3.1"
+ * cleanly, even if the recovery is waiting at one of the barriers mentioned in \ref exceptionHandling_b_3_1 "3.1"
  *
  * Test at the POST-INIT-HANDLER barrier.
  */
@@ -731,7 +731,7 @@ BOOST_AUTO_TEST_CASE(TestIncompleteRecoveryInit) {
 
 /**
  * \anchor testExceptionHandling_b_3_3_writeRecovery \ref exceptionHandling_b_3_3 "B.3.3" The application terminates
- * cleanly, even if the recovery is waiting at one of the barriers mentioned in \ref b_3_1 "3.1"
+ * cleanly, even if the recovery is waiting at one of the barriers mentioned in \ref exceptionHandling_b_3_1 "3.1"
  *
  * Test at the POST-INIT-HANDLER barrier.
  */
