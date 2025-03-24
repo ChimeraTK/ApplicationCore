@@ -8,10 +8,12 @@
 #include "ConfigReader.h"
 #include "PyModuleGroup.h"
 #include "PythonModuleManager.h"
+#include "VersionInfo.h"
 
 #include <filesystem>
 
 namespace py = pybind11;
+using namespace py::literals;
 
 namespace ChimeraTK {
 
@@ -22,6 +24,7 @@ namespace ChimeraTK {
       py::scoped_interpreter pyint{false}; // "false" = do not register signal handlers
       py::exception<boost::thread_interrupted> exceptionObject;
       std::function<void(const std::unique_ptr<PyModuleGroup>&)> onMainGroupChangeCallback;
+      PythonModuleManagerStatics();
     };
 
     /******************************************************************************************************************/
@@ -37,6 +40,25 @@ namespace ChimeraTK {
     std::unique_ptr<detail::PythonModuleManagerStatics> PythonModuleManagerImpl::statics;
     /// \endcond
 
+    /******************************************************************************************************************/
+
+    PythonModuleManagerStatics::PythonModuleManagerStatics() {
+      py::gil_scoped_acquire gil;
+
+      auto locals = py::dict("so_version"_a = ChimeraTK::VersionInfo::soVersion);
+      py::exec(R"(
+        import sys
+        import os
+
+        new_paths = []
+        for p in sys.path:
+          new_paths.append(os.path.join(p, 'ChimeraTK', 'ApplicationCore'+so_version))
+
+        sys.path.extend(new_paths)
+        print(sys.path)
+      )",
+          py::globals(), locals);
+    }
   } // namespace detail
 
   /********************************************************************************************************************/
