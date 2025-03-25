@@ -1,7 +1,7 @@
 // put the namespace around the doxygen block so we don't have to give it all the time in the code to get links
 namespace ChimeraTK {
 /**
-\page spec_execptionHandling Technical specification: Exception handling for device runtime errors V1.1RC2WIP
+\page spec_execptionHandling Technical specification: Exception handling for device runtime errors V1.1
 
 > **Attention** Changed numbering in B.3 since V1.0!
 
