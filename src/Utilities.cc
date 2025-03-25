@@ -7,9 +7,10 @@
 #include <boost/algorithm/algorithm.hpp>
 #include <boost/format.hpp>
 
+#include <pthread.h>
+
 #include <cassert>
 #include <iostream>
-#include <pthread.h>
 
 namespace ChimeraTK::Utilities {
 

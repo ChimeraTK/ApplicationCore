@@ -5,6 +5,7 @@
 // pybind11 includes should come first
 
 #include "PyModuleGroup.h"
+
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

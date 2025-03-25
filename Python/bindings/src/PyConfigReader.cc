@@ -6,6 +6,7 @@
 
 #include "PyApplicationModule.h"
 #include "PyConfigReader.h"
+
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

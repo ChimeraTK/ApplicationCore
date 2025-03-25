@@ -15,14 +15,15 @@
 #include "PyReadAnyGroup.h"
 #include "PyScalarAccessor.h"
 #include "PyVariableGroup.h"
-#include <pybind11/chrono.h>
-#include <pybind11/operators.h>
-#include <pybind11/pytypes.h>
-#include <pybind11/stl.h>
 
 #include <ChimeraTK/DataConsistencyGroup.h>
 #include <ChimeraTK/SupportedUserTypes.h>
 #include <ChimeraTK/VariantUserTypes.h>
+
+#include <pybind11/chrono.h>
+#include <pybind11/operators.h>
+#include <pybind11/pytypes.h>
+#include <pybind11/stl.h>
 
 #include <boost/fusion/algorithm.hpp>
 #include <boost/fusion/container/map.hpp>

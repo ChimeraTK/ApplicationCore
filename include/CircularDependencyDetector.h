@@ -4,13 +4,13 @@
 
 #include "Module.h"
 #include "VariableNetworkNode.h"
-#include <unordered_set>
 
 #include <boost/noncopyable.hpp>
 #include <boost/thread.hpp>
 
 #include <map>
 #include <ostream>
+#include <unordered_set>
 
 namespace ChimeraTK::detail {
 

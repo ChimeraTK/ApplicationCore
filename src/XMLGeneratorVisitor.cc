@@ -6,12 +6,14 @@
 #include "Application.h"
 #include "VariableGroup.h"
 #include "VariableNetworkNode.h"
-#include <libxml++/libxml++.h>
 
 #include <ChimeraTK/RegisterPath.h>
 
-#include <cassert>
+#include <libxml++/libxml++.h>
+
 #include <ConnectionMaker.h>
+
+#include <cassert>
 
 namespace detail {
   static constexpr std::string_view AC_NAMESPACE_URL{"https://github.com/ChimeraTK/ApplicationCore"};

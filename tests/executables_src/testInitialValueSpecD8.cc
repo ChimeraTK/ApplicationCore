@@ -17,10 +17,11 @@
 #include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
 
+#include <VoidAccessor.h>
+
 #include <chrono>
 #include <functional>
 #include <future>
-#include <VoidAccessor.h>
 
 namespace Tests::testInitialValues {
 
