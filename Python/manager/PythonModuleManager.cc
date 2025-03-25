@@ -54,8 +54,7 @@ namespace ChimeraTK {
         for p in sys.path:
           new_paths.append(os.path.join(p, 'ChimeraTK', 'ApplicationCore'+so_version))
 
-        sys.path.extend(new_paths)
-        print(sys.path)
+        sys.path = new_paths + sys.path # prepend so old system libraries are not found first
       )",
           py::globals(), locals);
     }
