@@ -4,6 +4,7 @@
 
 #include "TestFacility.h"
 #include "VariableGroup.h"
+
 #include <libxml++/libxml++.h>
 
 #include <filesystem>

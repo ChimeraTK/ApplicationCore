@@ -8,8 +8,6 @@
 #include "MetaDataPropagatingRegisterDecorator.h"
 #include "Model.h"
 #include "Visitor.h"
-#include <unordered_map>
-#include <unordered_set>
 
 #include <ChimeraTK/NDRegisterAccessorAbstractor.h>
 
@@ -17,6 +15,8 @@
 
 #include <cassert>
 #include <iostream>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace ChimeraTK {
 

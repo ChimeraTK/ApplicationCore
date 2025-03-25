@@ -5,11 +5,11 @@
 #include "Flags.h"
 #include "Utilities.h"
 #include "VariableNetworkNode.h"
-#include <unordered_set>
 
 #include <iostream>
 #include <list>
 #include <string>
+#include <unordered_set>
 
 namespace ChimeraTK {
 

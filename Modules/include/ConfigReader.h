@@ -68,11 +68,11 @@
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
 #include "ScalarAccessor.h"
-#include <unordered_map>
 
 #include <ChimeraTK/SupportedUserTypes.h>
 
 #include <map>
+#include <unordered_map>
 #include <utility>
 
 namespace ChimeraTK {

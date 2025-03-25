@@ -9,6 +9,7 @@
 #include "Multiplier.h"
 #include "Pipe.h"
 #include "TestFacility.h"
+
 #include <libxml++/libxml++.h>
 
 #include <boost/filesystem.hpp>

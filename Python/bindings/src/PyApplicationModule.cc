@@ -8,6 +8,7 @@
 #include "PyApplicationModule.h"
 #include "PyConfigReader.h"
 #include "PyLogger.h"
+
 #include <pybind11/stl.h>
 
 #include <iostream>

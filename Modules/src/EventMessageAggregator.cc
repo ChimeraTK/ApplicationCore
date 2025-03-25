@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include <EventMessageAggregator.h>
+
 #include <utility>
 
 namespace ChimeraTK {
