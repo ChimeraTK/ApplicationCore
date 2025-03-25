@@ -145,12 +145,12 @@ install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS} DESTINATION include/ChimeraTK/
 if(${pybind11_FOUND})
   # install Python modules to correct platform-dependent directory (if installing to system prefix)
   if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/usr" OR "${CMAKE_INSTALL_PREFIX}" STREQUAL "/usr/local")
-    set(python_install_path "${Python_SITEARCH}/ChimeraTK/ApplicationCore${${PROJECT_NAME}_SOVERSION}")
+    set(python_install_path "${Python_SITEARCH}")
   else()
-    set(python_install_path "lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/ChimeraTK/ApplicationCore${${PROJECT_NAME}_SOVERSION}")
+    set(python_install_path "lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages")
   endif()
 
-  install(TARGETS PyApplicationCore LIBRARY DESTINATION ${python_install_path})
+  install(TARGETS PyApplicationCore LIBRARY DESTINATION "${python_install_path}/ChimeraTK/ApplicationCore${${PROJECT_NAME}_SOVERSION}")
 
   if((NOT ${CMAKE_BUILD_TYPE} STREQUAL "asan") AND(NOT ${CMAKE_BUILD_TYPE} STREQUAL "tsan"))
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/PyApplicationCore.pyi DESTINATION ${python_install_path})
