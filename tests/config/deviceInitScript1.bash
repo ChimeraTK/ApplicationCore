@@ -2,15 +2,10 @@
 
 echo starting device1 init
 
-if [[ -f "produceDevice1InitError" ]]; then
-    exit 1
-fi
-
-while  [[ ! -f "continueDevice1Init" ]]; do
+while  [[ -f "blockDevice1Init" ]]; do
     sleep 1
 done
 
-touch device1Init.success
+touch device1Init.complete
 
-echo device1 init successful
-       
+echo device1 init complete
