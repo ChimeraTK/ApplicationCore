@@ -6,6 +6,7 @@
 #include "InversionOfControlAccessor.h"
 
 #include <ChimeraTK/ScalarRegisterAccessor.h>
+#include <ChimeraTK/SystemTags.h>
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/thread.hpp>
@@ -118,6 +119,16 @@ namespace ChimeraTK {
     using ScalarAccessor<UserType>::operator=;
   };
 
+  /********************************************************************************************************************/
+
+  /** Convenience class for output scalar accessors with return channel ("read back") (always UpdateMode::push) */
+  template<typename UserType>
+  struct ScalarOutputReverseRecovery : public ScalarAccessor<UserType> {
+    ScalarOutputReverseRecovery(Module* owner, const std::string& name, std::string unit,
+        const std::string& description, const std::unordered_set<std::string>& tags = {});
+    ScalarOutputReverseRecovery() : ScalarAccessor<UserType>() {}
+    using ScalarAccessor<UserType>::operator=;
+  };
   /********************************************************************************************************************/
   /********************************************************************************************************************/
   /* Implementations below this point                                                                                 */
@@ -245,6 +256,17 @@ namespace ChimeraTK {
       const std::string& description, const std::unordered_set<std::string>& tags)
   : ScalarAccessor<UserType>(
         owner, name, {VariableDirection::feeding, true}, unit, UpdateMode::push, description, tags) {}
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  ScalarOutputReverseRecovery<UserType>::ScalarOutputReverseRecovery(Module* owner, const std::string& name,
+      std::string unit, const std::string& description, const std::unordered_set<std::string>& tags)
+  : ScalarAccessor<UserType>(
+        owner, name, {VariableDirection::feeding, true}, unit, UpdateMode::push, description, tags) {
+    this->addTag(ChimeraTK::SystemTags::reverseRecovery);
+  }
 
   /********************************************************************************************************************/
 

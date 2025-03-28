@@ -1,0 +1,6 @@
+
+readOnly        1  0 4 0 32 0 1 RO
+readWrite       1  4 4 0 32 0 1 RW
+writeOnly       1  8 4 0 32 0 1 WO
+writeOnlyRB     1  8 4 0 32 0 1 RO
+secondReadWrite 1 12 4 0 32 0 1 RW
