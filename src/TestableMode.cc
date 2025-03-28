@@ -133,7 +133,7 @@ namespace ChimeraTK::detail {
                 std::cerr << " (data loss)";
               }
             }
-            catch(std::logic_error&) {
+            catch(ChimeraTK::logic_error&) {
               // if we receive a logic_error in readNonBlocking() it just means
               // another thread is waiting on a TransferFuture of this variable,
               // and we actually were not allowed to read...
