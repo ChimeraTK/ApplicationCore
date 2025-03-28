@@ -49,6 +49,7 @@ namespace Tests::testScriptedInitialisationHandler {
     (void)std::filesystem::remove("continueDevice1Init");
     (void)std::filesystem::remove("produceDevice1InitError");
     (void)std::filesystem::remove("produceDevice2InitError");
+    (void)std::filesystem::remove("produceDevice2InitSecondLine");
 
     testFacility.runApplication();
     // testApp.dumpConnections();

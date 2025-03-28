@@ -17,29 +17,26 @@ namespace ChimeraTK {
 
   class PyDataConsistencyGroup {
    public:
-    PyDataConsistencyGroup() = default;
+    explicit PyDataConsistencyGroup(DataConsistencyGroup&& other) : _impl(std::move(other)) {}
 
-    PyDataConsistencyGroup(DataConsistencyGroup&& other) : _impl(std::move(other)) {}
-
-    PyDataConsistencyGroup(py::args args) {
-      for(auto& acc : args) add(acc.cast<PyTransferElementBase&>());
+    explicit PyDataConsistencyGroup(const py::args& args, DataConsistencyGroup::MatchingMode mode, unsigned histLen)
+    : _impl(mode) {
+      for(const auto& acc : args) {
+        add(acc.cast<PyTransferElementBase&>(), histLen);
+      }
     }
 
-    void add(PyTransferElementBase& acc) { _impl.add(acc.getTE()); }
+    void add(PyTransferElementBase& acc, unsigned histLen = DataConsistencyGroup::defaultHistLen) {
+      _impl.add(acc.getTE(), histLen);
+    }
 
     bool update(const TransferElementID& transferelementid) { return _impl.update(transferelementid); }
-
-    void setMatchingMode(DataConsistencyGroup::MatchingMode newMode) { _impl.setMatchingMode(newMode); }
 
     DataConsistencyGroup::MatchingMode getMatchingMode() const { return _impl.getMatchingMode(); };
 
     static void bind(py::module& mod);
 
    protected:
-    // Helper constructor that takes a std::vector and passes it on to the iterator constructor of
-    // ReadAnyGroup
-    PyDataConsistencyGroup(std::vector<TransferElementAbstractor> args) : _impl(args.begin(), args.end()) {}
-
     DataConsistencyGroup _impl;
   };
 
