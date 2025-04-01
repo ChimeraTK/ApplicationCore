@@ -30,7 +30,7 @@
 namespace ctk = ChimeraTK;
 
 struct TestApplication : ctk::Application {
-  TestApplication() : ctk::Application("tagTestApplication") {}
+  TestApplication() : ctk::Application("tagTestApplication") { debugMakeConnections(); }
   ~TestApplication() override { shutdown(); }
 
   struct : public ctk::ApplicationModule {
@@ -346,7 +346,6 @@ BOOST_AUTO_TEST_CASE(testReverseRecoveryFromApp) {
 
   TestApplication app;
   ctk::DeviceModule devModule{&app, "taggedDevice", "/trigger"};
-  // ctk::DeviceModule devModule2{&app, "taggedDevice2", "/trigger"};
 
   std::atomic<bool> up{false};
 
@@ -360,6 +359,59 @@ BOOST_AUTO_TEST_CASE(testReverseRecoveryFromApp) {
   ctk::TestFacility test(app, false);
   test.setScalarDefault("/untagged", 4711);
 
+  test.runApplication();
+
+  // Wait for the device to become ready
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>("/Devices/taggedDevice/status"), 0, 1000);
+
+  up.wait(false);
+  auto untagged = test.getScalar<int32_t>("/untagged");
+
+  BOOST_TEST(dev.read<int32_t>("/secondReadWrite") == 815);
+
+  deviceInput.setAndWrite(128);
+  CHECK_EQUAL_TIMEOUT(dev.read<int32_t>("/secondReadWrite"), 128, 2000);
+
+  dev.write<int32_t>("/secondReadWrite", 3);
+  devModule.reportException("Trigger device recovery");
+
+  // Wait for ApplicationCore to recover
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>("/Devices/taggedDevice/status"), 1, 1000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>("/Devices/taggedDevice/status"), 0, 1000);
+
+  CHECK_EQUAL_TIMEOUT(dev.read<int32_t>("/secondReadWrite"), 3, 2000);
+
+  app.shutdown();
+}
+
+/********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testRecoveryFromAppDirect) {
+  std::cout << "testReverseRecoveryFromApp" << std::endl;
+
+  ctk::BackendFactory::getInstance().setDMapFilePath("testTagged.dmap");
+
+  ctk::Device dev;
+  dev.open("baseDevice");
+
+  // Initialize the device with some values
+  dev.write<int32_t>("/secondReadWrite", 815);
+
+  TestApplication app;
+  ctk::DeviceModule devModule{&app, "taggedDevice", "/trigger"};
+
+  std::atomic<bool> up{false};
+
+  ctk::ScalarOutputReverseRecovery<int32_t> deviceInput{&app.mod, "/untagged", "", ""};
+
+  app.mod.doMainLoop = [&]() {
+    up = true;
+    up.notify_one();
+  };
+
+  ctk::TestFacility test(app, false);
+  test.setScalarDefault("/untagged", 4711);
+  app.optimiseUnmappedVariables({"/untagged"});
   test.runApplication();
 
   // Wait for the device to become ready

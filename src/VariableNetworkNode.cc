@@ -47,7 +47,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   VariableNetworkNode::VariableNetworkNode(const std::string& name, const std::string& devAlias,
-      const std::string& regName, UpdateMode mode, VariableDirection dir, const std::type_info& valTyp,
+      const std::string& regName, UpdateMode mode, VariableDirection dir, bool isReadable, const std::type_info& valTyp,
       size_t nElements)
   : pdata(boost::make_shared<VariableNetworkNode_data>()) {
     pdata->name = name;
@@ -58,6 +58,7 @@ namespace ChimeraTK {
     pdata->deviceAlias = devAlias;
     pdata->registerName = regName;
     pdata->nElements = nElements;
+    pdata->isReadable = isReadable;
   }
 
   /********************************************************************************************************************/
@@ -156,8 +157,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void VariableNetworkNode::setDirection(VariableDirection newDirection) const {
-    assert(pdata->type == NodeType::ControlSystem);
-    assert(pdata->direction.dir == VariableDirection::feeding);
+    assert((pdata->type == NodeType::ControlSystem && pdata->direction.dir == VariableDirection::feeding) ||
+        (pdata->type == NodeType::Device && pdata->direction.dir == VariableDirection::consuming));
     pdata->direction = newDirection;
   }
 
@@ -257,6 +258,12 @@ namespace ChimeraTK {
 
   size_t VariableNetworkNode::getNumberOfElements() const {
     return pdata->nElements;
+  }
+
+  /********************************************************************************************************************/
+
+  bool VariableNetworkNode::isReadable() const {
+    return pdata->isReadable;
   }
 
   /********************************************************************************************************************/

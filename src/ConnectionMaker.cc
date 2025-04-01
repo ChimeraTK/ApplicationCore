@@ -41,6 +41,9 @@ namespace ChimeraTK {
       debug("  Network does not have reverse recovery");
     }
 
+    int bidirectionalDeviceNodeCount = 0;
+    std::vector<std::shared_ptr<VariableNetworkNode>> unidirectionalDeviceNodes;
+
     for(const auto& node : proxy.getNodes()) {
       if(node->getDirection().withReturn) {
         net.numberOfBidirectionalNodes++;
@@ -81,6 +84,15 @@ namespace ChimeraTK {
         if(node->getMode() == UpdateMode::poll) {
           net.numberOfPollingConsumers++;
         }
+
+        if(node->getType() == NodeType::Device) {
+          if(node->getDirection().withReturn) {
+            bidirectionalDeviceNodeCount++;
+          }
+          else {
+            unidirectionalDeviceNodes.push_back(node);
+          }
+        }
       }
       else {
         // There should not be an invalid direction variable in here. FIXME: is that true?
@@ -120,6 +132,21 @@ namespace ChimeraTK {
 
       if(net.unit.empty()) {
         net.unit = node->getUnit();
+      }
+    }
+
+    if(bidirectionalDeviceNodeCount == 0 && net.useReverseRecovery) {
+      debug("  Network has no bidirectional device nodes but uses reverse recovery, flagging device nodes as having "
+            "return channel");
+      if(unidirectionalDeviceNodes.size() > 1) {
+        throw ChimeraTK::logic_error(
+            "Invalid network " + proxy.getFullyQualifiedPath() + ", reverse recovery causes initial value conflict");
+      }
+      for(const auto& node : unidirectionalDeviceNodes) {
+        if(node->getDirection().dir == VariableDirection::consuming && node->isReadable()) {
+          node->setDirection({VariableDirection::consuming, true});
+          net.numberOfBidirectionalNodes++;
+        }
       }
     }
 
@@ -268,7 +295,7 @@ namespace ChimeraTK {
     }
 
     // Fold expression printer from https://en.cppreference.com/w/cpp/language/fold
-    (logger(Logger::Severity::debug, "ConnectionMaker") << ... << args) << std::endl;
+    (std::cout << ... << args) << std::endl;
   }
 
   /*********************************************************************************************************************/
