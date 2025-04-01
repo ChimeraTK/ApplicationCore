@@ -18,6 +18,7 @@ namespace ChimeraTK {
     TransferElement::_accessModeFlags.add(AccessMode::wait_for_new_data);
 
     _recoveryHelper->notificationQueue = cppext::future_queue<void>(3);
+    _recoveryHelper->recoveryDirection = RecoveryHelper::Direction::fromDevice;
 
     // Set the read queue as continuation of the notification queue
     // The continuation will just trigger a read on the target accessor

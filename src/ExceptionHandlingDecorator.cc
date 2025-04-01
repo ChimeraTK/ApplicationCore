@@ -42,13 +42,15 @@ namespace ChimeraTK {
       // version number and write order are still {nullptr} and 0 (i.e. invalid)
       _recoveryHelper = boost::make_shared<RecoveryHelper>(_recoveryAccessor, VersionNumber(nullptr), 0);
 
-      // add recovery accessor to DeviceManager so the last known value is restored during device recovery, unless
-      // the data type is Void, in which case there is no value to recover and writing will likely trigger some unwanted
-      // action.
+      // We need to do this here in addition to doing it unconditionally in the ReverseRecoveryDecorator
+      // to block recovery from write-only variables
       if(networkNode.getTags().contains(ChimeraTK::SystemTags::reverseRecovery)) {
         _recoveryHelper->recoveryDirection = RecoveryHelper::Direction::fromDevice;
       }
 
+      // add recovery accessor to DeviceManager so the last known value is restored during device recovery, unless
+      // the data type is Void, in which case there is no value to recover and writing will likely trigger some unwanted
+      // action.
       if(!std::is_same<UserType, ChimeraTK::Void>::value) {
         deviceManager->addRecoveryAccessor(_recoveryHelper);
       }
