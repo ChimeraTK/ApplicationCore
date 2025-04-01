@@ -42,6 +42,8 @@ struct TestApplication : ctk::Application {
   } mod{this, "Module", ""};
 };
 
+/********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testDirectThreadedFanOutWithReturn) {
   std::cout << "testDirectThreadedFanOutWithReturn" << std::endl;
 
@@ -123,6 +125,8 @@ BOOST_AUTO_TEST_CASE(testDirectThreadedFanOutWithReturn) {
   app.shutdown();
 }
 
+/********************************************************************************************************************/
+
 // Create a ThreadedFanOutWithReturn and check that we can use the
 // just the recovery value as an input
 BOOST_AUTO_TEST_CASE(testThreadedFanOutWithReturnOnlyRecoverValue) {
@@ -173,6 +177,8 @@ BOOST_AUTO_TEST_CASE(testThreadedFanOutWithReturnOnlyRecoverValue) {
   app.shutdown();
 }
 
+/********************************************************************************************************************/
+
 // Force the connection maker to create a direct connection with constant
 // feeder
 BOOST_AUTO_TEST_CASE(testConstantFeederInversion) {
@@ -217,6 +223,8 @@ BOOST_AUTO_TEST_CASE(testConstantFeederInversion) {
   CHECK_EQUAL_TIMEOUT(int32_t(deviceInput), 4, 1000);
   app.shutdown();
 }
+
+/********************************************************************************************************************/
 
 // Have an application module that has an explicit accessor requesting reverse recovery
 BOOST_AUTO_TEST_CASE(testFeedingFanOutWithExplicitAccessor) {
@@ -269,6 +277,8 @@ BOOST_AUTO_TEST_CASE(testFeedingFanOutWithExplicitAccessor) {
   app.shutdown();
 }
 
+/********************************************************************************************************************/
+
 // Have an application module that has an explicit accessor requesting reverse recovery
 BOOST_AUTO_TEST_CASE(testFanOutWithExplicitAccessor02) {
   std::cout << "testFanOutWithExplicitAccessor02" << std::endl;
@@ -319,6 +329,63 @@ BOOST_AUTO_TEST_CASE(testFanOutWithExplicitAccessor02) {
   CHECK_EQUAL_TIMEOUT(int32_t(deviceInput), 111, 1000);
   app.shutdown();
 }
+
+/********************************************************************************************************************/
+
+// Request that we do the reverse recovery from an untagged device register by using the ReverseRecovery accessor
+BOOST_AUTO_TEST_CASE(testReverseRecoveryFromApp) {
+  std::cout << "testReverseRecoveryFromApp" << std::endl;
+
+  ctk::BackendFactory::getInstance().setDMapFilePath("testTagged.dmap");
+
+  ctk::Device dev;
+  dev.open("baseDevice");
+
+  // Initialize the device with some values
+  dev.write<int32_t>("/secondReadWrite", 815);
+
+  TestApplication app;
+  ctk::DeviceModule devModule{&app, "taggedDevice", "/trigger"};
+  // ctk::DeviceModule devModule2{&app, "taggedDevice2", "/trigger"};
+
+  std::atomic<bool> up{false};
+
+  ctk::ScalarOutputReverseRecovery<int32_t> deviceInput{&app.mod, "/untagged", "", ""};
+
+  app.mod.doMainLoop = [&]() {
+    up = true;
+    up.notify_one();
+  };
+
+  ctk::TestFacility test(app, false);
+  test.setScalarDefault("/untagged", 4711);
+
+  test.runApplication();
+
+  // Wait for the device to become ready
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>("/Devices/taggedDevice/status"), 0, 1000);
+
+  up.wait(false);
+  auto untagged = test.getScalar<int32_t>("/untagged");
+
+  BOOST_TEST(dev.read<int32_t>("/secondReadWrite") == 815);
+
+  deviceInput.setAndWrite(128);
+  CHECK_EQUAL_TIMEOUT(dev.read<int32_t>("/secondReadWrite"), 128, 2000);
+
+  dev.write<int32_t>("/secondReadWrite", 3);
+  devModule.reportException("Trigger device recovery");
+
+  // Wait for ApplicationCore to recover
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>("/Devices/taggedDevice/status"), 1, 1000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>("/Devices/taggedDevice/status"), 0, 1000);
+
+  CHECK_EQUAL_TIMEOUT(dev.read<int32_t>("/secondReadWrite"), 3, 2000);
+
+  app.shutdown();
+}
+
+/********************************************************************************************************************/
 
 // Special case: Reverse recovery, but without any device
 BOOST_AUTO_TEST_CASE(testReverseRecoveryFromCS) {
