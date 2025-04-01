@@ -39,7 +39,7 @@ namespace ChimeraTK {
      * separate thread. */
     virtual void run();
 
-    VersionNumber readInitialValues();
+    VersionNumber readInitialValues(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor);
 
    protected:
     /** Thread handling the synchronisation, if needed */
@@ -138,7 +138,7 @@ namespace ChimeraTK {
     _testableModeReached = true;
 
     ChimeraTK::VersionNumber version{nullptr};
-    version = readInitialValues();
+    version = readInitialValues(FanOut<UserType>::_impl);
     while(true) {
       // send out copies to slaves
       boost::this_thread::interruption_point();
@@ -164,13 +164,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  VersionNumber ThreadedFanOut<UserType>::readInitialValues() {
+  VersionNumber ThreadedFanOut<UserType>::readInitialValues(
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor) {
     Application::getInstance().getTestableMode().unlock("readInitialValues");
-    FanOut<UserType>::_impl->read();
+    accessor->read();
     if(!Application::getInstance().getTestableMode().testLock()) {
       Application::getInstance().getTestableMode().lock("readInitialValues");
     }
-    return FanOut<UserType>::_impl->getVersionNumber();
+    return accessor->getVersionNumber();
   }
 
   /********************************************************************************************************************/
@@ -222,14 +223,9 @@ namespace ChimeraTK {
     }
     accessors[FanOut<UserType>::_impl->getId()] = FanOut<UserType>::_impl;
 
-    // For reading the initial value, swap out _impl, because readInitialValues()
-    // operates on it
-    std::swap(FanOut<UserType>::_impl, _initialValueProvider);
-    TransferElementID changedVariable = FanOut<UserType>::_impl->getId();
-    VersionNumber version{nullptr};
+    TransferElementID changedVariable = _initialValueProvider->getId();
 
-    version = readInitialValues();
-    std::swap(FanOut<UserType>::_impl, _initialValueProvider);
+    auto version = readInitialValues(_initialValueProvider);
 
     ReadAnyGroup group(_inputChannels.begin(), _inputChannels.end());
 
