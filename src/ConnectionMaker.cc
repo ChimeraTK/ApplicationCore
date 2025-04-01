@@ -875,7 +875,8 @@ namespace ChimeraTK {
       }
     }
     else if(net.consumers.size() > 1) {
-      debug("  More than one consumer, using fan-out as feeder impl");
+      debug(std::format("  More than one consumer, using fan-out as feeder impl (with return: {})",
+          net.feeder.getDirection().withReturn));
       callForType(*net.valueType, [&](auto t) {
         using UserType = decltype(t);
         auto consumerImplementationPairs = setConsumerImplementations<UserType>(net);
