@@ -9,11 +9,16 @@
 #include "DeviceManager.h"
 #include "ExceptionHandlingDecorator.h"
 #include "FanOut.h"
+#include "Flags.h"
+#include "ReverseRecoveryDecorator.h"
 #include "TestableMode.h"
 #include "ThreadedFanOut.h"
 #include "TriggerFanOut.h"
 
 #include <ChimeraTK/NDRegisterAccessor.h>
+#include <ChimeraTK/SystemTags.h>
+
+#include <algorithm>
 
 namespace ChimeraTK {
 
@@ -21,9 +26,23 @@ namespace ChimeraTK {
 
   NetworkVisitor::NetworkInformation NetworkVisitor::checkNetwork(Model::ProcessVariableProxy& proxy) {
     NetworkInformation net{&proxy};
+
+    debug("Checking network \"" + proxy.getName() + "\" consistency");
     // Sanity check for the type and lengths of the nodes, extract the feeding node if any
 
     VariableNetworkNode firstNodeWithType; // used for helpful error message only
+
+    net.useReverseRecovery = proxy.getTags().contains(ChimeraTK::SystemTags::reverseRecovery);
+
+    if(net.useReverseRecovery) {
+      debug("  Network has reverse recovery");
+    }
+    else {
+      debug("  Network does not have reverse recovery");
+    }
+
+    int bidirectionalDeviceNodeCount = 0;
+    std::vector<std::shared_ptr<VariableNetworkNode>> unidirectionalDeviceNodes;
 
     for(const auto& node : proxy.getNodes()) {
       if(node->getDirection().withReturn) {
@@ -32,7 +51,11 @@ namespace ChimeraTK {
       if(node->getDirection().dir == VariableDirection::feeding) {
         std::stringstream ss;
         node->dump(ss);
-        debug("    Feeder:   ", ss.str());
+        auto nodeDump = ss.str();
+
+        // Remove trailing newline
+        nodeDump.erase(nodeDump.length() - 1);
+        debug("  Feeder:   ", nodeDump);
 
         if(net.feeder.getType() == NodeType::invalid) {
           net.feeder = *node;
@@ -54,10 +77,21 @@ namespace ChimeraTK {
       else if(node->getDirection().dir == VariableDirection::consuming) {
         std::stringstream ss;
         node->dump(ss);
-        debug("    Consumer: ", ss.str());
+        auto consumerDump = ss.str();
+        consumerDump.erase(consumerDump.length() - 1);
+        debug("  Consumer: ", consumerDump);
         net.consumers.push_back(*node);
         if(node->getMode() == UpdateMode::poll) {
           net.numberOfPollingConsumers++;
+        }
+
+        if(node->getType() == NodeType::Device) {
+          if(node->getDirection().withReturn) {
+            bidirectionalDeviceNodeCount++;
+          }
+          else {
+            unidirectionalDeviceNodes.push_back(node);
+          }
         }
       }
       else {
@@ -98,6 +132,21 @@ namespace ChimeraTK {
 
       if(net.unit.empty()) {
         net.unit = node->getUnit();
+      }
+    }
+
+    if(bidirectionalDeviceNodeCount == 0 && net.useReverseRecovery) {
+      debug("  Network has no bidirectional device nodes but uses reverse recovery, flagging device nodes as having "
+            "return channel");
+      if(unidirectionalDeviceNodes.size() > 1) {
+        throw ChimeraTK::logic_error(
+            "Invalid network " + proxy.getFullyQualifiedPath() + ", reverse recovery causes initial value conflict");
+      }
+      for(const auto& node : unidirectionalDeviceNodes) {
+        if(node->getDirection().dir == VariableDirection::consuming && node->isReadable()) {
+          node->setDirection({VariableDirection::consuming, true});
+          net.numberOfBidirectionalNodes++;
+        }
       }
     }
 
@@ -152,6 +201,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   void NetworkVisitor::finaliseNetwork(NetworkInformation& net) {
+    debug("Finalising network \"" + net.proxy->getName() + "\"");
     // check whether this is a constant created via ApplicationModule::constant()
     bool isConstant{!net.consumers.empty() &&
         boost::starts_with(net.consumers.front().getName(), ApplicationModule::namePrefixConstant)};
@@ -177,7 +227,7 @@ namespace ChimeraTK {
     bool neededFeeder{false};
     if(not net.feeder.isValid()) {
       debug("  No feeder in network, creating ControlSystem feeder ", net.proxy->getFullyQualifiedPath());
-      debug("    Bi-directional consumers: ", net.numberOfBidirectionalNodes);
+      debug("  Bi-directional consumers: ", net.numberOfBidirectionalNodes);
 
       // If we have a bi-directional consumer, mark this CS feeder as bidirectional as well
       net.feeder = VariableNetworkNode(net.proxy->getFullyQualifiedPath(),
@@ -191,9 +241,13 @@ namespace ChimeraTK {
     if(not neededFeeder and not isConstant) {
       // Only add CS consumer if we did not previously add CS feeder, we will add one or the other, but never both
       // Also we will not add CS consumers for constants.
+      //
+      // If this is a one-on-one network with reverse recovery, we have to make the CS feeder bi-directional
+      auto needReturn = net.useReverseRecovery && net.consumers.empty();
       debug("  Network has a non-CS feeder, can create additional ControlSystem consumer");
-      net.consumers.push_back(VariableNetworkNode(
-          net.proxy->getFullyQualifiedPath(), {VariableDirection::consuming, false}, *net.valueType, net.valueLength));
+      debug("    with" + std::string(needReturn ? "" : "out") + " return");
+      net.consumers.push_back(VariableNetworkNode(net.proxy->getFullyQualifiedPath(),
+          {VariableDirection::consuming, needReturn}, *net.valueType, net.valueLength));
     }
     assert(not net.consumers.empty());
 
@@ -220,7 +274,6 @@ namespace ChimeraTK {
             }
           }
 
-          AccessModeFlags give_me_a_name;
           this->createProcessVariable<UserType>(net.feeder, net.valueLength, net.unit, net.description, flags);
         }
       });
@@ -230,6 +283,7 @@ namespace ChimeraTK {
                 << net.proxy->getFullyQualifiedPath() << std::endl;
       throw;
     }
+    debug();
   }
 
   /*********************************************************************************************************************/
@@ -241,7 +295,7 @@ namespace ChimeraTK {
     }
 
     // Fold expression printer from https://en.cppreference.com/w/cpp/language/fold
-    (logger(Logger::Severity::debug, "ConnectionMaker") << ... << args) << std::endl;
+    (std::cout << ... << args) << std::endl;
   }
 
   /*********************************************************************************************************************/
@@ -256,10 +310,10 @@ namespace ChimeraTK {
       auto deviceTrigger = p.getTrigger();
 
       if(deviceTrigger.isValid()) {
-        debug("    Found Feeding device ", p.getAliasOrCdd(), " with trigger ", p.getTrigger().getFullyQualifiedPath());
+        debug("  Found Feeding device ", p.getAliasOrCdd(), " with trigger ", p.getTrigger().getFullyQualifiedPath());
       }
       else {
-        debug("    Feeding from device ", p.getAliasOrCdd(), " but without any trigger");
+        debug("  Feeding from device ", p.getAliasOrCdd(), " but without any trigger");
       }
 
       return std::make_pair(deviceTrigger, p);
@@ -291,18 +345,17 @@ namespace ChimeraTK {
         makeDirectConnectionForFeederWithImplementation(_networks.at(path));
       }
       else {
-        // More than one consuming node
         debug("    More than one consuming node or having external trigger, setting up FanOut");
         makeFanOutConnectionForFeederWithImplementation(_networks.at(path), device, trigger);
       }
     }
     else if(not constantFeeder) {
-      debug("    Feeder '", _networks.at(path).feeder.getName(), "' does not require a fixed implementation.");
+      debug("  Feeder '", _networks.at(path).feeder.getName(), "' does not require a fixed implementation.");
       assert(not trigger.isValid());
       makeConnectionForFeederWithoutImplementation(_networks.at(path));
     }
     else { // constant feeder
-      debug("    Using constant feeder '", _networks.at(path).feeder.getName(), "'.");
+      debug("  Using constant feeder '", _networks.at(path).feeder.getName(), "'.");
       makeConnectionForConstantFeeder(_networks.at(path));
     }
 
@@ -316,10 +369,11 @@ namespace ChimeraTK {
         _app._circularDependencyNetworks[circularNetworkHash] = circularNetwork;
         _app._circularNetworkInvalidityCounters[circularNetworkHash] = 0;
 
-        debug("    Circular network detected: " + proxy.getFullyQualifiedPath() + " is part of " +
+        debug("  Circular network detected: " + proxy.getFullyQualifiedPath() + " is part of " +
             std::to_string(circularNetworkHash));
       }
     }
+    debug();
   }
 
   /*********************************************************************************************************************/
@@ -329,8 +383,8 @@ namespace ChimeraTK {
 
     _app.getTestableMode()._debugDecorating = _debugConnections;
 
-    debug("  Preparing trigger networks");
-    debug("    Collecting triggers");
+    debug("Preparing trigger networks");
+    debug("Collecting triggers");
 
     // Collect all triggers, add a TriggerReceiver placeholder for every device associated with that trigger
     std::list<Model::DeviceModuleProxy> dmProxyList;
@@ -345,16 +399,21 @@ namespace ChimeraTK {
       VariableNetworkNode placeholder(proxy.getAliasOrCdd(), 0);
       proxy.addVariable(trigger, placeholder);
     }
+    debug("  Found " + std::to_string(_triggers.size()) + " trigger(s)");
 
-    debug("    Finalising trigger networks");
+    debug("---------------------------");
+    debug("Finalising trigger networks");
+    debug("---------------------------");
     for(auto trigger : _triggers) {
       auto info = checkAndFinaliseNetwork(trigger);
       _triggerNetworks.insert(trigger.getFullyQualifiedPath());
       _networks.insert({trigger.getFullyQualifiedPath(), info});
-      debug("      trigger network: " + trigger.getFullyQualifiedPath());
+      debug("  trigger network: " + trigger.getFullyQualifiedPath());
     }
 
-    debug("  Finalising other networks");
+    debug("-------------------------");
+    debug("Finalising other networks");
+    debug("-------------------------");
     auto connectingVisitor = [&](auto proxy) {
       if(_triggerNetworks.count(proxy.getFullyQualifiedPath()) != 0) {
         return;
@@ -378,12 +437,16 @@ namespace ChimeraTK {
     // Improve: Likely no need to distinguish trigger and normal networks here... Also just iterate _networks instead
     // of the model!
 
-    debug("  Connecting trigger networks");
+    debug("---------------------------");
+    debug("Connecting trigger networks");
+    debug("---------------------------");
     for(auto trigger : _triggers) {
       connectNetwork(trigger);
     }
 
-    debug("  Connecting other networks");
+    debug("-------------------------");
+    debug("Connecting other networks");
+    debug("-------------------------");
     auto connectingVisitor = [&](auto proxy) {
       if(_triggerNetworks.count(proxy.getFullyQualifiedPath()) != 0) {
         return;
@@ -452,10 +515,20 @@ namespace ChimeraTK {
       }
 
       if(needsFanOut) {
+        debug("      needing an additional fan-out");
         assert(consumingImpl != nullptr);
+
         auto consumerImplPair = ConsumerImplementationPairs<UserType>{{consumingImpl, consumer}};
-        auto fanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, consumerImplPair);
-        _app._internalModuleList.push_back(fanOut);
+        boost::shared_ptr<ThreadedFanOut<UserType>> threadedFanOut;
+        if(not net.feeder.getDirection().withReturn) {
+          debug("            No return channel");
+          threadedFanOut = boost::make_shared<ThreadedFanOut<UserType>>(feedingImpl, consumerImplPair);
+        }
+        else {
+          debug("            With return channel");
+          threadedFanOut = boost::make_shared<ThreadedFanOutWithReturn<UserType>>(feedingImpl, consumerImplPair);
+        }
+        _app._internalModuleList.push_back(threadedFanOut);
       }
     });
   }
@@ -473,6 +546,7 @@ namespace ChimeraTK {
 
       boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> feedingImpl;
       if(net.feeder.getType() == NodeType::Device) {
+        debug("      Device feeder, creating Device variable");
         feedingImpl = createDeviceVariable<UserType>(net.feeder);
       }
       else if(net.feeder.getType() == NodeType::ControlSystem) {
@@ -527,7 +601,7 @@ namespace ChimeraTK {
         debug("        No trigger, using consuming fanout.");
         consumingFanOut = boost::make_shared<ConsumingFanOut<UserType>>(feedingImpl, consumerImplementationPairs);
 
-        // TODO Is this correct? we already added all consumer as slaves in the fanout  constructor.
+        // TODO Is this correct? we already added all consumer as slaves in the fanout constructor.
         //      Maybe assert that we only have a single poll-type node (is there a check in checkConnections?)
         for(const auto& consumer : net.consumers) {
           if(consumer.getMode() == UpdateMode::poll) {
@@ -567,7 +641,7 @@ namespace ChimeraTK {
       dir = SynchronizationDirection::deviceToControlSystem;
     }
 
-    debug("   calling createProcessArray()");
+    debug("      calling createProcessArray()");
 
     auto pv = _app.getPVManager()->createProcessArray<UserType>(
         dir, node.getPublicName(), length, unit, description, {}, 3, flags);
@@ -627,13 +701,17 @@ namespace ChimeraTK {
 
     // Receiving accessors should be faulty after construction,
     // see data validity propagation spec 2.6.1
-    if(node.getDirection().dir == VariableDirection::feeding) {
+    if(node.getDirection().dir == VariableDirection::feeding || node.getDirection().withReturn) {
       accessor->setDataValidity(DataValidity::faulty);
     }
 
     // decorate push-type feeders with testable mode decorator, if needed
     if(mode == UpdateMode::push && direction.dir == VariableDirection::feeding) {
       accessor = _app.getTestableMode().decorate(accessor, detail::TestableMode::DecoratorType::READ);
+    }
+
+    if(node.getDirection().dir == VariableDirection::consuming && node.getDirection().withReturn) {
+      return boost::make_shared<ReverseRecoveryDecorator<UserType>>(accessor, node);
     }
 
     return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, node);
@@ -824,7 +902,8 @@ namespace ChimeraTK {
       }
     }
     else if(net.consumers.size() > 1) {
-      debug("   More than one consumer, using fan-out as feeder impl");
+      debug(std::format("  More than one consumer, using fan-out as feeder impl (with return: {})",
+          net.feeder.getDirection().withReturn));
       callForType(*net.valueType, [&](auto t) {
         using UserType = decltype(t);
         auto consumerImplementationPairs = setConsumerImplementations<UserType>(net);
@@ -836,7 +915,7 @@ namespace ChimeraTK {
       });
     }
     else {
-      debug("   No consumer (presumably optimised out)");
+      debug("  No consumer (presumably optimised out)");
       net.feeder.setAppAccessorConstImplementation(VariableNetworkNode(net.valueType, true, net.valueLength));
     }
   }
@@ -867,6 +946,8 @@ namespace ChimeraTK {
           auto dev = deviceManager->getDevice().getBackend();
           auto impl =
               dev->getRegisterAccessor<UserType>(consumer.getRegisterName(), consumer.getNumberOfElements(), 0, {});
+          auto catalog = deviceManager->getDevice().getRegisterCatalogue();
+          auto tags = catalog.getRegister(consumer.getRegisterName()).getTags();
 
           // Set the value
           impl->accessChannel(0) =
@@ -876,8 +957,12 @@ namespace ChimeraTK {
           // version number and have a recovery accessors (RecoveryHelper to be exact) which we can register at the
           // DeviceModule. As this is a constant we don't need to change it later and don't have to store it somewhere
           // else.
-          deviceManager->addRecoveryAccessor(
-              boost::make_shared<RecoveryHelper>(impl, VersionNumber(), deviceManager->writeOrder()));
+          // If this register is considered for reverse recovery (Device pushes to application), do not add an
+          // accessor at all, since pushing to a constant does not make any sense.
+          if(!tags.contains(ChimeraTK::SystemTags::reverseRecovery)) {
+            deviceManager->addRecoveryAccessor(
+                boost::make_shared<RecoveryHelper>(impl, VersionNumber(), deviceManager->writeOrder()));
+          }
         }
         else if(consumer.getType() == NodeType::TriggerReceiver) {
           throw ChimeraTK::logic_error("Using constants as triggers is not supported!");
@@ -896,7 +981,20 @@ namespace ChimeraTK {
       auto& network = _networks.at(name);
       // if the control system is the feeder, change it into a constant
       if(network.feeder.getType() == NodeType::ControlSystem) {
-        network.feeder = VariableNetworkNode(network.valueType, true, network.valueLength);
+        if(network.useReverseRecovery) {
+          // We need to promote the accessor with the reverse recovery tag to the network feeder
+          // to prevent writing down the constant value into the device and propagating the
+          // recovery value to the other consumers instead.
+          auto reverseConsumer = std::ranges::find_if(network.consumers, [](auto& consumer) {
+            return consumer.getType() == NodeType::Device &&
+                consumer.getTags().contains(ChimeraTK::SystemTags::reverseRecovery);
+          });
+          network.consumers.remove(*reverseConsumer);
+          network.feeder = *reverseConsumer;
+        }
+        else {
+          network.feeder = VariableNetworkNode(network.valueType, true, network.valueLength);
+        }
       }
       else {
         // control system is a consumer: remove it from the list of consumers

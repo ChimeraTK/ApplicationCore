@@ -35,16 +35,17 @@ namespace ChimeraTK {
 
       const Model::ProcessVariableProxy* proxy{nullptr};
       // Variables related to the current network
-      VariableNetworkNode feeder{};
+      VariableNetworkNode feeder;
       std::map<std::string, boost::shared_ptr<TriggerFanOut>> triggerImpl;
       std::list<VariableNetworkNode> consumers;
       const std::type_info* valueType{&typeid(AnyType)};
       size_t valueLength{0};
-      std::string description{};
-      std::string unit{};
+      std::string description;
+      std::string unit;
       size_t numberOfBidirectionalNodes{0};
       size_t numberOfPollingConsumers{0};
       bool useExternalTrigger{false};
+      bool useReverseRecovery{false};
     };
     std::set<std::string> _triggerNetworks{};
     std::map<std::string, NetworkInformation> _networks{};
