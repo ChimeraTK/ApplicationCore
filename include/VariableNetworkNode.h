@@ -179,9 +179,13 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  /** Special tag to designate that a not should not automatically take over DataValidity of its owning module.
+  /** Special tag to designate that an output should not automatically take over DataValidity of its owning module.
    *  Use e.g. for a StatusOutput which should indicate errors. */
   constexpr auto explicitDataValidityTag = "_ChimeraTK_NodeHasExplicitDataValidity";
+
+  /** Special tag to designate that a push-input should not propagate VersionNumber updates to its owning module.
+   *  Use if a poll-input is not adequate. */
+  constexpr auto independentVersionTag = "_ChimeraTK_NodeHasIndependentVersion";
 
   /********************************************************************************************************************/
 
@@ -277,6 +281,9 @@ namespace ChimeraTK {
         boost::make_shared<MetaDataPropagatingRegisterDecorator<UserType>>(impl, getOwningModule(), getDirection());
     if(pdata->tags.find(explicitDataValidityTag) != pdata->tags.end()) {
       decorated->disableDataValidityPropagation();
+    }
+    if(pdata->tags.find(independentVersionTag) != pdata->tags.end()) {
+      decorated->disableVersionNumberPropagation();
     }
 
     getAppAccessor<UserType>().replace(decorated);
