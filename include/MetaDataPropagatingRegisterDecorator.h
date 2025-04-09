@@ -63,11 +63,13 @@ namespace ChimeraTK {
     [[nodiscard]] DataValidity getTargetValidity() const { return _target->dataValidity(); }
 
     void disableDataValidityPropagation() { _disableDataValidityPropagation = true; }
+    void disableVersionNumberPropagation() { _disableVersionNumberPropagation = true; }
 
    protected:
     EntityOwner* _owner;
     VariableDirection _direction;
     bool _disableDataValidityPropagation = false;
+    bool _disableVersionNumberPropagation = false;
 
     using TransferElement::_dataValidity;
     using NDRegisterAccessorDecorator<T>::_target;

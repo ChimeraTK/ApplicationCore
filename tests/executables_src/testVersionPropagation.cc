@@ -159,9 +159,12 @@ namespace Tests::testVersionpropagation {
 
   struct TheTestApplication : ChimeraTK::Application {
     using ChimeraTK::Application::Application;
+    explicit TheTestApplication(const std::string& name, const std::unordered_set<std::string>& pmTags = {})
+    : ChimeraTK::Application(name), pm{this, "pm", "", pmTags} {}
+
     ~TheTestApplication() override { shutdown(); }
 
-    ThePushModule pm{this, "pm", ""};
+    ThePushModule pm;
     TheOutputModule om{this, "om", ""};
   };
 
@@ -203,7 +206,27 @@ namespace Tests::testVersionpropagation {
     BOOST_CHECK(app.pm.getCurrentVersionNumber() == theVersion);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  BOOST_AUTO_TEST_CASE(versionPropagation_testDisabledVersionProp) {
+    std::cout << "versionPropagation_testDisabledVersionProp" << std::endl;
+    TheTestApplication app("app", {ChimeraTK::independentVersionTag});
+    ChimeraTK::TestFacility test(app, false);
+    test.runApplication();
+    app.pm.p.get_future().wait();
+    app.om.p.get_future().wait();
+
+    // test that special tag disables propagation of VersionNumber to application module
+    ctk::VersionNumber vnInputBeforeWrite = app.pm.pushInput.getVersionNumber();
+    ctk::VersionNumber vnModuleBeforeWrite = app.pm.getCurrentVersionNumber();
+    app.om.setCurrentVersionNumber({});
+    app.om.output.write();
+    app.pm.pushInput.read();
+    BOOST_CHECK(app.pm.pushInput.getVersionNumber() > vnInputBeforeWrite);
+    BOOST_CHECK(app.pm.getCurrentVersionNumber() == vnModuleBeforeWrite);
+  }
+
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_SUITE_END()
 
