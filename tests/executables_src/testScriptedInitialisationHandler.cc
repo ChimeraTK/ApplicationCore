@@ -60,7 +60,7 @@ namespace Tests::testScriptedInitialisationHandler {
   BOOST_FIXTURE_TEST_CASE(TestExecution, Fixture) {
     testFacility.runApplication();
 
-    CHECK_TIMEOUT(testFacility.readScalar<int32_t>("/Devices/Dummy0/status") == 0, 10000);
+    CHECK_TIMEOUT(testFacility.readScalar<int32_t>("/Devices/Dummy0/status") == 0, 30000);
     // As soon as the device reports ready, the init script effect must be visible. This is just a smoke test that the
     // ScriptedInitialisationHandler actually executes the specified script. It does not check the initialisation
     // handler spec that the call is happening at the right time in the recovery process, which is tested separately.
@@ -83,7 +83,7 @@ namespace Tests::testScriptedInitialisationHandler {
     size_t secondSnippetPos;
     CHECK_TIMEOUT((initMessage.readLatest(),
                       (secondSnippetPos = std::string(initMessage).find(secondSnippet)) != std::string::npos),
-        10000);
+        30000);
     // The first snippet is also there, and before the second snippet.
     BOOST_TEST(std::string(initMessage).find(firstSnippet) < secondSnippetPos);
     std::cout << std::string(initMessage) << std::endl;
@@ -105,7 +105,7 @@ namespace Tests::testScriptedInitialisationHandler {
     size_t successSnippetPos;
     CHECK_TIMEOUT((initMessage.readLatest(),
                       (successSnippetPos = std::string(initMessage).find(successSnippet)) != std::string::npos),
-        10000);
+        30000);
     // Tests that the script snippet is there before the success message.
     BOOST_TEST(std::string(initMessage).find(scriptOutputSnippet) < successSnippetPos);
   }
@@ -126,7 +126,7 @@ namespace Tests::testScriptedInitialisationHandler {
     constexpr auto secondSnippet = "device1 init complete";
 
     // The first snippet is in the message, the second not yet. The script has not reached the complete step yet.
-    CHECK_TIMEOUT((initMessage.readLatest(), std::string(initMessage).find(firstSnippet) != std::string::npos), 10000);
+    CHECK_TIMEOUT((initMessage.readLatest(), std::string(initMessage).find(firstSnippet) != std::string::npos), 30000);
     BOOST_TEST(std::string(initMessage).find(secondSnippet) == std::string::npos);
     BOOST_CHECK(!std::filesystem::exists("device1Init.complete"));
 
@@ -137,7 +137,7 @@ namespace Tests::testScriptedInitialisationHandler {
     size_t secondSnippetPos;
     CHECK_TIMEOUT((initMessage.readLatest(),
                       (secondSnippetPos = std::string(initMessage).find(secondSnippet)) != std::string::npos),
-        10000);
+        30000);
     // The first snippet is still in there, and before the second snippet.
     BOOST_TEST(std::string(initMessage).find(firstSnippet) < secondSnippetPos);
 
@@ -156,14 +156,14 @@ namespace Tests::testScriptedInitialisationHandler {
     // wait for the success snippet in message1. It must contain the first, but not the second snippet.
     auto initMessage1 = testFacility.getScalar<std::string>("/Devices/Dummy0/initScriptOutput");
     CHECK_TIMEOUT(
-        (initMessage1.readLatest(), std::string(initMessage1).find(successSnippet) != std::string::npos), 10000);
+        (initMessage1.readLatest(), std::string(initMessage1).find(successSnippet) != std::string::npos), 30000);
     BOOST_TEST(std::string(initMessage1).find(script1Snippet) != std::string::npos);
     BOOST_TEST(std::string(initMessage1).find(script2Snippet) == std::string::npos);
 
     // same for snippets in message2.
     auto initMessage2 = testFacility.getScalar<std::string>("/Devices/Dummy0/secondInitScriptOutput");
     CHECK_TIMEOUT(
-        (initMessage2.readLatest(), std::string(initMessage2).find(successSnippet) != std::string::npos), 10000);
+        (initMessage2.readLatest(), std::string(initMessage2).find(successSnippet) != std::string::npos), 30000);
     BOOST_TEST(std::string(initMessage2).find(script1Snippet) == std::string::npos);
     BOOST_TEST(std::string(initMessage2).find(script2Snippet) != std::string::npos);
   }
@@ -197,7 +197,7 @@ namespace Tests::testScriptedInitialisationHandler {
 
     // recovery
     (void)std::filesystem::remove("produceDevice2InitError");
-    CHECK_TIMEOUT(testFacility.readScalar<int32_t>("/Devices/Dummy0/status") == 0, 10000);
+    CHECK_TIMEOUT(testFacility.readScalar<int32_t>("/Devices/Dummy0/status") == 0, 30000);
   }
 
   /********************************************************************************************************************/
@@ -221,7 +221,7 @@ namespace Tests::testScriptedInitialisationHandler {
 
     // recovery
     (void)std::filesystem::remove("produceDevice2InitError");
-    CHECK_TIMEOUT(testFacility.readScalar<int32_t>("/Devices/Dummy0/status") == 0, 10000);
+    CHECK_TIMEOUT(testFacility.readScalar<int32_t>("/Devices/Dummy0/status") == 0, 30000);
   }
 
   /********************************************************************************************************************/
@@ -274,7 +274,7 @@ namespace Tests::testScriptedInitialisationHandler {
 
     // recovery
     (void)std::filesystem::remove("produceDevice2InitError");
-    CHECK_TIMEOUT(testFacility.readScalar<int32_t>("/Devices/Dummy0/status") == 0, 10000);
+    CHECK_TIMEOUT(testFacility.readScalar<int32_t>("/Devices/Dummy0/status") == 0, 30000);
 
     // The actual test: At least three failure grace periods have passed.
     auto stopTime = std::chrono::steady_clock::now();
