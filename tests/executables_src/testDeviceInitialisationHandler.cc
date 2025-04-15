@@ -171,6 +171,12 @@ namespace Tests::testDeviceInitialisationHandler {
     app.dev.addInitialisationHandler(&initialiseReg3);
     // app.dev.connectTo(app.cs);
     ctk::TestFacility test(app, false); // test facility without testable mode
+
+    auto status = test.getScalar<int32_t>(
+        ctk::RegisterPath("/Devices") / ctk::Utilities::escapeName(std::string(deviceCDD), false) / "status");
+    auto status_message = test.getScalar<std::string>(
+        ctk::RegisterPath("/Devices") / ctk::Utilities::escapeName(std::string(deviceCDD), false) / "status_message");
+
     ctk::Device dummy;
     dummy.open(deviceCDD.data());
 
@@ -181,16 +187,20 @@ namespace Tests::testDeviceInitialisationHandler {
     app.run();
     // app.dumpConnections();
 
-    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") /
-                            ctk::Utilities::escapeName(deviceCDD.data(), false) / "status"),
-        1, 30000);
-    CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") /
-                            ctk::Utilities::escapeName(deviceCDD.data(), false) / "status_message"),
-        exceptionMessage, 30000);
+    // initial values of device status
+    BOOST_TEST(status.readAndGet() == 1);
+    auto initialMessage = status_message.readAndGet();
+
+    // wait for exception, message shall be changed
+    status_message.read();
+    BOOST_TEST(std::string(status_message) != initialMessage);
 
     // Check that the execution of init handlers was stopped after the exception:
     // initialiseReg2 and initialiseReg3 were not executed. As we already checked with timeout that the
-    // initialisation error has been reported, we know that the data was written to the device and don't need the timeout here.
+    // initialisation error has been reported, we know that the data was written to the device and don't need the
+    // timeout here.
+
+    usleep(10000); // allow bugs to manifest (e.g. if manager would continue with other handlers after exception)
 
     BOOST_CHECK_EQUAL(var1, 42);
     BOOST_CHECK_EQUAL(var2, 0);
@@ -216,7 +226,7 @@ namespace Tests::testDeviceInitialisationHandler {
     BOOST_CHECK_EQUAL(var2, 47);
     BOOST_CHECK_EQUAL(var3, 52);
 
-    // now check that the initialisation error is also reportet when recovering
+    // now check that the initialisation error is also reported when recovering
     // Prepare registers to be initialised
     var1 = 12;
     var2 = 13;
@@ -236,10 +246,11 @@ namespace Tests::testDeviceInitialisationHandler {
                             ctk::Utilities::escapeName(deviceCDD.data(), false) / "status"),
         1, 30000);
     // First we see the message from the failing write
-    BOOST_CHECK(!test
-            .readScalar<std::string>(
-                ctk::RegisterPath("/Devices") / ctk::Utilities::escapeName(deviceCDD.data(), false) / "status_message")
-            .empty());
+    CHECK_TIMEOUT(!test
+                      .readScalar<std::string>(ctk::RegisterPath("/Devices") /
+                          ctk::Utilities::escapeName(deviceCDD.data(), false) / "status_message")
+                      .empty(),
+        30000);
     dummyBackend->throwExceptionWrite = false;
     // Afterwards we see a message from the failing initialisation (which we can now distinguish from the original write
     // exception because write does not throw any more)
