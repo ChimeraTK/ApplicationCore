@@ -21,9 +21,8 @@ namespace ctk = ChimeraTK;
 
 namespace Tests::testDeviceInitialisationHandler {
 
-  static constexpr std::string_view deviceCDD{"(ExceptionDummy?map=test.map)"};
-  static constexpr std::string_view exceptionMessage{
-      "DEBUG: runtime error intentionally cased in device initialisation"};
+  static const std::string deviceCDD{"(ExceptionDummy?map=test.map)"};
+  static const std::string exceptionMessage{"DEBUG: runtime error intentionally cased in device initialisation"};
 
   static std::atomic<bool> throwInInitialisation{false};
   static std::atomic<int32_t> var1{0};
@@ -33,7 +32,7 @@ namespace Tests::testDeviceInitialisationHandler {
   void initialiseReg1(ChimeraTK::Device&) {
     var1 = 42;
     if(throwInInitialisation) {
-      throw ctk::runtime_error(exceptionMessage.data());
+      throw ctk::runtime_error(exceptionMessage);
     }
   }
 
@@ -52,12 +51,12 @@ namespace Tests::testDeviceInitialisationHandler {
     TestApplication() : Application("testSuite") {}
     ~TestApplication() override { shutdown(); }
 
-    ctk::DeviceModule dev{this, deviceCDD.data(), "", &initialiseReg1};
+    ctk::DeviceModule dev{this, deviceCDD, "", &initialiseReg1};
   };
 
   /********************************************************************************************************************/
 
-  BOOST_AUTO_TEST_CASE(testBasicInitialisation) {
+  BOOST_AUTO_TEST_CASE(TestBasicInitialisation) {
     std::cout << "testBasicInitialisation" << std::endl;
     TestApplication app;
 
@@ -68,7 +67,7 @@ namespace Tests::testDeviceInitialisationHandler {
     ctk::TestFacility test{app};
     test.runApplication();
     ctk::Device dummy;
-    dummy.open(deviceCDD.data());
+    dummy.open(deviceCDD);
 
     // ********************************************************
     // REQUIRED TEST 1: After opening the device is initialised
@@ -78,8 +77,8 @@ namespace Tests::testDeviceInitialisationHandler {
     var1 = 0;
 
     // check that accessing an exception triggers a reconnection with re-initialisation
-    auto dummyBackend = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
-        ctk::BackendFactory::getInstance().createBackend(deviceCDD.data()));
+    auto dummyBackend =
+        boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
     dummyBackend->throwExceptionWrite = true;
 
     auto reg2_cs = test.getScalar<int32_t>("/REG2");
@@ -105,7 +104,7 @@ namespace Tests::testDeviceInitialisationHandler {
 
   /********************************************************************************************************************/
 
-  BOOST_AUTO_TEST_CASE(testMultipleInitialisationHandlers) {
+  BOOST_AUTO_TEST_CASE(TestMultipleInitialisationHandlers) {
     std::cout << "testMultipleInitialisationHandlers" << std::endl;
     TestApplication app;
 
@@ -119,7 +118,7 @@ namespace Tests::testDeviceInitialisationHandler {
     test.runApplication();
 
     auto deviceStatus = test.getScalar<int32_t>(
-        ctk::RegisterPath("/Devices") / ctk::Utilities::escapeName(deviceCDD.data(), false) / "status");
+        ctk::RegisterPath("/Devices") / ctk::Utilities::escapeName(deviceCDD, false) / "status");
 
     // *********************************************************
     // REQUIRED TEST 4: Handlers are executed in the right order
@@ -134,8 +133,8 @@ namespace Tests::testDeviceInitialisationHandler {
     var3 = 0;
 
     // cause an exception
-    auto dummyBackend = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
-        ctk::BackendFactory::getInstance().createBackend(deviceCDD.data()));
+    auto dummyBackend =
+        boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
     dummyBackend->throwExceptionWrite = true;
 
     auto reg4_cs = test.getScalar<int32_t>("/REG4");
@@ -157,7 +156,7 @@ namespace Tests::testDeviceInitialisationHandler {
 
   /********************************************************************************************************************/
 
-  BOOST_AUTO_TEST_CASE(testInitialisationException) {
+  BOOST_AUTO_TEST_CASE(TestInitialisationException) {
     std::cout << "testInitialisationException" << std::endl;
 
     var1 = 0;
@@ -178,7 +177,7 @@ namespace Tests::testDeviceInitialisationHandler {
         ctk::RegisterPath("/Devices") / ctk::Utilities::escapeName(std::string(deviceCDD), false) / "status_message");
 
     ctk::Device dummy;
-    dummy.open(deviceCDD.data());
+    dummy.open(deviceCDD);
 
     // We cannot use runApplication because the DeviceModule leaves the testable mode without variables in the queue,
     // but has not finished error handling yet. In this special case we cannot make the programme continue, because
@@ -212,13 +211,13 @@ namespace Tests::testDeviceInitialisationHandler {
     // wait until the device is reported to be OK again (check with timeout),
     // then check the initialisation (again, no extra timeout needed because of the logic:
     // success is only reported after successful init).
-    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") /
-                            ctk::Utilities::escapeName(deviceCDD.data(), false) / "status"),
+    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(
+                            ctk::RegisterPath("/Devices") / ctk::Utilities::escapeName(deviceCDD, false) / "status"),
         0, 30000);
     // We use the macro here for convenience, it's a test, speed should not matter
     // NOLINTNEXTLINE(readability-container-size-empty)
     CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") /
-                            ctk::Utilities::escapeName(deviceCDD.data(), false) / "status_message"),
+                            ctk::Utilities::escapeName(deviceCDD, false) / "status_message"),
         "", 30000);
 
     // initialisation should be correct now
@@ -234,41 +233,41 @@ namespace Tests::testDeviceInitialisationHandler {
 
     // Make initialisation fail when executed, and then cause an error condition
     throwInInitialisation = true;
-    auto dummyBackend = boost::dynamic_pointer_cast<ctk::ExceptionDummy>(
-        ctk::BackendFactory::getInstance().createBackend(deviceCDD.data()));
+    auto dummyBackend =
+        boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend(deviceCDD));
     dummyBackend->throwExceptionWrite = true;
 
     auto reg4_cs = test.getScalar<int32_t>("/REG4");
     reg4_cs = 20;
     reg4_cs.write();
 
-    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") /
-                            ctk::Utilities::escapeName(deviceCDD.data(), false) / "status"),
+    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(
+                            ctk::RegisterPath("/Devices") / ctk::Utilities::escapeName(deviceCDD, false) / "status"),
         1, 30000);
     // First we see the message from the failing write
     CHECK_TIMEOUT(!test
                       .readScalar<std::string>(ctk::RegisterPath("/Devices") /
-                          ctk::Utilities::escapeName(deviceCDD.data(), false) / "status_message")
+                          ctk::Utilities::escapeName(deviceCDD, false) / "status_message")
                       .empty(),
         30000);
     dummyBackend->throwExceptionWrite = false;
     // Afterwards we see a message from the failing initialisation (which we can now distinguish from the original write
     // exception because write does not throw any more)
     CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") /
-                            ctk::Utilities::escapeName(deviceCDD.data(), false) / "status_message"),
+                            ctk::Utilities::escapeName(deviceCDD, false) / "status_message"),
         exceptionMessage, 30000);
 
     // Now fix the initialisation error and check that the device comes up.
     throwInInitialisation = false;
     // Wait until the device is OK again
-    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(ctk::RegisterPath("/Devices") /
-                            ctk::Utilities::escapeName(deviceCDD.data(), false) / "status"),
+    CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>(
+                            ctk::RegisterPath("/Devices") / ctk::Utilities::escapeName(deviceCDD, false) / "status"),
         0, 30000);
 
     // We use the macro here for convenience, it's a test, speed should not matter
     // NOLINTNEXTLINE(readability-container-size-empty)
     CHECK_EQUAL_TIMEOUT(test.readScalar<std::string>(ctk::RegisterPath("/Devices") /
-                            ctk::Utilities::escapeName(deviceCDD.data(), false) / "status_message"),
+                            ctk::Utilities::escapeName(deviceCDD, false) / "status_message"),
         "", 30000);
     // Finally check that the 20 arrives on the device
     CHECK_EQUAL_TIMEOUT(dummy.read<int32_t>("/REG4"), 20, 30000);
