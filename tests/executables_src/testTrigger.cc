@@ -22,6 +22,8 @@
 #include <boost/mpl/list.hpp>
 #include <boost/test/included/unit_test.hpp>
 
+#include <latch>
+
 namespace Tests::testTrigger {
 
   using namespace boost::unit_test_framework;
@@ -616,6 +618,87 @@ namespace Tests::testTrigger {
     BOOST_CHECK_EQUAL(app.testModule.consumingPush3, 34);
 
     dev.close();
+  }
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  /* dummy application */
+
+  struct TestApplication2 : public ctk::Application {
+    TestApplication2() : Application("testSuite") {}
+    ~TestApplication2() override { shutdown(); }
+
+    std::atomic<bool> block{false};
+    std::latch confirmBlock{2};
+    std::latch unblock{2};
+
+    ctk::SetDMapFilePath dmap{"test.dmap"};
+    ctk::DeviceModule dev{this, "Dummy0", "/testModule/theTrigger", [&](ctk::Device&) {
+                            if(block) {
+                              std::cout << "Init Handler blocked." << std::endl;
+                              confirmBlock.arrive_and_wait();
+                              unblock.arrive_and_wait();
+                            }
+                            std::cout << "Init Handler completed." << std::endl;
+                          }};
+  };
+
+  /********************************************************************************************************************/
+  /*
+   * Test that the init handler closing the device while executing does not interfer with the TransferGroup reading
+   * in the TriggerFanOut. See #14286 for background information.
+   *
+   * Just connecting a single variable to the control system with a trigger will already give us a TriggerFanOut which
+   * always uses internally a TransferGroup, so no complicated setup should be required here.
+   */
+
+  BOOST_AUTO_TEST_CASE(TestTriggerTransferGroupInitHandler) {
+    std::cout << "***************************************************************"
+                 "******************************************************"
+              << std::endl;
+    std::cout << "==> TestTriggerTransferGroupInitHandler" << std::endl;
+
+    TestApplication2 app;
+
+    ctk::TestFacility test(app, false); // no testable mode, since we need to block the device recovery
+
+    auto trigger = test.getVoid("/testModule/theTrigger");
+    auto readBack = test.getScalar<int>("/MyModule/readBack");
+    auto devStatus = test.getScalar<int>("/Devices/Dummy0/status");
+
+    test.runApplication();
+
+    // await device to be opened
+    BOOST_REQUIRE(devStatus == 0);
+    devStatus.read();
+    BOOST_REQUIRE(devStatus == 1);
+
+    // trigger once and read the polled data, to make sure everything is running. Otherwise we would not (reliably)
+    // observe the failure below.
+    trigger.write();
+    readBack.read();
+
+    // trigger init handler and keep it blocked. The device will remain closed until the init handler is unblocked.
+    app.block = true;
+    app.dev.reportException("Force error");
+    app.confirmBlock.arrive_and_wait();
+
+    devStatus.read();
+    BOOST_REQUIRE(devStatus == 0);
+
+    // trigger the TriggerFanOut which will attempt to read from the closed device. The ExceptionHandlingDecorator
+    // should prevent this, so no logic_error should be thrown.
+    trigger.write();
+    // 0.5 seconds delay, give TriggerFanOut some time. In case of a bug, the logic_error will be thrown in the
+    // TriggerFanOut thread.
+    usleep(500000);
+
+    // unblock to finish recovery
+    app.block = false;
+    app.unblock.arrive_and_wait();
+    devStatus.read();
+    BOOST_REQUIRE(devStatus == 1);
   }
 
   /********************************************************************************************************************/
