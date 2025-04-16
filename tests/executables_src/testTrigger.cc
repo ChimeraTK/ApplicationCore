@@ -2,9 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "VoidAccessor.h"
 
-#include <chrono>
-#include <future>
-
 #define BOOST_TEST_MODULE testTrigger
 
 #include "Application.h"
@@ -30,7 +27,8 @@ namespace Tests::testTrigger {
   using namespace boost::unit_test_framework;
   namespace ctk = ChimeraTK;
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   // Application that has one polling consumer for a polling provider
   // It should work without any trigger
@@ -60,7 +58,9 @@ namespace Tests::testTrigger {
     ctk::DeviceModule dev;
   };
 
-  BOOST_AUTO_TEST_CASE(testDev2AppWithPollTrigger) {
+  /********************************************************************************************************************/
+
+  BOOST_AUTO_TEST_CASE(TestDev2AppWithPollTrigger) {
     // TestApp1 should work without specifying any trigger
     {
       TestApp1 app;
@@ -131,7 +131,7 @@ namespace Tests::testTrigger {
     }
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApp2 : ctk::Application {
     TestApp2() : ctk::Application("testApp2") {}
@@ -153,8 +153,10 @@ namespace Tests::testTrigger {
     ctk::DeviceModule dev;
   };
 
+  /********************************************************************************************************************/
+
   // Device that requires trigger, the trigger is 1:1 put into the CS
-  BOOST_AUTO_TEST_CASE(testDev2AppWithCsDirectTrigger) {
+  BOOST_AUTO_TEST_CASE(TestDev2AppWithCsDirectTrigger) {
     // TestApp2 should not work without specifying any trigger
     {
       TestApp2 app;
@@ -199,7 +201,8 @@ namespace Tests::testTrigger {
     }
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApp3 : ctk::Application {
     TestApp3() : ctk::Application("testApp3") {}
@@ -238,8 +241,10 @@ namespace Tests::testTrigger {
     ctk::DeviceModule dev{this, "Dummy0", "/cs/trigger"};
   };
 
+  /********************************************************************************************************************/
+
   // Device that requires trigger, the trigger is distributed in the Application as well
-  BOOST_AUTO_TEST_CASE(testDev2AppWithCsDistributedTrigger) {
+  BOOST_AUTO_TEST_CASE(TestDev2AppWithCsDistributedTrigger) {
     TestApp3 app;
 
     ChimeraTK::TestFacility tf{app, true};
@@ -275,7 +280,8 @@ namespace Tests::testTrigger {
     BOOST_TEST(rb == 12);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApp4 : ctk::Application {
     TestApp4() : ctk::Application("testApp4") {}
@@ -311,8 +317,10 @@ namespace Tests::testTrigger {
     ctk::DeviceModule dev2{this, "Dummy1Mapped", "/cs/trigger"};
   };
 
+  /********************************************************************************************************************/
+
   // Two devices using the same trigger
-  BOOST_AUTO_TEST_CASE(testDev2App1Trigger2Devices) {
+  BOOST_AUTO_TEST_CASE(TestDev2App1Trigger2Devices) {
     TestApp4 app;
 
     ChimeraTK::TestFacility tf{app, true};
@@ -357,7 +365,8 @@ namespace Tests::testTrigger {
     BOOST_TEST(rb == 2);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApp5 : ctk::Application {
     TestApp5() : ctk::Application("testApp5") {}
@@ -381,7 +390,9 @@ namespace Tests::testTrigger {
     ctk::DeviceModule dev;
   };
 
-  BOOST_AUTO_TEST_CASE(testDev2CSCsTrigger) {
+  /********************************************************************************************************************/
+
+  BOOST_AUTO_TEST_CASE(TestDev2CSCsTrigger) {
     TestApp5 app;
     app.dev = {&app, "Dummy0", "/cs/trigger"};
 
@@ -411,7 +422,9 @@ namespace Tests::testTrigger {
     BOOST_TEST(rb == 12);
   }
 
-  BOOST_AUTO_TEST_CASE(testDev2CSAppTrigger) {
+  /********************************************************************************************************************/
+
+  BOOST_AUTO_TEST_CASE(TestDev2CSAppTrigger) {
     TestApp5 app;
     app.dev = {&app, "Dummy0", "/trigger"};
 
@@ -441,12 +454,15 @@ namespace Tests::testTrigger {
     BOOST_TEST(rb == 12);
   }
 
-  constexpr std::string_view dummySdm{"(TestTransferGroupDummy?map=test_readonly.map)"};
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  const std::string dummySdm{"(TestTransferGroupDummy?map=test_readonly.map)"};
 
   // list of user types the accessors are tested with
   using test_types = boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double>;
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   class TestTransferGroupDummy : public ChimeraTK::DummyBackend {
    public:
@@ -467,12 +483,12 @@ namespace Tests::testTrigger {
     }
 
     std::atomic<size_t> numberOfTransfers{0};
-    std::atomic<uint64_t> lastBar{};
-    std::atomic<uint64_t> lastAddress{};
-    std::atomic<size_t> lastSizeInBytes{};
+    std::atomic<uint64_t> lastBar;
+    std::atomic<uint64_t> lastAddress;
+    std::atomic<size_t> lastSizeInBytes;
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* the ApplicationModule for the test is a template of the user type */
 
   struct TestModule : public ctk::ApplicationModule {
@@ -506,14 +522,14 @@ namespace Tests::testTrigger {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* dummy application */
 
   struct TestApplication : public ctk::Application {
     TestApplication() : Application("testSuite") {
       ChimeraTK::BackendFactory::getInstance().registerBackendType(
           "TestTransferGroupDummy", &TestTransferGroupDummy::createInstance);
-      dev2 = {this, dummySdm.data(), "/testModule/theTrigger"};
+      dev2 = {this, dummySdm, "/testModule/theTrigger"};
     }
     ~TestApplication() override { shutdown(); }
 
@@ -521,11 +537,11 @@ namespace Tests::testTrigger {
     ctk::DeviceModule dev2;
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test that multiple variables triggered by the same source are put into the
    * same TransferGroup */
 
-  BOOST_AUTO_TEST_CASE(testTriggerTransferGroup) {
+  BOOST_AUTO_TEST_CASE(TestTriggerTransferGroup) {
     std::cout << "***************************************************************"
                  "******************************************************"
               << std::endl;
@@ -538,9 +554,9 @@ namespace Tests::testTrigger {
     app.setPVManager(pvManagers.second);
 
     ChimeraTK::Device dev;
-    dev.open(dummySdm.data());
+    dev.open(dummySdm);
     auto backend = boost::dynamic_pointer_cast<TestTransferGroupDummy>(
-        ChimeraTK::BackendFactory::getInstance().createBackend(dummySdm.data()));
+        ChimeraTK::BackendFactory::getInstance().createBackend(dummySdm));
     BOOST_CHECK(backend != nullptr);
 
     app.initialise();
@@ -601,5 +617,7 @@ namespace Tests::testTrigger {
 
     dev.close();
   }
+
+  /********************************************************************************************************************/
 
 } // namespace Tests::testTrigger
