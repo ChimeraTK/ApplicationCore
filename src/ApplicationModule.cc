@@ -100,7 +100,7 @@ namespace ChimeraTK {
     Application::registerThread("AM_" + className()); // + getName());
 
     // Acquire testable mode lock, so from this point on we are running only one user thread concurrently
-    Application::getInstance().getTestableMode().lock("start");
+    Application::getInstance().getTestableMode().lock("start", true);
 
     // Read all variables once to obtain the initial values from the devices and from the control system persistency
     // layer. This is done in two steps, first for all poll-type variables and then for all push-types, because
@@ -120,7 +120,8 @@ namespace ChimeraTK {
           // The lock may have already been acquired if the above read() goes to a ConsumingFanOut, which sends out
           // the data to a slave decorated by a TestableModeAccessorDecorator. Hence we here must acquire the lock only
           // if we do not have it.
-          Application::getInstance().getTestableMode().lock("Initial value read for poll-type " + variable.getName());
+          Application::getInstance().getTestableMode().lock(
+              "Initial value read for poll-type " + variable.getName(), true);
         }
       }
     }
@@ -139,11 +140,13 @@ namespace ChimeraTK {
         Application::getInstance().getTestableMode().unlock("Initial value read for push-type " + variable.getName());
         Application::getInstance()._circularDependencyDetector.registerDependencyWait(variable);
         // Will internally release and lock during the read, hence surround with lock/unlock
-        Application::getInstance().getTestableMode().lock("Initial value read for push-type " + variable.getName());
+        Application::getInstance().getTestableMode().lock(
+            "Initial value read for push-type " + variable.getName(), true);
         variable.getAppAccessorNoType().read();
         Application::getInstance().getTestableMode().unlock("Initial value read for push-type " + variable.getName());
         Application::getInstance()._circularDependencyDetector.unregisterDependencyWait(variable);
-        Application::getInstance().getTestableMode().lock("Initial value read for push-type " + variable.getName());
+        Application::getInstance().getTestableMode().lock(
+            "Initial value read for push-type " + variable.getName(), true);
       }
     }
 

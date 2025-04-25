@@ -184,7 +184,9 @@ void Application::run() {
     while(!module->hasReachedTestableMode()) {
       Application::getInstance().getTestableMode().unlock("releaseForReachTestableMode");
       usleep(100);
-      Application::getInstance().getTestableMode().lock("acquireForReachTestableMode");
+      // Note: This is executed inside the test thread (by TestFacility::runApplication()), so we need the exclusive
+      // lock here.
+      Application::getInstance().getTestableMode().lock("acquireForReachTestableMode", false);
     }
   };
 

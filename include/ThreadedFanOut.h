@@ -134,7 +134,7 @@ namespace ChimeraTK {
   template<typename UserType>
   void ThreadedFanOut<UserType>::run() {
     Application::registerThread("ThFO" + FanOut<UserType>::_impl->getName());
-    Application::getInstance().getTestableMode().lock("start");
+    Application::getInstance().getTestableMode().lock("start", true);
     _testableModeReached = true;
 
     ChimeraTK::VersionNumber version{nullptr};
@@ -169,7 +169,7 @@ namespace ChimeraTK {
     Application::getInstance().getTestableMode().unlock("readInitialValues");
     accessor->read();
     if(!Application::getInstance().getTestableMode().testLock()) {
-      Application::getInstance().getTestableMode().lock("readInitialValues");
+      Application::getInstance().getTestableMode().lock("readInitialValues", true);
     }
     return accessor->getVersionNumber();
   }
@@ -214,7 +214,7 @@ namespace ChimeraTK {
   template<typename UserType>
   void ThreadedFanOutWithReturn<UserType>::run() {
     Application::registerThread("ThFO" + FanOut<UserType>::_impl->getName());
-    Application::getInstance().getTestableMode().lock("start");
+    Application::getInstance().getTestableMode().lock("start", true);
     _testableModeReached = true;
 
     std::map<TransferElementID, boost::shared_ptr<NDRegisterAccessor<UserType>>> accessors;

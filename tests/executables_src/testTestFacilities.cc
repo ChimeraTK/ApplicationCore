@@ -1,12 +1,11 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
-#include <chrono>
-#include <future>
 
 #define BOOST_TEST_MODULE testTestFacilities
 
 #include "Application.h"
 #include "ApplicationModule.h"
+#include "check_timeout.h"
 #include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestableMode.h"
@@ -16,26 +15,18 @@
 #include <ChimeraTK/Device.h>
 
 #include <boost/mpl/list.hpp>
+#include <boost/thread/barrier.hpp>
+
+#include <latch>
+
 // #define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
 // #undef BOOST_NO_EXCEPTIONS
-#include <boost/thread/barrier.hpp>
 
 namespace Tests::testTestFacilities {
 
   using namespace boost::unit_test_framework;
   namespace ctk = ChimeraTK;
-
-#define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
-  {                                                                                                                    \
-    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();                                       \
-    while(!(condition)) {                                                                                              \
-      bool timeout_reached = (std::chrono::steady_clock::now() - t0) > std::chrono::milliseconds(maxMilliseconds);     \
-      BOOST_CHECK(!timeout_reached);                                                                                   \
-      if(timeout_reached) break;                                                                                       \
-      usleep(1000);                                                                                                    \
-    }                                                                                                                  \
-  }
 
   constexpr std::string_view dummySdm{"(dummy?map=test_readonly.map)"};
 
@@ -983,6 +974,54 @@ namespace Tests::testTestFacilities {
     lk2.unlock();
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  /**
+   * Test that the testable mode lock is a shared lock and only the test thread acquires it in exclusive mode. This test
+   * makes sure that a DeviceManager can execute an init handler as part of the recovery procedure (which takes place
+   * while holding the testable mode lock) in parallel with an ApplicationModule thread doing something.
+   *
+   * The test was written to reproduce roughly a specific regression discovered after the introduction of recovery
+   * groups: A write() opreation issued from an ApplicationModule going to a Device in error state can dead lock with
+   * the device recovery in DeviceManager::RecoveryGroup::waitForRecoveryStage(), because the device recovery thread
+   * (holding the recovery lock) gives up the testable mode lock temporarily while arriving at the recovery stage
+   * barrier, but the ExceptionHandlingDecorator obtains the recovery lock while keeping the testable mode lock. This
+   * problem occured because the testable mode lock was at that time not yet a shared lock, which was then changed to
+   * fix the issue.
+   */
+  BOOST_AUTO_TEST_CASE(TestableModeLockShared) {
+    std::cout << "TestableModeLockShared" << std::endl;
+
+    const static std::string CDD1 = "(ExceptionDummy:1?map=recoveryGroups.map)";
+    static std::latch blockInitHandler{2};
+
+    class MyApp : public ctk::Application {
+     public:
+      using Application::Application;
+      ~MyApp() { shutdown(); }
+
+      class MyMod : public ctk::ApplicationModule {
+       public:
+        using ApplicationModule::ApplicationModule;
+        ctk::ScalarOutput<int32_t> reg2{this, "/MyModule/actuator", "", ""};
+        void mainLoop() override {
+          blockInitHandler.arrive_and_wait();
+          reg2.setAndWrite(42);
+        }
+      } myMod{this, "MyMod", ""};
+
+      ctk::DeviceModule dev1{this, CDD1, "/trigger", [&](ctk::Device&) { blockInitHandler.arrive_and_wait(); }};
+    } myApp{"MyApp"};
+
+    ctk::Device dev(CDD1);
+
+    ctk::TestFacility test(myApp);
+
+    test.runApplication();
+
+    CHECK_EQUAL_TIMEOUT(dev.read<int32_t>("/MyModule/actuator"), 42, 30000);
+  }
+
+  /********************************************************************************************************************/
 
 } // namespace Tests::testTestFacilities

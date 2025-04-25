@@ -90,7 +90,7 @@ namespace ChimeraTK {
 
   void TriggerFanOut::run() {
     Application::registerThread("TrFO" + _externalTrigger->getName());
-    Application::getInstance().getTestableMode().lock("start");
+    Application::getInstance().getTestableMode().lock("start", true);
     _testableModeReached = true;
 
     ChimeraTK::VersionNumber version = Application::getInstance().getStartVersion();
@@ -110,7 +110,7 @@ namespace ChimeraTK {
     }
     Application::getInstance().getTestableMode().unlock("WaitInitialValueLock");
     (void)_deviceModule.waitForInitialValues();
-    Application::getInstance().getTestableMode().lock("Enter while loop");
+    Application::getInstance().getTestableMode().lock("Enter while loop", true);
     if(Application::getInstance().getTestableMode().isEnabled()) {
       --Application::getInstance().getTestableMode()._deviceInitialisationCounter;
     }
