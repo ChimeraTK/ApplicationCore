@@ -8,34 +8,69 @@
 
 namespace ChimeraTK::detail {
 
-  std::timed_mutex TestableMode::mutex;
+  std::shared_timed_mutex TestableMode::_mutex;
 
   /********************************************************************************************************************/
 
   void TestableMode::enable() {
     setThreadName("TEST THREAD");
     _enabled = true;
-    lock("enableTestableMode");
+    lock("enableTestableMode", false);
   }
 
   /********************************************************************************************************************/
 
-  std::unique_lock<std::timed_mutex>& TestableMode::getLockObject() {
+  bool TestableMode::Lock::tryLockFor(std::chrono::seconds timeout, bool shared) {
+    assert(!_ownsLock);
+    _isShared = shared;
+    if(shared) {
+      _ownsLock = _mutex.try_lock_shared_for(timeout);
+      return _ownsLock;
+    }
+    _ownsLock = _mutex.try_lock_for(timeout);
+    return _ownsLock;
+  }
+
+  /********************************************************************************************************************/
+
+  void TestableMode::Lock::unlock() {
+    assert(_ownsLock);
+    _ownsLock = false;
+    if(_isShared) {
+      _mutex.unlock_shared();
+    }
+    else {
+      _mutex.unlock();
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  TestableMode::Lock::~Lock() {
+    if(_ownsLock) {
+      unlock();
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  TestableMode::Lock& TestableMode::getLockObject() {
     // Note: due to a presumed bug in gcc (still present in gcc 7), the
     // thread_local definition must be in the cc file to prevent seeing different
     // objects in the same thread under some conditions. Another workaround for
     // this problem can be found in commit
     // dc051bfe35ce6c1ed954010559186f63646cf5d4
-    thread_local std::unique_lock<std::timed_mutex> myLock(TestableMode::mutex, std::defer_lock);
+    thread_local Lock myLock;
     return myLock;
   }
+
   /********************************************************************************************************************/
 
   bool TestableMode::testLock() const {
     if(not _enabled) {
       return false;
     }
-    return getLockObject().owns_lock();
+    return getLockObject().ownsLock();
   }
 
   /********************************************************************************************************************/
@@ -57,7 +92,7 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
-  void TestableMode::lock(const std::string& name) {
+  void TestableMode::lock(const std::string& name, bool shared) {
     // don't do anything if testable mode is not enabled
     if(not _enabled) {
       return;
@@ -81,7 +116,7 @@ namespace ChimeraTK::detail {
     // obtain the lock
     boost::thread::id lastSeen_lastOwner = _lastMutexOwner;
   repeatTryLock:
-    auto success = getLockObject().try_lock_for(std::chrono::seconds(30));
+    auto success = getLockObject().tryLockFor(std::chrono::seconds(30), shared);
     boost::thread::id currentLastOwner = _lastMutexOwner;
     if(!success) {
       if(currentLastOwner != lastSeen_lastOwner) {
@@ -202,7 +237,7 @@ namespace ChimeraTK::detail {
       }
       unlock("stepApplication");
       boost::this_thread::yield();
-      lock("stepApplication");
+      lock("stepApplication", false);
     }
   }
 

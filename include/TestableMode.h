@@ -14,7 +14,7 @@
 #include <atomic>
 #include <cstddef>
 #include <map>
-#include <mutex>
+#include <shared_mutex>
 
 namespace ChimeraTK {
   class ConnectionMaker;
@@ -29,9 +29,13 @@ namespace ChimeraTK::detail {
      * Lock the testable mode mutex for the current thread. Internally, a thread-local std::unique_lock<std::mutex> will
      * be created and re-used in subsequent calls within the same thread to this function and to testableModeUnlock().
      *
+     * The shared parameter determines whether the mutex is locked shared or unique. The test always needs to acquire
+     * a unique lock while the tested application can acquire a shared lock (so multiple application threads can run in
+     * parallel).
+     *
      * This function should generally not be used in user code.
      */
-    void lock(const std::string& name);
+    void lock(const std::string& name, bool shared);
 
     /**
      * Unlock the testable mode mutex for the current thread. See also testableModeLock().
@@ -176,7 +180,7 @@ namespace ChimeraTK::detail {
      * Semaphore counter used in testable mode to check if application code is finished executing. This value may only
      * be accessed while holding the testableMode.mutex.
      */
-    size_t _counter{0};
+    std::atomic<size_t> _counter{0};
 
     /**
      * Flag if connections should be made in testable mode (i.e. the TestableModeAccessorDecorator is put around all
@@ -189,7 +193,7 @@ namespace ChimeraTK::detail {
      * only be accessed while holding mutex. This counter is a separate counter from counter so stepApplication() can be
      * controlled whether to obey this counter.
      */
-    size_t _deviceInitialisationCounter{0};
+    std::atomic<size_t> _deviceInitialisationCounter{0};
 
     struct VariableDescriptor {
       /** name of the variable, used to print sensible information. */
@@ -203,7 +207,7 @@ namespace ChimeraTK::detail {
        * detected stall (see repeatingMutexOwner) to print a list of
        * variables which still contain unread values
        */
-      size_t counter{0};
+      std::atomic<size_t> counter{0};
     };
 
     /** Mutex used in testable mode to take control over the application threads.
@@ -216,7 +220,7 @@ namespace ChimeraTK::detail {
      * static. The static storage duration presents no problem in either case,
      * since there can only be one single instance of Application at a time (see
      * ApplicationBase constructor). */
-    static std::timed_mutex mutex;
+    static std::shared_timed_mutex _mutex;
 
     /**
      * Map of unique IDs to a VariableDescriptor holding information about Variables
@@ -249,13 +253,39 @@ namespace ChimeraTK::detail {
      *  variable but not read by the receiver. */
     std::atomic<size_t> _repeatingMutexOwner{false};
 
+    // forward declaration
+    class Lock;
+
     /** Obtain the lock object for the testable mode lock for the current thread.
      * The returned object has thread_local storage duration and must only be used
      * inside the current thread. Initially (i.e. after the first call in one
      * particular thread) the lock will not be owned by the returned object, so it
      * is important to catch the corresponding exception when calling
      * std::unique_lock::unlock(). */
-    static std::unique_lock<std::timed_mutex>& getLockObject();
+    static Lock& getLockObject();
+
+    /**
+     * Class to manage locking/unlocking the _mutex within a thread. It allows a timed try-lock on the mutex with either
+     * shared or exclusive access. The unlock() function will use the appropriate unlock function matching the last lock
+     * type (shared/exclusive). It will also keep track of the current lock ownership.
+     *
+     * To obtain such object, use getLockObject().
+     */
+    class Lock {
+     public:
+      [[nodiscard]] bool tryLockFor(std::chrono::seconds timeout, bool shared);
+      void unlock();
+      [[nodiscard]] bool ownsLock() const { return _ownsLock; }
+      ~Lock();
+
+     private:
+      Lock() = default;
+
+      bool _ownsLock{false};
+      bool _isShared{false}; // only meaningful when _ownsLock = true
+
+      friend Lock& TestableMode::getLockObject();
+    };
 
     /** Map of thread names */
     std::map<boost::thread::id, std::string> _threadNames;
@@ -440,7 +470,7 @@ namespace ChimeraTK::detail {
   template<typename UserType>
   void TestableMode::AccessorDecorator<UserType>::obtainLockAndDecrementCounter(bool hasNewData) {
     if(!_testableMode.testLock()) {
-      _testableMode.lock("doReadTransfer " + this->getName());
+      _testableMode.lock("doReadTransfer " + this->getName(), true);
     }
     if(!hasNewData) {
       return;
@@ -492,22 +522,29 @@ namespace ChimeraTK::detail {
     bool dataLost = false;
     if(!_testableMode.testLock()) {
       // may happen if first write in thread is done before first blocking read
-      _testableMode.lock("write " + this->getName());
+      _testableMode.lock("write " + this->getName(), true);
     }
+
+    // Increment counters before write(), since another thread might react to the value on the queue already and
+    // try to do something with the counter( e.g. decrement it conditionally, see obtainLockAndDecrementCounter()).
+    _testableMode._variables.at(_variableIdWrite).counter++;
+    _testableMode._counter++;
 
     dataLost = writeOperation();
 
-    if(!dataLost) {
-      ++_testableMode._counter;
-      ++_testableMode._variables.at(_variableIdWrite).counter;
-      if(_testableMode._enableDebug) {
+    if(dataLost) {
+      // if data has been lost, decrement counter again since we never actually put data onto the queue.
+      _testableMode._variables.at(_variableIdWrite).counter--;
+      _testableMode._counter--;
+    }
+
+    if(_testableMode._enableDebug) {
+      if(!dataLost) {
         logger(Logger::Severity::debug, "TestableMode")
             << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
             << "]: testableMode.counter increased, now at value " << _testableMode._counter;
       }
-    }
-    else {
-      if(_testableMode._enableDebug) {
+      else {
         logger(Logger::Severity::debug, "TestableMode")
             << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
             << "]: testableMode.counter not increased due to lost data";

@@ -191,7 +191,7 @@ namespace ChimeraTK {
         _owner->getTestableMode().unlock("Wait before open/recover device");
         usleep(500000);
         boost::this_thread::interruption_point();
-        _owner->getTestableMode().lock("Attempt open/recover device");
+        _owner->getTestableMode().lock("Attempt open/recover device", true);
 
         try {
           std::lock_guard<std::mutex> deviceOpenLock(_recoveryGroup->deviceOpenCloseMutex);
@@ -382,7 +382,7 @@ namespace ChimeraTK {
       _errorQueue.wait();
       boost::this_thread::interruption_point();
 
-      _owner->getTestableMode().lock("Process exception");
+      _owner->getTestableMode().lock("Process exception", true);
       // increment special testable mode counter to make sure the initialisation completes within one
       // "application step"
       if(Application::getInstance().getTestableMode()._enabled) {
@@ -516,7 +516,6 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   bool DeviceManager::RecoveryGroup::waitForRecoveryStage(RecoveryStage stage) {
-    app->getTestableMode().unlock(std::string("DeviceManager: Sync device recovery after ") + stageToString(stage));
     if(shutdown) {
       throw boost::thread_interrupted(); // NOLINT hicpp-exception-baseclass
     }
@@ -528,8 +527,6 @@ namespace ChimeraTK {
       throw boost::thread_interrupted(); // NOLINT hicpp-exception-baseclass
     }
     boost::this_thread::interruption_point();
-    app->getTestableMode().lock(
-        std::string("DeviceManager: Starting next device recovery stage after ") + stageToString(stage));
 
     /** Return false if errorAtStage is the current stage.
      *   \anchor waitForRecoveryStage_comment
@@ -561,7 +558,7 @@ namespace ChimeraTK {
     app->getTestableMode().unlock("DeviceManager: Sync after resetting recovery group stage");
     recoveryBarrier.arrive_and_wait();
     boost::this_thread::interruption_point();
-    app->getTestableMode().lock("DeviceManager: Starting recovery");
+    app->getTestableMode().lock("DeviceManager: Starting recovery", true);
   }
 
 } // namespace ChimeraTK
