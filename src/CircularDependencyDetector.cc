@@ -125,6 +125,8 @@ namespace ChimeraTK::detail {
   /*********************************************************************************************************************/
 
   void CircularDependencyDetector::detectBlockedModules() {
+    Application::registerThread("CircDepDetector");
+
     auto& app = Application::getInstance();
     while(true) {
       // wait some time to slow down this check
