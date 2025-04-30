@@ -1,5 +1,9 @@
 // SPDX-FileCopyrightText: Deutsches Elektronen-Synchrotron DESY, MSK, ChimeraTK Project <chimeratk-support@desy.de>
 // SPDX-License-Identifier: LGPL-3.0-or-later
+#include <ChimeraTK/Exception.h>
+
+#include <boost/test/tools/old/interface.hpp>
+
 #include <chrono>
 #include <future>
 
@@ -48,45 +52,25 @@ namespace Tests::testApplication {
     std::cout << "==> testApplicationExceptions" << std::endl;
 
     // zero length name forbidden
-    try {
-      TestApp app("");
-      BOOST_FAIL("Exception expected.");
-    }
-    catch(ChimeraTK::logic_error&) {
-    }
+    BOOST_CHECK_THROW(TestApp app(""), ChimeraTK::logic_error);
 
     // names with spaces and special characters are forbidden
-    try {
-      TestApp app("With space");
-      BOOST_FAIL("Exception expected.");
-    }
-    catch(ChimeraTK::logic_error&) {
-    }
-    try {
-      TestApp app("WithExclamationMark!");
-      BOOST_FAIL("Exception expected.");
-    }
-    catch(ChimeraTK::logic_error&) {
-    }
+    BOOST_CHECK_THROW(TestApp app("With space"), ChimeraTK::logic_error); // <<< logic error terminates here
+    BOOST_CHECK_THROW(TestApp app("WithExclamationMark!"), ChimeraTK::logic_error);
 
     // all allowed characters in the name
     {
-      TestApp app("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz_1234567890");
+      BOOST_CHECK_NO_THROW(TestApp app("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz_1234567890"));
     }
 
     // repeated characters are allowed
     {
-      TestApp app("AAAAAAA");
+      BOOST_CHECK_NO_THROW(TestApp app("AAAAAAA"));
     }
 
     // Two apps at the same time are not allowed
     TestApp app1("FirstInstance");
-    try {
-      TestApp app2("SecondInstance");
-      BOOST_FAIL("Exception expected.");
-    }
-    catch(ChimeraTK::logic_error&) {
-    }
+    BOOST_CHECK_THROW(TestApp app2("SecondInstance"), ChimeraTK::logic_error);
   }
 
   /*********************************************************************************************************************/
