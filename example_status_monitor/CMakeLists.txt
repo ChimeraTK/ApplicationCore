@@ -1,9 +1,9 @@
 # Note: This CMakeLists.txt is a minimal complete example how to use the
 # *installed* application core library. It is not included from the main CMakeLists.txt
 # which is used to build ApplicationCore itself.
-PROJECT(demo_example_status_monitor)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.16)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5.1)
+PROJECT(demo_example_status_monitor)
 
 # Use the project template to get the settings required for an application core project
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
@@ -12,28 +12,24 @@ set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
-include(cmake/add_dependency.cmake)
 include(cmake/set_default_build_to_release.cmake)
 include(cmake/set_default_flags.cmake)
+include(cmake/set_control_system_adapter.cmake)
 
 # Add the dependencies. We need ApplicationCore and a control system adapter implementation.
-add_dependency(ChimeraTK-ApplicationCore 03.00 REQUIRED)
-#FIXME: Make the adapter configurable via command line parameter
-add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter 00.10 REQUIRED)
+find_package(ChimeraTK-ApplicationCore 03.00 REQUIRED)
 
 AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR} demo_sources)
 
 # The server proper. It depends on application core and the control system adapter implementation.
 add_executable(${PROJECT_NAME} ${demo_sources})
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${ChimeraTK-ApplicationCore_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS}")
-  target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES} )
+target_link_libraries(${PROJECT_NAME} ChimeraTK::ChimeraTK-ApplicationCore ChimeraTK::SelectedAdapter)
 
 # We compile the same sources with the GENERATE_XML flag to get an xml generator.
 # This one does not depent on a control system adapter implementation.
 add_executable(${PROJECT_NAME}-xmlGenerator ${demo_sources})
 set_target_properties( ${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES LINK_FLAGS "${ChimeraTK-ApplicationCore_LINK_FLAGS}")
-target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}-xmlGenerator ChimeraTK::ChimeraTK-ApplicationCore)
 
 # copy the (test) config files to the build directory for tests
 FILE( COPY config/ DESTINATION ${PROJECT_BINARY_DIR})
