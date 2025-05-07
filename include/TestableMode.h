@@ -290,6 +290,9 @@ namespace ChimeraTK::detail {
     /** Map of thread names */
     std::map<boost::thread::id, std::string> _threadNames;
 
+    /** Map of pthread ids. Use only for debugging purpuses. */
+    std::map<boost::thread::id, pid_t> _threadPThreadId;
+
     /// Mutex for accessing threadNames
     std::mutex _threadNamesMutex;
 
@@ -298,6 +301,16 @@ namespace ChimeraTK::detail {
      * output of the testable mode. Will return "*UNKNOWN_THREAD*" if the name for the given ID has not yet been set.
      */
     std::string threadName(const boost::thread::id& threadId = boost::this_thread::get_id());
+
+    /**
+     * Get the pthread id for the given thread. Use only for debugging purposes!
+     *
+     * Background: Debuggers (like VS code) print this ID in the callstack, which makes it easier to find the right
+     * thread.
+     *
+     * Returns 0 if thread ID is not known.
+     */
+    pid_t pthreadId(const boost::thread::id& threadId = boost::this_thread::get_id());
 
     bool _debugDecorating{false};
     friend class ChimeraTK::ConnectionMaker;
