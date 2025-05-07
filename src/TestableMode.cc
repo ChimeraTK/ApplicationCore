@@ -123,9 +123,11 @@ namespace ChimeraTK::detail {
         lastSeen_lastOwner = currentLastOwner;
         goto repeatTryLock;
       }
-      std::cerr << "testableModeLock(): Thread " << threadName()                        // LCOV_EXCL_LINE
-                << " could not obtain lock for 30 seconds, presumably because "         // LCOV_EXCL_LINE
-                << threadName(_lastMutexOwner) << " does not release it." << std::endl; // LCOV_EXCL_LINE
+
+      std::cerr << "testableModeLock(): Thread " << threadName()                // LCOV_EXCL_LINE
+                << " could not obtain lock for 30 seconds, presumably because " // LCOV_EXCL_LINE
+                << threadName(_lastMutexOwner) << " [" << pthreadId(_lastMutexOwner) << "] does not release it."
+                << std::endl; // LCOV_EXCL_LINE
 
       // throw a specialised exception to make sure whoever catches it really knows what he does...
       terminateTestStalled(); // LCOV_EXCL_LINE
@@ -246,6 +248,7 @@ namespace ChimeraTK::detail {
   void TestableMode::setThreadName(const std::string& name) {
     std::unique_lock<std::mutex> myLock(_threadNamesMutex);
     _threadNames[boost::this_thread::get_id()] = name;
+    _threadPThreadId[boost::this_thread::get_id()] = gettid();
     Utilities::setThreadName(name);
   }
 
@@ -260,6 +263,16 @@ namespace ChimeraTK::detail {
     return "*UNKNOWN_THREAD*";
   }
 
+  /********************************************************************************************************************/
+
+  pid_t TestableMode::pthreadId(const boost::thread::id& threadId) {
+    std::unique_lock<std::mutex> myLock(_threadNamesMutex);
+    if(auto const& it = _threadPThreadId.find(threadId); it != _threadPThreadId.end()) {
+      return it->second;
+    }
+
+    return 0;
+  }
   /********************************************************************************************************************/
 
   TestableMode::LastMutexOwner::operator boost::thread::id() {
