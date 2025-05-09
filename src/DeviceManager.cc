@@ -221,19 +221,26 @@ namespace ChimeraTK {
       }
       errorLock.unlock(); // we don't need to hold the lock for now, but we will need it later
 
-      for(auto& writeMe : _writeRegisterPaths) {
-        auto reg = _device.getOneDRegisterAccessor<std::string>(writeMe); // the user data type does not matter here.
-        if(!reg.isWriteable()) {
-          _owner->getTestableMode().unlock("throwing" + std::string(writeMe) + " is not writeable!");
-          throw ChimeraTK::logic_error(std::string(writeMe) + " is not writeable!");
-        }
-      }
+      {
+        auto catalogue = _device.getRegisterCatalogue();
 
-      for(auto& readMe : _readRegisterPaths) {
-        auto reg = _device.getOneDRegisterAccessor<std::string>(readMe); // the user data type does not matter here.
-        if(!reg.isReadable()) {
-          _owner->getTestableMode().unlock("throwing" + std::string(readMe) + " is not readable!");
-          throw ChimeraTK::logic_error(std::string(readMe) + " is not readable!");
+        for(auto& writeMe : _writeRegisterPaths) {
+          std::cout << "DeviceManager " << _deviceAliasOrCDD << " write " << writeMe << std::endl;
+
+          // auto reg = _device.getOneDRegisterAccessor<std::string>(writeMe); // the user data type does not matter here.
+          if(!catalogue.getRegister(writeMe).isWriteable()) { // reg.isWriteable()) {
+            _owner->getTestableMode().unlock("throwing" + std::string(writeMe) + " is not writeable!");
+            throw ChimeraTK::logic_error(std::string(writeMe) + " is not writeable!");
+          }
+        }
+
+        for(auto& readMe : _readRegisterPaths) {
+          std::cout << "DeviceManager " << _deviceAliasOrCDD << " read " << readMe << std::endl;
+          // auto reg = _device.getOneDRegisterAccessor<std::string>(readMe); // the user data type does not matter here.
+          if(!catalogue.getRegister(readMe).isReadable()) { // reg.isReadable()) {
+            _owner->getTestableMode().unlock("throwing" + std::string(readMe) + " is not readable!");
+            throw ChimeraTK::logic_error(std::string(readMe) + " is not readable!");
+          }
         }
       }
 
