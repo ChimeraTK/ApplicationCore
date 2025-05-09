@@ -48,7 +48,7 @@ struct SimulationModule : public ctk::ApplicationModule {
 };
 
 struct ExampleApp : public ctk::Application {
-  ExampleApp() : Application("exampleApp") { }
+  ExampleApp() : Application("exampleApp") {}
   ~ExampleApp() override { shutdown(); }
 
   // Create an instance of the simulation module. We name it "Simulation".
@@ -76,4 +76,3 @@ struct ExampleApp : public ctk::Application {
 };
 
 ExampleApp theExampleApp;
-
