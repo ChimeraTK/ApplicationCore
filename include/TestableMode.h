@@ -247,12 +247,6 @@ namespace ChimeraTK::detail {
       std::mutex _mxLastMutexOwner;
     } _lastMutexOwner;
 
-    /** Counter how often the same thread has acquired the testable mode mutex in
-     * a row without another thread owning it in between. This is an indicator for
-     * the test being stalled due to data send through a process
-     *  variable but not read by the receiver. */
-    std::atomic<size_t> _repeatingMutexOwner{false};
-
     // forward declaration
     class Lock;
 
