@@ -5,6 +5,7 @@
 
 #include "Application.h"
 #include "CircularDependencyDetector.h"
+#include "DeviceManager.h"
 #include "Flags.h"
 #include "ModuleGroup.h"
 
@@ -99,13 +100,23 @@ namespace ChimeraTK {
   void ApplicationModule::mainLoopWrapper() {
     Application::registerThread("AM_" + className()); // + getName());
 
-    // Acquire testable mode lock, so from this point on we are running only one user thread concurrently
-    Application::getInstance().getTestableMode().lock("start", true);
+    // Testable mode: Determine whether a shared or an exclusive testable mode lock shall be used during the initial
+    // startup phase of this ApplicationModule. Normal ApplicationModules use exclusive testable mode lock for the
+    // startup phase for performance reasons, only DeviceManagers have to use a shared lock from the beginning to
+    // avoid deadlocks in their RecoveryGroup barriers.
+    // Once the actual mainLoop() is entered, we always use a shared lock, since it should be faster to allow parallel
+    // execution of the ApplicationModules.
+    bool useSharedTestLockForStartup = (dynamic_cast<DeviceManager*>(this) != nullptr);
+
+    // Acquire testable mode lock, so from this point on we are excluding concurrent execution with the test thread.
+    Application::getInstance().getTestableMode().lock("start", useSharedTestLockForStartup);
+
+    auto accList = getAccessorListRecursive();
 
     // Read all variables once to obtain the initial values from the devices and from the control system persistency
     // layer. This is done in two steps, first for all poll-type variables and then for all push-types, because
     // poll-type reads might trigger distribution of values to push-type variables via a ConsumingFanOut.
-    for(auto& variable : getAccessorListRecursive()) {
+    for(auto& variable : accList) {
       if(variable.getDirection().dir != VariableDirection::consuming) {
         continue;
       }
@@ -121,12 +132,12 @@ namespace ChimeraTK {
           // the data to a slave decorated by a TestableModeAccessorDecorator. Hence we here must acquire the lock only
           // if we do not have it.
           Application::getInstance().getTestableMode().lock(
-              "Initial value read for poll-type " + variable.getName(), true);
+              "Initial value read for poll-type " + variable.getName(), useSharedTestLockForStartup);
         }
       }
     }
 
-    for(auto& variable : getAccessorListRecursive()) {
+    for(auto& variable : accList) {
       // According to spec, readback values are not considered in the distribution of initial values
       // However, if they are declared as providing reverse recovery, they have to be considered.
       auto doNotSkipInIvDistribution = variable.getDirection().dir == VariableDirection::feeding &&
@@ -141,13 +152,19 @@ namespace ChimeraTK {
         Application::getInstance()._circularDependencyDetector.registerDependencyWait(variable);
         // Will internally release and lock during the read, hence surround with lock/unlock
         Application::getInstance().getTestableMode().lock(
-            "Initial value read for push-type " + variable.getName(), true);
+            "Initial value read for push-type " + variable.getName(), useSharedTestLockForStartup);
         variable.getAppAccessorNoType().read();
         Application::getInstance().getTestableMode().unlock("Initial value read for push-type " + variable.getName());
         Application::getInstance()._circularDependencyDetector.unregisterDependencyWait(variable);
         Application::getInstance().getTestableMode().lock(
-            "Initial value read for push-type " + variable.getName(), true);
+            "Initial value read for push-type " + variable.getName(), useSharedTestLockForStartup);
       }
+    }
+
+    // downgrade to shared lock
+    if(!useSharedTestLockForStartup) {
+      Application::getInstance().getTestableMode().unlock("downgrade to shared lock");
+      Application::getInstance().getTestableMode().lock("downgrade to shared lock", true);
     }
 
     // We are holding the testable mode lock, so we are sure the mechanism will work now.

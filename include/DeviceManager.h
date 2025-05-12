@@ -253,15 +253,31 @@ namespace ChimeraTK {
       std::atomic<bool> shutdown{false};
 
       /**
-       * Protect the device open/close actions in a group. It ensures that no other DeviceManager can perform an open
-       * or close action while this lock is being held. This is needed in several places:
+       * Protect the device open actions for all DeviceManagers and groups. It is used to:
        *
-       * 1. Devices are closed when running init handlers, and no other DeviceManager must close the device to run its
-       *    init handler while an initi handler is accessing the device.
-       * 2. In backends, open() and close() are not thread safe. This prevents from concurrent open() calls, concurrent
-       *    close() calls, and calling open()/close() a the same time from different threads.
+       * 1) protect calls to open(), which is not thread safe in backends,
+       * 2) prevent concurrent extensive memory allocation which might happen in open(), which would be very
+       *    inefficient and slow.
+       *
+       * Note: Point 1) could be satisfied with a group-wide mutex, but this mutex needs to be common for all groups
+       * for point 2).
+       *
+       * The mutex is used in two places:
+       * a) call to open() to initially open the device resp. to recover it from an exception,
+       * b) re-opening the device after an init handler has been executed.
+       *
+       * The use case b) is augmented with the _initHandlerOpenCloseMutex.
        */
-      std::mutex deviceOpenCloseMutex;
+      static std::mutex globalDeviceOpenMutex;
+
+      /**
+       * Protect closing and re-opening the device of any DeviceManager in a recovery group against each other. This
+       * is needed since the devices can share backends internally. The globalDeviceOpenMutex is used in addition
+       * to protect globally open() calls as a performance optimisation.
+       *
+       * The use of this additional mutex allows to execute init handlers of different groups simultaneously.
+       */
+      std::mutex _initHandlerOpenCloseMutex;
 
       // Wait at the barrier for a stage to complete.
       // Returns 'true' if the stage was completed successfully.
