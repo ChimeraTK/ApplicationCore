@@ -14,6 +14,8 @@
 
 namespace ChimeraTK {
 
+  std::mutex DeviceManager::RecoveryGroup::globalDeviceOpenMutex;
+
   /********************************************************************************************************************/
 
   DeviceManager::DeviceManager(Application* application, const std::string& deviceAliasOrCDD)
@@ -167,17 +169,15 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void DeviceManager::mainLoopImpl() {
-    Application::registerThread("DM_" + getName());
+    Application::registerThread("DM_" + (--RegisterPath(getName()))); // strip leading "/Device" from name...
     std::string error;
-
-    // We have the testable mode lock. The device has not been initialised yet, but from now on the
-    // testableMode.deviceInitialisationCounter will take care or it
-    _testableModeReached = true;
 
     // flag whether the devices was opened+initialised for the first time
     bool firstSuccess = true;
 
     while(true) {
+      std::unique_ptr<RegisterCatalogue> catalogue;
+
       // Sync point DETECTION:
       // The manager has seen an error and (re)starts recovery. Wait until all
       // involved DeviceManagers have seen it.
@@ -194,8 +194,10 @@ namespace ChimeraTK {
         _owner->getTestableMode().lock("Attempt open/recover device", true);
 
         try {
-          std::lock_guard<std::mutex> deviceOpenLock(_recoveryGroup->deviceOpenCloseMutex);
+          std::lock_guard<std::mutex> deviceOpenLock(RecoveryGroup::globalDeviceOpenMutex);
+          // std::lock_guard<std::mutex> deviceOpenLock(_recoveryGroup->deviceOpenCloseMutex);
           _device.open();
+          catalogue = std::make_unique<RegisterCatalogue>(_device.getRegisterCatalogue());
         }
         catch(ChimeraTK::runtime_error& e) {
           assert(_deviceError._status != StatusOutput::Status::OK); // any error must already be reported...
@@ -221,28 +223,20 @@ namespace ChimeraTK {
       }
       errorLock.unlock(); // we don't need to hold the lock for now, but we will need it later
 
-      {
-        auto catalogue = _device.getRegisterCatalogue();
-
-        for(auto& writeMe : _writeRegisterPaths) {
-          std::cout << "DeviceManager " << _deviceAliasOrCDD << " write " << writeMe << std::endl;
-
-          // auto reg = _device.getOneDRegisterAccessor<std::string>(writeMe); // the user data type does not matter here.
-          if(!catalogue.getRegister(writeMe).isWriteable()) { // reg.isWriteable()) {
-            _owner->getTestableMode().unlock("throwing" + std::string(writeMe) + " is not writeable!");
-            throw ChimeraTK::logic_error(std::string(writeMe) + " is not writeable!");
-          }
-        }
-
-        for(auto& readMe : _readRegisterPaths) {
-          std::cout << "DeviceManager " << _deviceAliasOrCDD << " read " << readMe << std::endl;
-          // auto reg = _device.getOneDRegisterAccessor<std::string>(readMe); // the user data type does not matter here.
-          if(!catalogue.getRegister(readMe).isReadable()) { // reg.isReadable()) {
-            _owner->getTestableMode().unlock("throwing" + std::string(readMe) + " is not readable!");
-            throw ChimeraTK::logic_error(std::string(readMe) + " is not readable!");
-          }
+      for(auto& writeMe : _writeRegisterPaths) {
+        if(!catalogue->getRegister(writeMe).isWriteable()) { // reg.isWriteable()) {
+          _owner->getTestableMode().unlock("throwing" + std::string(writeMe) + " is not writeable!");
+          throw ChimeraTK::logic_error(std::string(writeMe) + " is not writeable!");
         }
       }
+
+      for(auto& readMe : _readRegisterPaths) {
+        if(!catalogue->getRegister(readMe).isReadable()) { // reg.isReadable()) {
+          _owner->getTestableMode().unlock("throwing" + std::string(readMe) + " is not readable!");
+          throw ChimeraTK::logic_error(std::string(readMe) + " is not readable!");
+        }
+      }
+      catalogue.reset();
 
       // Sync point (stage OPEN complete): Device opened. Synchronise before starting init scripts.
       assert(_recoveryGroup->errorAtStage ==
@@ -258,9 +252,11 @@ namespace ChimeraTK {
           {
             // Hold the open/close lock while executing the init handler, so no other
             // DeviceManager closes the device while the init handler is running.
-            std::lock_guard<std::mutex> openCloseLock(_recoveryGroup->deviceOpenCloseMutex);
+            std::lock_guard<std::mutex> openCloseLock(_recoveryGroup->_initHandlerOpenCloseMutex);
             _device.close();
             initHandler(_device);
+
+            std::lock_guard<std::mutex> deviceOpenLock(RecoveryGroup::globalDeviceOpenMutex);
             _device.open();
           }
         }
@@ -562,10 +558,8 @@ namespace ChimeraTK {
   void DeviceManager::RecoveryGroup::resetErrorAtStage() {
     errorAtStage = RecoveryStage::NO_ERROR;
 
-    app->getTestableMode().unlock("DeviceManager: Sync after resetting recovery group stage");
     recoveryBarrier.arrive_and_wait();
     boost::this_thread::interruption_point();
-    app->getTestableMode().lock("DeviceManager: Starting recovery", true);
   }
 
 } // namespace ChimeraTK
