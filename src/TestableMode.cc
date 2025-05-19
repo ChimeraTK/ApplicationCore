@@ -116,12 +116,12 @@ namespace ChimeraTK::detail {
         usleep(10000);
         goto repeatTryLock;
       }
-      std::cerr << "testableModeLock(): Thread " << threadName()                     // LCOV_EXCL_LINE
-                << " could not obtain lock for at least 30 seconds, presumably because "      // LCOV_EXCL_LINE
-                << threadName(_lastMutexOwner) << " [" << pthreadId(_lastMutexOwner) // LCOV_EXCL_LINE
-                << "] does not release it."                                          // LCOV_EXCL_LINE
-                << std::endl;                                                        // LCOV_EXCL_LINE
-      terminateTestStalled();                                                        // LCOV_EXCL_LINE
+      std::cerr << "testableModeLock(): Thread " << threadName()                         // LCOV_EXCL_LINE
+                << " could not obtain lock for at least 30 seconds, presumably because " // LCOV_EXCL_LINE
+                << threadName(_lastMutexOwner) << " [" << pthreadId(_lastMutexOwner)     // LCOV_EXCL_LINE
+                << "] does not release it."                                              // LCOV_EXCL_LINE
+                << std::endl;                                                            // LCOV_EXCL_LINE
+      terminateTestStalled();                                                            // LCOV_EXCL_LINE
     } // LCOV_EXCL_LINE
 
     _lastMutexOwner = boost::this_thread::get_id();
