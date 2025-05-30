@@ -590,7 +590,7 @@ namespace ChimeraTK::Model {
     mutable std::weak_ptr<Proxy::ProxyData> _proxy;
   };
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /**
    * Information to be stored with each edge
@@ -610,12 +610,12 @@ namespace ChimeraTK::Model {
     bool pvAccessWithReturnChannel{false};
   };
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * Predicates to identify the type of a proxy or a properties struct. All predicates can be used in constexpr if
    * conditions to simplify type-specific access to members.
    */
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename PROPERTY_OR_PROXY>
   constexpr bool isRoot(const PROPERTY_OR_PROXY&) {
@@ -623,7 +623,7 @@ namespace ChimeraTK::Model {
         std::is_same<PROPERTY_OR_PROXY, RootProxy>::value;
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename PROPERTY_OR_PROXY>
   constexpr bool isModuleGroup(const PROPERTY_OR_PROXY&) {
@@ -631,7 +631,7 @@ namespace ChimeraTK::Model {
         std::is_same<PROPERTY_OR_PROXY, ModuleGroupProxy>::value;
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename PROPERTY_OR_PROXY>
   constexpr bool isApplicationModule(const PROPERTY_OR_PROXY&) {
@@ -639,7 +639,7 @@ namespace ChimeraTK::Model {
         std::is_same<PROPERTY_OR_PROXY, ApplicationModuleProxy>::value;
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename PROPERTY_OR_PROXY>
   constexpr bool isVariableGroup(const PROPERTY_OR_PROXY&) {
@@ -647,7 +647,7 @@ namespace ChimeraTK::Model {
         std::is_same<PROPERTY_OR_PROXY, VariableGroupProxy>::value;
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename PROPERTY_OR_PROXY>
   constexpr bool isDeviceModule(const PROPERTY_OR_PROXY&) {
@@ -655,7 +655,7 @@ namespace ChimeraTK::Model {
         std::is_same<PROPERTY_OR_PROXY, DeviceModuleProxy>::value;
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename PROPERTY_OR_PROXY>
   constexpr bool isVariable(const PROPERTY_OR_PROXY&) {
@@ -663,7 +663,7 @@ namespace ChimeraTK::Model {
         std::is_same<PROPERTY_OR_PROXY, ProcessVariableProxy>::value;
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename PROPERTY_OR_PROXY>
   constexpr bool isDirectory(const PROPERTY_OR_PROXY&) {
@@ -671,7 +671,7 @@ namespace ChimeraTK::Model {
         std::is_same<PROPERTY_OR_PROXY, DirectoryProxy>::value;
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename PROPERTY_OR_PROXY>
   constexpr bool hasName(const PROPERTY_OR_PROXY&) {
@@ -687,7 +687,7 @@ namespace ChimeraTK::Model {
         std::is_same<PROPERTY_OR_PROXY, DirectoryProxy>::value;
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /**
    * Graph type for the model
@@ -701,7 +701,7 @@ namespace ChimeraTK::Model {
 
   using EdgeFilteredView = boost::filtered_graph<Graph, std::function<bool(const Edge&)>, boost::keep_all>;
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /// Do not use these class definitions, instead use the static instances below.
   struct SearchType {};
@@ -728,7 +728,7 @@ namespace ChimeraTK::Model {
   /// Perform a breadth first search on the model graph, starting at the current object.
   static constexpr BreadthFirstSearch breadthFirstSearch;
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   namespace detail {
     /**
@@ -748,7 +748,7 @@ namespace ChimeraTK::Model {
     };
   } // namespace detail
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /// Do not use these class definitions, instead use the static instances below.
   struct SearchOption {};
@@ -798,20 +798,20 @@ namespace ChimeraTK::Model {
   // Calls the visitor after all edges have been visited. Use together with DFS or BFS to modify the visiting order.
   static constexpr VisitOrder visitOrderPost{VisitOrder::VisitOrderType::post};
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename PROPERTIES>
   struct PropertyFilterTag {
     using PropertiesType = PROPERTIES;
   };
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   // Forward declaration
   template<typename FILTER_LHS, typename FILTER_RHS>
   struct AndSet;
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename FILTER_LHS, typename FILTER_RHS>
   struct OrSet : FILTER_LHS, FILTER_RHS {
@@ -841,7 +841,7 @@ namespace ChimeraTK::Model {
     }
   };
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename FILTER_LHS, typename FILTER_RHS>
   struct AndSet : FILTER_LHS, FILTER_RHS {
@@ -871,7 +871,7 @@ namespace ChimeraTK::Model {
     }
   };
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename FILTER>
   struct EdgeFilter : PropertyFilterTag<EdgeProperties> {
@@ -902,7 +902,7 @@ namespace ChimeraTK::Model {
     FILTER _filter;
   };
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename FILTER>
   struct VertexFilter : PropertyFilterTag<VertexProperties> {
@@ -939,20 +939,20 @@ namespace ChimeraTK::Model {
     FILTER _filter;
   };
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   [[maybe_unused]] static auto keepAll = [](const auto&) -> bool { return true; };
   [[maybe_unused]] static auto keepAllEdges = EdgeFilter(keepAll);
   [[maybe_unused]] static auto keepAllVertices = VertexFilter(keepAll);
 
-  /******************************************************************************************************************/
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<EdgeProperties::Type RELATIONSHIP>
   [[maybe_unused]] static constexpr auto relationshipFilter =
       EdgeFilter([](const EdgeProperties& e) -> bool { return e.type == RELATIONSHIP; });
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   static constexpr auto keepPvAccess = relationshipFilter<EdgeProperties::Type::pvAccess>;
   static constexpr auto keepPvAccesWithReturnChannel = Model::EdgeFilter([](const Model::EdgeProperties& edge) -> bool {
@@ -962,8 +962,8 @@ namespace ChimeraTK::Model {
   static constexpr auto keepParenthood = relationshipFilter<EdgeProperties::Type::parenthood>;
   static constexpr auto keepNeighbourhood = relationshipFilter<EdgeProperties::Type::neighbourhood>;
 
-  /******************************************************************************************************************/
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   namespace detail {
     template<VertexProperties::Type OBJECTTYPE>
@@ -971,7 +971,7 @@ namespace ChimeraTK::Model {
         [](const VertexProperties& e) -> bool { return e.type == OBJECTTYPE; };
   } // namespace detail
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   // FIXME: This _should_ be fine since it is not possible to use those templates
   // in different compilation units. This is the recommended work-around from the GCC manpage
@@ -1008,7 +1008,7 @@ namespace ChimeraTK::Model {
     /******************************************************************************************************************/
   } // namespace
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
   constexpr static auto keepModuleGroups = ObjecttypeFilter<VertexProperties::Type::moduleGroup, ModuleGroupProxy>();
   constexpr static auto keepApplicationModules =
       ObjecttypeFilter<VertexProperties::Type::applicationModule, ApplicationModuleProxy>();
@@ -1059,8 +1059,8 @@ namespace ChimeraTK::Model {
 
   } // namespace detail
 
-  /******************************************************************************************************************/
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   [[maybe_unused]] static auto keepName(const std::string& name) {
     return VertexFilter([name](const VertexProperties& e) -> bool {
@@ -1075,7 +1075,7 @@ namespace ChimeraTK::Model {
     });
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   [[maybe_unused]] static auto keepTag(std::string name) {
     return VertexFilter([name](const VertexProperties& e) -> bool {
@@ -1090,15 +1090,15 @@ namespace ChimeraTK::Model {
     });
   }
 
-  /******************************************************************************************************************/
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename A, typename B>
   struct CombinedSearchConfig : A, B {
     constexpr CombinedSearchConfig(A a, B b) : A(a), B(b) {}
   };
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename FIRST, typename... MORE>
   constexpr auto combinedSearchConfig(FIRST first, MORE... more) {
@@ -1110,7 +1110,7 @@ namespace ChimeraTK::Model {
     }
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   static constexpr auto ownedModuleGroups = combinedSearchConfig(
       ChimeraTK::Model::adjacentOutSearch, ChimeraTK::Model::keepOwnership, ChimeraTK::Model::keepModuleGroups);
@@ -1145,8 +1145,8 @@ namespace ChimeraTK::Model {
   static constexpr auto neighbourModules =
       combinedSearchConfig(ChimeraTK::Model::adjacentInSearch, ChimeraTK::Model::keepNeighbourhood);
 
-  /******************************************************************************************************************/
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /**
    * Visitor function for use with Proxy::visit() to return a found ModuleGroupProxy.
@@ -1163,7 +1163,7 @@ namespace ChimeraTK::Model {
     }
   };
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /**
    * Visitor function for use with Proxy::visit() to return a found ApplicationModuleProxy.
@@ -1180,7 +1180,7 @@ namespace ChimeraTK::Model {
     }
   };
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /**
    * Visitor function for use with Proxy::visit() to return a found VariableGroupProxy.
@@ -1197,7 +1197,7 @@ namespace ChimeraTK::Model {
     }
   };
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /**
    * Visitor function for use with Proxy::visit() to return a found ProcessVariableProxy.
@@ -1214,7 +1214,7 @@ namespace ChimeraTK::Model {
     }
   };
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /**
    * Visitor function for use with Proxy::visit() to return a found DirectoryProxy.
@@ -1231,8 +1231,8 @@ namespace ChimeraTK::Model {
     }
   };
 
-  /******************************************************************************************************************/
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename FIRST, typename... ARGS>
   constexpr auto getEdgeFilter([[maybe_unused]] FIRST first, ARGS... args) {
@@ -1251,7 +1251,7 @@ namespace ChimeraTK::Model {
     return keepAllEdges;
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename FIRST, typename... ARGS>
   constexpr auto getVertexFilter([[maybe_unused]] FIRST first, ARGS... args) {
@@ -1270,7 +1270,7 @@ namespace ChimeraTK::Model {
     return keepAllVertices;
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename SEARCH_TYPE>
   struct SearchTypeHolder {
@@ -1294,7 +1294,7 @@ namespace ChimeraTK::Model {
     return adjacentOutSearch;
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename SEARCH_OPTION_TO_FIND, typename FIRST, typename... ARGS>
   constexpr bool hasSearchOption() {
@@ -1314,7 +1314,7 @@ namespace ChimeraTK::Model {
     return false;
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename SEARCH_OPTION_TO_FIND, typename FIRST, typename... ARGS>
   constexpr auto getSearchOption([[maybe_unused]] FIRST first, ARGS... args) {
@@ -1334,7 +1334,7 @@ namespace ChimeraTK::Model {
     throw ChimeraTK::logic_error("Model::getSearchOption() called but search option not found!");
   }
 
-  /******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename FIRST, typename... ARGS>
   constexpr void checkConfigValidity(FIRST, ARGS... args) {

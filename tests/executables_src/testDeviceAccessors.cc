@@ -22,7 +22,7 @@ namespace ctk = ChimeraTK;
 
 namespace Tests::testDeviceAccessors {
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 #define CHECK_TIMEOUT(condition, maxMilliseconds)                                                                      \
   {                                                                                                                    \
@@ -35,7 +35,7 @@ namespace Tests::testDeviceAccessors {
     }                                                                                                                  \
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestModule : public ctk::ApplicationModule {
     TestModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
@@ -58,7 +58,7 @@ namespace Tests::testDeviceAccessors {
     void mainLoop() override {}
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* dummy application */
 
   struct TestApplication : public ctk::Application {
@@ -72,7 +72,7 @@ namespace Tests::testDeviceAccessors {
     // note: direct device-to-controlsystem connections are tested in testControlSystemAccessors!
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test feeding a scalar to a device */
 
   BOOST_AUTO_TEST_CASE(testFeedToDevice) {
@@ -103,7 +103,7 @@ namespace Tests::testDeviceAccessors {
     BOOST_CHECK(regacc == 120);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test feeding a scalar to two different device registers */
 
   BOOST_AUTO_TEST_CASE(testFeedToDeviceFanOut) {
@@ -147,7 +147,7 @@ namespace Tests::testDeviceAccessors {
     BOOST_CHECK(regrb == 120);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test consuming a scalar from a device */
 
   BOOST_AUTO_TEST_CASE(testConsumeFromDevice) {
@@ -194,7 +194,7 @@ namespace Tests::testDeviceAccessors {
     BOOST_CHECK(app.testModule.consumingPoll == 120);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test consuming a scalar from a device with a ConsumingFanOut (i.e. one
    * poll-type consumer and several push-type consumers). */
 
@@ -289,7 +289,7 @@ namespace Tests::testDeviceAccessors {
     BOOST_CHECK(app.testModule.consumingPush2.readNonBlocking() == false);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Application for tests of DeviceModule */
 
   struct TestModule2 : public ctk::ApplicationModule {
@@ -346,7 +346,7 @@ namespace Tests::testDeviceAccessors {
     ctk::DeviceModule dev{this, "Dummy0", "", [this](ChimeraTK::Device&) { initHandlerCallCount++; }};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testDeviceModuleExceptions) {
     std::cout << "testDeviceModuleExceptions" << std::endl;
@@ -365,7 +365,7 @@ namespace Tests::testDeviceAccessors {
         ctk::DeviceModule(&app.deeper, "Dummy0", "../another/relative/name", nullptr, "/MyModule"), ctk::logic_error);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testDeviceModule) {
     std::cout << "testDeviceModule" << std::endl;
@@ -439,7 +439,7 @@ namespace Tests::testDeviceAccessors {
     BOOST_CHECK_EQUAL(app.initHandlerCallCount, 1);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Application for tests of DeviceModule move constructor/assignment */
 
   struct TestApplication4 : public ctk::Application {
@@ -455,7 +455,7 @@ namespace Tests::testDeviceAccessors {
     Deeper deeper{this, "Deeper", ""};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testDeviceModuleMove) {
     std::cout << "testDeviceModuleMove" << std::endl;
@@ -477,6 +477,6 @@ namespace Tests::testDeviceAccessors {
     app.m.readback.read();
     BOOST_CHECK_EQUAL(app.m.readback, 432);
   }
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace Tests::testDeviceAccessors

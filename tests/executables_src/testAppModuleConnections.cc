@@ -25,7 +25,7 @@ namespace Tests::testAppModuleConnections {
   // list of user types the accessors are tested with
   using test_types = boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double>;
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* the ApplicationModule for the test is a template of the user type */
 
   template<typename T>
@@ -91,7 +91,7 @@ namespace Tests::testAppModuleConnections {
     void mainLoop() override { mainLoopStarted.wait(); }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* dummy application */
 
   template<typename T>
@@ -103,7 +103,7 @@ namespace Tests::testAppModuleConnections {
     TestModuleConsume<T> testModuleConsume{this, "testModuleConsume", "The other test module"};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test case for two scalar accessors in push mode */
 
   BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoScalarPushAccessors, T, test_types) {
@@ -145,7 +145,7 @@ namespace Tests::testAppModuleConnections {
     BOOST_CHECK(app.testModuleConsume.consumingPush == 120);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test case for four scalar accessors in push mode: one feeder and three
    * consumers */
 
@@ -214,7 +214,7 @@ namespace Tests::testAppModuleConnections {
     BOOST_CHECK(app.testModuleConsume.consumingPush3 == 120);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test case for two scalar accessors, feeder in push mode and consumer in poll
    * mode */
 
@@ -255,7 +255,7 @@ namespace Tests::testAppModuleConnections {
     BOOST_CHECK(app.testModuleConsume.consumingPoll == 120);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test case for two array accessors in push mode */
 
   BOOST_AUTO_TEST_CASE_TEMPLATE(testTwoArrayAccessors, T, test_types) {
@@ -316,7 +316,7 @@ namespace Tests::testAppModuleConnections {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test case for connecting array of length 1 with scalar */
 
   BOOST_AUTO_TEST_CASE_TEMPLATE(testPseudoArray, T, test_types) {
@@ -341,7 +341,7 @@ namespace Tests::testAppModuleConnections {
     BOOST_CHECK(app.testModuleConsume.consumingPush == 33);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test case for EntityOwner::constant() */
 
   template<typename T>
@@ -399,8 +399,8 @@ namespace Tests::testAppModuleConnections {
     BOOST_TEST(app.testModule.consumingPoll == 77);
   }
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct SelfUnregisteringModule : public ctk::ApplicationModule {
     SelfUnregisteringModule(
@@ -423,7 +423,7 @@ namespace Tests::testAppModuleConnections {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestAppSelfUnregisteringModule : public ctk::Application {
     TestAppSelfUnregisteringModule() : Application("SelfUnregisteringModuleApp") {}
@@ -434,7 +434,7 @@ namespace Tests::testAppModuleConnections {
     SelfUnregisteringModule c{this, "c", "Another test module which stays"};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test case for EntityOwner::constant() */
 
   BOOST_AUTO_TEST_CASE(testSelfUnregisteringModule) {
@@ -479,6 +479,6 @@ namespace Tests::testAppModuleConnections {
     BOOST_TEST(cout == 121);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace Tests::testAppModuleConnections

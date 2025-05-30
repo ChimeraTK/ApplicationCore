@@ -115,7 +115,7 @@ namespace Tests::testProcessVariableRecovery {
     } module{this, "READ_ONLY_TEST", "The test module"};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testWriteToReadOnly) {
     std::cout << "testWriteToReadOnly" << std::endl;
@@ -133,7 +133,7 @@ namespace Tests::testProcessVariableRecovery {
     test.writeScalar("/READ_ONLY_TEST/startTest", 1);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testProcessVariableRecovery) {
     std::cout << "testProcessVariableRecovery" << std::endl;

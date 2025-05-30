@@ -17,7 +17,7 @@ namespace ctk = ChimeraTK;
 
 // This test is meant to be run manual, each test individually since all of them terminate the process
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 struct ScalarOutputModule : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
@@ -26,7 +26,7 @@ struct ScalarOutputModule : ctk::ApplicationModule {
   void mainLoop() override {}
 };
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 struct ArrayOutputModule : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
@@ -35,7 +35,7 @@ struct ArrayOutputModule : ctk::ApplicationModule {
   void mainLoop() override {}
 };
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 struct ScalarInputModule : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
@@ -44,7 +44,7 @@ struct ScalarInputModule : ctk::ApplicationModule {
   void mainLoop() override {}
 };
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 struct ArrayInputModule : ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
@@ -53,7 +53,7 @@ struct ArrayInputModule : ctk::ApplicationModule {
   void mainLoop() override {}
 };
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 struct ScalarApplicationModuleTestApp : ctk::Application {
   ScalarApplicationModuleTestApp() : Application("theApp") {
@@ -65,7 +65,7 @@ struct ScalarApplicationModuleTestApp : ctk::Application {
   ScalarInputModule mod2{this, "mod2", ""};
 };
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 struct ArrayApplicationModuleTestApp : ctk::Application {
   ArrayApplicationModuleTestApp() : Application("theApp") {
@@ -77,7 +77,7 @@ struct ArrayApplicationModuleTestApp : ctk::Application {
   ArrayInputModule mod2{this, "mod2", ""};
 };
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testDestroyConnectedApplicationModule) {
   std::cout << "*** testDestroyConnectedApplicationModule" << std::endl;
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(testDestroyConnectedApplicationModule) {
   app.mod.reset();
 }
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testDestroyConnectedApplicationModuleWithArray) {
   std::cout << "*** testDestroyConnectedApplicationModuleWithArray" << std::endl;
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(testDestroyConnectedApplicationModuleWithArray) {
   app.mod.reset();
 }
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testMoveConnectedApplicationModule) {
   std::cout << "*** testDestroyMovedApplicationModule" << std::endl;
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(testMoveConnectedApplicationModule) {
   ScalarInputModule moved(std::move(mod));
 }
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testMoveConnectedApplicationModuleWithArray) {
   std::cout << "*** testDestroyMovedApplicationModuleWithArray" << std::endl;
@@ -123,9 +123,9 @@ BOOST_AUTO_TEST_CASE(testMoveConnectedApplicationModuleWithArray) {
   ArrayInputModule moved(std::move(mod));
 }
 
-/*********************************************************************************************************************/
-/*********************************************************************************************************************/
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 struct ScalarVariableGroup : public ctk::VariableGroup {
   using ctk::VariableGroup::VariableGroup;
@@ -133,7 +133,7 @@ struct ScalarVariableGroup : public ctk::VariableGroup {
   ctk::ScalarPushInput<int> output{this, "/variable1", "", ""};
 };
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 struct ScalarVariableGroupTestApp : ctk::Application {
   ScalarVariableGroupTestApp() : Application("theApp") {
@@ -149,7 +149,7 @@ struct ScalarVariableGroupTestApp : ctk::Application {
   } mod2{this, "mod", ""};
 };
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testDestroyConnectedVariableGroupDelete) {
   std::cout << "*** testDestroyConnectedVariableGroupDelete" << std::endl;
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(testDestroyConnectedVariableGroupDelete) {
   app.mod2.group.reset();
 }
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 struct ArrayVariableGroup : public ctk::VariableGroup {
   using ctk::VariableGroup::VariableGroup;
@@ -168,7 +168,7 @@ struct ArrayVariableGroup : public ctk::VariableGroup {
   ctk::ArrayPushInput<int> output{this, "/variable1", "", 10, ""};
 };
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 struct ArrayVariableGroupTestApp : ctk::Application {
   ArrayVariableGroupTestApp() : Application("theApp") {
@@ -184,7 +184,7 @@ struct ArrayVariableGroupTestApp : ctk::Application {
   } mod2{this, "mod", ""};
 };
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testDestroyConnectedVariableGroupArrayDelete) {
   std::cout << "*** testDestroyConnectedVariableGroupArrayDelete" << std::endl;
@@ -195,9 +195,9 @@ BOOST_AUTO_TEST_CASE(testDestroyConnectedVariableGroupArrayDelete) {
   app.mod2.group.reset();
 }
 
-/*********************************************************************************************************************/
-/*********************************************************************************************************************/
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 struct ScalarVariableGroupTestAppForMove : ctk::Application {
   ScalarVariableGroupTestAppForMove() : Application("theApp") {}
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE(testMoveConnectedVariableGroup) {
   app.mod2.group = ScalarVariableGroup(&app.mod2, "group2", "");
 }
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 struct ArrayVariableGroupTestAppForMove : ctk::Application {
   ArrayVariableGroupTestAppForMove() : Application("theApp") {}
@@ -234,7 +234,7 @@ struct ArrayVariableGroupTestAppForMove : ctk::Application {
   } mod2{this, "mod", ""};
 };
 
-/*********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testMoveConnectedVariableGroupArray) {
   std::cout << "*** testMoveConnectedVariableGroupArray" << std::endl;

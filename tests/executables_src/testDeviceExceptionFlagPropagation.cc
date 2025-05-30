@@ -24,7 +24,7 @@ namespace Tests::testDeviceExceptionFlagPropagation {
 
   constexpr std::string_view ExceptionDummyCDD1{"(ExceptionDummy:1?map=test3.map)"};
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApplication : ctk::Application {
     TestApplication() : Application("testSuite") {}
@@ -96,7 +96,7 @@ namespace Tests::testDeviceExceptionFlagPropagation {
     ctk::DeviceModule dev{this, ExceptionDummyCDD1.data(), "/fakeTriggerToMakeUnusedPollRegsHappy"};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testDirectConnectOpen) {
     for(int readMode = 0; readMode < 2; ++readMode) {
@@ -133,7 +133,7 @@ namespace Tests::testDeviceExceptionFlagPropagation {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testDirectConnectRead) {
     std::cout << "testDirectConnectRead" << std::endl;
@@ -173,7 +173,7 @@ namespace Tests::testDeviceExceptionFlagPropagation {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testDirectConnectWrite) {
     std::cout << "testDirectConnectWrite" << std::endl;
@@ -206,6 +206,6 @@ namespace Tests::testDeviceExceptionFlagPropagation {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace Tests::testDeviceExceptionFlagPropagation

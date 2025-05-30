@@ -30,7 +30,7 @@ namespace Tests::testTestFacilities {
 
   constexpr std::string_view dummySdm{"(dummy?map=test_readonly.map)"};
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* the BlockingReadTestModule blockingly reads its input in the main loop and writes the result to its output */
 
   struct BlockingReadTestModule : public ctk::ApplicationModule {
@@ -51,7 +51,7 @@ namespace Tests::testTestFacilities {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* the ReadAnyTestModule calls readAny on a bunch of inputs and outputs some information on the received data */
 
   struct ReadAnyTestModule : public ctk::ApplicationModule {
@@ -107,7 +107,7 @@ namespace Tests::testTestFacilities {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* the PollingReadModule is designed to test poll-type transfers (even mixed with push-type) */
 
   struct PollingReadModule : public ctk::ApplicationModule {
@@ -161,7 +161,7 @@ namespace Tests::testTestFacilities {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* the PollingThroughFanoutsModule is designed to test poll-type transfers in combination with FanOuts */
 
   struct PollingThroughFanoutsModule : ctk::ApplicationModule {
@@ -192,7 +192,7 @@ namespace Tests::testTestFacilities {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test that no TestableModeAccessorDecorator is used if the testable mode is not enabled */
 
   struct TestNoDecoratorApplication : public ctk::Application {
@@ -227,7 +227,7 @@ namespace Tests::testTestFacilities {
         boost::dynamic_pointer_cast<ctk::detail::TestableMode::AccessorDecorator<int32_t>>(hloutput) == nullptr);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test blocking read in test mode */
 
   struct TestBlockingReadApplication : public ctk::Application {
@@ -264,7 +264,7 @@ namespace Tests::testTestFacilities {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test testReadAny in test mode */
 
   struct TestReadAnyApplication : public ctk::Application {
@@ -407,7 +407,7 @@ namespace Tests::testTestFacilities {
     BOOST_CHECK_EQUAL(index, 1);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test the interplay of multiple chained modules and their threads in test mode
    */
 
@@ -504,7 +504,7 @@ namespace Tests::testTestFacilities {
     BOOST_CHECK(index.readNonBlocking() == false);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test combination with trigger */
 
   struct TestWithTriggerApplication : public ctk::Application {
@@ -588,7 +588,7 @@ namespace Tests::testTestFacilities {
     BOOST_CHECK(index.readNonBlocking() == false);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test convenience read functions */
 
   struct TestConvenienceReadApplication : public ctk::Application {
@@ -626,7 +626,7 @@ namespace Tests::testTestFacilities {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test poll-type transfers mixed with push-type */
 
   struct TestPollingApplication : public ctk::Application {
@@ -716,7 +716,7 @@ namespace Tests::testTestFacilities {
     BOOST_CHECK_EQUAL((int32_t)pv_state, 1);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test poll-type transfers in combination with various FanOuts */
 
   struct TestPollingThroughFanOutsApplication : public ctk::Application {
@@ -874,7 +874,7 @@ namespace Tests::testTestFacilities {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test device variables */
 
   struct TestDeviceApplication : public ctk::Application {
@@ -929,7 +929,7 @@ namespace Tests::testTestFacilities {
     BOOST_CHECK_EQUAL(valuePoll, 44);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test initial values (from control system variables) */
 
   struct TestInitialApplication : public ctk::Application {

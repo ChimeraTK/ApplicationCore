@@ -22,7 +22,7 @@ namespace Tests::testModules {
 
   namespace ctk = ChimeraTK;
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Variable group used in the modules */
 
   struct SomeGroup : ctk::VariableGroup {
@@ -32,7 +32,7 @@ namespace Tests::testModules {
         this, "alsoInGroup", "justANumber", 16, "A 64 bit number array", {"A", "D"}};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* A plain application module for testing */
 
   struct TestModule : public ctk::ApplicationModule {
@@ -59,7 +59,7 @@ namespace Tests::testModules {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Simple application with just one module */
 
   struct OneModuleApp : public ctk::Application {
@@ -69,7 +69,7 @@ namespace Tests::testModules {
     TestModule testModule{this, "testModule", "Module to test"};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Application with a vector of modules */
 
   struct VectorOfModulesApp : public ctk::Application {
@@ -85,7 +85,7 @@ namespace Tests::testModules {
     std::vector<TestModule> vectorOfTestModule;
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* An application module with a vector of a variable group*/
 
   struct VectorModule : public ctk::ApplicationModule {
@@ -124,7 +124,7 @@ namespace Tests::testModules {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* An module group with a vector of a application modules */
 
   struct VectorModuleGroup : public ctk::ModuleGroup {
@@ -146,7 +146,7 @@ namespace Tests::testModules {
     std::vector<VectorModule> vectorOfVectorModule;
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Application with a vector of module groups containing a vector of modules
    * containing a vector of variable groups */
 
@@ -167,7 +167,7 @@ namespace Tests::testModules {
     std::vector<VectorModuleGroup> vectorOfVectorModuleGroup;
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Application with various modules that get initialised late in the constructor. */
 
   struct AssignModuleLaterApp : public ctk::Application {
@@ -186,7 +186,7 @@ namespace Tests::testModules {
     VectorModule modInstanceToAssignLater;
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test module and variable ownerships */
 
   BOOST_AUTO_TEST_CASE(test_ownership) {
@@ -210,7 +210,7 @@ namespace Tests::testModules {
     BOOST_CHECK(app.testModule.anotherGroup.foo.getOwner() == &(app.testModule.anotherGroup));
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test that modules cannot be owned by the wrong types */
 
   BOOST_AUTO_TEST_CASE(test_badHierarchies) {
@@ -262,7 +262,7 @@ namespace Tests::testModules {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test that modules can be owned by the right types */
 
   BOOST_AUTO_TEST_CASE(test_allowedHierarchies) {
@@ -336,7 +336,7 @@ namespace Tests::testModules {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test getSubmoduleList() and getSubmoduleListRecursive() */
 
   BOOST_AUTO_TEST_CASE(test_getSubmoduleList) {
@@ -411,7 +411,7 @@ namespace Tests::testModules {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test getAccessorList() and getAccessorListRecursive() */
 
   BOOST_AUTO_TEST_CASE(test_getAccessorList) {
@@ -534,7 +534,7 @@ namespace Tests::testModules {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test addTag() */
 
   BOOST_AUTO_TEST_CASE(testAddTag) {
@@ -561,7 +561,7 @@ namespace Tests::testModules {
     BOOST_TEST(nFound == 5);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test addTag() with negated tags, in order to remove tags */
 
   BOOST_AUTO_TEST_CASE(testAddTagNegated) {
@@ -607,7 +607,7 @@ namespace Tests::testModules {
     // in some other module at the same time
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test correct behaviour when using a std::vector of ApplicationModules */
 
   BOOST_AUTO_TEST_CASE(testVectorOfApplicationModule) {
@@ -726,7 +726,7 @@ namespace Tests::testModules {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test correct behaviour when using a std::vector of ModuleGroup, ApplicationModule and VariableGroup at the same
    * time */
 
@@ -740,7 +740,7 @@ namespace Tests::testModules {
     size_t nInstances = 10;
     VectorOfEverythingApp app(nInstances);
 
-    //-------------------------------------------------------------------------------------------------------------------
+    /*----------------------------------------------------------------------------------------------------------------*/
     // the app creates the 10 module instances, check if this is done proplery (a quite redundant test...)
     BOOST_CHECK(app.vectorOfVectorModuleGroup.size() == nInstances);
     for(size_t i = 0; i < nInstances; ++i) {
@@ -750,7 +750,7 @@ namespace Tests::testModules {
       }
     }
 
-    //-------------------------------------------------------------------------------------------------------------------
+    /*----------------------------------------------------------------------------------------------------------------*/
     // check presence in lists (getSubmoduleList() and getAccessorList())
 
     { // checks on first hierarchy level (application has the list of module groups)
@@ -875,7 +875,7 @@ namespace Tests::testModules {
       }
     }
 
-    //-------------------------------------------------------------------------------------------------------------------
+    /*----------------------------------------------------------------------------------------------------------------*/
     // check ownerships
     for(size_t i = 0; i < nInstances; ++i) {
       BOOST_CHECK(app.vectorOfVectorModuleGroup[i].getOwner() == &app);
@@ -899,7 +899,7 @@ namespace Tests::testModules {
       }
     }
 
-    //-------------------------------------------------------------------------------------------------------------------
+    /*----------------------------------------------------------------------------------------------------------------*/
     // check pointers to accessors in VariableNetworkNode
     for(size_t i = 0; i < nInstances; ++i) {
       for(size_t k = 0; k < nInstances; ++k) {
@@ -937,7 +937,7 @@ namespace Tests::testModules {
       }
     }
 
-    //-------------------------------------------------------------------------------------------------------------------
+    /*----------------------------------------------------------------------------------------------------------------*/
     // check model
     { // check presence of all PVs (and indirectly the directories)
       size_t nFound = 0;
@@ -1042,7 +1042,7 @@ namespace Tests::testModules {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test late initialisation of modules using the assignment operator */
 
   BOOST_AUTO_TEST_CASE(test_moveAssignmentOperator) {
@@ -1124,7 +1124,7 @@ namespace Tests::testModules {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test tailing slashes in module names and group names will throw error*/
 
   struct SlashModule : public ctk::ApplicationModule {
@@ -1158,7 +1158,7 @@ namespace Tests::testModules {
     BOOST_CHECK_THROW(SlashApp app, ctk::logic_error);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /*  test tailing slashes in scalar variable name */
 
   struct VariableSlashScalarApp : public ctk::Application {
@@ -1183,7 +1183,7 @@ namespace Tests::testModules {
     BOOST_CHECK_THROW(VariableSlashScalarApp app, ctk::logic_error);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test tailing slashes in variable names */
 
   struct VariableSlashArrayApp : public ctk::Application {
@@ -1208,7 +1208,7 @@ namespace Tests::testModules {
     BOOST_CHECK_THROW(VariableSlashArrayApp app, ctk::logic_error);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test slash as variable name */
 
   struct OnlySlashNameArrayApp : public ctk::Application {
@@ -1233,7 +1233,7 @@ namespace Tests::testModules {
     BOOST_CHECK_THROW(OnlySlashNameArrayApp app, ctk::logic_error);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test tailing slash as module name */
 
   struct OnlySlashModuleName : public ctk::Application {
@@ -1263,7 +1263,7 @@ namespace Tests::testModules {
     BOOST_CHECK(app.someModule.array.getName() == "/someArray");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test multiple slashes in module name */
 
   struct MultiSlashModule : public ctk::Application {
@@ -1290,7 +1290,7 @@ namespace Tests::testModules {
     ;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test multiple slashes in variable name */
 
   struct MultiSlashVarModule : public ctk::Application {
