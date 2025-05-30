@@ -22,7 +22,7 @@
 
 namespace ChimeraTK {
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   NetworkVisitor::NetworkInformation NetworkVisitor::checkNetwork(Model::ProcessVariableProxy& proxy) {
     NetworkInformation net{&proxy};
@@ -187,7 +187,7 @@ namespace ChimeraTK {
     return net;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   NetworkVisitor::NetworkInformation NetworkVisitor::checkAndFinaliseNetwork(Model::ProcessVariableProxy& proxy) {
     // This will do two things:
@@ -198,7 +198,7 @@ namespace ChimeraTK {
     return info;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void NetworkVisitor::finaliseNetwork(NetworkInformation& net) {
     debug("Finalising network \"" + net.proxy->getName() + "\"");
@@ -286,7 +286,7 @@ namespace ChimeraTK {
     debug();
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename... Args>
   void NetworkVisitor::debug(Args&&... args) {
@@ -298,9 +298,9 @@ namespace ChimeraTK {
     (logger(Logger::Severity::debug, "ConnectionMaker") << ... << args) << std::endl;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* ConnectionMaker implementations */
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ConnectionMaker::connectNetwork(Model::ProcessVariableProxy& proxy) {
     auto path = proxy.getFullyQualifiedPath();
@@ -376,7 +376,7 @@ namespace ChimeraTK {
     debug();
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ConnectionMaker::finalise() {
     debug("Calling finalise()...");
@@ -427,7 +427,7 @@ namespace ChimeraTK {
         ChimeraTK::Model::keepParenthood);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ConnectionMaker::connect() {
     debug("Calling connect()...");
@@ -460,7 +460,7 @@ namespace ChimeraTK {
         ChimeraTK::Model::keepParenthood);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ConnectionMaker::makeDirectConnectionForFeederWithImplementation(NetworkInformation& net) {
     debug("    Making direct connection for feeder with implementation");
@@ -533,7 +533,7 @@ namespace ChimeraTK {
     });
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ConnectionMaker::makeFanOutConnectionForFeederWithImplementation(
       NetworkInformation& net, const Model::DeviceModuleProxy& device, const Model::ProcessVariableProxy& trigger) {
@@ -613,7 +613,7 @@ namespace ChimeraTK {
     });
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   void NetworkVisitor::createProcessVariable(const VariableNetworkNode& node, size_t length, const std::string& unit,
@@ -669,14 +669,14 @@ namespace ChimeraTK {
     boost::fusion::at_key<UserType>(_decoratedPvImpls.table)[node.getPublicName()] = pvImpl;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> ConnectionMaker::getProcessVariable(
       const VariableNetworkNode& node) {
     return boost::fusion::at_key<UserType>(_decoratedPvImpls.table).at(node.getPublicName());
   }
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   boost::shared_ptr<NDRegisterAccessor<UserType>> ConnectionMaker::createDeviceVariable(
@@ -717,7 +717,7 @@ namespace ChimeraTK {
     return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, node);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   ConsumerImplementationPairs<UserType> ConnectionMaker::setConsumerImplementations(NetworkInformation& net) {
@@ -765,7 +765,7 @@ namespace ChimeraTK {
     return consumerImplPairs;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   std::pair<boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>>,
@@ -833,7 +833,7 @@ namespace ChimeraTK {
     return pvarPair;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ChimeraTK::ConnectionMaker::makeConnectionForFeederWithoutImplementation(NetworkInformation& net) {
     // we should be left with an application feeder node
@@ -920,7 +920,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ConnectionMaker::makeConnectionForConstantFeeder(NetworkInformation& net) {
     assert(net.feeder.getType() == NodeType::Constant);
@@ -974,7 +974,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ConnectionMaker::optimiseUnmappedVariables(const std::set<std::string>& names) {
     for(const auto& name : names) {

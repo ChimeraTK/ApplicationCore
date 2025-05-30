@@ -36,7 +36,7 @@ namespace Tests::testControlSystemAccessors {
     }                                                                                                                  \
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* the ApplicationModule for the test is a template of the user type */
 
   template<typename T>
@@ -58,7 +58,7 @@ namespace Tests::testControlSystemAccessors {
     void mainLoop() override { mainLoopStarted.wait(); }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* dummy application */
 
   template<typename T>
@@ -71,7 +71,7 @@ namespace Tests::testControlSystemAccessors {
     TestModule<T> testModule{this, "TestModule", "The test module"};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test feeding a scalar to the control system adapter */
 
   BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToCS, T, test_types) {
@@ -111,7 +111,7 @@ namespace Tests::testControlSystemAccessors {
     BOOST_CHECK(myFeeder->accessData(0) == 120);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test consuming a scalar from the control system adapter */
 
   BOOST_AUTO_TEST_CASE_TEMPLATE(testConsumeFromCS, T, test_types) {
@@ -147,6 +147,6 @@ namespace Tests::testControlSystemAccessors {
     BOOST_CHECK(app.testModule.consumer == 120);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace Tests::testControlSystemAccessors

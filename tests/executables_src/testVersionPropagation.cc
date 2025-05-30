@@ -21,7 +21,7 @@ namespace Tests::testVersionpropagation {
 
   BOOST_FIXTURE_TEST_SUITE(VersionPropagationPart1, Fixture)
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(versionPropagation_testPolledRead) {
     std::cout << "versionPropagation_testPolledRead" << std::endl;
@@ -36,7 +36,7 @@ namespace Tests::testVersionpropagation {
     BOOST_CHECK(moduleVersion == application.group1.pollModule.getCurrentVersionNumber());
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadNonBlocking) {
     std::cout << "versionPropagation_testPolledReadNonBlocking" << std::endl;
@@ -51,7 +51,7 @@ namespace Tests::testVersionpropagation {
     BOOST_CHECK(moduleVersion == application.group1.pollModule.getCurrentVersionNumber());
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(versionPropagation_testPolledReadLatest) {
     std::cout << "versionPropagation_testPolledReadLatest" << std::endl;
@@ -66,7 +66,7 @@ namespace Tests::testVersionpropagation {
     BOOST_CHECK(moduleVersion == application.group1.pollModule.getCurrentVersionNumber());
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeRead) {
     std::cout << "versionPropagation_testPushTypeRead" << std::endl;
@@ -80,7 +80,7 @@ namespace Tests::testVersionpropagation {
     BOOST_CHECK(application.group1.pushModule.getCurrentVersionNumber() == pushVariable.getVersionNumber());
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeReadNonBlocking) {
     std::cout << "versionPropagation_testPushTypeReadNonBlocking" << std::endl;
@@ -103,7 +103,7 @@ namespace Tests::testVersionpropagation {
     BOOST_CHECK(application.group1.pushModule.getCurrentVersionNumber() == moduleVersion);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(versionPropagation_testPushTypeReadLatest) {
     std::cout << "versionPropagation_testPushTypeReadLatest" << std::endl;
@@ -129,8 +129,8 @@ namespace Tests::testVersionpropagation {
 
   BOOST_AUTO_TEST_SUITE_END()
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   // The EmptyFixture is required, since we cannot use an ordinary BOOST_AUTO_TEST_SUITE after a
   // BOOST_FIXTURE_TEST_SUITE when compiling with -std=c++20 or later.
@@ -168,7 +168,7 @@ namespace Tests::testVersionpropagation {
     TheOutputModule om{this, "om", ""};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(versionPropagation_testSetAndWrite) {
     std::cout << "versionPropagation_testSetAndWrite" << std::endl;
@@ -187,7 +187,7 @@ namespace Tests::testVersionpropagation {
     BOOST_CHECK(app.pm.getCurrentVersionNumber() == theVersion);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(versionPropagation_testWriteIfDifferent) {
     std::cout << "versionPropagation_testWriteIfDifferent" << std::endl;
@@ -230,6 +230,6 @@ namespace Tests::testVersionpropagation {
 
   BOOST_AUTO_TEST_SUITE_END()
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace Tests::testVersionpropagation

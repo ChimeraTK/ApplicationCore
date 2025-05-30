@@ -25,7 +25,7 @@
 
 namespace Tests::testInitialValues {
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   // Base Application module that provides flags for the various phases
   // of module lifetime and full-fills a promise when the main loop has been reached
@@ -42,7 +42,7 @@ namespace Tests::testInitialValues {
     void prepare() override { enteredThePrepareLoop = true; }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   using namespace boost::unit_test_framework;
   namespace ctk = ChimeraTK;

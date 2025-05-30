@@ -34,7 +34,7 @@ namespace Tests::testScriptedInitialisationHandler {
         this, "InitHander2", "description", "./deviceInitScript2.bash", dev1, "secondInitScriptOutput", 1};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct Fixture {
     TestApp testApp{"ScriptedInitApp"};

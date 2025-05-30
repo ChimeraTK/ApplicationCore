@@ -42,7 +42,7 @@ struct TestApplication : ctk::Application {
   } mod{this, "Module", ""};
 };
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testDirectThreadedFanOutWithReturn) {
   std::cout << "testDirectThreadedFanOutWithReturn" << std::endl;
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(testDirectThreadedFanOutWithReturn) {
   app.shutdown();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 // Create a ThreadedFanOutWithReturn and check that we can use the
 // just the recovery value as an input
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(testThreadedFanOutWithReturnOnlyRecoverValue) {
   app.shutdown();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 // Force the connection maker to create a direct connection with constant
 // feeder
@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE(testConstantFeederInversion) {
   app.shutdown();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 // Have an application module that has an explicit accessor requesting reverse recovery
 BOOST_AUTO_TEST_CASE(testFeedingFanOutWithExplicitAccessor) {
@@ -277,7 +277,7 @@ BOOST_AUTO_TEST_CASE(testFeedingFanOutWithExplicitAccessor) {
   app.shutdown();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 // Have an application module that has an explicit accessor requesting reverse recovery
 BOOST_AUTO_TEST_CASE(testFanOutWithExplicitAccessor02) {
@@ -330,7 +330,7 @@ BOOST_AUTO_TEST_CASE(testFanOutWithExplicitAccessor02) {
   app.shutdown();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 // Request that we do the reverse recovery from an untagged device register by using the ReverseRecovery accessor
 BOOST_AUTO_TEST_CASE(testReverseRecoveryFromApp) {
@@ -384,7 +384,7 @@ BOOST_AUTO_TEST_CASE(testReverseRecoveryFromApp) {
   app.shutdown();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRecoveryFromAppDirect) {
   std::cout << "testReverseRecoveryFromApp" << std::endl;
@@ -437,7 +437,7 @@ BOOST_AUTO_TEST_CASE(testRecoveryFromAppDirect) {
   app.shutdown();
 }
 
-/********************************************************************************************************************/
+/**********************************************************************************************************************/
 
 // Special case: Reverse recovery, but without any device
 BOOST_AUTO_TEST_CASE(testReverseRecoveryFromCS) {

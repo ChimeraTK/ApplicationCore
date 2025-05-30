@@ -26,7 +26,7 @@ namespace Tests::testIllegalNetworks {
   using TestTypes =
       boost::mpl::list<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, float, double, ctk::Boolean>;
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test case for two scalar accessors, feeder in poll mode and consumer in push
    * mode (without trigger) */
 
@@ -59,7 +59,7 @@ namespace Tests::testIllegalNetworks {
         ctk::logic_error);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test case for two feeders */
 
   template<typename T>
@@ -90,7 +90,7 @@ namespace Tests::testIllegalNetworks {
     BOOST_CHECK_THROW(ctk::TestFacility tf(app, false), ctk::logic_error);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test case for too many polling consumers */
 
   struct TestApplication4 : public ctk::Application {
@@ -129,7 +129,7 @@ namespace Tests::testIllegalNetworks {
         ctk::logic_error);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test case for different number of elements */
 
   template<typename T>
@@ -159,7 +159,7 @@ namespace Tests::testIllegalNetworks {
     BOOST_CHECK_THROW(ctk::TestFacility tf(app, false), ctk::logic_error);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test case for zero-length elements that are not void */
 
   template<typename T>
@@ -189,7 +189,7 @@ namespace Tests::testIllegalNetworks {
     BOOST_CHECK_THROW(ctk::TestFacility tf(app, false), ctk::logic_error);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test cases for modules connecting itself, either directly or via a deep C++ hierarchy */
 
   struct CircularConnectionModule : public ctk::ApplicationModule {

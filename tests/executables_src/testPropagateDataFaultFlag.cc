@@ -33,7 +33,7 @@ namespace Tests::testPropagateDataFaultFlag {
 
   /* dummy application */
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestModule1 : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -64,7 +64,7 @@ namespace Tests::testPropagateDataFaultFlag {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestModule2 : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -81,7 +81,7 @@ namespace Tests::testPropagateDataFaultFlag {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApplication1 : ctk::Application {
     TestApplication1() : Application("testSuite") {}
@@ -90,7 +90,7 @@ namespace Tests::testPropagateDataFaultFlag {
     TestModule1 t1{this, "t1", ""};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApplication2 : ctk::Application {
     TestApplication2() : Application("testSuite") {}
@@ -100,8 +100,8 @@ namespace Tests::testPropagateDataFaultFlag {
     TestModule2 b{this, "A", ""};
   };
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   // first test without FanOuts of any kind
   BOOST_AUTO_TEST_CASE(testDirectConnections) {
@@ -253,7 +253,7 @@ namespace Tests::testPropagateDataFaultFlag {
     BOOST_CHECK(oStat.dataValidity() == ctk::DataValidity::faulty);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testWithFanOut) {
     std::cout << "testWithFanOut" << std::endl;
@@ -355,8 +355,8 @@ namespace Tests::testPropagateDataFaultFlag {
     BOOST_CHECK_EQUAL(int(app.b.i1), 6);
   }
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
   /*
    * Tests below verify data fault flag propagation on:
    * - Threaded FanOut
@@ -449,8 +449,8 @@ namespace Tests::testPropagateDataFaultFlag {
       }*/
   };
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct FixtureTestFacility {
     FixtureTestFacility()
@@ -476,7 +476,7 @@ namespace Tests::testPropagateDataFaultFlag {
 
   BOOST_FIXTURE_TEST_SUITE(data_validity_propagation, FixtureTestFacility)
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testThreadedFanout) {
     std::cout << "testThreadedFanout" << std::endl;
@@ -532,7 +532,7 @@ namespace Tests::testPropagateDataFaultFlag {
     BOOST_CHECK(m2_result.dataValidity() == ctk::DataValidity::ok);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testInvalidTrigger) {
     std::cout << "testInvalidTrigger" << std::endl;
@@ -545,7 +545,7 @@ namespace Tests::testPropagateDataFaultFlag {
     auto trigger = test.getVoid("trigger");
     auto result = test.getScalar<int>("/m1/i3"); // Cs hook into reg: m1.i3
 
-    //----------------------------------------------------------------//
+    /*----------------------------------------------------------------------------------------------------------------*/
     // trigger works as expected
     trigger.write();
 
@@ -555,7 +555,7 @@ namespace Tests::testPropagateDataFaultFlag {
     BOOST_CHECK_EQUAL(result, 20);
     BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
 
-    //----------------------------------------------------------------//
+    /*----------------------------------------------------------------------------------------------------------------*/
     // faulty trigger
     deviceRegister = 30;
     deviceRegister.write();
@@ -568,7 +568,7 @@ namespace Tests::testPropagateDataFaultFlag {
     BOOST_CHECK_EQUAL(result, 30);
     BOOST_CHECK(result.dataValidity() == ctk::DataValidity::faulty);
 
-    //----------------------------------------------------------------//
+    /*----------------------------------------------------------------------------------------------------------------*/
     // recovery
     deviceRegister = 50;
     deviceRegister.write();
@@ -585,8 +585,8 @@ namespace Tests::testPropagateDataFaultFlag {
 
   BOOST_AUTO_TEST_SUITE_END()
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct FixtureNoTestableMode {
     FixtureNoTestableMode()
@@ -632,7 +632,7 @@ namespace Tests::testPropagateDataFaultFlag {
     ChimeraTK::ScalarRegisterAccessor<int> device2Status;
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_SUITE(data_validity_propagation_noTestFacility)
 
@@ -703,7 +703,7 @@ namespace Tests::testPropagateDataFaultFlag {
     BOOST_CHECK(result.dataValidity() == ctk::DataValidity::ok);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_FIXTURE_TEST_CASE(testReadDeviceWithTrigger, FixtureNoTestableMode) {
     std::cout << "testReadDeviceWithTrigger" << std::endl;
@@ -711,7 +711,7 @@ namespace Tests::testPropagateDataFaultFlag {
 
     auto trigger = test.getVoid("trigger");
     auto fromDevice = test.getScalar<int>("/m1/i3"); // cs side display: m1.i3
-    //----------------------------------------------------------------//
+    /*----------------------------------------------------------------------------------------------------------------*/
     fromDevice.read(); // there is an initial value
     BOOST_CHECK_EQUAL(fromDevice, 0);
 
@@ -727,7 +727,7 @@ namespace Tests::testPropagateDataFaultFlag {
     BOOST_CHECK_EQUAL(fromDevice, 30);
     BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::ok);
 
-    //----------------------------------------------------------------//
+    /*----------------------------------------------------------------------------------------------------------------*/
     // Device module exception
     deviceRegister = 10;
     deviceRegister.write();
@@ -739,7 +739,7 @@ namespace Tests::testPropagateDataFaultFlag {
     fromDevice.read();
     BOOST_CHECK_EQUAL(fromDevice, 30);
     BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::faulty);
-    //----------------------------------------------------------------//
+    /*----------------------------------------------------------------------------------------------------------------*/
     // Recovery
     device1DummyBackend->throwExceptionRead = false;
 
@@ -756,7 +756,7 @@ namespace Tests::testPropagateDataFaultFlag {
     BOOST_CHECK(fromDevice.dataValidity() == ctk::DataValidity::ok);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_FIXTURE_TEST_CASE(testConsumingFanout, FixtureNoTestableMode) {
     std::cout << "testConsumingFanout" << std::endl;
@@ -780,7 +780,7 @@ namespace Tests::testPropagateDataFaultFlag {
     consumingFanoutSource = 1;
     consumingFanoutSource.write();
 
-    //----------------------------------------------------------//
+    /*----------------------------------------------------------------------------------------------------------------*/
     // no device module exception
     threadedFanoutInput.write();
 
@@ -831,7 +831,7 @@ namespace Tests::testPropagateDataFaultFlag {
     BOOST_CHECK(fromConsumingFanout.dataValidity() == ctk::DataValidity::ok);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_FIXTURE_TEST_CASE(testDataFlowOnDeviceException, FixtureNoTestableMode) {
     std::cout << "testDataFlowOnDeviceException" << std::endl;
@@ -958,8 +958,8 @@ namespace Tests::testPropagateDataFaultFlag {
 
   BOOST_AUTO_TEST_SUITE_END()
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   // Module and Application for test case "testDataValidPropagationOnException"
   struct Module3 : ctk::ApplicationModule {
@@ -997,7 +997,7 @@ namespace Tests::testPropagateDataFaultFlag {
       }*/
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testDataValidPropagationOnException) {
     std::cout << "testDataValidPropagationOnException" << std::endl;
@@ -1124,7 +1124,7 @@ namespace Tests::testPropagateDataFaultFlag {
     BOOST_CHECK(result.readLatest() == false);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestModule3 : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -1133,7 +1133,7 @@ namespace Tests::testPropagateDataFaultFlag {
     void mainLoop() override {}
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApplication5 : ctk::Application {
     TestApplication5() : Application("testSuite") {}
@@ -1142,7 +1142,7 @@ namespace Tests::testPropagateDataFaultFlag {
     TestModule3 a{this, "A", ""};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testWriteIfDifferent) {
     std::cout << "testWriteIfDifferent" << std::endl;
@@ -1194,6 +1194,6 @@ namespace Tests::testPropagateDataFaultFlag {
     BOOST_TEST(std::vector<int>(o2) == std::vector<int>({48, 59}));
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace Tests::testPropagateDataFaultFlag
