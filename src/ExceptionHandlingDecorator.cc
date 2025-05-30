@@ -10,7 +10,7 @@
 
 namespace ChimeraTK {
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   ExceptionHandlingDecorator<UserType>::ExceptionHandlingDecorator(
@@ -67,7 +67,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreWrite(TransferType type, VersionNumber versionNumber) {
@@ -120,7 +120,7 @@ namespace ChimeraTK {
     ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreWrite(type, versionNumber);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostWrite(TransferType type, VersionNumber versionNumber) {
@@ -154,7 +154,7 @@ namespace ChimeraTK {
     assert(_activeException == nullptr);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPostRead(TransferType type, bool hasNewData) {
@@ -218,7 +218,7 @@ namespace ChimeraTK {
     assert(_activeException == nullptr);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   void ExceptionHandlingDecorator<UserType>::doPreRead(TransferType type) {
@@ -245,21 +245,21 @@ namespace ChimeraTK {
     ChimeraTK::NDRegisterAccessorDecorator<UserType>::doPreRead(type);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doWriteTransfer(VersionNumber versionNumber) {
     return genericWriteWrapper([&] { return _target->writeTransferDestructively(versionNumber); });
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   bool ExceptionHandlingDecorator<UserType>::doWriteTransferDestructively(VersionNumber versionNumber) {
     return genericWriteWrapper([&] { return _target->writeTransferDestructively(versionNumber); });
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   template<typename Callable>
@@ -277,10 +277,10 @@ namespace ChimeraTK {
     return (transferReportsPreviousDataLost || _dataLostInPreviousWrite);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ExceptionHandlingDecorator);
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } /* namespace ChimeraTK */

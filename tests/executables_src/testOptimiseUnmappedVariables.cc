@@ -25,7 +25,7 @@ namespace Tests::testOptimiseUnmappedVariables {
   using namespace boost::unit_test_framework;
   namespace ctk = ChimeraTK;
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Application without name */
 
   struct TestApp : public ctk::Application {
@@ -36,7 +36,7 @@ namespace Tests::testOptimiseUnmappedVariables {
     ctk::ScalarPipe<double> pipe{this, "/Multiplier/output", "/mySubModule/output", "unit", "Some pipe module"};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testOptimiseUnmappedVariables) {
     std::cout << "***************************************************************" << std::endl;

@@ -3,7 +3,7 @@
 #include "ReverseRecoveryDecorator.h"
 
 namespace ChimeraTK {
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   ReverseRecoveryDecorator<UserType>::ReverseRecoveryDecorator(
@@ -26,14 +26,14 @@ namespace ChimeraTK {
         _recoveryHelper->notificationQueue.template then<void>([&, this]() { _target->read(); }, std::launch::deferred);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   void ReverseRecoveryDecorator<UserType>::interrupt() {
     this->interrupt_impl(this->_recoveryHelper->notificationQueue);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType>
   void ReverseRecoveryDecorator<UserType>::setInReadAnyGroup(ReadAnyGroup* rag) {
@@ -42,7 +42,7 @@ namespace ChimeraTK {
     NDRegisterAccessor<UserType>::setInReadAnyGroup(rag);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   INSTANTIATE_TEMPLATE_FOR_CHIMERATK_USER_TYPES(ReverseRecoveryDecorator);
 } // namespace ChimeraTK

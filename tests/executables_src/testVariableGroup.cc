@@ -21,7 +21,7 @@ namespace Tests::testVariableGroup {
   using namespace boost::unit_test_framework;
   namespace ctk = ChimeraTK;
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* the ApplicationModule for the test is a template of the user type */
 
   struct InputModule : public ctk::ApplicationModule {
@@ -65,7 +65,7 @@ namespace Tests::testVariableGroup {
     void mainLoop() override {}
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* dummy application */
 
   struct TestApplication : public ctk::Application {
@@ -76,7 +76,7 @@ namespace Tests::testVariableGroup {
     OutputModule out{this, "out", "The other test module"};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test module-wide read/write operations */
 
   BOOST_AUTO_TEST_CASE(testModuleReadWrite) {
@@ -214,7 +214,7 @@ namespace Tests::testVariableGroup {
     BOOST_CHECK(app.in.mixedGroup.consumingPoll3 == 44);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test trigger by app variable when connecting a polled device register to an app variable */
 
   BOOST_AUTO_TEST_CASE(testReadAny) {

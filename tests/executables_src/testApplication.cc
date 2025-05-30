@@ -27,7 +27,7 @@ namespace ctk = ChimeraTK;
 
 namespace Tests::testApplication {
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Application without name */
 
   struct TestApp : public ctk::Application {
@@ -41,7 +41,7 @@ namespace Tests::testApplication {
     ctk::DeviceModule device{this, "(logicalNameMap?map=empty.xlmap)", "/trigger"};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test trigger by app variable when connecting a polled device register to an
    * app variable */
 
@@ -73,7 +73,7 @@ namespace Tests::testApplication {
     BOOST_CHECK_THROW(TestApp app2("SecondInstance"), ChimeraTK::logic_error);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   // Helper function for testXmlGeneration:
   // Obtain a value from an XML node
   std::string getValueFromNode(const xmlpp::Node* node, const std::string& subnodeName) {
@@ -95,7 +95,7 @@ namespace Tests::testApplication {
     return textNode->get_content();
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   /* test creation of XML file describing the variable tree */
 
   BOOST_AUTO_TEST_CASE(testXmlGeneration) {

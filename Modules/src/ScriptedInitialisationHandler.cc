@@ -12,7 +12,7 @@ namespace bp = boost::process;
 
 namespace ChimeraTK {
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   ScriptedInitHandler::ScriptedInitHandler(ModuleGroup* owner, const std::string& name, const std::string& description,
       std::string command, DeviceModule& deviceModule, std::string outputName, unsigned int errorGracePeriod)
@@ -21,7 +21,7 @@ namespace ChimeraTK {
     _errorGracePeriod(errorGracePeriod) {
     deviceModule.addInitialisationHandler([this](Device&) { doInit(); });
   }
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void ScriptedInitHandler::doInit() {
     std::string output;
@@ -67,5 +67,5 @@ namespace ChimeraTK {
     }
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 } // namespace ChimeraTK

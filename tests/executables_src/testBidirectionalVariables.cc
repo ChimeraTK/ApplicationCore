@@ -24,7 +24,7 @@ namespace ctk = ChimeraTK;
 
 namespace Tests::testBidirectionalVariables {
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /* Module which converts the input data from inches to centimetres - and the
    * other way round for the return channel. In case of the return channel, the
@@ -55,7 +55,7 @@ namespace Tests::testBidirectionalVariables {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /* Module which limits a value to stay below a maximum value. */
   struct ModuleB : public ctk::ApplicationModule {
@@ -90,7 +90,7 @@ namespace Tests::testBidirectionalVariables {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct ModuleD : public ctk::ApplicationModule {
     using ApplicationModule::ApplicationModule;
@@ -111,7 +111,7 @@ namespace Tests::testBidirectionalVariables {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct ModuleFunnel : public ctk::ApplicationModule {
     using ApplicationModule::ApplicationModule;
@@ -139,7 +139,7 @@ namespace Tests::testBidirectionalVariables {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApplication : public ctk::Application {
     TestApplication() : Application("testSuite") {}
@@ -150,7 +150,7 @@ namespace Tests::testBidirectionalVariables {
     ModuleD copy;
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct FunnelApplication : public ctk::Application {
     FunnelApplication() : Application("testSuite") {}
@@ -160,7 +160,7 @@ namespace Tests::testBidirectionalVariables {
     ModuleFunnel f2{this, "Funnel2", ""};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct ModuleC : public ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -183,7 +183,7 @@ namespace Tests::testBidirectionalVariables {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct InitTestApplication : public ctk::Application {
     InitTestApplication() : Application("testSuite") {}
@@ -192,7 +192,7 @@ namespace Tests::testBidirectionalVariables {
     ModuleC c{this, "ModuleC", ""};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testDirectAppToCSConnections) {
     std::cout << "*** testDirectAppToCSConnections" << std::endl;
@@ -243,7 +243,7 @@ namespace Tests::testBidirectionalVariables {
     BOOST_CHECK(var3.readNonBlocking() == false);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testRealisticExample) {
     std::cout << "*** testRealisticExample" << std::endl;
@@ -396,7 +396,7 @@ namespace Tests::testBidirectionalVariables {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testFunnel) {
     std::cout << "*** testFunnel" << std::endl;
@@ -442,7 +442,7 @@ namespace Tests::testBidirectionalVariables {
     BOOST_TEST(funnel1out == 44);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testStartup) {
     std::cout << "*** testStartup" << std::endl;
@@ -458,7 +458,7 @@ namespace Tests::testBidirectionalVariables {
     BOOST_CHECK_EQUAL(testFacility.readScalar<int>("ModuleC/var1"), 42);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApplication2 : ctk::Application {
     TestApplication2() : Application("testSuite") {}
@@ -486,7 +486,7 @@ namespace Tests::testBidirectionalVariables {
     Module<ctk::ScalarOutputPushRB<int>> upper{this, ".", ""};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testReadWriteAll) {
     std::cout << "*** testReadWriteAll" << std::endl;
@@ -514,7 +514,7 @@ namespace Tests::testBidirectionalVariables {
     BOOST_CHECK(app.upper.var.readNonBlocking() == true);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testDataValidityReturn) {
     std::cout << "*** testDataValidityReturn" << std::endl;
@@ -563,7 +563,7 @@ namespace Tests::testBidirectionalVariables {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testInitialValues) {
     std::cout << "*** testInitialValues" << std::endl;
@@ -586,8 +586,8 @@ namespace Tests::testBidirectionalVariables {
     BOOST_CHECK_EQUAL(app.lower.var, 666);
   }
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct ModuleX : ChimeraTK::ApplicationModule {
     using ChimeraTK::ApplicationModule::ApplicationModule;
@@ -604,7 +604,7 @@ namespace Tests::testBidirectionalVariables {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct ModuleY : ChimeraTK::ApplicationModule {
     using ChimeraTK::ApplicationModule::ApplicationModule;
@@ -618,7 +618,7 @@ namespace Tests::testBidirectionalVariables {
     }
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApplicationShutdownIssue : ChimeraTK::Application {
     using ChimeraTK::Application::Application;
@@ -628,7 +628,7 @@ namespace Tests::testBidirectionalVariables {
     ModuleY mod2{this, "Mod2", ""};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testShutdownWithFeedingFanOut) {
     // This test checks that the FeedingFanOut does not try to propagate the boost::thread_interrupted exception through
@@ -645,7 +645,7 @@ namespace Tests::testBidirectionalVariables {
     std::cout << "Will shutdown now" << std::endl;
   }
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace Tests::testBidirectionalVariables

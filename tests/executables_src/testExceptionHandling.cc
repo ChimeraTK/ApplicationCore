@@ -37,7 +37,7 @@ namespace Tests::testExceptionHandling {
    */
   BOOST_AUTO_TEST_SUITE(runtimeErrorHandling)
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_1 \ref exceptionHandling_b_2_1 "B.2.1"
    *
@@ -71,7 +71,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK_EQUAL(static_cast<std::string>(message), "");
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_2_poll \ref exceptionHandling_b_2_2_2 "B.2.2.2"
    *
@@ -113,7 +113,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK(versionNumberOnRuntimeError > versionNumberBeforeRuntimeError);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_2_push \ref exceptionHandling_b_2_2_2 "B.2.2.2"
    *
@@ -153,7 +153,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK(versionNumberOnRuntimeError > versionNumberBeforeRuntimeError);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_3 \ref exceptionHandling_b_2_2_3 "B.2.2.3"
    *
@@ -189,7 +189,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK_EQUAL(pollVariable.getVersionNumber(), versionNumberOnRuntimeError);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_3_TrFO \ref exceptionHandling_b_2_2_3 "B.2.2.3"
    *
@@ -228,7 +228,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK(triggeredInput.dataValidity() == ctk::DataValidity::faulty);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_4_blocking \ref exceptionHandling_b_2_2_4 "B.2.2.4"
    *
@@ -258,7 +258,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK(versionNumberOnRuntimeError > version);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_4_nonBlocking \ref exceptionHandling_b_2_2_4 "B.2.2.4"
    *
@@ -288,7 +288,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK(versionNumberOnRuntimeError > version);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_4_any \ref exceptionHandling_b_2_2_4 "B.2.2.4"
    *
@@ -320,7 +320,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK(versionNumberOnRuntimeError > version);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_4_latest \ref exceptionHandling_b_2_2_4 "B.2.2.4"
    *
@@ -350,7 +350,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK(versionNumberOnRuntimeError > version);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_4_ThFO \ref exceptionHandling_b_2_2_4 "B.2.2.4"
    *
@@ -387,7 +387,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK(pushVariable3copy.getVersionNumber() > version);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_4_TrFO \ref exceptionHandling_b_2_2_4 "B.2.2.4"
    *
@@ -422,7 +422,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK(triggeredInput.getVersionNumber() > versionBeforeException);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_4_1_nonBlocking \ref exceptionHandling_b_2_2_4_1 "B.2.2.4.1"
    *
@@ -455,7 +455,7 @@ namespace Tests::testExceptionHandling {
     }
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_4_1_latest \ref exceptionHandling_b_2_2_4_1 "B.2.2.4.1"
    *
@@ -488,7 +488,7 @@ namespace Tests::testExceptionHandling {
     }
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_4_2 \ref exceptionHandling_b_2_2_4_2 "B.2.2.4.2"
    *
@@ -519,7 +519,7 @@ namespace Tests::testExceptionHandling {
     deviceBackend->throwExceptionOpen = false;
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_4_3 \ref exceptionHandling_b_2_2_4_3 "B.2.2.4.3"
    *
@@ -554,7 +554,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK_EQUAL(pushVariable, 77);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_5 \ref exceptionHandling_b_2_2_5 "B.2.2.5"
    *
@@ -583,7 +583,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK(pollVariable.getVersionNumber() == exceptionVersion);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_2_6 \ref exceptionHandling_b_2_2_6 "B.2.2.6"
    *
@@ -624,7 +624,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK_EQUAL(pollVariable, 43);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_3_3 \ref exceptionHandling_b_2_3_3 "B.2.3.3"
    *
@@ -649,7 +649,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK_EQUAL(outputVariable2.write(), true); // data lost
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_3_5 \ref exceptionHandling_b_2_3_5 "B.2.3.5"
    *
@@ -677,7 +677,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK_EQUAL(exceptionDummyRegister2[0], 987);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_2_5 \ref exceptionHandling_b_2_5 "B.2.5"
    *
@@ -702,7 +702,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK(!outputVariable2.isReadOnly());
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_3_2_2 \ref exceptionHandling_b_3_2_2 "B.3.2.2"
    *
@@ -752,7 +752,7 @@ namespace Tests::testExceptionHandling {
     CHECK_TIMEOUT(initHandler2Called, 10000);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_3_2_3 \ref exceptionHandling_b_3_2_3 "B.3.2.3"
    *
@@ -824,7 +824,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK_EQUAL(deviceBackend->getWriteCount("REGV"), wcRegV);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_3_2_5\ref exceptionHandling_b_3_2_5 "B.3.2.5"
    *
@@ -860,7 +860,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK_EQUAL(deviceBackend->getWriteCount("REG2"), reg2WriteCountBeforeRecovery + 1);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_3_2_6 \ref exceptionHandling_b_3_2_6 "B.3.2.6"
    *
@@ -895,7 +895,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK(deviceBecameFunctional.readNonBlocking() == false);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_4_1 \ref exceptionHandling_b_4_1 "B.4.1"
    *
@@ -926,7 +926,7 @@ namespace Tests::testExceptionHandling {
     assert(status2 == 1);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_5 \ref exceptionHandling_b_5 "B.5"
    *
@@ -947,7 +947,7 @@ namespace Tests::testExceptionHandling {
     BOOST_CHECK(status.readAndGet() == 0);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
   /**
    * \anchor testExceptionHandling_b_5_1 \ref exceptionHandling_b_5_1 "B.5.1"
    *

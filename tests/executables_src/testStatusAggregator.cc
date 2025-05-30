@@ -18,7 +18,7 @@ namespace Tests::testStatusAggregator {
 
   namespace ctk = ChimeraTK;
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct StatusGenerator : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -39,7 +39,7 @@ namespace Tests::testStatusAggregator {
     void mainLoop() override {}
   };
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct StatusWithMessageGenerator : ctk::ApplicationModule {
     using ctk::ApplicationModule::ApplicationModule;
@@ -64,7 +64,7 @@ namespace Tests::testStatusAggregator {
     void mainLoop() override {}
   };
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApplication : ctk::Application {
     TestApplication() : Application("testApp") {}
@@ -92,7 +92,7 @@ namespace Tests::testStatusAggregator {
         this, "Aggregated/status", "aggregated status description", ctk::StatusAggregator::PriorityMode::fwko};
   };
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testSingleNoTags) {
     std::cout << "testSingleNoTags" << std::endl;
@@ -126,7 +126,7 @@ namespace Tests::testStatusAggregator {
     check(app.outerGroup.innerGroup2.deep.status);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testDataValidity) {
     std::cout << "testDataValidity" << std::endl;
@@ -153,7 +153,7 @@ namespace Tests::testStatusAggregator {
     BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::OFF));
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestPrioApplication : ctk::Application {
     explicit TestPrioApplication(ctk::StatusOutput::Status theInitialValue)
@@ -168,7 +168,7 @@ namespace Tests::testStatusAggregator {
     ctk::StatusAggregator aggregator;
   };
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testPriorities) {
     std::cout << "testPriorities" << std::endl;
@@ -283,7 +283,7 @@ namespace Tests::testStatusAggregator {
         ctk::StatusOutput::Status::OK, ctk::StatusOutput::Status::WARNING, ctk::StatusOutput::Status::FAULT, true);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testCustomMixedWarnMessage) {
     std::cout << "testCustomMixedWarnMessage" << std::endl;
@@ -317,7 +317,7 @@ namespace Tests::testStatusAggregator {
     BOOST_TEST(statusMessage.readAndGet() == customMessage2);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApplication2Levels : ctk::Application {
     TestApplication2Levels() : Application("testApp") {}
@@ -387,7 +387,7 @@ namespace Tests::testStatusAggregator {
     BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::OFF));
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApplicationTags : ctk::Application {
     TestApplicationTags() : Application("testApp") {}
@@ -416,7 +416,7 @@ namespace Tests::testStatusAggregator {
         this, "aggregateAll", "aggregated status description", ctk::StatusAggregator::PriorityMode::fw_warn_mixed};
   };
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testTags) {
     std::cout << "testTags" << std::endl;
@@ -463,7 +463,7 @@ namespace Tests::testStatusAggregator {
     BOOST_CHECK_EQUAL(int(Group_aggregateB), int(ctk::StatusOutput::Status::FAULT));
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApplicationAggregatorTags : ctk::Application {
     TestApplicationAggregatorTags() : Application("testApp") {}
@@ -495,7 +495,7 @@ namespace Tests::testStatusAggregator {
     ctk::StatusAggregator aggAggB{this, "aggAggB", "", ctk::StatusAggregator::PriorityMode::fwko, {"B"}};
   };
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testAggregatorTags) {
     std::cout << "testAggregatorTags" << std::endl;
@@ -530,7 +530,7 @@ namespace Tests::testStatusAggregator {
     BOOST_CHECK(!checkForName(accessorsAggAggB, "sB2"));
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApplicationMessage : ctk::Application {
     TestApplicationMessage() : Application("testApp") {}
@@ -554,7 +554,7 @@ namespace Tests::testStatusAggregator {
         this, "Aggregated/status", "aggregated status description", ctk::StatusAggregator::PriorityMode::fwko};
   };
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   // test behavior for status+string:
   // test that status aggregator always has a message output and hands it over to next status aggregator
@@ -669,6 +669,6 @@ namespace Tests::testStatusAggregator {
     BOOST_CHECK_EQUAL(std::string(innerStatusMessage), faultString1);
   }
 
-  /**********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace Tests::testStatusAggregator

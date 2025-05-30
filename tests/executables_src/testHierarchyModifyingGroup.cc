@@ -22,8 +22,8 @@ namespace Tests::testHierarchyModifyingGroup {
   using namespace boost::unit_test_framework;
   namespace ctk = ChimeraTK;
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /**
    * This test checks use of relative paths in modules at the example of a VariableGroup.
@@ -34,8 +34,8 @@ namespace Tests::testHierarchyModifyingGroup {
    * - Add checks for relative paths in accessors
    */
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestGroup : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
@@ -68,7 +68,7 @@ namespace Tests::testHierarchyModifyingGroup {
     } testModule{this, "mod", "The test module"};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   void check(TestApplication& app, TestGroup& group, const std::string& name) {
     static int myCounter = 42;
@@ -87,8 +87,8 @@ namespace Tests::testHierarchyModifyingGroup {
     ++myCounter;
   }
 
-  /*********************************************************************************************************************/
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(VariableGroupLike) {
     std::cout << "*** VariableGroupLike" << std::endl;
@@ -97,7 +97,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.g, "/mod/VariableGroupLike");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(MoveToRoot) {
     std::cout << "*** MoveToRoot" << std::endl;
@@ -106,7 +106,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.g, "/MoveToRoot");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(oneUp) {
     std::cout << "*** ../oneUp" << std::endl;
@@ -115,7 +115,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.g, "/oneUp");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(dotdot) {
     std::cout << "*** .." << std::endl;
@@ -124,7 +124,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.g, "");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(local_hierarchy) {
     std::cout << "*** local/hierarchy" << std::endl;
@@ -133,7 +133,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.g, "/mod/local/hierarchy");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(AtRoot_hierarchy) {
     std::cout << "*** /AtRoot/hierarchy" << std::endl;
@@ -142,7 +142,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.g, "/AtRoot/hierarchy");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(oneUp_hierarchy) {
     std::cout << "*** ../oneUp/hierarchy" << std::endl;
@@ -151,7 +151,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.g, "/oneUp/hierarchy");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(local_very_deep_hierarchy) {
     std::cout << "*** local/very/deep/hierarchy" << std::endl;
@@ -160,7 +160,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.g, "/mod/local/very/deep/hierarchy");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(root_very_deep_hierarchy) {
     std::cout << "*** /root/very/deep/hierarchy" << std::endl;
@@ -169,7 +169,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.g, "/root/very/deep/hierarchy");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(oneUp_very_deep_hierarchy) {
     std::cout << "*** ../oneUp/very/deep/hierarchy" << std::endl;
@@ -178,7 +178,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.g, "/oneUp/very/deep/hierarchy");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(extra_slashes_everywhere) {
     std::cout << "*** //extra//slashes////everywhere///" << std::endl;
@@ -195,7 +195,7 @@ namespace Tests::testHierarchyModifyingGroup {
     BOOST_CHECK_NO_THROW((app.testModule.g = {&app.testModule, "/extra/slashes/everywhere", "No extra slash"}));
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(twoUp) {
     std::cout << "*** twoUp" << std::endl;
@@ -204,7 +204,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.extraHierarchy.g, "/twoUp");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(hierarchy_with_dots_anywhere_also_single_dots) {
     std::cout << "*** hierarchy/with/../dots/../../anywhere/./also/./single/./dots/.." << std::endl;
@@ -215,7 +215,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.g, "/mod/anywhere/also/single");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(dot) {
     std::cout << "*** ." << std::endl;
@@ -224,7 +224,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.g, "/mod");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(dot_at_end) {
     std::cout << "*** dot/at/end/." << std::endl;
@@ -233,7 +233,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.g, "/mod/dot/at/end");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(MoveToRootFromHidden) {
     std::cout << "*** MoveToRootFromHidden" << std::endl;
@@ -244,7 +244,7 @@ namespace Tests::testHierarchyModifyingGroup {
     check(app, app.testModule.g, "/MoveToRootFromHidden");
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   struct TestApplicationEmpty : public ctk::Application {
     TestApplicationEmpty() : Application("testSuite") {}
@@ -256,7 +256,7 @@ namespace Tests::testHierarchyModifyingGroup {
     } testModule{this, "TestModule", "The test module"};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(bad_path_exception) {
     std::cout << "*** bad_path_exception" << std::endl;
@@ -267,6 +267,6 @@ namespace Tests::testHierarchyModifyingGroup {
         TestGroup tg(&app.testModule, "/somthing/less/../../../obvious", "This is also not allowed"), ctk::logic_error);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace Tests::testHierarchyModifyingGroup

@@ -214,7 +214,7 @@ namespace ChimeraTK {
     bool _finalised{false};
   };
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename... ACCESSORTYPES>
   void UserInputValidator::add(
@@ -233,7 +233,7 @@ namespace ChimeraTK {
     });
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType, template<typename> typename Accessor>
   void UserInputValidator::setFallback(Accessor<UserType>& accessor, UserType value) {
@@ -248,7 +248,7 @@ namespace ChimeraTK {
     pv->fallbackValue[0] = value;
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType, template<typename> typename Accessor>
   void UserInputValidator::setFallback(Accessor<UserType>& accessor, std::vector<UserType> value) {
@@ -262,7 +262,7 @@ namespace ChimeraTK {
     }
     pv->fallbackValue = value;
   }
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType, template<typename> typename Accessor>
   void UserInputValidator::addAccessorIfNeeded(Accessor<UserType>& accessor) {
@@ -274,7 +274,7 @@ namespace ChimeraTK {
       _variableMap[accessor.getId()] = std::make_shared<Variable<UserType, Accessor>>(accessor);
     }
   }
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType, template<typename> typename Accessor>
   UserInputValidator::Variable<UserType, Accessor>::Variable(Accessor<UserType>& validatedAaccessor)
@@ -294,7 +294,7 @@ namespace ChimeraTK {
     lastAcceptedValue.set_capacity(1);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType, template<typename> typename Accessor>
   void UserInputValidator::Variable<UserType, Accessor>::reject(RejectionType type) {
@@ -325,7 +325,7 @@ namespace ChimeraTK {
     }
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename UserType, template<typename> typename Accessor>
   void UserInputValidator::Variable<UserType, Accessor>::accept() {
     if constexpr(std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInput<UserType>>::value ||
@@ -340,7 +340,7 @@ namespace ChimeraTK {
       lastAcceptedValue.push_back(savedValue);
     }
   }
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
   template<typename UserType, template<typename> typename Accessor>
   void UserInputValidator::Variable<UserType, Accessor>::setHistorySize(std::size_t size) {
@@ -348,6 +348,6 @@ namespace ChimeraTK {
     lastAcceptedValue.set_capacity(historyLength);
   }
 
-  /*********************************************************************************************************************/
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK

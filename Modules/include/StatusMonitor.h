@@ -35,9 +35,9 @@ For more info see \ref statusmonitordoc
 
 namespace ChimeraTK {
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Declaration of MonitorBase **************************************************************************************/
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   struct MonitorBase : ApplicationModule {
     // make constructors protected not to allow of instantiancion of this object - this is just a base class for other monitors
    protected:
@@ -58,9 +58,9 @@ namespace ChimeraTK {
     void setStatus(StatusOutput::Status newStatus);
   };
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Declaration of MaxMonitor ***************************************************************************************/
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Module for status monitoring depending on a maximum threshold value*/
   template<typename T>
@@ -95,9 +95,9 @@ namespace ChimeraTK {
     void mainLoop() override;
   };
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Declaration of MinMonitor ***************************************************************************************/
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Module for status monitoring depending on a minimum threshold value*/
   template<typename T>
@@ -127,9 +127,9 @@ namespace ChimeraTK {
     void mainLoop() override;
   };
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Declaration of RangeMonitor *************************************************************************************/
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /** Module for status monitoring depending on range of threshold values.
    * As long as a monitored value is in the range defined by user it goes
@@ -173,9 +173,9 @@ namespace ChimeraTK {
     void mainLoop() override;
   };
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Declaration of ExactMonitor *************************************************************************************/
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
   /**
    *  Module for status monitoring of an exact value.
@@ -230,13 +230,13 @@ namespace ChimeraTK {
     void mainLoop() override;
   };
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Implementation starts here **************************************************************************************/
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Implementation of MaxMonitor ************************************************************************************/
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename T>
   MaxMonitor<T>::MaxMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& parameterPath, const std::string& description,
@@ -244,7 +244,7 @@ namespace ChimeraTK {
   : MaxMonitor(owner, inputPath, outputPath, parameterPath + "/upperWarningThreshold",
         parameterPath + "/upperFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename T>
   MaxMonitor<T>::MaxMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& warningThresholdPath, const std::string& faultThresholdPath, const std::string& disablePath,
@@ -255,7 +255,7 @@ namespace ChimeraTK {
     warningThreshold(this, warningThresholdPath, "", "Warning threshold to compare with", parameterTags),
     faultThreshold(this, faultThresholdPath, "", "Fault threshold to compare with", parameterTags) {}
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename T>
   void MaxMonitor<T>::mainLoop() {
     // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
@@ -278,9 +278,9 @@ namespace ChimeraTK {
     }
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Implementation of MinMonitor ************************************************************************************/
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename T>
   MinMonitor<T>::MinMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& parameterPath, const std::string& description,
@@ -288,7 +288,7 @@ namespace ChimeraTK {
   : MinMonitor(owner, inputPath, outputPath, parameterPath + "/lowerWarningThreshold",
         parameterPath + "/lowerFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename T>
   MinMonitor<T>::MinMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& warningThresholdPath, const std::string& faultThresholdPath, const std::string& disablePath,
@@ -299,7 +299,7 @@ namespace ChimeraTK {
     warningThreshold(this, warningThresholdPath, "", "Warning threshold to compare with", parameterTags),
     faultThreshold(this, faultThresholdPath, "", "Fault threshold to compare with", parameterTags) {}
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename T>
   void MinMonitor<T>::mainLoop() {
     // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
@@ -322,9 +322,9 @@ namespace ChimeraTK {
     }
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Implementation of RangeMonitor **********************************************************************************/
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename T>
   RangeMonitor<T>::RangeMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& parameterPath, const std::string& description,
@@ -333,7 +333,7 @@ namespace ChimeraTK {
         parameterPath + "/upperWarningThreshold", parameterPath + "/lowerFaultThreshold",
         parameterPath + "/upperFaultThreshold", parameterPath + "/disable", description, outputTags, parameterTags) {}
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename T>
   RangeMonitor<T>::RangeMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& warningLowerThresholdPath, const std::string& warningUpperThresholdPath,
@@ -348,7 +348,7 @@ namespace ChimeraTK {
     faultLowerThreshold(this, faultLowerThresholdPath, "", "Lower fault threshold to compare with", parameterTags),
     faultUpperThreshold(this, faultUpperThresholdPath, "", "Upper fault threshold to compare with", parameterTags) {}
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename T>
   void RangeMonitor<T>::mainLoop() {
     // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
@@ -374,9 +374,9 @@ namespace ChimeraTK {
     }
   }
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   /* Implementation of ExactMonitor **********************************************************************************/
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename T>
   ExactMonitor<T>::ExactMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& parameterPath, const std::string& description,
@@ -384,7 +384,7 @@ namespace ChimeraTK {
   : ExactMonitor(owner, inputPath, outputPath, parameterPath + "/requiredValue", parameterPath + "/disable",
         description, outputTags, parameterTags) {}
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename T>
   ExactMonitor<T>::ExactMonitor(ModuleGroup* owner, const std::string& inputPath, const std::string& outputPath,
       const std::string& requiredValuePath, const std::string& disablePath, const std::string& description,
@@ -393,7 +393,7 @@ namespace ChimeraTK {
     watch(this, inputPath, "", "Value to monitor"),
     requiredValue(this, requiredValuePath, "", "Value to compare with", parameterTags) {}
 
-  /*******************************************************************************************************************/
+  /********************************************************************************************************************/
   template<typename T>
   void ExactMonitor<T>::mainLoop() {
     // If there is a change either in value monitored or in requiredValue, the status is re-evaluated
