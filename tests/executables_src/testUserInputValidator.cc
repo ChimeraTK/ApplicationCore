@@ -670,6 +670,7 @@ namespace Tests::testUserInputValidator {
       if(++retry < 100) {
         goto repeat;
       }
+      BOOST_ERROR("The wanted 'likely' scenario could not be observed, only the unwanted 'unlikely'.");
     }
     BOOST_TEST(!upstrIn.readLatest());
     BOOST_TEST(downstrIn == 5);
