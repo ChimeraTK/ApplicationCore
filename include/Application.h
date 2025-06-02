@@ -295,7 +295,7 @@ namespace ChimeraTK {
     friend class MetaDataPropagatingRegisterDecorator; // needs to access circularNetworkInvalidityCounters
     friend class ApplicationModule;                    // needs to access circularNetworkInvalidityCounters
     friend struct detail::CircularDependencyDetector;
-    friend struct ConfigReader; // needs access to _configReader to replace it eventually
+    friend class ConfigReader; // needs access to _configReader to replace it eventually
 
     VersionNumber getCurrentVersionNumber() const override {
       throw ChimeraTK::logic_error("getCurrentVersionNumber() called on the application. This is probably "
