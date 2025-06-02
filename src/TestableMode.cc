@@ -8,7 +8,7 @@
 
 namespace ChimeraTK::detail {
 
-  std::shared_timed_mutex TestableMode::_mutex;
+  boost::shared_mutex TestableMode::_mutex;
 
   /********************************************************************************************************************/
 
@@ -20,7 +20,7 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
-  bool TestableMode::Lock::tryLockFor(std::chrono::seconds timeout, bool shared) {
+  bool TestableMode::Lock::tryLockFor(boost::chrono::seconds timeout, bool shared) {
     assert(!_ownsLock);
     _isShared = shared;
     if(shared) {
@@ -75,6 +75,15 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
+  bool TestableMode::testLockExclusive() const {
+    if(not _enabled) {
+      return false;
+    }
+    return getLockObject().ownsLockExclusive();
+  }
+
+  /********************************************************************************************************************/
+
   namespace {
     /// This is a trick to make sure the exception is never caught, not even by the BOOST test framework.
     void terminateTestStalled() {
@@ -108,7 +117,7 @@ namespace ChimeraTK::detail {
     // obtain the lock
     boost::thread::id lastSeen_lastOwner = _lastMutexOwner;
   repeatTryLock:
-    auto success = getLockObject().tryLockFor(std::chrono::seconds(30), shared);
+    auto success = getLockObject().tryLockFor(boost::chrono::seconds(30), shared);
     boost::thread::id currentLastOwner = _lastMutexOwner;
     if(!success) {
       if(currentLastOwner != lastSeen_lastOwner) {
