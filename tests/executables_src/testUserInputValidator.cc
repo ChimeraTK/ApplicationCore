@@ -17,7 +17,7 @@ namespace Tests::testUserInputValidator {
   namespace ctk = ChimeraTK;
 
   /********************************************************************************************************************/
-  /* Test module with a single validated input, used stand alone or as a downstream module *****************************/
+  /* Test module with a single validated input, used stand alone or as a downstream module */
   /********************************************************************************************************************/
 
   struct ModuleA : public ctk::ApplicationModule {
@@ -45,7 +45,7 @@ namespace Tests::testUserInputValidator {
   };
 
   /********************************************************************************************************************/
-  /* Variant of ModuleA with a second input ****************************************************************************/
+  /* Variant of ModuleA with a second input */
   /********************************************************************************************************************/
 
   struct ModuleAwithSecondInput : public ModuleA {
@@ -63,7 +63,7 @@ namespace Tests::testUserInputValidator {
   };
 
   /********************************************************************************************************************/
-  /* Test module with a single validated input and one output for connection to another validated input ****************/
+  /* Test module with a single validated input and one output for connection to another validated input */
   /********************************************************************************************************************/
 
   struct UpstreamSingleOut : public ctk::ApplicationModule {
@@ -89,7 +89,7 @@ namespace Tests::testUserInputValidator {
     }
   };
   /********************************************************************************************************************/
-  /* Test module with a single validated input and two outputs for connection to another validated input ***************/
+  /* Test module with a single validated input and two outputs for connection to another validated input */
   /********************************************************************************************************************/
 
   struct UpstreamTwinOut : public ctk::ApplicationModule {
@@ -120,7 +120,7 @@ namespace Tests::testUserInputValidator {
   };
 
   /********************************************************************************************************************/
-  /* Test cases ********************************************************************************************************/
+  /* Test cases */
   /********************************************************************************************************************/
 
   BOOST_AUTO_TEST_CASE(testSingleVariable) {
@@ -667,7 +667,7 @@ namespace Tests::testUserInputValidator {
       BOOST_TEST(upstrIn.readLatest());
       BOOST_TEST(midstreamIn == 6);
       BOOST_TEST(upstrIn == 5);
-      if(++retry < 10) {
+      if(++retry < 100) {
         goto repeat;
       }
     }
