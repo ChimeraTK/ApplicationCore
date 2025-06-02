@@ -55,6 +55,13 @@ namespace ChimeraTK::detail {
     [[nodiscard]] bool testLock() const;
 
     /**
+     * Test if the testable mode mutex is locked in exclusive mode by the current thread.
+     *
+     * This function should generally not be used in user code.
+     */
+    [[nodiscard]] bool testLockExclusive() const;
+
+    /**
      * Check whether set() can be called or it would throw due to no data in the queues.
      */
     [[nodiscard]] bool canStep() const { return _counter != 0; }
@@ -220,7 +227,7 @@ namespace ChimeraTK::detail {
      * static. The static storage duration presents no problem in either case,
      * since there can only be one single instance of Application at a time (see
      * ApplicationBase constructor). */
-    static std::shared_timed_mutex _mutex;
+    static boost::shared_mutex _mutex;
 
     /**
      * Map of unique IDs to a VariableDescriptor holding information about Variables
@@ -267,9 +274,10 @@ namespace ChimeraTK::detail {
      */
     class Lock {
      public:
-      [[nodiscard]] bool tryLockFor(std::chrono::seconds timeout, bool shared);
+      [[nodiscard]] bool tryLockFor(boost::chrono::seconds timeout, bool shared);
       void unlock();
       [[nodiscard]] bool ownsLock() const { return _ownsLock; }
+      [[nodiscard]] bool ownsLockExclusive() const { return _ownsLock && !_isShared; }
       ~Lock();
 
      private:
