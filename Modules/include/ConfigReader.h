@@ -110,7 +110,8 @@ namespace ChimeraTK {
   Application::defineConnections() function by using the
    *  ConfigReader::get() function.
    */
-  struct ConfigReader : ApplicationModule {
+  class ConfigReader : public ApplicationModule {
+   public:
     ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
         const std::unordered_set<std::string>& tags = {});
     ~ConfigReader() override;
