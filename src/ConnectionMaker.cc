@@ -989,8 +989,8 @@ namespace ChimeraTK {
             return consumer.getType() == NodeType::Device &&
                 consumer.getTags().contains(ChimeraTK::SystemTags::reverseRecovery);
           });
-          network.consumers.remove(*reverseConsumer);
           network.feeder = *reverseConsumer;
+          network.consumers.remove(*reverseConsumer);
         }
         else {
           network.feeder = VariableNetworkNode(network.valueType, true, network.valueLength);
