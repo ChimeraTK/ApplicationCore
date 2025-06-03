@@ -55,13 +55,6 @@ namespace ChimeraTK::detail {
     [[nodiscard]] bool testLock() const;
 
     /**
-     * Test if the testable mode mutex is locked in exclusive mode by the current thread.
-     *
-     * This function should generally not be used in user code.
-     */
-    [[nodiscard]] bool testLockExclusive() const;
-
-    /**
      * Check whether set() can be called or it would throw due to no data in the queues.
      */
     [[nodiscard]] bool canStep() const { return _counter != 0; }
@@ -227,7 +220,19 @@ namespace ChimeraTK::detail {
      * static. The static storage duration presents no problem in either case,
      * since there can only be one single instance of Application at a time (see
      * ApplicationBase constructor). */
-    static boost::shared_mutex _mutex;
+    static std::shared_timed_mutex _mutex;
+
+    /**
+     * This additional mutex is only there to eliminate a false positive in TSAN:
+     * https://github.com/llvm/llvm-project/issues/142370
+     *
+     * Theis additional mutex is not "timed" so TSAN properly recognises it. It will be only locked after the timed
+     * _mutex has been locked successfully, so that it will always succeed in locking immediately (without blocking).
+     * This should add minimal overhead while fixing the TSAN false positive.
+     *
+     * Using a boost::shared_mutex instead had severe performance issues.
+     */
+    static std::shared_mutex _mutex2;
 
     /**
      * Map of unique IDs to a VariableDescriptor holding information about Variables
@@ -274,10 +279,9 @@ namespace ChimeraTK::detail {
      */
     class Lock {
      public:
-      [[nodiscard]] bool tryLockFor(boost::chrono::seconds timeout, bool shared);
+      [[nodiscard]] bool tryLockFor(std::chrono::seconds timeout, bool shared);
       void unlock();
       [[nodiscard]] bool ownsLock() const { return _ownsLock; }
-      [[nodiscard]] bool ownsLockExclusive() const { return _ownsLock && !_isShared; }
       ~Lock();
 
      private:

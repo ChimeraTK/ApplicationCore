@@ -8,7 +8,8 @@
 
 namespace ChimeraTK::detail {
 
-  boost::shared_mutex TestableMode::_mutex;
+  std::shared_timed_mutex TestableMode::_mutex;
+  std::shared_mutex TestableMode::_mutex2;
 
   /********************************************************************************************************************/
 
@@ -20,14 +21,20 @@ namespace ChimeraTK::detail {
 
   /********************************************************************************************************************/
 
-  bool TestableMode::Lock::tryLockFor(boost::chrono::seconds timeout, bool shared) {
+  bool TestableMode::Lock::tryLockFor(std::chrono::seconds timeout, bool shared) {
     assert(!_ownsLock);
     _isShared = shared;
     if(shared) {
       _ownsLock = _mutex.try_lock_shared_for(timeout);
+      if(_ownsLock) {
+        _mutex2.lock_shared();
+      }
       return _ownsLock;
     }
     _ownsLock = _mutex.try_lock_for(timeout);
+    if(_ownsLock) {
+      _mutex2.lock();
+    }
     return _ownsLock;
   }
 
@@ -37,9 +44,11 @@ namespace ChimeraTK::detail {
     assert(_ownsLock);
     _ownsLock = false;
     if(_isShared) {
+      _mutex2.unlock_shared();
       _mutex.unlock_shared();
     }
     else {
+      _mutex2.unlock();
       _mutex.unlock();
     }
   }
@@ -71,15 +80,6 @@ namespace ChimeraTK::detail {
       return false;
     }
     return getLockObject().ownsLock();
-  }
-
-  /********************************************************************************************************************/
-
-  bool TestableMode::testLockExclusive() const {
-    if(not _enabled) {
-      return false;
-    }
-    return getLockObject().ownsLockExclusive();
   }
 
   /********************************************************************************************************************/
@@ -117,7 +117,7 @@ namespace ChimeraTK::detail {
     // obtain the lock
     boost::thread::id lastSeen_lastOwner = _lastMutexOwner;
   repeatTryLock:
-    auto success = getLockObject().tryLockFor(boost::chrono::seconds(30), shared);
+    auto success = getLockObject().tryLockFor(std::chrono::seconds(30), shared);
     boost::thread::id currentLastOwner = _lastMutexOwner;
     if(!success) {
       if(currentLastOwner != lastSeen_lastOwner) {
