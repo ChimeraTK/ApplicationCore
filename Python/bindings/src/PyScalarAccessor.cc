@@ -268,6 +268,18 @@ namespace ChimeraTK {
               AccessorTypeTag<ScalarOutputPushRB>{}, type, &owner, name, unit, description);
         },
         py::return_value_policy::reference, "");
+
+    /**
+     * ScalarOutputReverseRecovery
+     */
+    m.def(
+        "ScalarOutputReverseRecovery",
+        [](ChimeraTK::DataType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            const std::string& description) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
+              AccessorTypeTag<ScalarOutputReverseRecovery>{}, type, &owner, name, unit, description);
+        },
+        py::return_value_policy::reference, "");
   }
 
   /********************************************************************************************************************/
