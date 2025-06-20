@@ -288,6 +288,18 @@ namespace ChimeraTK {
               AccessorTypeTag<ArrayOutputPushRB>{}, type, &owner, name, unit, nElements, description);
         },
         py::return_value_policy::reference, "");
+
+    /**
+     *  ArrayOutputReverseRecovery
+     */
+    m.def(
+        "ArrayOutputReverseRecovery",
+        [](ChimeraTK::DataType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            size_t nElements, const std::string& description) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyArrayAccessor>(
+              AccessorTypeTag<ArrayOutputReverseRecovery>{}, type, &owner, name, unit, nElements, description);
+        },
+        py::return_value_policy::reference, "");
   }
 
   /********************************************************************************************************************/
