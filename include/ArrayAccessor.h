@@ -123,7 +123,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  /** Deprecated, do not use. Use ArrayOutpuPushRB instead (works identically). */
+  /** Deprecated, do not use. Use ArrayOutputPushRB instead (works identically). */
   template<typename UserType>
   struct ArrayOutputRB : public ArrayAccessor<UserType> {
     [[deprecated]] ArrayOutputRB(Module* owner, const std::string& name, std::string unit, size_t nElements,
@@ -136,8 +136,8 @@ namespace ChimeraTK {
 
   template<typename UserType>
   struct ArrayOutputReverseRecovery : public ArrayAccessor<UserType> {
-    [[deprecated]] ArrayOutputReverseRecovery(Module* owner, const std::string& name, std::string unit,
-        size_t nElements, const std::string& description, const std::unordered_set<std::string>& tags = {});
+    ArrayOutputReverseRecovery(Module* owner, const std::string& name, std::string unit, size_t nElements,
+        const std::string& description, const std::unordered_set<std::string>& tags = {});
     ArrayOutputReverseRecovery() = default;
     using ArrayAccessor<UserType>::operator=;
   };
