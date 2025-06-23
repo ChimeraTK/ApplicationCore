@@ -217,6 +217,8 @@ namespace ChimeraTK {
     size_t _validationDepth{0};
     ApplicationModule* _module{nullptr};
     bool _finalised{false};
+
+    friend class PyUserInputValidator;
   };
 
   /********************************************************************************************************************/
