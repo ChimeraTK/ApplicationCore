@@ -71,6 +71,10 @@ namespace ChimeraTK {
       return;
     }
 
+    if(_module == nullptr) {
+      throw ChimeraTK::logic_error("UserInputValidator was finalised without any call to add()");
+    }
+
     for(auto& accessor : _module->getAccessorListRecursive()) {
       if(accessor.getDirection() == VariableDirection{VariableDirection::feeding, true} &&
           accessor.getModel().getTags().count(std::string(UserInputValidator::tagValidatedVariable)) > 0) {
