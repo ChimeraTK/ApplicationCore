@@ -1,0 +1,7 @@
+<configuration>
+    <module name="PythonModules">
+        <module name="AppModule">
+            <variable name="path" type="string" value="testPythonUserInputValidator" />
+        </module>
+    </module>
+</configuration>
