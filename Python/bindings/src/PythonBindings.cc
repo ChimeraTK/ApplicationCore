@@ -132,6 +132,19 @@ namespace ChimeraTK {
         .def("__repr__", [](VersionNumber& v) { return "VersionNumber(" + std::string(v) + ")"; });
 
     /**
+     * ChimeraTK::Boolean
+     */
+    py::class_<Boolean>(m, "Boolean")
+        .def(py::init<>())
+        .def(py::init<bool>())
+        // NOLINTBEGIN(misc-redundant-expression)
+        .def(py::self == py::self)
+        .def(py::self != py::self)
+        // NOLINTEND(misc-redundant-expression)
+        .def("__bool__", [](Boolean& v) { return bool(v); })
+        .def("__repr__", [](Boolean& v) { return "Boolean(" + std::to_string(bool(v)) + ")"; });
+
+    /**
      * TransferElementID
      */
     py::class_<TransferElementID>(m, "TransferElementID")
