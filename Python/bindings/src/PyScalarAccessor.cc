@@ -142,14 +142,6 @@ namespace ChimeraTK {
             "Read the latest value, discarding any other update since the last read if present.\n\nOtherwise this "
             "function is identical to readNonBlocking(), i.e. it will never wait for new values and it will return "
             "whether a new value was available if AccessMode::wait_for_new_data is set.")
-        .def("write", &PyScalarAccessor::write,
-            "Write the data to device.\n\nThe return value is true, old data was lost on the write transfer (e.g. due "
-            "to an buffer overflow). In case of an unbuffered write transfer, the return value will always be false.")
-        .def("writeDestructively", &PyScalarAccessor::writeDestructively,
-            "Just like write(), but allows the implementation to destroy the content of the user buffer in the "
-            "process.\n\nThis is an optional optimisation, hence there is a default implementation which just calls "
-            "the normal doWriteTransfer(). In any case, the application must expect the user buffer of the "
-            "TransferElement to contain undefined data after calling this function.")
         .def("getName", &PyScalarAccessor::getName, "Returns the name that identifies the process variable.")
         .def("getUnit", &PyScalarAccessor::getUnit,
             "Returns the engineering unit.\n\nIf none was specified, it will default to ' n./ a.'")
