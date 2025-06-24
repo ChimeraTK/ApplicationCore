@@ -17,7 +17,8 @@ namespace ChimeraTK {
    public:
     virtual ~PyTransferElementBase() = default;
 
-    virtual TransferElementAbstractor getTE() const = 0;
+    virtual const TransferElementAbstractor& getTE() const = 0;
+    virtual TransferElementAbstractor& getTE() = 0;
 
     static void bind(py::module& mod);
 
@@ -69,11 +70,19 @@ namespace ChimeraTK {
 
     // Note: using this function will bypass code added in ApplicationCore's ScalarAccessor/ArrayAccessor classes and
     // instead run functions as defined in DeviceAccess. Do not use for write operations.
-    TransferElementAbstractor getTE() const final {
+    [[nodiscard]] const TransferElementAbstractor& getTE() const final {
       const auto* self = static_cast<const DerivedAccessor*>(this);
-      TransferElementAbstractor te;
-      std::visit([&](auto& acc) { te.replace(acc); }, self->_accessor);
-      return te;
+      TransferElementAbstractor* te;
+      std::visit([&](auto& acc) { te = &acc; }, self->_accessor);
+      return *te;
+    }
+
+    // non-const version which can be used to modify the original TransferElementAbstractor, e.g. for decoration
+    [[nodiscard]] TransferElementAbstractor& getTE() final {
+      const auto* self = static_cast<const DerivedAccessor*>(this);
+      TransferElementAbstractor* te;
+      std::visit([&](auto& acc) { te = &acc; }, self->_accessor);
+      return *te;
     }
 
     // Pass the actual accessor type (e.g. ScalarAccessor<int>) as argument to the given callable

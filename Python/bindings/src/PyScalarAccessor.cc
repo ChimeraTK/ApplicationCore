@@ -123,7 +123,7 @@ namespace ChimeraTK {
 
   void PyScalarAccessor::bind(py::module& m) {
     // strictly speaking, py::nodelete is not necessary since we hand out instances only via factory function,
-    // but leave it here for consistentcy
+    // but leave it here for consistency
     py::class_<PyScalarAccessor, PyTransferElementBase, std::unique_ptr<PyScalarAccessor, py::nodelete>> scalaracc(
         m, "ScalarAccessor", py::buffer_protocol());
     scalaracc.def(py::init<>())
