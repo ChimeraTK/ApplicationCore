@@ -38,15 +38,11 @@ namespace ChimeraTK {
     }
     bool readNonBlocking() {
       py::gil_scoped_release release;
-      bool rv;
-      visit([&](auto& acc) { rv = acc.readNonBlocking(); });
-      return rv;
+      return visit([&](auto& acc) { return acc.readNonBlocking(); });
     }
     bool readLatest() {
       py::gil_scoped_release release;
-      bool rv;
-      visit([&](auto& acc) { rv = acc.readLatest(); });
-      return rv;
+      return visit([&](auto& acc) { return acc.readLatest(); });
     }
     void write() {
       py::gil_scoped_release release;
@@ -87,9 +83,9 @@ namespace ChimeraTK {
 
     // Pass the actual accessor type (e.g. ScalarAccessor<int>) as argument to the given callable
     template<typename CALLABLE>
-    void visit(CALLABLE fn) const {
+    auto visit(CALLABLE fn) const {
       const auto* self = static_cast<const DerivedAccessor*>(this);
-      std::visit(fn, self->_accessor);
+      return std::visit(fn, self->_accessor);
     }
   };
 
