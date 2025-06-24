@@ -76,6 +76,7 @@ namespace ChimeraTK {
       std::visit([&](auto& acc) { te = &acc; }, self->_accessor);
       return *te;
     }
+
     // non-const version which can be used to modify the original TransferElementAbstractor, e.g. for decoration
     [[nodiscard]] TransferElementAbstractor& getTE() final {
       const auto* self = static_cast<const DerivedAccessor*>(this);

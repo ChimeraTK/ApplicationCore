@@ -15,6 +15,7 @@
 #include "PyReadAnyGroup.h"
 #include "PyScalarAccessor.h"
 #include "PyVariableGroup.h"
+#include "PyVoidAccessor.h"
 
 #include <ChimeraTK/DataConsistencyGroup.h>
 #include <ChimeraTK/SupportedUserTypes.h>
@@ -203,6 +204,11 @@ namespace ChimeraTK {
      * Scalar accessors
      */
     PyScalarAccessor::bind(m);
+
+    /**
+     * Void accessors
+     */
+    PyVoidAccessor::bind(m);
 
     /**
      * Array accessors
