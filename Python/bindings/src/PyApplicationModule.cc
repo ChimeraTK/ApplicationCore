@@ -44,7 +44,9 @@ namespace ChimeraTK {
       _myThread.attr("start")();
     }
     // must release GIL before acquiring testable mode lock, to avoid deadlock
-    Application::getInstance().getTestableMode().lock("acquireForPythonModuleStart", true);
+    // lock must be exclusive, since this is executed in the main thread (= test thread). The module thread is launched
+    // above in the py::eval() call.
+    Application::getInstance().getTestableMode().lock("acquireForPythonModuleStart", false);
   }
 
   /********************************************************************************************************************/
