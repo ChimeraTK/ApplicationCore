@@ -195,6 +195,11 @@ namespace ChimeraTK {
       std::string errorMessage;
     };
 
+    Validator* addValidator(const std::function<bool(void)>& isValidFunction, const std::string& errorMessage);
+
+    template<typename UserType, template<typename> typename Accessor>
+    void registerAccessorWithValidator(Accessor<UserType>& accessor, Validator* validator);
+
     // List of Validator objects
     std::list<Validator> _validators; // must not use std::vector as resizing it invalidates pointers to objects
 
@@ -208,11 +213,19 @@ namespace ChimeraTK {
     std::function<void(const std::string&)> _errorFunction{
         [](const std::string& m) { logger(Logger::Severity::warning, "UserInputValidator") << m; }};
 
-    std::unordered_set<ChimeraTK::TransferElementID> _downstreamInvalidatingReturnChannels{};
+    std::unordered_set<ChimeraTK::TransferElementID> _downstreamInvalidatingReturnChannels;
     size_t _validationDepth{0};
     ApplicationModule* _module{nullptr};
     bool _finalised{false};
   };
+
+  /********************************************************************************************************************/
+
+  template<typename UserType, template<typename> typename Accessor>
+  void UserInputValidator::registerAccessorWithValidator(Accessor<UserType>& accessor, Validator* validator) {
+    addAccessorIfNeeded(accessor);
+    _validatorMap[accessor.getId()].push_back(validator);
+  }
 
   /********************************************************************************************************************/
 
@@ -223,14 +236,10 @@ namespace ChimeraTK {
     static_assert(boost::fusion::size(accessorList) > 0, "Must specify at least one accessor!");
     assert(isValidFunction != nullptr);
 
-    // create validator and store in list
-    _validators.emplace_back(isValidFunction, errorMessage);
+    auto* validator = addValidator(isValidFunction, errorMessage);
 
     // create map of accessors to validators, also add accessors/variables to list
-    boost::fusion::for_each(accessorList, [&](auto& accessor) {
-      addAccessorIfNeeded(accessor);
-      _validatorMap[accessor.getId()].push_back(&_validators.back());
-    });
+    boost::fusion::for_each(accessorList, [&](auto& accessor) { registerAccessorWithValidator(accessor, validator); });
   }
 
   /********************************************************************************************************************/
