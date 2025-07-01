@@ -43,6 +43,12 @@ namespace ChimeraTK {
     /** Move assignment operator */
     Module& operator=(Module&& other) noexcept;
 
+    /**
+     * Hook function called on all Modules of an Application after the Application constructor is complete but before
+     * the PV connections are being finalised.
+     */
+    virtual void postConstruct() {}
+
     /** Prepare the execution of the module. This function is called before any module is started (including internal
      *  modules like FanOuts) and before the initial values of the variables are pushed into the queues. Reading and
      *  writing variables at this point may result in undefined behaviour. */
