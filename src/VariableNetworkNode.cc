@@ -274,27 +274,36 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void VariableNetworkNode::setMetaData(
-      const std::string& name, const std::string& unit, const std::string& description) const {
+  void VariableNetworkNode::setMetaData(const std::optional<std::string>& name, const std::optional<std::string>& unit,
+      const std::optional<std::string>& description, const std::optional<std::unordered_set<std::string>>& tags) {
     if(getType() != NodeType::Application) {
       throw ChimeraTK::logic_error("Calling VariableNetworkNode::updateMetaData() is not allowed for "
                                    "non-application type nodes.");
     }
-    pdata->name = name;
-    pdata->qualifiedName = pdata->owningModule->getQualifiedName() + "/" + name;
-    pdata->unit = unit;
-    pdata->description = description;
-  }
 
-  /********************************************************************************************************************/
+    bool needModelUpdate = getModel().isValid() && name.has_value();
 
-  void VariableNetworkNode::setMetaData(const std::string& name, const std::string& unit,
-      const std::string& description, const std::unordered_set<std::string>& tags) const {
-    if(getType() == NodeType::invalid) {
-      return;
+    if(needModelUpdate) {
+      getModel().removeNode(*this);
     }
-    setMetaData(name, unit, description);
-    pdata->tags = tags;
+
+    if(name.has_value()) {
+      pdata->name = name.value();
+      pdata->qualifiedName = pdata->owningModule->getQualifiedName() + "/" + name.value();
+    }
+    if(unit.has_value()) {
+      pdata->unit = unit.value();
+    }
+    if(description.has_value()) {
+      pdata->description = description.value();
+    }
+    if(tags.has_value()) {
+      pdata->tags = tags.value();
+    }
+
+    if(needModelUpdate) {
+      registerInModel();
+    }
   }
 
   /********************************************************************************************************************/
@@ -446,6 +455,44 @@ namespace ChimeraTK {
         setAppAccessorImplementation<UserType>(impl);
       }
     });
+  }
+
+  /********************************************************************************************************************/
+
+  void VariableNetworkNode::registerInModel() {
+    auto* owner = getOwningModule();
+    auto name = getName();
+
+    // Since we have to try out the possible owner types via dynamic_cast, the actual code is in this lambda:
+    auto addToOnwer = [&](auto& owner_casted) {
+      auto model = owner_casted.getModel();
+      if(!model.isValid()) {
+        // this happens e.g. for default-constructed owners and their sub-modules
+        return;
+      }
+      auto neighbourDir = model.visit(
+          Model::returnDirectory, Model::getNeighbourDirectory, Model::returnFirstHit(Model::DirectoryProxy{}));
+
+      auto dir = neighbourDir.addDirectoryRecursive(Utilities::getPathName(name));
+      auto var = dir.addVariable(Utilities::getUnqualifiedName(name));
+
+      model.addVariable(var, *this);
+    };
+
+    // Try for all possible module types
+    auto* owner_am = dynamic_cast<ApplicationModule*>(owner);
+    auto* owner_vg = dynamic_cast<VariableGroup*>(owner);
+    if(owner_am) {
+      addToOnwer(*owner_am);
+    }
+    else if(owner_vg) {
+      addToOnwer(*owner_vg);
+    }
+    else {
+      throw ChimeraTK::logic_error("Trying to add " + name + " to " + owner->getQualifiedName() +
+          " which is neither an ApplicationModule nor a VariableGroup, but a " +
+          boost::core::demangled_name(typeid(owner)));
+    }
   }
 
   /********************************************************************************************************************/

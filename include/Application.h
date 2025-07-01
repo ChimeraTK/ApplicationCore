@@ -26,14 +26,11 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   class Module;
-  class AccessorBase;
   class VariableNetwork;
   class TestFacility;
   class DeviceManager;
   class ApplicationModule;
 
-  template<typename UserType>
-  class Accessor;
   template<typename UserType>
   class FanOut;
   template<typename UserType>
@@ -202,9 +199,6 @@ namespace ChimeraTK {
     friend struct detail::TestableMode;
     friend class NetworkVisitor;
     friend class ConnectionMaker;
-
-    template<typename UserType>
-    friend class Accessor;
 
     template<typename UserType>
     friend class ExceptionHandlingDecorator;

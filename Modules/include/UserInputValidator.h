@@ -2,13 +2,12 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "AccessorConcepts.h"
 #include "ArrayAccessor.h"
 #include "ScalarAccessor.h"
 
 #include <boost/circular_buffer.hpp>
 #include <boost/fusion/container.hpp>
-
-#include <iostream>
 
 namespace ChimeraTK {
 
@@ -96,6 +95,14 @@ namespace ChimeraTK {
         const std::string& errorMessage, const std::function<bool(void)>& isValidFunction, ACCESSORTYPES&... accessors);
 
     /**
+     * Alternate signature for add(), accepting an iterable container of accessors instead of individual arguments. This
+     * requires all accessors to be of the same type.
+     */
+    template<std::ranges::input_range R>
+      requires push_input<std::ranges::range_value_t<R>>
+    void add(const std::string& errorMessage, const std::function<bool(void)>& isValidFunction, const R& accessors);
+
+    /**
      * Provide fallback value for the given accessor. This value is used if the validation of the initial value fails,
      * since there is no previous value to revert to in that case.
      *
@@ -139,6 +146,12 @@ namespace ChimeraTK {
      * values.
      */
     bool validateAll();
+
+    /**
+     */
+    struct AccessorHook {
+      virtual void onAdd(UserInputValidator& validator) = 0;
+    };
 
    protected:
     static constexpr std::string_view tagValidatedVariable{"__UserInputValidator"};
@@ -246,6 +259,24 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  template<std::ranges::input_range R>
+    requires push_input<std::ranges::range_value_t<R>>
+  void UserInputValidator::add(
+      const std::string& errorMessage, const std::function<bool(void)>& isValidFunction, const R& accessors) {
+    assert(isValidFunction != nullptr);
+
+    // create validator and store in list
+    _validators.emplace_back(isValidFunction, errorMessage);
+
+    // create map of accessors to validators, also add accessors/variables to list
+    for(auto& accessor : accessors) {
+      addAccessorIfNeeded(accessor);
+      _validatorMap[accessor.getId()].push_back(&_validators.back());
+    };
+  }
+
+  /********************************************************************************************************************/
+
   template<typename UserType, template<typename> typename Accessor>
   void UserInputValidator::setFallback(Accessor<UserType>& accessor, UserType value) {
     addAccessorIfNeeded(accessor);
@@ -283,6 +314,12 @@ namespace ChimeraTK {
     if(!_variableMap.count(accessor.getId())) {
       accessor.addTag(std::string(tagValidatedVariable));
       _variableMap[accessor.getId()] = std::make_shared<Variable<UserType, Accessor>>(accessor);
+
+      // Call the AccessorHook::onAdd() if present in the accessor
+      auto hook = boost::dynamic_pointer_cast<AccessorHook>(accessor.getImpl());
+      if(hook) {
+        hook->onAdd(*this);
+      }
     }
   }
   /********************************************************************************************************************/
