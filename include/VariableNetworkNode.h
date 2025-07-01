@@ -72,13 +72,14 @@ namespace ChimeraTK {
     /** Default constructor for an invalid node */
     VariableNetworkNode();
 
-    /** Change meta data (name, unit, description and optionally tags). This
-     * function may only be used on Application-type nodes. If the optional
-     * argument tags is omitted, the tags will not be changed. To clear the
-     *  tags, an empty set can be passed. */
-    void setMetaData(const std::string& name, const std::string& unit, const std::string& description) const;
-    void setMetaData(const std::string& name, const std::string& unit, const std::string& description,
-        const std::unordered_set<std::string>& tags) const;
+    /**
+     * Change meta data (name, unit, description and optionally tags). This function may only be used on
+     * Application-type nodes. If the optional argument tags is omitted, the tags will not be changed. To clear the
+     * tags, an empty set can be passed.
+     */
+    void setMetaData(const std::optional<std::string>& name, const std::optional<std::string>& unit = {},
+        const std::optional<std::string>& description = {},
+        const std::optional<std::unordered_set<std::string>>& tags = {});
 
     /** Clear the owner network of this node. */
     void clearOwner();
@@ -172,6 +173,8 @@ namespace ChimeraTK {
 
     template<typename UserType>
     UserType getConstantValue() const;
+
+    void registerInModel();
 
     // protected:  @todo make protected again (with proper interface extension)
 

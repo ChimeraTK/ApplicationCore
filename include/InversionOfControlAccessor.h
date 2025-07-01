@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #pragma once
 
+#include "Application.h"
 #include "ApplicationModule.h"
 #include "Module.h"
 #include "Utilities.h"
@@ -24,13 +25,14 @@ namespace ChimeraTK {
     /** Unregister at its owner when deleting */
     ~InversionOfControlAccessor();
 
-    /** Change meta data (name, unit, description and optionally tags). This
-     * function may only be used on Application-type nodes. If the optional
-     * argument tags is omitted, the tags will not be changed. To clear the
-     *  tags, an empty set can be passed. */
-    void setMetaData(const std::string& name, const std::string& unit, const std::string& description);
-    void setMetaData(const std::string& name, const std::string& unit, const std::string& description,
-        const std::unordered_set<std::string>& tags);
+    /**
+     * Change meta data (name, unit, description and optionally tags). This function may only be used on
+     * Application-type nodes. If the optional argument tags is omitted, the tags will not be changed. To clear the
+     * tags, an empty set can be passed.
+     */
+    void setMetaData(const std::optional<std::string>& name, const std::optional<std::string>& unit = {},
+        const std::optional<std::string>& description = {},
+        const std::optional<std::unordered_set<std::string>>& tags = {});
 
     /** Add a tag. Valid names for tags only contain alpha-numeric characters
      * (i.e. no spaces and no special characters). */
@@ -56,15 +58,19 @@ namespace ChimeraTK {
     [[nodiscard]] Model::ProcessVariableProxy getModel() const { return _node.getModel(); }
 
    protected:
-    /// complete the description with the full description from the owner
-    [[nodiscard]] std::string completeDescription(EntityOwner* owner, const std::string& description) const;
-
+    /** Constructor, only used by child class accessors */
     InversionOfControlAccessor(Module* owner, const std::string& name, VariableDirection direction, std::string unit,
         size_t nElements, UpdateMode mode, const std::string& description, const std::type_info* valueType,
         const std::unordered_set<std::string>& tags = {});
 
     /** Default constructor creates a dysfunctional accessor (to be assigned with a real accessor later) */
     InversionOfControlAccessor() = default;
+
+    /** complete the description with the full description from the owner */
+    [[nodiscard]] std::string completeDescription(EntityOwner* owner, const std::string& description) const;
+
+    /** Register the variable in the model */
+    void registerInModel();
 
     VariableNetworkNode _node;
   };
@@ -114,17 +120,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename Derived>
-  void InversionOfControlAccessor<Derived>::setMetaData(
-      const std::string& name, const std::string& unit, const std::string& description) {
-    _node.setMetaData(name, unit, completeDescription(getOwner(), description));
-  }
-
-  /********************************************************************************************************************/
-
-  template<typename Derived>
-  void InversionOfControlAccessor<Derived>::setMetaData(const std::string& name, const std::string& unit,
-      const std::string& description, const std::unordered_set<std::string>& tags) {
-    _node.setMetaData(name, unit, completeDescription(getOwner(), description), tags);
+  void InversionOfControlAccessor<Derived>::setMetaData(const std::optional<std::string>& name,
+      const std::optional<std::string>& unit, const std::optional<std::string>& description,
+      const std::optional<std::unordered_set<std::string>>& tags) {
+    std::optional<std::string> description_ = description;
+    if(description.has_value()) {
+      description_ = completeDescription(getOwner(), description.value());
+    }
+    _node.setMetaData(name, unit, description_, tags);
   }
 
   /********************************************************************************************************************/
@@ -207,36 +210,16 @@ namespace ChimeraTK {
     static_assert(std::is_base_of<InversionOfControlAccessor<Derived>, Derived>::value,
         "InversionOfControlAccessor<> must be used in a curiously recurring template pattern!");
 
-    /// @todo FIXME eliminate dynamic_cast and the "lambda trick" by changing owner pointer type
-    auto addToOnwer = [&](auto& owner_casted) {
-      auto model = owner_casted.getModel();
-      if(!model.isValid()) {
-        // this happens e.g. for default-constructed owners and their sub-modules
-        return;
-      }
-      auto neighbourDir = model.visit(
-          Model::returnDirectory, Model::getNeighbourDirectory, Model::returnFirstHit(Model::DirectoryProxy{}));
-
-      auto dir = neighbourDir.addDirectoryRecursive(Utilities::getPathName(name));
-      auto var = dir.addVariable(Utilities::getUnqualifiedName(name));
-
-      model.addVariable(var, _node);
-    };
-    auto* owner_am = dynamic_cast<ApplicationModule*>(owner);
-    auto* owner_vg = dynamic_cast<VariableGroup*>(owner);
-    if(owner_am) {
-      addToOnwer(*owner_am);
-    }
-    else if(owner_vg) {
-      addToOnwer(*owner_vg);
-    }
-    else {
-      throw ChimeraTK::logic_error("Trying to add " + name + " to " + owner->getQualifiedName() +
-          " which is neither an ApplicationModule nor a VariableGroup, but a " +
-          boost::core::demangled_name(typeid(owner)));
-    }
+    registerInModel();
 
     owner->registerAccessor(_node);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename Derived>
+  void InversionOfControlAccessor<Derived>::registerInModel() {
+    _node.registerInModel();
   }
 
   /********************************************************************************************************************/

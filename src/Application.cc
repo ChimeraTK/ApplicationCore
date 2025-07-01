@@ -108,8 +108,9 @@ void Application::initialise() {
     throw ChimeraTK::logic_error("Application::initialise() was already called before.");
   }
 
-  if(!getPVManager()) {
-    throw ChimeraTK::logic_error("Application::initialise() was called without an instance of ChimeraTK::PVManager.");
+  // call postConstruct on all Modules
+  for(auto& module : getSubmoduleListRecursive()) {
+    module->postConstruct();
   }
 
   _cm.setDebugConnections(_enableDebugMakeConnections);
@@ -133,6 +134,10 @@ void Application::optimiseUnmappedVariables(const std::set<std::string>& names) 
 
 void Application::run() {
   assert(!_applicationName.empty());
+
+  if(!getPVManager()) {
+    throw ChimeraTK::logic_error("Application::run() was called without an instance of ChimeraTK::PVManager.");
+  }
 
   if(_testableMode.isEnabled()) {
     if(!_testFacilityRunApplicationCalled) {
