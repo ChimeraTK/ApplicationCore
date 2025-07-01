@@ -286,15 +286,15 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
 
   template<typename UserType, template<typename> typename Accessor>
-  UserInputValidator::Variable<UserType, Accessor>::Variable(Accessor<UserType>& validatedAaccessor)
-  : accessor(validatedAaccessor) {
-    static_assert(std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInputWB<UserType>>::value ||
-            std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInput<UserType>>::value ||
-            std::is_same<Accessor<UserType>, ChimeraTK::ArrayPushInputWB<UserType>>::value ||
-            std::is_same<Accessor<UserType>, ChimeraTK::ArrayPushInput<UserType>>::value,
-        "UserInputValidator can only be used with push-type inputs.");
-    if constexpr(std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInputWB<UserType>>::value ||
-        std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInput<UserType>>::value) {
+  UserInputValidator::Variable<UserType, Accessor>::Variable(Accessor<UserType>& validatedAccessor)
+  : accessor(validatedAccessor) {
+    auto node = static_cast<VariableNetworkNode>(validatedAccessor);
+
+    if(node.getMode() != UpdateMode::push) {
+      throw ChimeraTK::logic_error("UserInputValidator can only be used with push-type inputs.");
+    }
+
+    if constexpr(std::derived_from<Accessor<UserType>, ChimeraTK::ScalarAccessor<UserType>>) {
       fallbackValue.resize(1);
     }
     else {
@@ -310,8 +310,7 @@ namespace ChimeraTK {
     if(type == RejectionType::downstream && !lastAcceptedValue.empty()) {
       lastAcceptedValue.pop_back();
     }
-    if constexpr(std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInput<UserType>>::value ||
-        std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInputWB<UserType>>::value) {
+    if constexpr(std::derived_from<Accessor<UserType>, ChimeraTK::ScalarAccessor<UserType>>) {
       if(lastAcceptedValue.empty()) {
         accessor = fallbackValue[0];
       }
@@ -328,8 +327,7 @@ namespace ChimeraTK {
       }
     }
 
-    if constexpr(std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInputWB<UserType>>::value ||
-        std::is_same<Accessor<UserType>, ChimeraTK::ArrayPushInputWB<UserType>>::value) {
+    if(accessor.isWriteable()) {
       accessor.write();
     }
   }
@@ -337,8 +335,7 @@ namespace ChimeraTK {
   /*********************************************************************************************************************/
   template<typename UserType, template<typename> typename Accessor>
   void UserInputValidator::Variable<UserType, Accessor>::accept() {
-    if constexpr(std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInput<UserType>>::value ||
-        std::is_same<Accessor<UserType>, ChimeraTK::ScalarPushInputWB<UserType>>::value) {
+    if constexpr(std::derived_from<Accessor<UserType>, ChimeraTK::ScalarAccessor<UserType>>) {
       auto savedValue = std::vector<UserType>(1);
       savedValue[0] = accessor;
       lastAcceptedValue.push_back(savedValue);
