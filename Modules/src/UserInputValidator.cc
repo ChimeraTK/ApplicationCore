@@ -10,6 +10,16 @@ namespace ChimeraTK {
 
   /*********************************************************************************************************************/
 
+  UserInputValidator::Validator* UserInputValidator::addValidator(
+      const std::function<bool(void)>& isValidFunction, const std::string& errorMessage) {
+    // create validator and store in list
+    _validators.emplace_back(isValidFunction, errorMessage);
+
+    return &_validators.back();
+  }
+
+  /********************************************************************************************************************/
+
   void UserInputValidator::setErrorFunction(const std::function<void(const std::string&)>& errorFunction) {
     _errorFunction = errorFunction;
   }
