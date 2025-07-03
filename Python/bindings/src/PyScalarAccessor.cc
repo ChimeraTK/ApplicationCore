@@ -105,6 +105,10 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   std::string PyScalarAccessor::repr(py::object& acc) {
+    if(not acc.cast<PyScalarAccessor&>().getTE().isInitialised()) {
+      return "<ScalarAccessor(not initialized)>";
+    }
+
     std::string rep{"<ScalarAccessor(type="};
     rep.append(py::cast<py::object>(py::cast(&acc).attr("getValueType")()).attr("__repr__")().cast<std::string>());
     rep.append(", name=");

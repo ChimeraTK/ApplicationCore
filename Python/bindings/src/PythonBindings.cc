@@ -14,6 +14,7 @@
 #include "PyOwnershipManagement.h"
 #include "PyReadAnyGroup.h"
 #include "PyScalarAccessor.h"
+#include "PyUserInputValidator.h"
 #include "PyVariableGroup.h"
 #include "PyVoidAccessor.h"
 
@@ -234,6 +235,11 @@ namespace ChimeraTK {
      * ConfigReader
      */
     PyConfigReader::bind(m);
+
+    /**
+     * UserInputValidator
+     */
+    PyUserInputValidator::bind(m);
 
     /*
      * Set the main ModuleGroup as an attribute of the bindings module. This is done with a callback to avoid

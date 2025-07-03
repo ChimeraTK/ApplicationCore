@@ -348,4 +348,79 @@ namespace Tests::testPython {
 
   /********************************************************************************************************************/
 
+  struct TestAppUserInputValiador : public ctk::Application {
+    explicit TestAppUserInputValiador(const std::string& name) : ctk::Application(name) {}
+    ~TestAppUserInputValiador() override { shutdown(); }
+  };
+
+  /********************************************************************************************************************/
+
+  BOOST_AUTO_TEST_CASE(testPythonUserInputValidator) {
+    std::cout << "***************************************************************************************" << std::endl;
+    std::cout << "==> testPythonUserInputValidator" << std::endl;
+
+    TestAppUserInputValiador app("testPythonUserInputValidator");
+    ctk::TestFacility tf(app);
+
+    tf.setScalarDefault("/UserInputValidatorTestRunner/in1", 12);
+    tf.setArrayDefault("/UserInputValidatorTestRunner/in2", std::vector<int>{10, 10, 10, 10, 10});
+
+    auto input = tf.getScalar<int>("/UserInputValidatorTestRunner/in1");
+    auto input2 = tf.getArray<int>("/UserInputValidatorTestRunner/in2");
+    auto errorFunctionCalled = tf.getVoid("/UserInputValidatorTestRunner/errorFunctionCalled");
+
+    tf.runApplication();
+
+    // The initial values were wrong and were corrected
+    auto error = tf.getScalar<std::string>("/UserInputValidatorTestRunner/TestError");
+    // Should have two values in queue because both two validators failed
+    BOOST_TEST(errorFunctionCalled.readNonBlocking() == true);
+    BOOST_TEST(errorFunctionCalled.readNonBlocking() == true);
+    BOOST_TEST(error.readNonBlocking() == false);
+    BOOST_TEST(std::string(error) == "");
+
+    input.setAndWrite(8);
+    tf.stepApplication();
+    BOOST_TEST(!input.readLatest());
+    BOOST_TEST(error.readNonBlocking() == false);
+    BOOST_TEST(std::string(error) == "");
+
+    input.setAndWrite(10);
+    tf.stepApplication();
+    BOOST_TEST(input.readLatest());
+    BOOST_TEST(input == 8);
+    BOOST_TEST(errorFunctionCalled.readNonBlocking() == true);
+    BOOST_TEST(error.readNonBlocking() == false);
+    BOOST_TEST(std::string(error) == "");
+
+    input2 = std::vector{2, 2, 2, 2, 1};
+    input2.write();
+    tf.stepApplication();
+    BOOST_TEST(!input2.readLatest());
+    BOOST_TEST(errorFunctionCalled.readNonBlocking() == false);
+    BOOST_CHECK(static_cast<const std::vector<int>&>(input2) == std::vector<int>({2, 2, 2, 2, 1}));
+    BOOST_TEST(error.readNonBlocking() == false);
+    BOOST_TEST(std::string(error) == "");
+
+    input2 = std::vector{1, 2, 3, 4, 5};
+    input2.write();
+    tf.stepApplication();
+    BOOST_TEST(input2.readLatest());
+    BOOST_TEST(errorFunctionCalled.readNonBlocking() == true);
+    BOOST_CHECK(static_cast<const std::vector<int>&>(input2) == std::vector<int>({2, 2, 2, 2, 1}));
+    BOOST_TEST(error.readNonBlocking() == false);
+    BOOST_TEST(std::string(error) == "");
+
+    input2 = std::vector{9, 0, 0, 0, 0};
+    input2.write();
+    tf.stepApplication();
+    BOOST_TEST(input2.readLatest());
+    BOOST_TEST(errorFunctionCalled.readNonBlocking() == true);
+    BOOST_CHECK(static_cast<const std::vector<int>&>(input2) == std::vector<int>({2, 2, 2, 2, 1}));
+    BOOST_TEST(error.readNonBlocking() == false);
+    BOOST_TEST(std::string(error) == "");
+  }
+
+  /********************************************************************************************************************/
+
 } // namespace Tests::testPython
