@@ -5,7 +5,6 @@
 #include "ApplicationModule.h"
 #include "Module.h"
 #include "Utilities.h"
-#include "VariableGroup.h"
 #include "VariableNetworkNode.h"
 
 #include <boost/smart_ptr/shared_ptr.hpp>
