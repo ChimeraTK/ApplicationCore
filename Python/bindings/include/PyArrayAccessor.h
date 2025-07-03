@@ -57,7 +57,7 @@ namespace ChimeraTK {
 
     void setitem(size_t index, const UserTypeVariantNoVoid& val);
 
-    std::string repr(py::object& acc) const;
+    static std::string repr(py::object& acc);
 
     py::buffer_info getBufferInfo();
 

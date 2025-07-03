@@ -107,7 +107,7 @@ namespace ChimeraTK {
   }
   /********************************************************************************************************************/
 
-  std::string PyArrayAccessor::repr(py::object& acc) const {
+  std::string PyArrayAccessor::repr(py::object& acc) {
     std::string rep{"<ArrayAccessor(type="};
     rep.append(py::cast<py::object>(py::cast(&acc).attr("getValueType")()).attr("__repr__")().cast<std::string>());
     rep.append(", name=");
