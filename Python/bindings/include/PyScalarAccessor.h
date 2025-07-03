@@ -45,7 +45,7 @@ namespace ChimeraTK {
 
     void set(UserTypeVariantNoVoid val);
 
-    std::string repr(py::object& acc);
+    static std::string repr(py::object& acc);
 
     static void bind(py::module& mod);
 
