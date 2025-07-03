@@ -113,7 +113,6 @@ namespace ChimeraTK {
     }
 
     std::string rep{"<ArrayAccessor(type="};
-    rep.append("type=");
     rep.append(py::cast<py::object>(py::cast(&acc).attr("getValueType")()).attr("__repr__")().cast<std::string>());
     rep.append(", name=");
     rep.append(py::cast(&acc).attr("getName")().cast<std::string>());
