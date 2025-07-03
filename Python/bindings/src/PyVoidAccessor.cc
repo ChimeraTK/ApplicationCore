@@ -29,8 +29,6 @@ namespace ChimeraTK {
   std::string PyVoidAccessor::repr(py::object& acc) {
     std::string rep{"<VoidAccessor(name="};
     rep.append(py::cast(&acc).attr("getName")().cast<std::string>());
-    rep.append(", data=");
-    rep.append(py::cast<py::object>(py::cast(&acc).attr("__str__")()).cast<std::string>());
     rep.append(", versionNumber=");
     rep.append(py::cast<py::object>(py::cast(&acc).attr("getVersionNumber")()).attr("__repr__")().cast<std::string>());
     rep.append(", dataValidity=");
