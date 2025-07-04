@@ -32,29 +32,9 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void XMLGenerator::run() {
+    _app.initialise();
+
     _rootElement->set_attribute("name", _app.getName());
-
-    std::list<Model::DeviceModuleProxy> deviceModules;
-
-    // Collect all DeviceModule proxies with triggers
-    auto deviceModuleCollector = [&](auto proxy) {
-      auto trigger = proxy.getTrigger();
-      if(not trigger.isValid()) {
-        return;
-      }
-
-      deviceModules.push_back(proxy);
-    };
-
-    _app.getModel().visit(deviceModuleCollector, Model::depthFirstSearch, Model::keepDeviceModules);
-
-    // Add a TriggerReceiver placeholder for every device associated with that trigger
-    // Do this in two steps, otherwise we would be modifying the model while iterating
-    for(auto& proxy : deviceModules) {
-      auto trigger = proxy.getTrigger();
-      VariableNetworkNode placeholder(proxy.getAliasOrCdd(), 0);
-      proxy.addVariable(trigger, placeholder);
-    };
 
     auto connectingVisitor = [&](auto proxy) { generateXMLNetwork(proxy); };
 

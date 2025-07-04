@@ -62,7 +62,7 @@
 
   <xsd:complexType name="ConnectionsType">
     <xsd:sequence>
-      <xsd:element name="peer" type="PeerType" minOccurs="0"/>
+      <xsd:element name="peer" type="PeerType" minOccurs="0" maxOccurs="unbounded"/>
     </xsd:sequence>
   </xsd:complexType>
 
