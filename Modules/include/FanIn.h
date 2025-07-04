@@ -73,7 +73,7 @@ namespace ChimeraTK {
     FanIn(VariableGroup* owner, std::string name, std::string unit, const std::string& description,
         AggregatorType aggregator, const std::unordered_set<std::string>& tags = {});
 
-    static constexpr auto keepLastValue = [](auto id, auto map) { return map[id]; };
+    static constexpr auto keepLastValue = [](auto id, const auto& map) { return map[id]; };
 
    protected:
     // Change read/write functions etc. to protected, because they are not for the user. Using them might be
