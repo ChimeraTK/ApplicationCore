@@ -8,6 +8,7 @@
 #include "PyTransferElement.h"
 
 #include <ChimeraTK/DataConsistencyGroup.h>
+#include <ChimeraTK/DataConsistencyGroupSimpleMatcher.h>
 
 namespace py = pybind11;
 
