@@ -186,11 +186,11 @@ namespace ChimeraTK {
 
     /** Check if variable exists in the config and if type of var name in the config file matches the given type.
      * Throws logic_errors otherwise. */
-    void checkVariable(std::string const& name, std::string const& type) const;
+    [[nodiscard]] bool checkVariable(std::string const& name, std::string const& type) const;
 
     /** Check if array exists in the config and if type of array name in the config file matches the given type.
      * Throws logic_errors otherwise. */
-    void checkArray(std::string const& name, std::string const& type) const;
+    [[nodiscard]] bool checkArray(std::string const& name, std::string const& type) const;
 
     /** Define type for map of std::string to Var, so we can put it into the
      * TemplateUserTypeMap */
@@ -212,13 +212,16 @@ namespace ChimeraTK {
     ChimeraTK::SingleTypeUserTypeMapNoVoid<const char*> _typeMap{"int8", "uint8", "int16", "uint16", "int32", "uint32",
         "int64", "uint64", "float", "double", "string", "boolean"};
 
-    /** Implementation of get() which can be overloaded for scalars and vectors.
-     * The second argument is a dummy only to distinguish the two overloaded
-     * functions. */
+    /**
+     * Implementation of get() which can be overloaded for scalars and vectors. The second argument is a dummy only to
+     * distinguish the two overloaded functions. The return type is an std::optional. In case the variable does not
+     * exist, no value is returned. If the variable exists but has a different type, a ChimeraTK::logic_error is thrown.
+     */
     template<typename T>
-    const T& getImpl(const std::string& variableName, T*) const;
+    std::optional<const T*> getImpl(const std::string& variableName, T*) const;
+
     template<typename T>
-    const std::vector<T>& getImpl(const std::string& variableName, std::vector<T>*) const;
+    std::optional<const std::vector<T>*> getImpl(const std::string& variableName, std::vector<T>*) const;
 
     friend struct FunctorFill;
     friend struct ArrayFunctorFill;
@@ -235,13 +238,8 @@ namespace ChimeraTK {
     if(variableName.starts_with("/")) {
       variableName = variableName.substr(1);
     }
-    /// FIXME: Do not implement with try-catch.
-    try {
-      return getImpl(variableName, static_cast<T*>(nullptr));
-    }
-    catch(ChimeraTK::logic_error&) {
-      return defaultValue;
-    }
+    auto result = getImpl(variableName, static_cast<T*>(nullptr));
+    return *(result.value_or(&defaultValue));
   }
 
   /********************************************************************************************************************/
@@ -252,25 +250,38 @@ namespace ChimeraTK {
     if(variableName.starts_with("/")) {
       variableName = variableName.substr(1);
     }
-    return getImpl(variableName, static_cast<T*>(nullptr));
+    auto result = getImpl(variableName, static_cast<T*>(nullptr));
+    if(!result.has_value()) {
+      auto msg = "ConfigReader: Cannot find configuration variable of the name '" + variableName +
+          "' in the config file '" + _fileName + "'.";
+      std::cerr << msg << std::endl;
+      throw(ChimeraTK::logic_error(msg));
+    }
+    return *(result.value());
   }
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
 
   template<typename T>
-  const T& ConfigReader::getImpl(const std::string& variableName, T*) const {
-    checkVariable(variableName, boost::fusion::at_key<T>(_typeMap));
-    return boost::fusion::at_key<T>(_variableMap.table).at(variableName).value;
+  std::optional<const T*> ConfigReader::getImpl(const std::string& variableName, T*) const {
+    bool exists = checkVariable(variableName, boost::fusion::at_key<T>(_typeMap));
+    if(!exists) {
+      return {};
+    }
+    return &(boost::fusion::at_key<T>(_variableMap.table).at(variableName).value);
   }
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
 
   template<typename T>
-  const std::vector<T>& ConfigReader::getImpl(const std::string& variableName, std::vector<T>*) const {
-    checkArray(variableName, boost::fusion::at_key<T>(_typeMap));
-    return boost::fusion::at_key<T>(_arrayMap.table).at(variableName).value;
+  std::optional<const std::vector<T>*> ConfigReader::getImpl(const std::string& variableName, std::vector<T>*) const {
+    bool exists = checkArray(variableName, boost::fusion::at_key<T>(_typeMap));
+    if(!exists) {
+      return {};
+    }
+    return &(boost::fusion::at_key<T>(_arrayMap.table).at(variableName).value);
   }
 
 } // namespace ChimeraTK

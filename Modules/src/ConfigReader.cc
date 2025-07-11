@@ -185,16 +185,13 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void ConfigReader::checkVariable(std::string const& name, std::string const& typeOfThis) const {
+  bool ConfigReader::checkVariable(std::string const& name, std::string const& typeOfThis) const {
     std::string typeOfVar;
 
     bool varExists = boost::fusion::any(_variableMap.table, FunctorGetTypeForName{this, name, typeOfVar});
 
     if(!varExists) {
-      auto msg = "ConfigReader: Cannot find a scalar configuration variable of the name '" + name +
-          "' in the config file '" + _fileName + "'.";
-      std::cerr << msg << std::endl;
-      throw(ChimeraTK::logic_error(msg));
+      return false;
     }
 
     if(typeOfVar != typeOfThis) {
@@ -203,19 +200,19 @@ namespace ChimeraTK {
       std::cerr << msg << std::endl;
       throw(ChimeraTK::logic_error(msg));
     }
+
+    return true;
   }
 
   /********************************************************************************************************************/
 
-  void ConfigReader::checkArray(std::string const& name, std::string const& typeOfThis) const {
+  bool ConfigReader::checkArray(std::string const& name, std::string const& typeOfThis) const {
     std::string typeOfVar;
 
     bool varExists = boost::fusion::any(_arrayMap.table, FunctorGetTypeForName{this, name, typeOfVar});
 
     if(!varExists) {
-      throw(ChimeraTK::logic_error("ConfigReader: Cannot find a array "
-                                   "configuration variable of the name '" +
-          name + "' in the config file '" + _fileName + "'."));
+      return false;
     }
 
     if(typeOfVar != typeOfThis) {
@@ -223,6 +220,7 @@ namespace ChimeraTK {
           "' with type '" + typeOfThis + "'. This does not match type '" + typeOfVar +
           "' defined in the config file."));
     }
+    return true;
   }
 
   /********************************************************************************************************************/
