@@ -124,14 +124,14 @@ namespace ChimeraTK {
      *  as template argument.
      */
     template<typename T>
-    const T& get(const std::string& variableName) const;
+    const T& get(std::string variableName) const;
 
     /**
      *  Version of get() which does not throw if the variable does not exist and instead returns the given default
      *  value.
      */
     template<typename T>
-    const T& get(const std::string& variableName, const T& defaultValue) const;
+    const T& get(std::string variableName, const T& defaultValue) const;
 
     /**
      * Returns a list of names of modules which are direct children of path.
@@ -231,7 +231,10 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename T>
-  const T& ConfigReader::get(const std::string& variableName, const T& defaultValue) const {
+  const T& ConfigReader::get(std::string variableName, const T& defaultValue) const {
+    if(variableName.starts_with("/")) {
+      variableName = variableName.substr(1);
+    }
     /// FIXME: Do not implement with try-catch.
     try {
       return getImpl(variableName, static_cast<T*>(nullptr));
@@ -245,7 +248,10 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename T>
-  const T& ConfigReader::get(const std::string& variableName) const {
+  const T& ConfigReader::get(std::string variableName) const {
+    if(variableName.starts_with("/")) {
+      variableName = variableName.substr(1);
+    }
     return getImpl(variableName, static_cast<T*>(nullptr));
   }
 
