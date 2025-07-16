@@ -145,6 +145,22 @@ namespace Tests::testPython {
   }
 
   /********************************************************************************************************************/
+  /* Test appConfig group */
+
+  BOOST_AUTO_TEST_CASE(testAppConfig) {
+    std::cout << "***************************************************************************************" << std::endl;
+    std::cout << "==> testAppConfig" << std::endl;
+
+    TestApp app("testPythonAppConfig");
+    ctk::TestFacility tf(app);
+    auto result = tf.getScalar<std::string>("/UserModule/testError");
+
+    tf.runApplication();
+    result.readLatest();
+    BOOST_TEST(std::string(result) == "");
+  }
+
+  /********************************************************************************************************************/
   /* Test variable group */
 
   BOOST_AUTO_TEST_CASE(testVariableGroup) {
