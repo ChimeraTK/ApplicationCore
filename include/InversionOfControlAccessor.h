@@ -91,7 +91,8 @@ namespace ChimeraTK {
           if(application->getLifeCycleState() == LifeCycleState::run) {
             try {
               throw ChimeraTK::logic_error(
-                  "Variable has been destroyed with active connections while application is still running");
+                  "Variable has been destroyed with active connections while application is "
+                  "still running. Maybe the Application did not call shutdown() in its destructor?");
             }
             catch(ChimeraTK::logic_error&) {
               std::terminate();
