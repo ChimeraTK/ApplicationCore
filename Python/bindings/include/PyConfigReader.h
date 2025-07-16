@@ -25,6 +25,10 @@ namespace ChimeraTK {
     UserTypeVariantNoVoid get(
         ChimeraTK::DataType dt, const std::string& path, std::optional<UserTypeVariantNoVoid> defaultValue);
 
+    // Variant of the above for getting arrays
+    UserTypeTemplateVariantNoVoid<std::vector> getArray(ChimeraTK::DataType dt, const std::string& path,
+        std::optional<UserTypeTemplateVariantNoVoid<std::vector>> defaultValue);
+
     std::list<std::string> getModules(const std::string& path) { return _reader.get().getModules(path); }
 
     static void bind(py::module& mod);
