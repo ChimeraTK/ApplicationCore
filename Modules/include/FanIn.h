@@ -155,9 +155,9 @@ namespace ChimeraTK {
       void postConstruct() override;
       void prepare() override;
 
-      void processUpdate(const TransferElementID& change);
+      enum class UpdateType { POST_READ, ACCEPT, REJECT };
 
-      void setValidator(UserInputValidator& validator) { _validator = &validator; }
+      void processUpdate(const TransferElementID& change, UpdateType type);
 
       std::string _name;
       std::string _unit;
@@ -171,8 +171,8 @@ namespace ChimeraTK {
       std::map<TransferElementID, AbstractorType> _abstractorMap;
       std::map<TransferElementID, AccessorType*> _accessorMap;
       TransferElementID _lastUpdate;
-
-      UserInputValidator* _validator{nullptr};
+      bool _hasValidator{false};
+      size_t _nInitialValuesValidated{0};
 
       friend class FanIn;
 
@@ -189,7 +189,11 @@ namespace ChimeraTK {
 
         void doPostRead(TransferType type, bool updateDataBuffer) override;
 
-        void onAdd(UserInputValidator& validator) override;
+        void onReject() override;
+
+        void onAccept() override;
+
+        void onAddValidator(UserInputValidator&) override;
 
        private:
         Inputs& _fanIn;
@@ -250,6 +254,7 @@ namespace ChimeraTK {
 
   template<push_input AccessorType>
   auto FanIn<AccessorType>::inputs() const {
+    _inputs.prepare(); // make sure map is filled, noop if it already is
     return _inputs._accessorMap | std::views::values |
         std::views::transform([](const auto* p) -> const auto& { return *p; });
   }
@@ -258,6 +263,7 @@ namespace ChimeraTK {
 
   template<push_input AccessorType>
   auto FanIn<AccessorType>::inputs() {
+    _inputs.prepare(); // make sure map is filled, noop if it already is
     return _inputs._accessorMap | std::views::values | std::views::transform([](auto* p) -> auto& { return *p; });
   }
 
@@ -304,6 +310,12 @@ namespace ChimeraTK {
 
   template<push_input AccessorType>
   void FanIn<AccessorType>::Inputs::prepare() {
+    if(!_accessorMap.empty()) {
+      // prepare() is also called by inputs() to make sure the map is already filled, e.g. when needed by the owning
+      // module's prepare() function, which might be called first.
+      return;
+    }
+
     for(auto& input : _inputs) {
       auto deco = boost::make_shared<TrackingDecorator<typename AccessorType::value_type>>(input.getImpl(), *this);
       input.NDRegisterAccessorAbstractor<typename AccessorType::value_type>::replace(deco);
@@ -338,7 +350,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<push_input AccessorType>
-  void FanIn<AccessorType>::Inputs::processUpdate(const TransferElementID& change) {
+  void FanIn<AccessorType>::Inputs::processUpdate(const TransferElementID& change, UpdateType type) {
     assert(_output != nullptr);
 
     _lastUpdate = change;
@@ -353,16 +365,22 @@ namespace ChimeraTK {
       }
     }
 
-    *_output = _aggregator(change, _abstractorMap);
+    if(type != UpdateType::ACCEPT) {
+      *_output = _aggregator(change, _abstractorMap);
+    }
 
-    if(_validator) {
-      bool rejected = _validator->validate(change);
-      if(rejected) {
-        *_output = _aggregator(change, _abstractorMap);
+    if(_output->getVersionNumber() == VersionNumber{nullptr} && _hasValidator && type != UpdateType::POST_READ) {
+      ++_nInitialValuesValidated;
+      if(_nInitialValuesValidated < _inputs.size()) {
+        return;
       }
     }
 
-    _output->write();
+    // If a UserInputValidator is added, delay writing the output until after the validation took place (see the hook
+    // functions onAccept() and onReject() of the TrackingDecorator).
+    if(!_hasValidator || type != UpdateType::POST_READ) {
+      _output->write();
+    }
   }
 
   /********************************************************************************************************************/
@@ -373,7 +391,7 @@ namespace ChimeraTK {
   void FanIn<AccessorType>::Inputs::TrackingDecorator<U>::doPostRead(TransferType type, bool updateDataBuffer) {
     NDRegisterAccessorDecorator<U>::doPostRead(type, updateDataBuffer);
     if(updateDataBuffer) {
-      _fanIn.processUpdate(this->getId());
+      _fanIn.processUpdate(this->getId(), UpdateType::POST_READ);
     }
   }
 
@@ -381,8 +399,25 @@ namespace ChimeraTK {
 
   template<push_input AccessorType>
   template<user_type U>
-  void FanIn<AccessorType>::Inputs::TrackingDecorator<U>::onAdd(UserInputValidator& validator) {
-    _fanIn.setValidator(validator);
+  void FanIn<AccessorType>::Inputs::TrackingDecorator<U>::onReject() {
+    assert(_fanIn._hasValidator);
+    _fanIn.processUpdate(this->getId(), UpdateType::REJECT);
+  }
+
+  /********************************************************************************************************************/
+
+  template<push_input AccessorType>
+  template<user_type U>
+  void FanIn<AccessorType>::Inputs::TrackingDecorator<U>::onAccept() {
+    assert(_fanIn._hasValidator);
+    _fanIn.processUpdate(this->getId(), UpdateType::ACCEPT);
+  }
+  /********************************************************************************************************************/
+
+  template<push_input AccessorType>
+  template<user_type U>
+  void FanIn<AccessorType>::Inputs::TrackingDecorator<U>::onAddValidator(UserInputValidator&) {
+    _fanIn._hasValidator = true;
   }
 
   /********************************************************************************************************************/

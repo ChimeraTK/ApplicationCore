@@ -129,4 +129,24 @@ namespace ChimeraTK::Utilities {
 
   /********************************************************************************************************************/
 
+  bool isBeingDebugged() {
+    try {
+      std::ifstream status_file("/proc/self/status");
+      std::string line;
+      while(std::getline(status_file, line)) {
+        if(line.substr(0, 10) == "TracerPid:") {
+          int tracer_pid = std::stoi(line.substr(10));
+          return tracer_pid != 0;
+        }
+      }
+      return false;
+    }
+    catch(...) {
+      // assume no debugger if anything goes wrong (e.g. on different platforms)
+      return false;
+    }
+  }
+
+  /********************************************************************************************************************/
+
 } // namespace ChimeraTK::Utilities

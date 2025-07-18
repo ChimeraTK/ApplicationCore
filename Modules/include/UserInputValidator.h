@@ -148,15 +148,37 @@ namespace ChimeraTK {
     bool validateAll();
 
     /**
+     * Accessors inheriting from this class (in addition to their accessor base class) can get informed about the
+     * validation process.
      */
-    struct AccessorHook {
-      virtual void onAdd(UserInputValidator& validator) = 0;
+    class AccessorHook {
+     public:
+      virtual ~AccessorHook() = default;
+
+      /**
+       * Called when the accessor is added to the validator, i.e. the accessor is passed to the
+       * UserInputValidator::add() function for the first time.
+       */
+      virtual void onAddValidator([[maybe_unused]] UserInputValidator& validator) {};
+
+      /**
+       * Called when UserInputValidator::validate() (or validateAll()) rejects an incoming or initial value. The call
+       * takes place after the valid value has been restored to the accessor but right before the call to write().
+       */
+      virtual void onReject() {};
+
+      /**
+       * Called when UserInputValidator::validate() (or validateAll()) accepts an incoming or initial value, i.e. the
+       * value has been validated successfully.
+       */
+      virtual void onAccept() {};
     };
 
    protected:
     static constexpr std::string_view tagValidatedVariable{"__UserInputValidator"};
 
-    // Helper function to set up queue lengths of valid values. Will be called automatically for the first call to // validate
+    // Helper function to set up queue lengths of valid values. Will be called automatically for the first call to
+    // validate
     void finalise();
 
     // Helper function for internal book keeping of accessors (prevent unnecessary overwrite of map entry, which might
@@ -315,10 +337,10 @@ namespace ChimeraTK {
       accessor.addTag(std::string(tagValidatedVariable));
       _variableMap[accessor.getId()] = std::make_shared<Variable<UserType, Accessor>>(accessor);
 
-      // Call the AccessorHook::onAdd() if present in the accessor
+      // Call the AccessorHook::onAddValidator() if present in the accessor
       auto hook = boost::dynamic_pointer_cast<AccessorHook>(accessor.getImpl());
       if(hook) {
-        hook->onAdd(*this);
+        hook->onAddValidator(*this);
       }
     }
   }
@@ -366,6 +388,12 @@ namespace ChimeraTK {
       }
     }
 
+    // Call the AccessorHook::onReject() if present in the accessor
+    auto hook = boost::dynamic_pointer_cast<AccessorHook>(accessor.getImpl());
+    if(hook) {
+      hook->onReject();
+    }
+
     if(accessor.isWriteable()) {
       accessor.write();
     }
@@ -383,6 +411,12 @@ namespace ChimeraTK {
       auto savedValue = std::vector<UserType>(accessor.getNElements());
       savedValue = accessor;
       lastAcceptedValue.push_back(savedValue);
+    }
+
+    // Call the AccessorHook::onAccept() if present in the accessor
+    auto hook = boost::dynamic_pointer_cast<AccessorHook>(accessor.getImpl());
+    if(hook) {
+      hook->onAccept();
     }
   }
   /********************************************************************************************************************/
