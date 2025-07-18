@@ -87,6 +87,12 @@ namespace ChimeraTK::detail {
   namespace {
     /// This is a trick to make sure the exception is never caught, not even by the BOOST test framework.
     void terminateTestStalled() {
+      // Do not terminate, just warn, while running in a debugger
+      if(Utilities::isBeingDebugged()) {
+        std::cerr << "*** Test stalled. Continue anyway since running in debugger." << std::endl;
+        return;
+      }
+
       struct TestStalled : std::exception {
         [[nodiscard]] const char* what() const noexcept override { return "Test stalled."; }
       };
@@ -123,14 +129,16 @@ namespace ChimeraTK::detail {
       if(currentLastOwner != lastSeen_lastOwner) {
         lastSeen_lastOwner = currentLastOwner;
         usleep(10000);
-        goto repeatTryLock;
       }
-      std::cerr << "testableModeLock(): Thread " << threadName()                         // LCOV_EXCL_LINE
-                << " could not obtain lock for at least 30 seconds, presumably because " // LCOV_EXCL_LINE
-                << threadName(_lastMutexOwner) << " [" << pthreadId(_lastMutexOwner)     // LCOV_EXCL_LINE
-                << "] does not release it."                                              // LCOV_EXCL_LINE
-                << std::endl;                                                            // LCOV_EXCL_LINE
-      terminateTestStalled();                                                            // LCOV_EXCL_LINE
+      else {
+        std::cerr << "testableModeLock(): Thread " << threadName()                         // LCOV_EXCL_LINE
+                  << " could not obtain lock for at least 30 seconds, presumably because " // LCOV_EXCL_LINE
+                  << threadName(_lastMutexOwner) << " [" << pthreadId(_lastMutexOwner)     // LCOV_EXCL_LINE
+                  << "] does not release it."                                              // LCOV_EXCL_LINE
+                  << std::endl;                                                            // LCOV_EXCL_LINE
+        terminateTestStalled();                                                            // LCOV_EXCL_LINE
+      }
+      goto repeatTryLock;
     } // LCOV_EXCL_LINE
 
     _lastMutexOwner = boost::this_thread::get_id();

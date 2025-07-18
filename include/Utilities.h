@@ -57,4 +57,9 @@ namespace ChimeraTK::Utilities {
    */
   std::string raiseIftrailingSlash(const std::string& name, bool isModule);
 
+  /**
+   * Checks whether the current process is being debugged. Works only on Unix-like systems with a /proc file system.
+   */
+  bool isBeingDebugged();
+
 } // namespace ChimeraTK::Utilities
