@@ -182,16 +182,22 @@ namespace Tests::testFanIn {
 
       ctk::ScalarFanInWB<int32_t> in{this, "fanIn", {"a", "b"}, "", "", aggregateSum};
       ctk::ScalarOutput<std::string> err{this, "err", "", ""};
+      ctk::UserInputValidator validator;
 
-      void mainLoop() override {
-        ctk::UserInputValidator validator;
-        validator.setErrorFunction([&](const std::string& msg) { err.setAndWrite(msg); });
+      void prepare() override {
+        validator.setErrorFunction([&](const std::string& msg) {
+          std::cout << "---> " << msg << std::endl;
+          err.setAndWrite(msg);
+        });
 
         validator.add("testOnAggregated", [&] { return in < 10; }, in.inputs());
         for(auto& acc : in.inputs()) {
           validator.add("testOnIndividual", [&] { return acc > -10; }, acc);
+          validator.setFallback(acc, 1);
         }
+      }
 
+      void mainLoop() override {
         auto rag = readAnyGroup();
         validator.validate({}); // initial values won't be validated internally by the FanIn
 
@@ -220,15 +226,15 @@ namespace Tests::testFanIn {
     auto err = test.getScalar<std::string>("/path/to/err");
 
     test.setScalarDefault<int32_t>("/path/to/a", 1);
-    test.setScalarDefault<int32_t>("/path/to/b", 1);
+    test.setScalarDefault<int32_t>("/path/to/b", -20);
 
     test.runApplication();
 
-    // initial value (both a and b are sending 1 in prepare())
-    BOOST_TEST(out == 2);
-    BOOST_TEST(!out.readNonBlocking());
+    // initial value (after rejection of out-of-range initial values)
     BOOST_TEST(app.r.in == 2);
     BOOST_TEST(!err.readNonBlocking());
+    BOOST_TEST(out == 2);
+    BOOST_TEST(!out.readNonBlocking());
 
     a.setAndWrite(20);
     test.stepApplication();
@@ -237,6 +243,7 @@ namespace Tests::testFanIn {
     BOOST_TEST(std::string(err) == "testOnAggregated");
     BOOST_TEST(out.readNonBlocking());
     BOOST_TEST(out == 2);
+    BOOST_TEST(!out.readNonBlocking());
 
     b.setAndWrite(20);
     test.stepApplication();
@@ -245,6 +252,7 @@ namespace Tests::testFanIn {
     BOOST_TEST(std::string(err) == "testOnAggregated");
     BOOST_TEST(out.readNonBlocking());
     BOOST_TEST(out == 2);
+    BOOST_TEST(!out.readNonBlocking());
 
     a.setAndWrite(-20);
     test.stepApplication();
@@ -253,6 +261,7 @@ namespace Tests::testFanIn {
     BOOST_TEST(std::string(err) == "testOnIndividual");
     BOOST_TEST(out.readNonBlocking());
     BOOST_TEST(out == 2);
+    BOOST_TEST(!out.readNonBlocking());
 
     b.setAndWrite(-20);
     test.stepApplication();
@@ -261,6 +270,7 @@ namespace Tests::testFanIn {
     BOOST_TEST(std::string(err) == "testOnIndividual");
     BOOST_TEST(out.readNonBlocking());
     BOOST_TEST(out == 2);
+    BOOST_TEST(!out.readNonBlocking());
 
     a.setAndWrite(3);
     test.stepApplication();
@@ -268,6 +278,7 @@ namespace Tests::testFanIn {
     BOOST_TEST(!err.readNonBlocking());
     BOOST_TEST(out.readNonBlocking());
     BOOST_TEST(out == 4);
+    BOOST_TEST(!out.readNonBlocking());
   }
 
   /********************************************************************************************************************/
