@@ -163,6 +163,59 @@ namespace Tests::testFanIn {
 
   /********************************************************************************************************************/
 
+  class TestRelativeSenderNamesApp : public ctk::Application {
+   public:
+    TestRelativeSenderNamesApp() : ctk::Application("TestApp") {}
+    ~TestRelativeSenderNamesApp() override { shutdown(); }
+
+    class MG : public ctk::ModuleGroup {
+     public:
+      using ctk::ModuleGroup::ModuleGroup;
+
+      class MySender : public ctk::ApplicationModule {
+       public:
+        using ctk::ApplicationModule::ApplicationModule;
+        ctk::ScalarOutput<int32_t> out{this, "../path/to/fanIn", "", ""};
+        void mainLoop() override {}
+        void prepare() override { out.setAndWrite(1); }
+      };
+      MySender a{this, "a", ""};
+      MySender b{this, "b", ""};
+
+      class TheReceiver : public TheReceiverBase {
+       public:
+        using TheReceiverBase::TheReceiverBase;
+
+        ctk::ScalarFanIn<int32_t> in{this, "fanIn", "", "", ctk::fanInKeepLastValue};
+      };
+      TheReceiver r{this, "path/to", ""};
+    } mg{this, "/some/directory", ""};
+  };
+
+  BOOST_AUTO_TEST_CASE(TestRelativeSenderNames) {
+    std::cout << "***************************************************************" << std::endl;
+    std::cout << "==> TestRelativeSenderNames" << std::endl;
+
+    TestRelativeSenderNamesApp app;
+
+    ctk::TestFacility test{app};
+
+    auto out = test.getScalar<int32_t>("/some/directory/path/to/fanIn");
+
+    test.runApplication();
+
+    // initial value (both a and b are sending 1 in prepare())
+    BOOST_TEST(out == 1);
+    BOOST_TEST(!out.readNonBlocking());
+    BOOST_TEST(app.mg.r.in == 1);
+
+    app.mg.a.out.setAndWrite(42);
+    test.stepApplication();
+    BOOST_TEST(app.mg.r.in == 42);
+  }
+
+  /********************************************************************************************************************/
+
   class TestUserInputValidationApp : public ctk::Application {
    public:
     TestUserInputValidationApp() : ctk::Application("TestApp") {}
