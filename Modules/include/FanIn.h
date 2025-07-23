@@ -296,7 +296,8 @@ namespace ChimeraTK {
       if(*node == VariableNetworkNode(*_output)) {
         continue;
       }
-      inputNames.emplace_back(node->getName() + "/__FanInNode_" + std::to_string(index) + "__");
+      auto qualifiedName = node->getModel().getFullyQualifiedPath();
+      inputNames.emplace_back(qualifiedName + "/__FanInNode_" + std::to_string(index) + "__");
       node->setMetaData(inputNames.back());
       ++index;
     }
