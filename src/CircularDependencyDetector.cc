@@ -178,7 +178,7 @@ namespace ChimeraTK::detail {
                   logger(Logger::Severity::warning, "CircularDependencyDetector")
                       << "Note: ApplicationModule " << appModule->getQualifiedNameWithType() << " is waiting for an "
                       << "initial value, because " << feedingAppModule->getQualifiedNameWithType()
-                      << " has not yet sent one." << std::endl;
+                      << " has not yet sent one on " << node.getModel().getFullyQualifiedPath() << std::endl;
                 }
                 return;
               }
