@@ -25,9 +25,12 @@ namespace ChimeraTK {
     UserTypeVariantNoVoid get(
         ChimeraTK::DataType dt, const std::string& path, std::optional<UserTypeVariantNoVoid> defaultValue);
 
+    template<typename UserType>
+    using Vector = std::vector<UserType>;
+
     // Variant of the above for getting arrays
-    UserTypeTemplateVariantNoVoid<std::vector> getArray(ChimeraTK::DataType dt, const std::string& path,
-        std::optional<UserTypeTemplateVariantNoVoid<std::vector>> defaultValue);
+    UserTypeTemplateVariantNoVoid<Vector> getArray(ChimeraTK::DataType dt, const std::string& path,
+        std::optional<UserTypeTemplateVariantNoVoid<Vector>> defaultValue);
 
     std::list<std::string> getModules(const std::string& path) { return _reader.get().getModules(path); }
 
