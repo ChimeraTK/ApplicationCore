@@ -196,10 +196,11 @@ namespace ChimeraTK::detail {
                 if(_modulesWeHaveWarnedAbout.find(feedingAppModule) == _modulesWeHaveWarnedAbout.end()) {
                   _modulesWeHaveWarnedAbout.insert(feedingAppModule);
                   logger(Logger::Severity::warning, "CircularDependencyDetector")
-                      << "Note: ApplicationModule " << appModule->getQualifiedNameWithType() << " and "
+                      << "Note: ApplicationModule " << appModule->getQualifiedNameWithType()
+                      << " is directly or indirectly waiting for an initial value from "
                       << feedingAppModule->getQualifiedNameWithType()
-                      << " are both waiting, on initial value provided directly or indirectly by the other."
-                      << std::endl;
+                      << ", which in turn is waiting for an initial value on input "
+                      << node.getModel().getFullyQualifiedPath() << std::endl;
                 }
               }
             }
