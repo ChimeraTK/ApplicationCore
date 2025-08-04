@@ -137,6 +137,10 @@ namespace ChimeraTK {
      * If change is a default-constructed ChimeraTK::TransferElementID, all validation conditions are evaluated and all
      * invalid values are corrected. This is equivalent to call validateAll(). This functionality is useful to trigger
      * the validation of initial values.
+     *
+     * Return value:
+     *   - true: incoming change has been rejected
+     *   - false: change was accepted
      */
     bool validate(const ChimeraTK::TransferElementID& change);
 
@@ -144,6 +148,10 @@ namespace ChimeraTK {
      * Evaluate all validation conditions and correct all invalid values. This is equivalent to call validate() with a
      * default-constructed ChimeraTK::TransferElementID. This function is useful to trigger the validation of initial
      * values.
+     *
+     * Return value:
+     *   - true: at least one value has been rejected (hence changed to its fallback value)
+     *   - false: all values are valid
      */
     bool validateAll();
 
