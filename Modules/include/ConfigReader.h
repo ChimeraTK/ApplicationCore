@@ -10,7 +10,8 @@
  * - expose above values as process variables; these may connect to other ApplicationCore modules if needed.
  *
  * \section usage Example usage
- * - A server application using the config reader may look like:
+ * - Each server comes with a built-in config reader that will look for
+ *   the file <servername>-config.xml. So for the server below:
  *  \code
  *  namespace ctk = ChimeratK
  *
@@ -18,19 +19,15 @@
  *    Server() : Application("testserver") {}
  *    ~Server() { shutdown(); }
  *
- *    ctk::ConfigReader config{this, "config", "validConfig.xml", {"MyTAG"}};
  *    TestModule testModule{this, "TestModule", "The test module"};
- *
- *    void Server::defineConnections() override;
- *
  *  };
  *  \endcode
  *
- * - Values from validConfig.xml can be accessed at server startup:
+ * - Values from testserver-config.xml can be accessed at server startup:
  * \code
  * Server::Server() {
- *  auto config_var = config.get<int8_t>("module1/var8");
- *  auto config_arr = config.get<std::vector<int8>>("module1/submodule/intArray");
+ *  auto config_var = appConfig().get<int8_t>("module1/var8");
+ *  auto config_arr = appConfig().get<std::vector<int8>>("module1/submodule/intArray");
  *  // ...
  * }
  * \endcode
@@ -43,6 +40,7 @@
  *   \verbatim
      <configuration>
        <variable name="var8" type="int8" value="-123"/>
+       <variable name="bool" type="boolean" value="true"/>
        <module name="module1">
          <variable name="var8" type="int8" value="-123"/>
          <module name="submodule">
