@@ -392,7 +392,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void ConfigReader::parsingError(const std::string& message) {
+  // NOLINTNEXTLINE(bugprone-exception-escape)
+  void ConfigReader::parsingError(const std::string& message) noexcept {
     throw ChimeraTK::logic_error("ConfigReader: Error parsing the config file '" + _fileName + "': " + message);
   }
 
