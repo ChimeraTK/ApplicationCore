@@ -43,6 +43,7 @@ namespace ChimeraTK {
       std::string description;
       std::string unit;
       size_t numberOfBidirectionalNodes{0};
+      size_t numberOfBidirectionalConsumers{0};
       size_t numberOfPollingConsumers{0};
       bool useExternalTrigger{false};
       bool useReverseRecovery{false};
