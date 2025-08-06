@@ -75,6 +75,9 @@ namespace ChimeraTK {
         }
       }
       else if(node->getDirection().dir == VariableDirection::consuming) {
+        if(node->getDirection().withReturn) {
+          net.numberOfBidirectionalConsumers++;
+        }
         std::stringstream ss;
         node->dump(ss);
         auto consumerDump = ss.str();
@@ -146,6 +149,7 @@ namespace ChimeraTK {
         if(node->getDirection().dir == VariableDirection::consuming && node->isReadable()) {
           node->setDirection({VariableDirection::consuming, true});
           net.numberOfBidirectionalNodes++;
+          net.numberOfBidirectionalConsumers++;
         }
       }
     }
@@ -242,8 +246,9 @@ namespace ChimeraTK {
       // Only add CS consumer if we did not previously add CS feeder, we will add one or the other, but never both
       // Also we will not add CS consumers for constants.
       //
-      // If this is a one-on-one network with reverse recovery, we have to make the CS feeder bi-directional
-      auto needReturn = net.useReverseRecovery && net.consumers.empty();
+      // If this is a one-on-one network with reverse recovery or none of the other consumers is bi-directional, we
+      // have to make the CS feeder bi-directional
+      auto needReturn = net.useReverseRecovery && (net.consumers.empty() || net.numberOfBidirectionalConsumers == 0);
       debug("  Network has a non-CS feeder, can create additional ControlSystem consumer");
       debug("    with" + std::string(needReturn ? "" : "out") + " return");
       net.consumers.push_back(VariableNetworkNode(net.proxy->getFullyQualifiedPath(),

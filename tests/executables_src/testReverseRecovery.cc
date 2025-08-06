@@ -29,17 +29,18 @@
 
 namespace ctk = ChimeraTK;
 
+struct ExternalMainLoopModule : public ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+
+  std::function<void()> doMainLoop;
+
+  void mainLoop() final { doMainLoop(); }
+};
 struct TestApplication : ctk::Application {
   TestApplication() : ctk::Application("tagTestApplication") { debugMakeConnections(); }
   ~TestApplication() override { shutdown(); }
 
-  struct : public ctk::ApplicationModule {
-    using ctk::ApplicationModule::ApplicationModule;
-
-    std::function<void()> doMainLoop;
-
-    void mainLoop() final { doMainLoop(); }
-  } mod{this, "Module", ""};
+  ExternalMainLoopModule mod{this, "Module", ""};
 };
 
 /**********************************************************************************************************************/
@@ -345,6 +346,7 @@ BOOST_AUTO_TEST_CASE(testReverseRecoveryFromApp) {
   dev.write<int32_t>("/secondReadWrite", 815);
 
   TestApplication app;
+
   ctk::DeviceModule devModule{&app, "taggedDevice", "/trigger"};
 
   std::atomic<bool> up{false};
@@ -387,7 +389,7 @@ BOOST_AUTO_TEST_CASE(testReverseRecoveryFromApp) {
 /**********************************************************************************************************************/
 
 BOOST_AUTO_TEST_CASE(testRecoveryFromAppDirect) {
-  std::cout << "testReverseRecoveryFromApp" << std::endl;
+  std::cout << "testReverseRecoveryFromAppDirect" << std::endl;
 
   ctk::BackendFactory::getInstance().setDMapFilePath("testTagged.dmap");
 
@@ -461,6 +463,47 @@ BOOST_AUTO_TEST_CASE(testReverseRecoveryFromCS) {
   up.wait(false);
 
   CHECK_EQUAL_TIMEOUT(csOutput, 4711, 2000);
+
+  app.shutdown();
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testReverseRecoveryWithAdditionalInput) {
+  std::cout << "testReverseRecoveryWithAdditionalInput" << std::endl;
+
+  ctk::BackendFactory::getInstance().setDMapFilePath("testTagged.dmap");
+
+  TestApplication app;
+  ExternalMainLoopModule mod2{&app, "Module2", ""};
+
+  // One module with an ouptut that has reverse recovery, and another module that takes this as
+  // input
+  ctk::ScalarOutputReverseRecovery<uint32_t> out{&app.mod, "/Out/a", "", ""};
+  ctk::ScalarPushInput<uint32_t> in{&mod2, "/Out/a", "", ""};
+
+  std::atomic<bool> up{false};
+  std::atomic<bool> up2{false};
+
+  app.mod.doMainLoop = [&]() {
+    up = true;
+    up.notify_one();
+  };
+
+  mod2.doMainLoop = [&]() {
+    up2 = true;
+    up2.notify_one();
+  };
+
+  ctk::TestFacility test(app, false);
+  test.setScalarDefault<uint32_t>("/Out/a", 32);
+
+  test.runApplication();
+  up.wait(false);
+  up2.wait(false);
+
+  CHECK_EQUAL_TIMEOUT(out, 32, 2000);
+  CHECK_EQUAL_TIMEOUT(in, 32, 2000);
 
   app.shutdown();
 }
