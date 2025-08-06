@@ -5,6 +5,8 @@
 #include "TestFacility.h"
 #include "VariableGroup.h"
 
+#include <ChimeraTK/Exception.h>
+
 #include <libxml++/libxml++.h>
 
 #include <filesystem>
@@ -392,8 +394,13 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void ConfigReader::parsingError(const std::string& message) {
-    throw ChimeraTK::logic_error("ConfigReader: Error parsing the config file '" + _fileName + "': " + message);
+  void ConfigReader::parsingError(const std::string& message) noexcept {
+    try {
+      throw ChimeraTK::logic_error("ConfigReader: Error parsing the config file '" + _fileName + "': " + message);
+    }
+    catch(ChimeraTK::logic_error&) {
+      std::terminate();
+    }
   }
 
   /********************************************************************************************************************/
