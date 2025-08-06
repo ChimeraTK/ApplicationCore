@@ -248,7 +248,7 @@ namespace ChimeraTK {
       //
       // If this is a one-on-one network with reverse recovery or none of the other consumers is bi-directional, we
       // have to make the CS feeder bi-directional
-      auto needReturn = net.useReverseRecovery && (net.consumers.empty() || net.numberOfBidirectionalConsumers == 0);
+      auto needReturn = net.useReverseRecovery && net.numberOfBidirectionalConsumers == 0;
       debug("  Network has a non-CS feeder, can create additional ControlSystem consumer");
       debug("    with" + std::string(needReturn ? "" : "out") + " return");
       net.consumers.push_back(VariableNetworkNode(net.proxy->getFullyQualifiedPath(),
