@@ -150,7 +150,7 @@ namespace ChimeraTK {
     std::unique_ptr<ModuleTree> _moduleTree;
 
     /** throw a parsing error with more information */
-    void parsingError(const std::string& message);
+    void parsingError(const std::string& message) noexcept;
 
     /** Class holding the value and the accessor for one configuration variable */
     template<typename T>
