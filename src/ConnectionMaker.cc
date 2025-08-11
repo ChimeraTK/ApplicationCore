@@ -350,7 +350,8 @@ namespace ChimeraTK {
         makeDirectConnectionForFeederWithImplementation(_networks.at(path));
       }
       else {
-        debug("    More than one consuming node or having external trigger, setting up FanOut");
+        debug(std::format("    More than one consuming node ({}) or having external trigger ({}), setting up FanOut",
+            _networks.at(path).consumers.size(), _networks.at(path).useExternalTrigger));
         makeFanOutConnectionForFeederWithImplementation(_networks.at(path), device, trigger);
       }
     }
@@ -982,7 +983,12 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void ConnectionMaker::optimiseUnmappedVariables(const std::set<std::string>& names) {
+    debug("-----------------------------");
+    debug("Optimising unmapped variables");
+    debug("-----------------------------");
+
     for(const auto& name : names) {
+      debug("Looking at network " + name);
       auto& network = _networks.at(name);
       // if the control system is the feeder, change it into a constant
       if(network.feeder.getType() == NodeType::ControlSystem) {
@@ -998,11 +1004,13 @@ namespace ChimeraTK {
           network.consumers.remove(*reverseConsumer);
         }
         else {
+          debug("  Adding constant feeder");
           network.feeder = VariableNetworkNode(network.valueType, true, network.valueLength);
         }
       }
       else {
         // control system is a consumer: remove it from the list of consumers
+        debug("  Dropping CS consumer");
         network.consumers.remove_if([](auto& consumer) { return consumer.getType() == NodeType::ControlSystem; });
       }
     }
