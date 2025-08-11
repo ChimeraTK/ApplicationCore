@@ -331,6 +331,57 @@ BOOST_AUTO_TEST_CASE(testFanOutWithExplicitAccessor02) {
   app.shutdown();
 }
 
+// Have an application module that has an explicit accessor requesting reverse recovery
+BOOST_AUTO_TEST_CASE(testFanOutWithExplicitAccessor03) {
+  std::cout << "testFanOutWithExplicitAccessor03" << std::endl;
+  ctk::BackendFactory::getInstance().setDMapFilePath("testTagged.dmap");
+
+  ctk::Device dev;
+  dev.open("baseDevice");
+
+  // Initialize the device with some values
+  dev.write<int32_t>("/readWrite", 4);
+
+  TestApplication app;
+  ctk::DeviceModule devModule{&app, "taggedDevice", "/trigger"};
+
+  std::atomic<bool> up{false};
+
+  ctk::ScalarPushInput<int32_t> deviceInput{&app.mod, "/taggedReadWrite", "", ""};
+
+  app.mod.doMainLoop = [&]() {
+    up = true;
+    up.notify_one();
+  };
+
+  ctk::TestFacility test(app, false);
+
+  app.optimiseUnmappedVariables({"/taggedReadWrite"});
+  test.runApplication();
+  up.wait(false);
+
+  CHECK_EQUAL_TIMEOUT((int32_t(deviceInput)), 4, 1000);
+  CHECK_EQUAL_TIMEOUT(dev.read<int32_t>("/readWrite"), 4, 1000);
+
+  // Check that we can still write down to the device properly
+  deviceInput.setAndWrite(44);
+  CHECK_EQUAL_TIMEOUT(dev.read<int32_t>("/readWrite"), 44, 1000);
+
+  // Manipulate the device so we can check that the value is propagated
+  // from the device to the application, as expected, after the device recovers
+  dev.write<int32_t>("/readWrite", 111);
+
+  devModule.reportException("Trigger device recovery");
+
+  // Wait for ApplicationCore to recover
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>("/Devices/taggedDevice/status"), 1, 1000);
+  CHECK_EQUAL_TIMEOUT(test.readScalar<int32_t>("/Devices/taggedDevice/status"), 0, 1000);
+
+  deviceInput.read();
+  CHECK_EQUAL_TIMEOUT(int32_t(deviceInput), 111, 1000);
+  app.shutdown();
+}
+
 /**********************************************************************************************************************/
 
 // Request that we do the reverse recovery from an untagged device register by using the ReverseRecovery accessor
@@ -505,5 +556,76 @@ BOOST_AUTO_TEST_CASE(testReverseRecoveryWithAdditionalInput) {
   CHECK_EQUAL_TIMEOUT(out, 32, 2000);
   CHECK_EQUAL_TIMEOUT(in, 32, 2000);
 
+  app.shutdown();
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testReverseRecoveryPromotingDeviceWoToFeeder) {
+  std::cout << "testReverseRecoveryPromotingDeviceWoToFeeder" << std::endl;
+
+  // This test just checks that we can connect this network successfully
+  ctk::BackendFactory::getInstance().setDMapFilePath("testTagged.dmap");
+
+  TestApplication app;
+
+  std::atomic<bool> up{false};
+
+  ctk::DeviceModule devModule{&app, "taggedDevice", "/trigger"};
+
+  ctk::Device dev;
+  dev.open("baseDevice");
+  dev.write<int32_t>("/writeOnlyRB.DUMMY_WRITEABLE", 8);
+
+  // Nothing to do
+  app.mod.doMainLoop = [&]() {};
+
+  ctk::TestFacility test(app, false);
+  app.optimiseUnmappedVariables({"/taggedWriteOnly"});
+
+  test.runApplication();
+
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  BOOST_TEST(dev.read<int32_t>("/writeOnlyRB") == 8);
+  app.shutdown();
+}
+
+BOOST_AUTO_TEST_CASE(testReverseRecoveryNetworkWoOptimized) {
+  std::cout << "testReverseRecoveryNetworkWoOptimized" << std::endl;
+
+  // This test just checks that we can connect this network successfully
+  ctk::BackendFactory::getInstance().setDMapFilePath("testTagged.dmap");
+
+  ctk::Logger::getInstance().setMinSeverity(ctk::Logger::Severity::debug);
+
+  TestApplication app;
+
+  std::atomic<bool> up{false};
+
+  ctk::DeviceModule devModule{&app, "taggedDevice", "/trigger"};
+  ctk::ScalarPushInput<int32_t> modIn{&app.mod, "/taggedWriteOnly", "", ""};
+
+  ctk::Device dev;
+  dev.open("baseDevice");
+  dev.write<int32_t>("/writeOnlyRB.DUMMY_WRITEABLE", 8);
+
+  // Nothing to do
+  app.mod.doMainLoop = [&]() {
+    up = true;
+    up.notify_one();
+  };
+
+  ctk::TestFacility test(app, false);
+  test.setScalarDefault<int32_t>("/taggedWriteOnly", 12);
+  app.optimiseUnmappedVariables({"/taggedWriteOnly"});
+
+  test.runApplication();
+  up.wait(false);
+
+  // Gets value from constant feeder
+  CHECK_EQUAL_TIMEOUT(int(modIn), 0, 2000);
+
+  CHECK_EQUAL_TIMEOUT(dev.read<int32_t>("/writeOnlyRB"), 8, 2000);
   app.shutdown();
 }
