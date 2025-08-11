@@ -1000,8 +1000,16 @@ namespace ChimeraTK {
             return consumer.getType() == NodeType::Device &&
                 consumer.getTags().contains(ChimeraTK::SystemTags::reverseRecovery);
           });
-          network.feeder = *reverseConsumer;
-          network.consumers.remove(*reverseConsumer);
+          if(reverseConsumer->isReadable()) {
+            debug(std::format("  Promoting reverse consumer {} to feeder", reverseConsumer->getName()));
+            network.feeder = *reverseConsumer;
+            network.consumers.remove(*reverseConsumer);
+          }
+          else {
+            debug(std::format(
+                "  Reverse consumer {} is not readable, adding constant feeder instead", reverseConsumer->getName()));
+            network.feeder = VariableNetworkNode(network.valueType, true, network.valueLength);
+          }
         }
         else {
           debug("  Adding constant feeder");
