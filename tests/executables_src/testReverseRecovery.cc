@@ -569,8 +569,6 @@ BOOST_AUTO_TEST_CASE(testReverseRecoveryPromotingDeviceWoToFeeder) {
 
   TestApplication app;
 
-  std::atomic<bool> up{false};
-
   ctk::DeviceModule devModule{&app, "taggedDevice", "/trigger"};
 
   ctk::Device dev;
@@ -591,13 +589,13 @@ BOOST_AUTO_TEST_CASE(testReverseRecoveryPromotingDeviceWoToFeeder) {
   app.shutdown();
 }
 
+/**********************************************************************************************************************/
+
 BOOST_AUTO_TEST_CASE(testReverseRecoveryNetworkWoOptimized) {
   std::cout << "testReverseRecoveryNetworkWoOptimized" << std::endl;
 
   // This test just checks that we can connect this network successfully
   ctk::BackendFactory::getInstance().setDMapFilePath("testTagged.dmap");
-
-  ctk::Logger::getInstance().setMinSeverity(ctk::Logger::Severity::debug);
 
   TestApplication app;
 
@@ -629,3 +627,112 @@ BOOST_AUTO_TEST_CASE(testReverseRecoveryNetworkWoOptimized) {
   CHECK_EQUAL_TIMEOUT(dev.read<int32_t>("/writeOnlyRB"), 8, 2000);
   app.shutdown();
 }
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testReverseRecoveryBitAccessorFanOut) {
+  std::cout << "testReverseRecoveryBitAccessorFanOut" << std::endl;
+
+  // This test just checks that we can connect this network successfully
+  ctk::BackendFactory::getInstance().setDMapFilePath("testTagged.dmap");
+
+  TestApplication app;
+
+  ctk::DeviceModule devModule{&app, "bitMappedDevice", "/trigger"};
+
+  ctk::Device dev;
+  dev.open("baseDevice");
+  dev.write<int32_t>("/readWrite", 0x7fff);
+
+  // Nothing to do
+  app.mod.doMainLoop = [&]() {};
+
+  ctk::TestFacility test(app, false);
+  test.setScalarDefault<ctk::Boolean>("/bit3", false);
+  test.runApplication();
+
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  BOOST_TEST(dev.read<int32_t>("/readWrite") == 0x7FFF);
+  app.shutdown();
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testReverseRecoveryBitAccessorDirect) {
+  std::cout << "testReverseRecoveryBitAccessorFanOut" << std::endl;
+
+  // This test just checks that we can connect this network successfully
+  ctk::BackendFactory::getInstance().setDMapFilePath("testTagged.dmap");
+
+  TestApplication app;
+
+  ctk::DeviceModule devModule{&app, "bitMappedDevice", "/trigger"};
+
+  ctk::Device dev;
+  dev.open("baseDevice");
+  dev.write<int32_t>("/readWrite", 0x7fff);
+
+  // Nothing to do
+  app.mod.doMainLoop = [&]() {
+
+  };
+
+  ctk::TestFacility test(app, false);
+  test.setScalarDefault<ctk::Boolean>("/bit3", false);
+  app.optimiseUnmappedVariables({"/bit3"});
+  test.runApplication();
+
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  BOOST_TEST(dev.read<int32_t>("/readWrite") == 0x7FFF);
+  app.shutdown();
+}
+
+/**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(testReverseRecoveryBitAccessorMultipleInModule) {
+  std::cout << "testReverseRecoveryBitAccessorMultipleInModule" << std::endl;
+
+  // Regression test whether this setup deadlocks itself
+  ctk::BackendFactory::getInstance().setDMapFilePath("testTagged.dmap");
+
+  TestApplication app;
+
+  ctk::DeviceModule devModule{&app, "bitMappedDevice", "/trigger"};
+  ctk::ScalarPollInput<ctk::Boolean> bit0{&app.mod, "/bit0", "", ""};
+  ctk::ScalarOutput<ctk::Boolean> bit1{&app.mod, "/bit1", "", ""};
+  ctk::ScalarOutput<ctk::Boolean> bit2{&app.mod, "/bit2", "", ""};
+  ctk::ScalarPollInput<ctk::Boolean> bit3{&app.mod, "/bit3", "", ""};
+  ctk::ScalarOutput<ctk::Boolean> bit4{&app.mod, "/bit4", "", ""};
+  ctk::ScalarOutput<ctk::Boolean> bit5{&app.mod, "/bit5", "", ""};
+  ctk::ScalarPollInput<ctk::Boolean> bit6{&app.mod, "/bit6", "", ""};
+  ctk::ScalarOutput<ctk::Boolean> bit7{&app.mod, "/bit7", "", ""};
+  ctk::ScalarOutput<ctk::Boolean> bit8{&app.mod, "/bit8", "", ""};
+
+  ctk::Device dev;
+  dev.open("baseDevice");
+  dev.write<int32_t>("/readWrite", 0x7fff);
+
+  std::atomic<bool> up{false};
+
+  // Nothing to do
+  app.mod.doMainLoop = [&]() {
+    up = true;
+    up.notify_all();
+  };
+
+  ctk::TestFacility test(app, false);
+  test.runApplication();
+
+  test.getVoid("/trigger").write();
+
+  up.wait(false);
+
+  // sanity check if the reverse recovery for the output bits still holds
+  BOOST_TEST(dev.read<int32_t>("/readWrite") == 0x7FFF);
+
+  app.shutdown();
+}
+
+/**********************************************************************************************************************/

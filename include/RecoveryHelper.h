@@ -16,7 +16,7 @@ namespace ChimeraTK {
     enum class Direction { fromDevice, toDevice };
     boost::shared_ptr<TransferElement> accessor;
     VersionNumber versionNumber;
-    uint64_t writeOrder;
+    uint64_t writeOrder{0};
     bool wasWritten{false};
     cppext::future_queue<void> notificationQueue;
     Direction recoveryDirection{Direction::toDevice};
@@ -24,6 +24,8 @@ namespace ChimeraTK {
     explicit RecoveryHelper(boost::shared_ptr<TransferElement> a, VersionNumber v = VersionNumber(nullptr),
         uint64_t order = 0, Direction direction = Direction::toDevice)
     : accessor(std::move(a)), versionNumber(v), writeOrder(order), recoveryDirection(direction) {}
+
+    RecoveryHelper() = default;
   };
 
 } // end of namespace ChimeraTK

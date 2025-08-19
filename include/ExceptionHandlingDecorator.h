@@ -22,8 +22,8 @@ namespace ChimeraTK {
      * All information to get the DeviceModule and to create a recovery accessor are
      * taken from the VariableNetworkNode.
      */
-    ExceptionHandlingDecorator(
-        boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, const VariableNetworkNode& networkNode);
+    ExceptionHandlingDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor,
+        const VariableNetworkNode& networkNode, boost::shared_ptr<RecoveryHelper> recoveryHelper);
 
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
