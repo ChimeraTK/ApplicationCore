@@ -96,8 +96,7 @@ namespace ChimeraTK {
       deactivate();
     }
     catch(ChimeraTK::logic_error& e) {
-      std::cerr << e.what() << std::endl;
-      std::exit(1);
+      std::terminate();
     }
   }
 

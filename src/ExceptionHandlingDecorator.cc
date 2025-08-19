@@ -8,14 +8,18 @@
 #include <ChimeraTK/SystemTags.h>
 #include <ChimeraTK/TransferElement.h>
 
+#include <utility>
+
 namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
   template<typename UserType>
   ExceptionHandlingDecorator<UserType>::ExceptionHandlingDecorator(
-      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, const VariableNetworkNode& networkNode)
-  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), _direction(networkNode.getDirection()) {
+      boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor, const VariableNetworkNode& networkNode,
+      boost::shared_ptr<RecoveryHelper> recoveryHelper)
+  : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), _recoveryHelper(std::move(recoveryHelper)),
+    _direction(networkNode.getDirection()) {
     const auto& deviceAlias = networkNode.getDeviceAlias();
     const auto& registerName = networkNode.getRegisterName();
 
@@ -40,7 +44,7 @@ namespace ChimeraTK {
       _recoveryAccessor = deviceBackend->getRegisterAccessor<UserType>(
           registerName, nElements, 0, {}); // recovery accessors don't have wait_for_new_data
       // version number and write order are still {nullptr} and 0 (i.e. invalid)
-      _recoveryHelper = boost::make_shared<RecoveryHelper>(_recoveryAccessor, VersionNumber(nullptr), 0);
+      _recoveryHelper->accessor = _recoveryAccessor;
 
       // We need to do this here in addition to doing it unconditionally in the ReverseRecoveryDecorator
       // to block recovery from write-only variables

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<logicalNameMap>
+  <redirectedRegister name="bit0">
+    <targetDevice>baseDevice</targetDevice>
+    <targetRegister>readWrite</targetRegister>
+    <plugin name="bitRange">
+      <parameter name="shift">0</parameter>
+      <parameter name="numberOfBits">1</parameter>
+    </plugin>
+    <plugin name="tagModifier">
+      <parameter name="set">_ChimeraTK_DeviceRegister_reverseRecovery</parameter>
+    </plugin>
+    <plugin name="typeHintModifier">
+      <parameter name="type">Boolean</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="bit1">
+    <targetDevice>baseDevice</targetDevice>
+    <targetRegister>readWrite</targetRegister>
+    <plugin name="bitRange">
+      <parameter name="shift">1</parameter>
+      <parameter name="numberOfBits">1</parameter>
+    </plugin>
+    <plugin name="tagModifier">
+      <parameter name="set">_ChimeraTK_DeviceRegister_reverseRecovery</parameter>
+    </plugin>
+    <plugin name="typeHintModifier">
+      <parameter name="type">Boolean</parameter>
+    </plugin>
+  </redirectedRegister>
+  <redirectedRegister name="bit2">
+    <targetDevice>baseDevice</targetDevice>
+    <targetRegister>readWrite</targetRegister>
+    <plugin name="bitRange">
+      <parameter name="shift">2</parameter>
+      <parameter name="numberOfBits">1</parameter>
+    </plugin>
+    <plugin name="tagModifier">
+      <parameter name="set">_ChimeraTK_DeviceRegister_reverseRecovery</parameter>
+    </plugin>
+    <plugin name="typeHintModifier">
+      <parameter name="type">Boolean</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="bit3">
+    <targetDevice>baseDevice</targetDevice>
+    <targetRegister>readWrite</targetRegister>
+    <plugin name="bitRange">
+      <parameter name="shift">3</parameter>
+      <parameter name="numberOfBits">1</parameter>
+    </plugin>
+    <plugin name="tagModifier">
+      <parameter name="set">_ChimeraTK_DeviceRegister_reverseRecovery</parameter>
+    </plugin>
+    <plugin name="typeHintModifier">
+      <parameter name="type">Boolean</parameter>
+    </plugin>
+  </redirectedRegister>
+
+  <redirectedRegister name="bit4">
+    <targetDevice>baseDevice</targetDevice>
+    <targetRegister>readWrite</targetRegister>
+    <plugin name="bitRange">
+      <parameter name="shift">4</parameter>
+      <parameter name="numberOfBits">1</parameter>
+    </plugin>
+    <plugin name="tagModifier">
+      <parameter name="set">_ChimeraTK_DeviceRegister_reverseRecovery</parameter>
+    </plugin>
+    <plugin name="typeHintModifier">
+      <parameter name="type">Boolean</parameter>
+    </plugin>
+  </redirectedRegister>
+  <redirectedRegister name="bit5">
+    <targetDevice>baseDevice</targetDevice>
+    <targetRegister>readWrite</targetRegister>
+    <plugin name="bitRange">
+      <parameter name="shift">5</parameter>
+      <parameter name="numberOfBits">1</parameter>
+    </plugin>
+    <plugin name="tagModifier">
+      <parameter name="set">_ChimeraTK_DeviceRegister_reverseRecovery</parameter>
+    </plugin>
+    <plugin name="typeHintModifier">
+      <parameter name="type">Boolean</parameter>
+    </plugin>
+  </redirectedRegister>
+
+
+  <redirectedRegister name="bit6">
+    <targetDevice>baseDevice</targetDevice>
+    <targetRegister>readWrite</targetRegister>
+    <plugin name="bitRange">
+      <parameter name="shift">6</parameter>
+      <parameter name="numberOfBits">1</parameter>
+    </plugin>
+    <plugin name="tagModifier">
+      <parameter name="set">_ChimeraTK_DeviceRegister_reverseRecovery</parameter>
+    </plugin>
+    <plugin name="typeHintModifier">
+      <parameter name="type">Boolean</parameter>
+    </plugin>
+  </redirectedRegister>
+  <redirectedRegister name="bit7">
+    <targetDevice>baseDevice</targetDevice>
+    <targetRegister>readWrite</targetRegister>
+    <plugin name="bitRange">
+      <parameter name="shift">7</parameter>
+      <parameter name="numberOfBits">1</parameter>
+    </plugin>
+    <plugin name="tagModifier">
+      <parameter name="set">_ChimeraTK_DeviceRegister_reverseRecovery</parameter>
+    </plugin>
+    <plugin name="typeHintModifier">
+      <parameter name="type">Boolean</parameter>
+    </plugin>
+  </redirectedRegister>
+  <redirectedRegister name="bit8">
+    <targetDevice>baseDevice</targetDevice>
+    <targetRegister>readWrite</targetRegister>
+    <plugin name="bitRange">
+      <parameter name="shift">8</parameter>
+      <parameter name="numberOfBits">1</parameter>
+    </plugin>
+    <plugin name="tagModifier">
+      <parameter name="set">_ChimeraTK_DeviceRegister_reverseRecovery</parameter>
+    </plugin>
+    <plugin name="typeHintModifier">
+      <parameter name="type">Boolean</parameter>
+    </plugin>
+  </redirectedRegister>
+  <redirectedRegister name="bit9">
+    <targetDevice>baseDevice</targetDevice>
+    <targetRegister>readWrite</targetRegister>
+    <plugin name="bitRange">
+      <parameter name="shift">9</parameter>
+      <parameter name="numberOfBits">1</parameter>
+    </plugin>
+    <plugin name="tagModifier">
+      <parameter name="set">_ChimeraTK_DeviceRegister_reverseRecovery</parameter>
+    </plugin>
+    <plugin name="typeHintModifier">
+      <parameter name="type">Boolean</parameter>
+    </plugin>
+  </redirectedRegister>
+
+</logicalNameMap>

@@ -115,6 +115,7 @@ namespace ChimeraTK {
     if(_impl) {
       _impl->interrupt();
     }
+
     for(auto& slave : _slaves) {
       slave->interrupt();
     }

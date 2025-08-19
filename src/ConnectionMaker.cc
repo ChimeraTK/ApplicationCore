@@ -716,11 +716,13 @@ namespace ChimeraTK {
       accessor = _app.getTestableMode().decorate(accessor, detail::TestableMode::DecoratorType::READ);
     }
 
+    auto recoveryHelper = boost::make_shared<RecoveryHelper>();
+
     if(node.getDirection().dir == VariableDirection::consuming && node.getDirection().withReturn) {
-      return boost::make_shared<ReverseRecoveryDecorator<UserType>>(accessor, node);
+      accessor = boost::make_shared<ReverseRecoveryDecorator<UserType>>(accessor, recoveryHelper);
     }
 
-    return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, node);
+    return boost::make_shared<ExceptionHandlingDecorator<UserType>>(accessor, node, recoveryHelper);
   }
 
   /********************************************************************************************************************/
