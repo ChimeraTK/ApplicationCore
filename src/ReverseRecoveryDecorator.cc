@@ -21,9 +21,14 @@ namespace ChimeraTK {
     _recoveryHelper->recoveryDirection = RecoveryHelper::Direction::fromDevice;
 
     // Set the read queue as continuation of the notification queue
-    // The continuation will just trigger a read on the target accessor
-    this->_readQueue =
-        _recoveryHelper->notificationQueue.template then<void>([&, this]() { _target->read(); }, std::launch::deferred);
+    // The continuation will just trigger a readTransfer on the target accessor
+    // pre/post will have been/be called by the decorator
+    this->_readQueue = _recoveryHelper->notificationQueue.template then<void>(
+        [&, this]() {
+          assert(_target->isReadTransactionInProgress());
+          _target->readTransfer();
+        },
+        std::launch::deferred);
   }
 
   /********************************************************************************************************************/

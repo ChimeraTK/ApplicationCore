@@ -597,8 +597,6 @@ BOOST_AUTO_TEST_CASE(testReverseRecoveryNetworkWoOptimized) {
   // This test just checks that we can connect this network successfully
   ctk::BackendFactory::getInstance().setDMapFilePath("testTagged.dmap");
 
-  ctk::Logger::getInstance().setMinSeverity(ctk::Logger::Severity::debug);
-
   TestApplication app;
 
   std::atomic<bool> up{false};
@@ -627,5 +625,62 @@ BOOST_AUTO_TEST_CASE(testReverseRecoveryNetworkWoOptimized) {
   CHECK_EQUAL_TIMEOUT(int(modIn), 0, 2000);
 
   CHECK_EQUAL_TIMEOUT(dev.read<int32_t>("/writeOnlyRB"), 8, 2000);
+  app.shutdown();
+}
+
+BOOST_AUTO_TEST_CASE(testReverseRecoveryBitAccessorFanOut) {
+  std::cout << "testReverseRecoveryBitAccessorFanOut" << std::endl;
+
+  // This test just checks that we can connect this network successfully
+  ctk::BackendFactory::getInstance().setDMapFilePath("testTagged.dmap");
+
+  TestApplication app;
+
+  ctk::DeviceModule devModule{&app, "bitMappedDevice", "/trigger"};
+
+  ctk::Device dev;
+  dev.open("baseDevice");
+  dev.write<int32_t>("/readWrite", 0x7fff);
+
+  // Nothing to do
+  app.mod.doMainLoop = [&]() {};
+
+  ctk::TestFacility test(app, false);
+  test.setScalarDefault<ctk::Boolean>("/bit3", false);
+  test.runApplication();
+
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  BOOST_TEST(dev.read<int32_t>("/readWrite") == 0x7FFF);
+  app.shutdown();
+}
+
+BOOST_AUTO_TEST_CASE(testReverseRecoveryBitAccessorDirect) {
+  std::cout << "testReverseRecoveryBitAccessorFanOut" << std::endl;
+
+  // This test just checks that we can connect this network successfully
+  ctk::BackendFactory::getInstance().setDMapFilePath("testTagged.dmap");
+
+  TestApplication app;
+
+  ctk::DeviceModule devModule{&app, "bitMappedDevice", "/trigger"};
+
+  ctk::Device dev;
+  dev.open("baseDevice");
+  dev.write<int32_t>("/readWrite", 0x7fff);
+
+  // Nothing to do
+  app.mod.doMainLoop = [&]() {
+
+  };
+
+  ctk::TestFacility test(app, false);
+  test.setScalarDefault<ctk::Boolean>("/bit3", false);
+  app.optimiseUnmappedVariables({"/bit3"});
+  test.runApplication();
+
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  BOOST_TEST(dev.read<int32_t>("/readWrite") == 0x7FFF);
   app.shutdown();
 }
