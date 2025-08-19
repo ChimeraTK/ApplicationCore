@@ -1,2 +1,3 @@
 baseDevice (sharedMemoryDummy?map=baseDevice.map)
 taggedDevice (logicalNameMap?map=tagged.xlmap)
+bitMappedDevice (logicalNameMap?map=taggedBitRange.xlmap)
