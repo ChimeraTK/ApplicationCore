@@ -120,7 +120,9 @@ namespace ChimeraTK {
     static void registerThread(const std::string& name);
 
     /**
-     * Enable debug output for the ConnectionMaker.
+     * Enable debug output for the ConnectionMaker. Note, the debug output will have the logger severity "trace" and
+     * hence will not be visible by default. Enable trace output as follows:
+     *   Logger::getInstance().setMinSeverity(Logger::Severity::trace);
      */
     void debugMakeConnections() { _enableDebugMakeConnections = true; }
 
