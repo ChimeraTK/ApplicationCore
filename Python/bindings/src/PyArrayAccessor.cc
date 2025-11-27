@@ -92,6 +92,7 @@ namespace ChimeraTK {
     std::visit([&](auto& acc) { rv = py::cast(acc[index]); }, _accessor);
     return rv;
   }
+
   /********************************************************************************************************************/
 
   void PyArrayAccessor::setitem(size_t index, const UserTypeVariantNoVoid& val) {
@@ -105,6 +106,29 @@ namespace ChimeraTK {
         },
         _accessor);
   }
+
+  /********************************************************************************************************************/
+
+  void PyArrayAccessor::setslice(const py::slice& slice, const UserTypeVariantNoVoid& val) {
+    std::visit(
+        [&](auto& acc) {
+          std::visit(
+              [&](auto& v) {
+                size_t start, stop, step, length;
+                if(!slice.compute(acc.getNElements(), &start, &stop, &step, &length)) {
+                  throw pybind11::error_already_set();
+                }
+
+                auto value = userTypeToUserType<typename std::remove_reference<decltype(acc)>::type::value_type>(v);
+                for(size_t i = start; i < stop; i += step) {
+                  acc[i] = value;
+                }
+              },
+              val);
+        },
+        _accessor);
+  }
+
   /********************************************************************************************************************/
 
   std::string PyArrayAccessor::repr(py::object& acc) {
@@ -222,6 +246,7 @@ namespace ChimeraTK {
         .def("__repr__", &PyArrayAccessor::repr)
         .def("__getitem__", &PyArrayAccessor::getitem)
         .def("__setitem__", &PyArrayAccessor::setitem)
+        .def("__setitem__", &PyArrayAccessor::setslice)
         .def("__getattr__", &PyArrayAccessor::getattr);
     for(const auto& fn : PyTransferElementBase::specialFunctionsToEmulateNumeric) {
       arrayacc.def(fn.c_str(),

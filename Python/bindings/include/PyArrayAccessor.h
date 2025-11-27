@@ -58,6 +58,8 @@ namespace ChimeraTK {
 
     void setitem(size_t index, const UserTypeVariantNoVoid& val);
 
+    void setslice(const py::slice& slice, const UserTypeVariantNoVoid& val);
+
     static std::string repr(py::object& acc);
 
     py::buffer_info getBufferInfo();
