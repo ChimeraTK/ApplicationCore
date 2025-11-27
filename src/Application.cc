@@ -241,6 +241,9 @@ void Application::shutdown() {
 
   _circularDependencyDetector.terminate();
 
+  // Since the destructor of the Application may come too late, we will de-init the Python system here
+  getPythonModuleManager().deinit();
+
   ApplicationBase::shutdown();
 }
 
