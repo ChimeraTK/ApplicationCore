@@ -10,9 +10,7 @@ namespace ChimeraTK {
       const std::string& description, const std::unordered_set<std::string>& tags)
   : VariableGroup(owner, Utilities::getPathName(qualifiedStatusVariableName), description, tags),
     _status(this, Utilities::getUnqualifiedName(qualifiedStatusVariableName), description, {tagStatusHasMessage}),
-    _message(this, Utilities::getUnqualifiedName(qualifiedStatusVariableName) + "_message", "", "status message") {
-    addTag(explicitDataValidityTag);
-  }
+    _message(this, Utilities::getUnqualifiedName(qualifiedStatusVariableName) + "_message", "", "status message") {}
 
   /********************************************************************************************************************/
 
@@ -24,7 +22,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void StatusWithMessage::writeIfDifferent(StatusOutput::Status status, std::string message) {
-    if(status != _status || message != std::string(_message) || _status.getVersionNumber() == VersionNumber{nullptr}) {
+    if(status != _status || message != std::string(_message) || _status.checkMetadataWriteDifference<int32_t>()) {
       write(status, std::move(message));
     }
   }
@@ -39,7 +37,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void StatusWithMessage::writeOkIfDifferent() {
-    if(_status != StatusOutput::Status::OK || _status.getVersionNumber() == VersionNumber{nullptr}) {
+    if(_status != StatusOutput::Status::OK || _status.checkMetadataWriteDifference<int32_t>()) {
       setOk();
       writeAll();
     }

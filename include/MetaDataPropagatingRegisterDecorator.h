@@ -65,6 +65,8 @@ namespace ChimeraTK {
     void disableDataValidityPropagation() { _disableDataValidityPropagation = true; }
     void disableVersionNumberPropagation() { _disableVersionNumberPropagation = true; }
 
+    [[nodiscard]] bool getDisableDataValidityPropagation() const { return _disableDataValidityPropagation; }
+
    protected:
     EntityOwner* _owner;
     VariableDirection _direction;

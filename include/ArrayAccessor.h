@@ -190,21 +190,8 @@ namespace ChimeraTK {
 
   template<typename UserType>
   void ArrayAccessor<UserType>::writeIfDifferent(const std::vector<UserType>& newValue) {
-    // Need to get to the MetaDataPropagatingRegisterDecorator to obtain the last written data validity for this PV.
-    // The dynamic_cast is ok, since the MetaDataPropagatingRegisterDecorator is always the outermost accessor, cf.
-    // the data validity propagation specification, Section 2.5.1.
-    auto* targetMetaDataPropagatingDecorator =
-        dynamic_cast<MetaDataPropagatingRegisterDecorator<UserType>*>(this->get());
-    assert(targetMetaDataPropagatingDecorator != nullptr);
-
-    // In contrast to OneDRegisterAccessor::writeIfDifferent(), we must not set the data validity on the target
-    // accessor, since that would be interpreted by the MetaDataPropagatingRegisterDecorator as an application-induced
-    // forced fault state. This would result in invalidity lock-ups if this happens in a circular network. Hence the
-    // comparison of the data validity must also be done against the validity of the decorator's target accessor which
-    // corresponds to the last written data validity for this PV.
     if(!std::equal(newValue.begin(), newValue.end(), this->get()->accessChannel(0).begin()) ||
-        this->getVersionNumber() == VersionNumber(nullptr) ||
-        targetMetaDataPropagatingDecorator->getTargetValidity() != this->getOwner()->getDataValidity()) {
+        this->template checkMetadataWriteDifference<UserType>()) {
       setAndWrite(newValue);
     }
   }
