@@ -57,7 +57,8 @@ namespace ChimeraTK {
      *
      *  The tagsToAggregate are the tags which are required to be present at the aggregated StatusOutputs. StatusOutputs
      *  which do not have the specified tags are ignored. If no tag is specified, all StatusOutputs are aggregated. At
-     *  the moment, at maximum only one tag may be specified.
+     *  the moment, at maximum only one tag may be specified. The specified tag can be negated (start with "!"), in
+     *  which case all StatusOutputs with that tag will be excluded.
      *
      *  outputTags is the list of tags which is attached to the aggregated output. This tag has no influence on the
      *  aggregation. Other StatusAggregators will aggregate the output based on the tagsToAggregate, not based on the

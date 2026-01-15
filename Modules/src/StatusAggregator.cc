@@ -4,8 +4,6 @@
 
 #include <ChimeraTK/SystemTags.h>
 
-#include <list>
-#include <regex>
 #include <utility>
 
 namespace ChimeraTK {
@@ -41,22 +39,35 @@ namespace ChimeraTK {
     // map which assigns fully qualified path of StatusAggregator output to the ully qualified path StatusAggregator output message
     std::map<std::string, std::string> statusToMessagePathsMap;
 
+    // define visitor function as a lambda, executed for each PV and StatusAggregator in the model
     auto scanModel = [&](auto proxy) {
+      // Define helper lambda (yes, inside another lambda, sorry...) for checking if a PV meets a tag requirement.
+      // This avoids code duplication.
+      auto checkTag = [&](const auto& nodeOrProxy) -> bool {
+        // ATTENTION. This code is implementing a logical AND.
+        // The constructor is currently limiting to one tag. According to #13256 the logic should be configurable
+        // whether a logical AND or a logical OR is used, or only a single tag is allowed (which will be the default).
+        return std::ranges::all_of(_tagsToAggregate, [&](const auto& tagToAgregate) {
+          if(tagToAgregate.starts_with('!')) {
+            // tag is negated: tag must not be present to consider status for aggregation
+            return nodeOrProxy.getTags().find(negateTag(tagToAgregate)) == nodeOrProxy.getTags().end();
+          }
+          // tag is not negated: tag needs to be present to consider status for aggregation
+          return nodeOrProxy.getTags().find(tagToAgregate) != nodeOrProxy.getTags().end();
+        });
+      };
+
+      // First case: ApplicationModule, check if this is another StatusAggregator
       if constexpr(ChimeraTK::Model::isApplicationModule(proxy)) {
         auto* staAggPtr = dynamic_cast<StatusAggregator*>(&proxy.getApplicationModule());
         if(staAggPtr != nullptr) {
           if(staAggPtr == this) {
             return;
           }
-          // ATTENTION. This loop is implementing a logical AND.
-          // There is a design decision pending whether this is the wanted behaviour (#13256).
-          // The constructor is currently limiting to one tag, so existing logic will not break.
-          for(const auto& tagToAgregate : _tagsToAggregate) {
-            // Each tag attached to this StatusAggregator must be present at all StatusOutputs to be aggregated
-            auto outputNode = VariableNetworkNode(staAggPtr->_output._status);
-            if(outputNode.getTags().find(tagToAgregate) == outputNode.getTags().end()) {
-              return;
-            }
+
+          // check if found status output matches our tag filter
+          if(!checkTag(VariableNetworkNode(staAggPtr->_output._status))) {
+            return;
           }
 
           inputPathsSet.insert(staAggPtr->_output._status.getModel().getFullyQualifiedPath());
@@ -71,6 +82,7 @@ namespace ChimeraTK {
         }
       }
 
+      // Second case: ProcessVariable: use StatusOutputs not belonging to another StatusAggregator (if tag matches)
       if constexpr(ChimeraTK::Model::isVariable(proxy)) {
         // check whether its not output of this (current) StatusAggregator. 'Current' StatusAggregator output is also
         // visible in the scanned model and should be ignored
@@ -87,16 +99,11 @@ namespace ChimeraTK {
 
         // find status output - this is potential candidate to be aggregated
         if(tags.find(ChimeraTK::SystemTags::statusOutput) != tags.end()) {
-          for(const auto& tagToAgregate : _tagsToAggregate) {
-            // ATTENTION. This loop is implementing a logical AND.
-            // There is a design decision pending whether this is the wanted behaviour (#13256).
-            // The constructor is currently limiting to one tag, so existing logic will not break.
-            //
-            // Each tag attached to this StatusAggregator must be present at all StatusOutputs to be aggregated
-            if(tags.find(tagToAgregate) == tags.end()) {
-              return;
-            }
+          // check if found status output matches our tag filter
+          if(!checkTag(proxy)) {
+            return;
           }
+
           inputPathsSet.insert(proxy.getFullyQualifiedPath());
 
           // check for presence of message
@@ -123,6 +130,8 @@ namespace ChimeraTK {
       }
     }
   }
+
+  /********************************************************************************************************************/
 
   int StatusAggregator::getPriority(StatusOutput::Status status) const {
     using Status = StatusOutput::Status;
