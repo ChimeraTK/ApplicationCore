@@ -7,9 +7,7 @@
 #include <boost/core/demangle.hpp>
 
 #include <cassert>
-#include <fstream>
 #include <iostream>
-#include <regex>
 
 namespace ChimeraTK {
 
