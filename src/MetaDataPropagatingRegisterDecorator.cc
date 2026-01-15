@@ -9,6 +9,8 @@
 
 namespace ChimeraTK {
 
+  /********************************************************************************************************************/
+
   template<typename T>
   void MetaDataPropagatingRegisterDecorator<T>::doPostRead(TransferType type, bool hasNewData) {
     NDRegisterAccessorDecorator<T, T>::doPostRead(type, hasNewData);
@@ -38,6 +40,8 @@ namespace ChimeraTK {
       _lastValidity = _dataValidity;
     }
   }
+
+  /********************************************************************************************************************/
 
   template<typename T>
   void MetaDataPropagatingRegisterDecorator<T>::doPreWrite(TransferType type, VersionNumber versionNumber) {
@@ -76,6 +80,8 @@ namespace ChimeraTK {
     }
     _target->preWrite(type, versionNumber);
   }
+
+  /********************************************************************************************************************/
 
 } // namespace ChimeraTK
 
