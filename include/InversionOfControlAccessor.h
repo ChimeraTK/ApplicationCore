@@ -23,7 +23,7 @@ namespace ChimeraTK {
   class InversionOfControlAccessor {
    public:
     /** Unregister at its owner when deleting */
-    ~InversionOfControlAccessor();
+    virtual ~InversionOfControlAccessor();
 
     /**
      * Change meta data (name, unit, description and optionally tags). This function may only be used on
@@ -56,6 +56,10 @@ namespace ChimeraTK {
     [[nodiscard]] EntityOwner* getOwner() const { return _node.getOwningModule(); }
 
     [[nodiscard]] Model::ProcessVariableProxy getModel() const { return _node.getModel(); }
+
+    /** Checks whether a writeIfDifferent would have to issue a write, even if the payload data is unchanged. */
+    template<typename UserType>
+    [[nodiscard]] bool checkMetadataWriteDifference();
 
    protected:
     /** Constructor, only used by child class accessors */
@@ -221,6 +225,39 @@ namespace ChimeraTK {
   template<typename Derived>
   void InversionOfControlAccessor<Derived>::registerInModel() {
     _node.registerInModel();
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename Derived>
+  template<typename UserType>
+  bool InversionOfControlAccessor<Derived>::checkMetadataWriteDifference() {
+    auto& ndra = dynamic_cast<NDRegisterAccessorAbstractor<UserType>&>(*this);
+
+    // make sure to propagate initial values
+    if(ndra.getVersionNumber() == VersionNumber(nullptr)) {
+      return true;
+    }
+
+    // Need to get to the MetaDataPropagatingRegisterDecorator to obtain the last written data validity for this PV.
+    // The dynamic_cast is ok, since the MetaDataPropagatingRegisterDecorator is always the outermost accessor, cf.
+    // the data validity propagation specification, Section 2.5.1.
+    const auto& targetMetaDataPropagatingDecorator =
+        dynamic_cast<const MetaDataPropagatingRegisterDecorator<UserType>&>(*ndra.getImpl());
+
+    // Special case: propagation from module to output explicitly suppressed by tag
+    if(targetMetaDataPropagatingDecorator.getDisableDataValidityPropagation()) {
+      return targetMetaDataPropagatingDecorator.getTargetValidity() != ndra.dataValidity();
+    }
+
+    // Special case: DataValidity has been overridden for this PV to faulty
+    if(ndra.dataValidity() == DataValidity::faulty) {
+      // Last written DataValidity != faulty -> write is necessary
+      return targetMetaDataPropagatingDecorator.getTargetValidity() != DataValidity::faulty;
+    }
+
+    // Check with DataValidity from owning module
+    return targetMetaDataPropagatingDecorator.getTargetValidity() != this->getOwner()->getDataValidity();
   }
 
   /********************************************************************************************************************/

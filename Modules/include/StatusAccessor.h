@@ -68,7 +68,6 @@ namespace ChimeraTK {
         const std::unordered_set<std::string>& tags = {})
     : StatusAccessor<ScalarOutput<int32_t>>(owner, name, "", description, tags) {
       addTag(ChimeraTK::SystemTags::statusOutput);
-      addTag(explicitDataValidityTag);
     }
     StatusOutput() = default;
     using StatusAccessor<ScalarOutput<int32_t>>::operator=;

@@ -138,19 +138,31 @@ namespace Tests::testStatusAggregator {
 
     test.runApplication();
 
+    // one of the inputs goes faulty, output is faulty
     app.s.incrementDataFaultCounter();
     app.s.status = ctk::StatusOutput::Status::OK;
     app.s.status.write();
     test.stepApplication();
     BOOST_CHECK(status.readNonBlocking() == true);
-    BOOST_CHECK(status.dataValidity() == ctk::DataValidity::ok);
+    BOOST_CHECK(status.dataValidity() == ctk::DataValidity::faulty);
     BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::OK));
+
+    // proper aggregation still taking place
     app.s.status = ctk::StatusOutput::Status::OFF;
     app.s.status.write();
     test.stepApplication();
     BOOST_CHECK(status.readNonBlocking() == true);
-    BOOST_CHECK(status.dataValidity() == ctk::DataValidity::ok);
+    BOOST_CHECK(status.dataValidity() == ctk::DataValidity::faulty);
     BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::OFF));
+
+    // one of the valid inputs has the highest priority value (i.e. Status::FAULT in this case), output will be valid
+    // (because other inputs do not matter in this case, the result will be always FAULT)
+    app.outerGroup.s1.status = ctk::StatusOutput::Status::FAULT;
+    app.outerGroup.s1.status.write();
+    test.stepApplication();
+    BOOST_CHECK(status.readNonBlocking() == true);
+    BOOST_CHECK(status.dataValidity() == ctk::DataValidity::ok);
+    BOOST_CHECK_EQUAL(int(status), int(ctk::StatusOutput::Status::FAULT));
   }
 
   /********************************************************************************************************************/

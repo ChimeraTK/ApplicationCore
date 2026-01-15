@@ -23,6 +23,9 @@ namespace ChimeraTK {
     }
     // add reserved tag tagAggregatedStatus to the status output, so it can be detected by other StatusAggregators
     _output._status.addTag(tagAggregatedStatus);
+    // switch off propagation of DataValidity from the inputs, because of special handling (output is valid if one
+    // of the valid inputs has the highest-priority value).
+    _output.addTag(explicitDataValidityTag);
     // search the variable tree for StatusOutputs and create the matching inputs
     populateStatusInput();
   }
@@ -173,9 +176,22 @@ namespace ChimeraTK {
       // flag whether status has been set from an input already
       bool statusSet = false;
 
+      // custom DataValidity propagation
+      bool hasInvalidInput{false};
+      bool forceValid{false};
+
       for(auto& inputPair : _inputs) {
         StatusPushInput& input = inputPair._status;
         auto prio = getPriority(input);
+
+        // custom DataValidity propagation
+        if(input.dataValidity() == DataValidity::faulty) {
+          hasInvalidInput = true;
+        }
+        else if(prio == 3) {
+          // valid and highest priority (e.g. Status::FAULT except for PriorityMode::ofwk where it's Status::OFF)
+          forceValid = true;
+        }
 
         // Select the input if:
         // - no input has been selected so far, or
@@ -200,6 +216,12 @@ namespace ChimeraTK {
 
       // some input must be selected due to the logic
       assert(statusSet);
+
+      // custom DataValidity propagation
+      auto validity = (!hasInvalidInput || forceValid) ? DataValidity::ok : DataValidity::faulty;
+
+      _output._status.setDataValidity(validity);
+      _output._message.setDataValidity(validity);
 
       // write status output with message from selected input. The output is written only if the output's value has
       // changed (writeIfDifferent).

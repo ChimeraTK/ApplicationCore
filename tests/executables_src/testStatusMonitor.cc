@@ -930,8 +930,7 @@ namespace Tests::testStatusMonitor {
     // lastStatusValidity
     BOOST_CHECK(status.readLatest());
     BOOST_CHECK(status == static_cast<int>(ChimeraTK::StatusOutput::Status::OK));
-    // StatusOutput by default does not propagate DataValidity=fault (behaviour was changed!)
-    BOOST_CHECK(status.dataValidity() == ctk::DataValidity::ok);
+    BOOST_CHECK(status.dataValidity() == ctk::DataValidity::faulty);
 
     watch = 55.0;
     watch.write();
@@ -939,7 +938,7 @@ namespace Tests::testStatusMonitor {
     status.readLatest();
     // status is changed, data validity is not changed -> test condition: status.value != newStatus
     BOOST_CHECK(status == static_cast<int>(ChimeraTK::StatusOutput::Status::WARNING));
-    BOOST_CHECK(status.dataValidity() == ctk::DataValidity::ok);
+    BOOST_CHECK(status.dataValidity() == ctk::DataValidity::faulty);
 
     watch = 70.0;
     watch.setDataValidity(ctk::DataValidity::ok);

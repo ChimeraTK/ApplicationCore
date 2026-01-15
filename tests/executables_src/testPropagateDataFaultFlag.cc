@@ -119,7 +119,7 @@ namespace Tests::testPropagateDataFaultFlag {
 
     test.runApplication();
 
-    // test if fault flag propagates to all outputs, except oStat
+    // test if fault flag propagates to all outputs
     i1 = 1;
     i1.setDataValidity(ctk::DataValidity::faulty);
     i1.write();
@@ -129,7 +129,7 @@ namespace Tests::testPropagateDataFaultFlag {
     oStat.read();
     BOOST_CHECK(o1.dataValidity() == ctk::DataValidity::faulty);
     BOOST_CHECK(o2.dataValidity() == ctk::DataValidity::faulty);
-    BOOST_CHECK(oStat.dataValidity() == ctk::DataValidity::ok);
+    BOOST_CHECK(oStat.dataValidity() == ctk::DataValidity::faulty);
     BOOST_CHECK_EQUAL(int(o1), 1);
     BOOST_CHECK_EQUAL(o2[0], 0);
     BOOST_CHECK_EQUAL(o2[1], 0);
