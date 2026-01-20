@@ -139,14 +139,63 @@ namespace ChimeraTK {
   int StatusAggregator::getPriority(StatusOutput::Status status) const {
     using Status = StatusOutput::Status;
 
-    // static helps against initializing over and over again
-    static const std::map<PriorityMode, std::map<Status, int32_t>> map_priorities{
-        {PriorityMode::fwko, {{Status::OK, 1}, {Status::FAULT, 3}, {Status::OFF, 0}, {Status::WARNING, 2}}},
-        {PriorityMode::fwok, {{Status::OK, 0}, {Status::FAULT, 3}, {Status::OFF, 1}, {Status::WARNING, 2}}},
-        {PriorityMode::ofwk, {{Status::OK, 0}, {Status::FAULT, 2}, {Status::OFF, 3}, {Status::WARNING, 1}}},
-        {PriorityMode::fw_warn_mixed, {{Status::OK, -1}, {Status::FAULT, 3}, {Status::OFF, -1}, {Status::WARNING, 2}}}};
+    // Attention! priority_table must follow the order of PriorityMode and Status values!
+    static_assert(int(PriorityMode::fwok) == 0);
+    static_assert(int(PriorityMode::fwko) == 1);
+    static_assert(int(PriorityMode::fw_warn_mixed) == 2);
+    static_assert(int(PriorityMode::ofwk) == 3);
 
-    return map_priorities.at(_mode).at(status);
+    static_assert(int(Status::OK) == 0);
+    static_assert(int(Status::FAULT) == 1);
+    static_assert(int(Status::OFF) == 2);
+    static_assert(int(Status::WARNING) == 3);
+
+    constexpr auto priority_table = std::array{
+        // PriorityMode::fwok
+        std::array<int32_t, 4>{
+            /* OK */ 0,
+            /* FAULT */ 3,
+            /* OFF */ 1,
+            /* WARNING */ 2,
+        },
+        // PriorityMode::fwko
+        std::array<int32_t, 4>{
+            /* OK */ 1,
+            /* FAULT */ 3,
+            /* OFF */ 0,
+            /* WARNING */ 2,
+        },
+        // PriorityMode::fw_warn_mixed
+        std::array<int32_t, 4>{
+            /* OK */ -1,
+            /* FAULT */ 3,
+            /* OFF */ -1,
+            /* WARNING */ 2,
+        },
+        // PriorityMode::ofwk
+        std::array<int32_t, 4>{
+            /* OK */ 0,
+            /* FAULT */ 2,
+            /* OFF */ 3,
+            /* WARNING */ 1,
+        },
+    };
+
+    return priority_table[int(_mode)][int(status)];
+
+    /*
+      For reference, we keep the old code here with an std::map. This creates issues since the static instance may go
+      away too early in the shutdown phase, resulting in a use-after-free. Once we have C++26 fully supported, we should
+      be able to use a constexpr std::map.
+
+      static const std::map<PriorityMode, std::map<Status, int32_t>> map_priorities{
+        {PriorityMode::fwok, {{Status::OK, 0}, {Status::FAULT, 3}, {Status::OFF, 1}, {Status::WARNING, 2}}},
+        {PriorityMode::fwko, {{Status::OK, 1}, {Status::FAULT, 3}, {Status::OFF, 0}, {Status::WARNING, 2}}},
+        {PriorityMode::fw_warn_mixed, {{Status::OK, -1}, {Status::FAULT, 3}, {Status::OFF, -1}, {Status::WARNING, 2}}},
+        {PriorityMode::ofwk, {{Status::OK, 0}, {Status::FAULT, 2}, {Status::OFF, 3}, {Status::WARNING, 1}}},
+      };
+      return map_priorities.at(_mode).at(status);
+    */
   }
 
   /********************************************************************************************************************/
