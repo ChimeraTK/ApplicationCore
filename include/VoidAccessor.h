@@ -37,6 +37,8 @@ namespace ChimeraTK {
 
     bool writeDestructively();
 
+    ~VoidAccessor() { InversionOfControlAccessor<VoidAccessor>::deinit(); }
+
    protected:
     friend class InversionOfControlAccessor<VoidAccessor>;
 
@@ -53,7 +55,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /** Convenience class for input accessors. For Void there is only UpdateMode::push */
-  struct VoidInput : public VoidAccessor {
+  class VoidInput : public VoidAccessor {
+   public:
     VoidInput(Module* owner, const std::string& name, const std::string& description,
         const std::unordered_set<std::string>& tags = {})
     : VoidAccessor(owner, name, {VariableDirection::consuming, false}, UpdateMode::push, description, tags) {}
@@ -65,7 +68,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /** Convenience class for output void (always UpdateMode::push) */
-  struct VoidOutput : public VoidAccessor {
+  class VoidOutput : public VoidAccessor {
+   public:
     VoidOutput(Module* owner, const std::string& name, const std::string& description,
         const std::unordered_set<std::string>& tags = {})
     : VoidAccessor(owner, name, {VariableDirection::feeding, false}, UpdateMode::push, description, tags) {}
@@ -132,14 +136,18 @@ namespace ChimeraTK {
   inline VoidAccessor::VoidAccessor(Module* owner, const std::string& name, VariableDirection direction,
       std::string& unit, UpdateMode mode, const std::string& description, const std::unordered_set<std::string>& tags)
   : InversionOfControlAccessor<VoidAccessor>(
-        owner, name, direction, unit, 1, mode, description, &typeid(ChimeraTK::Void), tags) {}
+        owner, name, direction, unit, 1, mode, description, &typeid(ChimeraTK::Void), tags) {
+    InversionOfControlAccessor<VoidAccessor>::init();
+  }
 
   /********************************************************************************************************************/
 
   inline VoidAccessor::VoidAccessor(Module* owner, const std::string& name, VariableDirection direction,
       UpdateMode mode, const std::string& description, const std::unordered_set<std::string>& tags)
   : InversionOfControlAccessor<VoidAccessor>(
-        owner, name, direction, "", 1, mode, description, &typeid(ChimeraTK::Void), tags) {}
+        owner, name, direction, "", 1, mode, description, &typeid(ChimeraTK::Void), tags) {
+    InversionOfControlAccessor<VoidAccessor>::init();
+  }
 
   /********************************************************************************************************************/
 
