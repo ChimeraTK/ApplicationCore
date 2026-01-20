@@ -23,7 +23,8 @@ namespace ChimeraTK {
 
   /** Special StatusAccessor - used to avoid code duplication in StatusOutput, StatusPushInput and StatusPollInput. */
   template<typename ACCESSOR>
-  struct StatusAccessor : ACCESSOR, StatusAccessorBase {
+  class StatusAccessor : public ACCESSOR, public StatusAccessorBase {
+   public:
     /** Note: In contrast to normal ScalarInput accessors, this constructor omits the unit argument. */
     StatusAccessor(Module* owner, const std::string& name, const std::string& description,
         const std::unordered_set<std::string>& tags = {})
@@ -62,7 +63,8 @@ namespace ChimeraTK {
    *  status, unless explicitly set for the output.
    *  The owning ApplicationModule is responsible for a implenting reasonable mapping, if required.
    */
-  struct StatusOutput : StatusAccessor<ScalarOutput<int32_t>> {
+  class StatusOutput : public StatusAccessor<ScalarOutput<int32_t>> {
+   public:
     /** Note: In contrast to normal ScalarOutput accessors, this constructor omits the unit argument. */
     StatusOutput(Module* owner, const std::string& name, const std::string& description,
         const std::unordered_set<std::string>& tags = {})
@@ -78,7 +80,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /** Special StatusPushInput which reads from a StatusOutput and also handles the type conversion */
-  struct StatusPushInput : StatusAccessor<ScalarPushInput<int32_t>> {
+  class StatusPushInput : public StatusAccessor<ScalarPushInput<int32_t>> {
+   public:
     using StatusAccessor<ScalarPushInput<int32_t>>::StatusAccessor;
     using StatusAccessor<ScalarPushInput<int32_t>>::operator=;
   };
@@ -86,7 +89,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   /** Special StatusPollInput which reads from a StatusOutput and also handles the type conversion */
-  struct StatusPollInput : StatusAccessor<ScalarPollInput<int32_t>> {
+  class StatusPollInput : public StatusAccessor<ScalarPollInput<int32_t>> {
+   public:
     using StatusAccessor<ScalarPollInput<int32_t>>::StatusAccessor;
     using StatusAccessor<ScalarPollInput<int32_t>>::operator=;
   };

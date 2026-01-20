@@ -76,7 +76,23 @@ namespace ChimeraTK {
     /** Register the variable in the model */
     void registerInModel();
 
+    /**
+     * Late initialisation of stuff we cannot do in our constructor. Needs to be called by all App accessors in their
+     * own constructor.
+     */
+    void init();
+
+    /**
+     * Early deinitialisation of stuff we cannot do in our destructor. Needs to be called in all App accessors in their
+     * their own destructor.
+     */
+    void deinit();
+
     VariableNetworkNode _node;
+
+   private:
+    bool _initCalled{false};
+    bool _deinitCalled{false};
   };
 
   /********************************************************************************************************************/
@@ -84,41 +100,9 @@ namespace ChimeraTK {
 
   template<typename Derived>
   InversionOfControlAccessor<Derived>::~InversionOfControlAccessor() {
-    if(getOwner() != nullptr) {
-      if(static_cast<Derived*>(this)->_impl != nullptr) {
-        auto* entity = getOwner();
-
-        if(entity != nullptr) {
-          auto* owner = dynamic_cast<Module*>(entity);
-          while(owner->getOwner() != nullptr) {
-            owner = dynamic_cast<Module*>(owner->getOwner());
-          }
-
-          auto* application = dynamic_cast<Application*>(owner);
-          assert(application != nullptr);
-
-          if(application->getLifeCycleState() == LifeCycleState::run) {
-            try {
-              throw ChimeraTK::logic_error(
-                  "Variable has been destroyed with active connections while application is "
-                  "still running. Maybe the Application did not call shutdown() in its destructor?");
-            }
-            catch(ChimeraTK::logic_error&) {
-              std::terminate();
-            }
-          }
-        }
-      }
-      getOwner()->unregisterAccessor(_node);
-    }
-    if(getModel().isValid()) {
-      try {
-        getModel().removeNode(_node);
-      }
-      catch(ChimeraTK::logic_error& e) {
-        std::cerr << "ChimeraTK::logic_error caught: " << e.what() << std::endl;
-        std::terminate();
-      }
+    if(_node.getType() == NodeType::Application) {
+      assert(_initCalled);
+      assert(_deinitCalled);
     }
   }
 
@@ -187,6 +171,9 @@ namespace ChimeraTK {
       assert(_node.getType() == NodeType::invalid);
     }
     // Note: the accessor is registered by the VariableNetworkNode, so we don't have to re-register.
+
+    _initCalled = other._initCalled;
+    _deinitCalled = other._deinitCalled;
   }
 
   /********************************************************************************************************************/
@@ -210,14 +197,76 @@ namespace ChimeraTK {
   InversionOfControlAccessor<Derived>::InversionOfControlAccessor(Module* owner, const std::string& name,
       VariableDirection direction, std::string unit, size_t nElements, UpdateMode mode, const std::string& description,
       const std::type_info* valueType, const std::unordered_set<std::string>& tags)
-  : _node(owner, static_cast<Derived*>(this), ChimeraTK::Utilities::raiseIftrailingSlash(name, false), direction, unit,
-        nElements, mode, completeDescription(owner, description), valueType, tags) {
+  : _node(owner, nullptr, ChimeraTK::Utilities::raiseIftrailingSlash(name, false), direction, unit, nElements, mode,
+        completeDescription(owner, description), valueType, tags) {
     static_assert(std::is_base_of<InversionOfControlAccessor<Derived>, Derived>::value,
         "InversionOfControlAccessor<> must be used in a curiously recurring template pattern!");
 
     registerInModel();
 
     owner->registerAccessor(_node);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename Derived>
+  void InversionOfControlAccessor<Derived>::init() {
+    _initCalled = true;
+
+    /*
+     * This initialises pointer to App accessor.  We cannot really do it in the constructor, since it then involves a
+     * static_cast into the App Accessor type, which is undefined behaviour at that point in time (base class
+     * constructor). This is found by ASAN.
+     */
+    _node.setAppAccessorPointer(static_cast<Derived*>(this));
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename Derived>
+  void InversionOfControlAccessor<Derived>::deinit() {
+    _deinitCalled = true;
+
+    // This check and deregistration code involves "static_cast<Derived*>(this)" which is not allowed in the
+    // destructor any more - the derived part of the object is already gone. In the destructor there is no reliable way
+    // to get to the pointer to the implementation, since it is held by the other inheritance branch which may already
+    // be gone.
+    if(getOwner() != nullptr) {
+      if(static_cast<Derived*>(this)->_impl != nullptr) {
+        auto* entity = getOwner();
+
+        if(entity != nullptr) {
+          auto* owner = dynamic_cast<Module*>(entity);
+          while(owner->getOwner() != nullptr) {
+            owner = dynamic_cast<Module*>(owner->getOwner());
+          }
+
+          auto* application = dynamic_cast<Application*>(owner);
+          assert(application != nullptr);
+
+          if(application->getLifeCycleState() == LifeCycleState::run) {
+            try {
+              throw ChimeraTK::logic_error(
+                  "Variable has been destroyed with active connections while application is "
+                  "still running. Maybe the Application did not call shutdown() in its destructor?");
+            }
+            catch(ChimeraTK::logic_error&) {
+              std::terminate();
+            }
+          }
+        }
+      }
+      getOwner()->unregisterAccessor(_node);
+    }
+    if(getModel().isValid()) {
+      try {
+        getModel().removeNode(_node);
+      }
+      catch(ChimeraTK::logic_error& e) {
+        std::cerr << "ChimeraTK::logic_error caught: " << e.what() << std::endl;
+        std::terminate();
+      }
+    }
   }
 
   /********************************************************************************************************************/

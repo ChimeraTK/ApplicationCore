@@ -52,6 +52,8 @@ namespace ChimeraTK {
 
     using value_type = UserType;
 
+    ~ScalarAccessor() { InversionOfControlAccessor<ScalarAccessor<UserType>>::deinit(); }
+
    protected:
     friend class InversionOfControlAccessor<ScalarAccessor<UserType>>;
 
@@ -67,7 +69,8 @@ namespace ChimeraTK {
 
   /** Convenience class for input scalar accessors with UpdateMode::push */
   template<typename UserType>
-  struct ScalarPushInput : public ScalarAccessor<UserType> {
+  class ScalarPushInput : public ScalarAccessor<UserType> {
+   public:
     ScalarPushInput(Module* owner, const std::string& name, std::string unit, const std::string& description,
         const std::unordered_set<std::string>& tags = {});
     ScalarPushInput() : ScalarAccessor<UserType>() {}
@@ -78,7 +81,8 @@ namespace ChimeraTK {
 
   /** Convenience class for input scalar accessors with UpdateMode::poll */
   template<typename UserType>
-  struct ScalarPollInput : public ScalarAccessor<UserType> {
+  class ScalarPollInput : public ScalarAccessor<UserType> {
+   public:
     ScalarPollInput(Module* owner, const std::string& name, std::string unit, const std::string& description,
         const std::unordered_set<std::string>& tags = {});
     ScalarPollInput() : ScalarAccessor<UserType>() {}
@@ -90,7 +94,8 @@ namespace ChimeraTK {
 
   /** Convenience class for output scalar accessors (always UpdateMode::push) */
   template<typename UserType>
-  struct ScalarOutput : public ScalarAccessor<UserType> {
+  class ScalarOutput : public ScalarAccessor<UserType> {
+   public:
     ScalarOutput(Module* owner, const std::string& name, std::string unit, const std::string& description,
         const std::unordered_set<std::string>& tags = {});
     ScalarOutput() : ScalarAccessor<UserType>() {}
@@ -101,7 +106,8 @@ namespace ChimeraTK {
 
   /** Convenience class for input scalar accessors with return channel ("write back") and UpdateMode::push. */
   template<typename UserType>
-  struct ScalarPushInputWB : public ScalarAccessor<UserType> {
+  class ScalarPushInputWB : public ScalarAccessor<UserType> {
+   public:
     ScalarPushInputWB(Module* owner, const std::string& name, std::string unit, const std::string& description,
         const std::unordered_set<std::string>& tags = {});
     ScalarPushInputWB() : ScalarAccessor<UserType>() {}
@@ -112,7 +118,8 @@ namespace ChimeraTK {
 
   /** Convenience class for output scalar accessors with return channel ("read back") (always UpdateMode::push) */
   template<typename UserType>
-  struct ScalarOutputPushRB : public ScalarAccessor<UserType> {
+  class ScalarOutputPushRB : public ScalarAccessor<UserType> {
+   public:
     ScalarOutputPushRB(Module* owner, const std::string& name, std::string unit, const std::string& description,
         const std::unordered_set<std::string>& tags = {});
     ScalarOutputPushRB() : ScalarAccessor<UserType>() {}
@@ -123,7 +130,8 @@ namespace ChimeraTK {
 
   /** Convenience class for output scalar accessors with return channel ("read back") (always UpdateMode::push) */
   template<typename UserType>
-  struct ScalarOutputReverseRecovery : public ScalarAccessor<UserType> {
+  class ScalarOutputReverseRecovery : public ScalarAccessor<UserType> {
+   public:
     ScalarOutputReverseRecovery(Module* owner, const std::string& name, std::string unit,
         const std::string& description, const std::unordered_set<std::string>& tags = {});
     ScalarOutputReverseRecovery() : ScalarAccessor<UserType>() {}
@@ -197,7 +205,9 @@ namespace ChimeraTK {
   ScalarAccessor<UserType>::ScalarAccessor(Module* owner, const std::string& name, VariableDirection direction,
       std::string unit, UpdateMode mode, const std::string& description, const std::unordered_set<std::string>& tags)
   : InversionOfControlAccessor<ScalarAccessor<UserType>>(
-        owner, name, direction, unit, 1, mode, description, &typeid(UserType), tags) {}
+        owner, name, direction, unit, 1, mode, description, &typeid(UserType), tags) {
+    InversionOfControlAccessor<ScalarAccessor<UserType>>::init();
+  }
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/

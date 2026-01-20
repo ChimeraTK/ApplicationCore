@@ -52,6 +52,8 @@ namespace ChimeraTK {
 
     using value_type = UserType;
 
+    ~ArrayAccessor() { InversionOfControlAccessor<ArrayAccessor<UserType>>::deinit(); }
+
    protected:
     friend class InversionOfControlAccessor<ArrayAccessor<UserType>>;
 
@@ -67,7 +69,8 @@ namespace ChimeraTK {
 
   /** Convenience class for input array accessors with UpdateMode::push */
   template<typename UserType>
-  struct ArrayPushInput : public ArrayAccessor<UserType> {
+  class ArrayPushInput : public ArrayAccessor<UserType> {
+   public:
     ArrayPushInput(Module* owner, const std::string& name, std::string unit, size_t nElements,
         const std::string& description, const std::unordered_set<std::string>& tags = {});
     ArrayPushInput() = default;
@@ -78,7 +81,8 @@ namespace ChimeraTK {
 
   /** Convenience class for input array accessors with UpdateMode::poll */
   template<typename UserType>
-  struct ArrayPollInput : public ArrayAccessor<UserType> {
+  class ArrayPollInput : public ArrayAccessor<UserType> {
+   public:
     ArrayPollInput(Module* owner, const std::string& name, std::string unit, size_t nElements,
         const std::string& description, const std::unordered_set<std::string>& tags = {});
     ArrayPollInput() = default;
@@ -90,7 +94,8 @@ namespace ChimeraTK {
 
   /** Convenience class for output array accessors (always UpdateMode::push) */
   template<typename UserType>
-  struct ArrayOutput : public ArrayAccessor<UserType> {
+  class ArrayOutput : public ArrayAccessor<UserType> {
+   public:
     ArrayOutput(Module* owner, const std::string& name, std::string unit, size_t nElements,
         const std::string& description, const std::unordered_set<std::string>& tags = {});
     ArrayOutput() = default;
@@ -102,7 +107,8 @@ namespace ChimeraTK {
   /** Convenience class for input array accessors with return channel ("write
    * back") and UpdateMode::push */
   template<typename UserType>
-  struct ArrayPushInputWB : public ArrayAccessor<UserType> {
+  class ArrayPushInputWB : public ArrayAccessor<UserType> {
+   public:
     ArrayPushInputWB(Module* owner, const std::string& name, std::string unit, size_t nElements,
         const std::string& description, const std::unordered_set<std::string>& tags = {});
     ArrayPushInputWB() = default;
@@ -114,7 +120,8 @@ namespace ChimeraTK {
   /** Convenience class for output array accessors with return channel ("read
    * back") (always UpdateMode::push) */
   template<typename UserType>
-  struct ArrayOutputPushRB : public ArrayAccessor<UserType> {
+  class ArrayOutputPushRB : public ArrayAccessor<UserType> {
+   public:
     ArrayOutputPushRB(Module* owner, const std::string& name, std::string unit, size_t nElements,
         const std::string& description, const std::unordered_set<std::string>& tags = {});
     ArrayOutputPushRB() = default;
@@ -125,7 +132,8 @@ namespace ChimeraTK {
 
   /** Deprecated, do not use. Use ArrayOutputPushRB instead (works identically). */
   template<typename UserType>
-  struct ArrayOutputRB : public ArrayAccessor<UserType> {
+  class ArrayOutputRB : public ArrayAccessor<UserType> {
+   public:
     [[deprecated]] ArrayOutputRB(Module* owner, const std::string& name, std::string unit, size_t nElements,
         const std::string& description, const std::unordered_set<std::string>& tags = {});
     ArrayOutputRB() = default;
@@ -135,7 +143,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename UserType>
-  struct ArrayOutputReverseRecovery : public ArrayAccessor<UserType> {
+  class ArrayOutputReverseRecovery : public ArrayAccessor<UserType> {
+   public:
     ArrayOutputReverseRecovery(Module* owner, const std::string& name, std::string unit, size_t nElements,
         const std::string& description, const std::unordered_set<std::string>& tags = {});
     ArrayOutputReverseRecovery() = default;
@@ -211,7 +220,9 @@ namespace ChimeraTK {
       std::string unit, size_t nElements, UpdateMode mode, const std::string& description,
       const std::unordered_set<std::string>& tags)
   : InversionOfControlAccessor<ArrayAccessor<UserType>>(
-        owner, name, direction, unit, nElements, mode, description, &typeid(UserType), tags) {}
+        owner, name, direction, unit, nElements, mode, description, &typeid(UserType), tags) {
+    InversionOfControlAccessor<ArrayAccessor<UserType>>::init();
+  }
 
   /********************************************************************************************************************/
   /********************************************************************************************************************/
