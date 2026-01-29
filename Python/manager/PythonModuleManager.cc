@@ -10,8 +10,6 @@
 #include "PythonModuleManager.h"
 #include "VersionInfo.h"
 
-#include <filesystem>
-
 namespace py = pybind11;
 using namespace py::literals;
 
@@ -42,7 +40,7 @@ namespace ChimeraTK {
 
     /******************************************************************************************************************/
 
-    PythonModuleManagerStatics::PythonModuleManagerStatics() {
+    __attribute__((visibility("hidden"))) PythonModuleManagerStatics::PythonModuleManagerStatics() {
       py::gil_scoped_acquire gil;
 
       auto locals = py::dict("so_version"_a = ChimeraTK::VersionInfo::soVersion);

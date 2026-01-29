@@ -11,7 +11,7 @@
  *
  * \section usage Example usage
  * - Each server comes with a built-in config reader that will look for
- *   the file <servername>-config.xml. So for the server below:
+ *   the file &lt;servername&gt;-config.xml. So for the server below:
  *  \code
  *  namespace ctk = ChimeratK
  *
