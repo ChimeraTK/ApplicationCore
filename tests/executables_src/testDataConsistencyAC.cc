@@ -180,4 +180,87 @@ namespace Tests::testDataConsistencyAC {
 
   /********************************************************************************************************************/
 
+  struct ModuleIVProvider : ChimeraTK::ApplicationModule {
+    explicit ModuleIVProvider(ChimeraTK::ModuleGroup* owner) : ChimeraTK::ApplicationModule(owner, "modA", "") {}
+
+    ChimeraTK::ScalarPushInput<unsigned> trigger{this, "/trigger", "", ""};
+    ChimeraTK::ArrayOutput<unsigned> data{this, "/data", "", 10, ""};
+
+    void mainLoop() override {
+      // on initial value of trigger, do not provide data
+      while(true) {
+        trigger.read();
+        data[0] = trigger;
+        data[1] = 1;
+        data.writeDestructively();
+      }
+    }
+  };
+
+  struct ModuleIVConsumer : ChimeraTK::ApplicationModule {
+    explicit ModuleIVConsumer(ChimeraTK::ModuleGroup* owner) : ChimeraTK::ApplicationModule(owner, "modB", "") {}
+
+    ChimeraTK::ScalarPushInput<unsigned> trigger{this, "/trigger", "", ""};
+    ChimeraTK::ArrayPushInput<unsigned> data{this, "/data", "", 10, ""};
+    ChimeraTK::ScalarOutput<ChimeraTK::Boolean> ok{this, "/ok", "", ""};
+
+    void mainLoop() override {
+      // on module startup, we should have inconsitent initial values
+      std::cout << "ModuleIVConsumer initial vns: data.vn=" << data.getVersionNumber()
+                << " trigger.vn=" << trigger.getVersionNumber() << std::endl;
+      auto rag = readAnyGroup();
+      ChimeraTK::DataConsistencyGroup dGroup(
+          {data, trigger}, ChimeraTK::DataConsistencyGroup::MatchingMode::historized);
+      assert(data[1] == 1);
+      assert(!dGroup.isConsistent());
+
+      ChimeraTK::TransferElementID updatedId;
+      while(true) {
+        updatedId = rag.readAny();
+        for(auto& li : this->getAccessorListRecursive()) {
+          auto& a = li.getAppAccessorNoType();
+          if(a.getId() == updatedId) {
+            std::cout << " updated=" << a.getName() << " vn=" << a.getVersionNumber()
+                      << " cur.vn=" << getCurrentVersionNumber() << std::endl;
+          }
+        }
+        std::cout << "data[0,1] = " << data[0] << " " << data[1] << std::endl;
+        dGroup.update(updatedId);
+        ok = dGroup.isConsistent() && data[1] == 1;
+        writeAllDestructively();
+      }
+    }
+  };
+
+  struct TestFixtureIV {
+    struct Server : ChimeraTK::Application {
+      Server() : Application("testSuite") {}
+      ~Server() override { shutdown(); }
+
+      ModuleIVProvider modA{this};
+      ModuleIVConsumer modB{this};
+    } testApp;
+    // cannot use TestableMode here since it waits on all modules entering main loop
+    ChimeraTK::TestFacility testFacility{testApp, false};
+  };
+
+  BOOST_FIXTURE_TEST_CASE(testHistorizedInitialVals, TestFixtureIV) {
+    std::cout << "testHistorizedInitialVals" << std::endl;
+    // this is a regression test for a bug with MatchingMode::histored and initial values
+    //
+    // Let(A, B) be set of vars that should be consistent.
+    // If initial Value A matches with value B coming in later, initial value of A might be lost.
+    // This could happen because initial value was already swapped into MetaDataRegisterDecorator.
+    auto trigger = testFacility.getScalar<unsigned>("/trigger");
+
+    testFacility.runApplication();
+
+    trigger.write();
+    auto isOk = testFacility.getScalar<ChimeraTK::Boolean>("/ok");
+    isOk.read();
+    BOOST_TEST(isOk == true);
+  }
+
+  /********************************************************************************************************************/
+
 } // namespace Tests::testDataConsistencyAC
