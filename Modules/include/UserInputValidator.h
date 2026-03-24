@@ -334,7 +334,10 @@ namespace ChimeraTK {
       _module = dynamic_cast<ApplicationModule*>(dynamic_cast<Module*>(accessor.getOwner())->findApplicationModule());
     }
     if(!_variableMap.count(accessor.getId())) {
-      accessor.addTag(std::string(tagValidatedVariable));
+      if(Application::getInstance().getLifeCycleState() == LifeCycleState::initialisation) {
+        // only add tag in initialisation phase, since later model modifications can lead to race conditions
+        accessor.addTag(std::string(tagValidatedVariable));
+      }
       _variableMap[accessor.getId()] = std::make_shared<Variable<UserType, Accessor>>(accessor);
 
       // Call the AccessorHook::onAddValidator() if present in the accessor
