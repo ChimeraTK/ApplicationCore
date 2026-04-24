@@ -92,6 +92,31 @@ namespace ChimeraTK {
      */
     Logger::StreamProxy logger(Logger::Severity severity);
 
+    /**
+     * Convenicene function to obtain a trace logger stream, with the current class name as context
+     */
+    Logger::StreamProxy trace();
+
+    /**
+     * Convenicene function to obtain a debug logger stream, with the current class name as context
+     */
+    Logger::StreamProxy debug();
+
+    /**
+     * Convenicene function to obtain a info logger stream, with the current class name as context
+     */
+    Logger::StreamProxy info();
+
+    /**
+     * Convenicene function to obtain a warning logger stream, with the current class name as context
+     */
+    Logger::StreamProxy warning();
+
+    /**
+     * Convenicene function to obtain a error logger stream, with the current class name as context
+     */
+    Logger::StreamProxy error();
+
    protected:
     /** Wrapper around mainLoop(), to execute additional tasks in the thread
      * before entering the main loop */
@@ -142,4 +167,30 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  inline Logger::StreamProxy ApplicationModule::trace() {
+    return logger(Logger::Severity::trace);
+  }
+
+  /********************************************************************************************************************/
+
+  inline Logger::StreamProxy ApplicationModule::debug() {
+    return logger(Logger::Severity::debug);
+  }
+
+  /********************************************************************************************************************/
+
+  inline Logger::StreamProxy ApplicationModule::info() {
+    return logger(Logger::Severity::info);
+  }
+  /********************************************************************************************************************/
+
+  inline Logger::StreamProxy ApplicationModule::warning() {
+    return logger(Logger::Severity::warning);
+  }
+
+  /********************************************************************************************************************/
+
+  inline Logger::StreamProxy ApplicationModule::error() {
+    return logger(Logger::Severity::error);
+  }
 } /* namespace ChimeraTK */
