@@ -129,7 +129,7 @@ namespace ChimeraTK {
     // strictly speaking, py::nodelete is not necessary since we hand out instances only via factory function,
     // but leave it here for consistency
     py::class_<PyScalarAccessor, PyTransferElementBase, std::unique_ptr<PyScalarAccessor, py::nodelete>> scalaracc(
-        m, "ScalarAccessor", py::buffer_protocol());
+        m, "ScalarAccessor", py::buffer_protocol(), py::module_local());
     scalaracc.def(py::init<>())
         .def("read", &PyScalarAccessor::read,
             "Read the data from the device.\n\nIf AccessMode::wait_for_new_data was set, this function will block "

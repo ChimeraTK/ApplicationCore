@@ -186,7 +186,7 @@ namespace ChimeraTK {
 
   void PyArrayAccessor::bind(py::module& m) {
     py::class_<PyArrayAccessor, PyTransferElementBase, std::unique_ptr<PyArrayAccessor, py::nodelete>> arrayacc(
-        m, "ArrayAccessor", py::buffer_protocol());
+        m, "ArrayAccessor", py::buffer_protocol(), py::module_local());
     arrayacc.def(py::init<>())
         .def_buffer(&PyArrayAccessor::getBufferInfo)
         .def("read", &PyArrayAccessor::read,

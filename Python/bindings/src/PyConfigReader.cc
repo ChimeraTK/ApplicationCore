@@ -67,7 +67,7 @@ namespace ChimeraTK {
   void PyConfigReader::bind(py::module& m) {
     // Global access to appConfig(), mimicking something like Application::appConfig() in C++
     m.def("appConfig", []() { return PyConfigReader(PyApplicationModule::appConfig()); });
-    py::class_<PyConfigReader>(m, "ConfigReader")
+    py::class_<PyConfigReader>(m, "ConfigReader", py::module_local())
         .def("get", &PyConfigReader::get,
             "Get value for given configuration variable.\n\nThis is already accessible right after construction of "
             "this object. Throws ChimeraTK::logic_error if variable doesn't exist. To obtain the value of an array, "

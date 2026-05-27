@@ -65,7 +65,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void PyReadAnyGroup::bind(py::module& mod) {
-    py::class_<PyReadAnyGroup>(mod, "ReadAnyGroup")
+    py::class_<PyReadAnyGroup>(mod, "ReadAnyGroup", py::module_local())
         .def(py::init<>())
         .def(py::init<py::args>())
         .def("add", &PyReadAnyGroup::add,

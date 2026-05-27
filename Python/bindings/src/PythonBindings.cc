@@ -82,12 +82,12 @@ namespace ChimeraTK {
     /**
      *  DataType (with internal enum)
      */
-    py::class_<DataType> mDataType(m, "DataType");
+    py::class_<DataType> mDataType(m, "DataType", py::module_local());
     mDataType.def(py::init<DataType::TheType>())
         .def("__str__", &DataType::getAsString)
         .def(py::self == py::self)
         .def("__repr__", [](const DataType& type) { return "DataType." + type.getAsString(); });
-    py::enum_<DataType::TheType>(mDataType, "TheType")
+    py::enum_<DataType::TheType>(mDataType, "TheType", py::module_local())
         .value("none", DataType::none)
         .value("int8", DataType::int8)
         .value("uint8", DataType::uint8)
@@ -109,7 +109,7 @@ namespace ChimeraTK {
     /**
      * DataValidity
      */
-    py::enum_<DataValidity>(m, "DataValidity")
+    py::enum_<DataValidity>(m, "DataValidity", py::module_local())
         .value("ok", DataValidity::ok)
         .value("faulty", DataValidity::faulty)
         .export_values();
@@ -117,7 +117,7 @@ namespace ChimeraTK {
     /**
      * VersionNumber
      */
-    py::class_<VersionNumber>(m, "VersionNumber")
+    py::class_<VersionNumber>(m, "VersionNumber", py::module_local())
         .def(py::init<>())
         .def(py::init<std::chrono::system_clock::time_point>())
         .def(py::init<std::nullptr_t>(), py::arg("version").none(true))
@@ -136,7 +136,7 @@ namespace ChimeraTK {
     /**
      * ChimeraTK::Boolean
      */
-    py::class_<Boolean>(m, "Boolean")
+    py::class_<Boolean>(m, "Boolean", py::module_local())
         .def(py::init<>())
         .def(py::init<bool>())
         // NOLINTBEGIN(misc-redundant-expression)
@@ -151,7 +151,7 @@ namespace ChimeraTK {
     /**
      * TransferElementID
      */
-    py::class_<TransferElementID>(m, "TransferElementID")
+    py::class_<TransferElementID>(m, "TransferElementID", py::module_local())
         .def(py::init<>())
         // NOLINTBEGIN(misc-redundant-expression)
         .def(py::self == py::self)
@@ -174,8 +174,8 @@ namespace ChimeraTK {
      * Define base classes so we can specify them in the derived class definitions, otherwise pybind11 seems to
      * complain about not mentioning all base classes
      */
-    py::class_<PyOwnedObject> pwnedObject(m, "PyOwnedObject");
-    py::class_<PyOwningObject> pwningObject(m, "PyOwningObject");
+    py::class_<PyOwnedObject> pwnedObject(m, "PyOwnedObject", py::module_local());
+    py::class_<PyOwningObject> pwningObject(m, "PyOwningObject", py::module_local());
 
     /**
      *

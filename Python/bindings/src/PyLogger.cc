@@ -11,8 +11,8 @@ namespace ChimeraTK {
 
   void PyLogger::bind(py::module& mod) {
     // Logger::Severity
-    py::class_<Logger> mPythonLogger(mod, "Logger");
-    py::enum_<Logger::Severity>(mPythonLogger, "Severity")
+    py::class_<Logger> mPythonLogger(mod, "Logger", py::module_local());
+    py::enum_<Logger::Severity>(mPythonLogger, "Severity", py::module_local())
         .value("trace", Logger::Severity::trace)
         .value("debug", Logger::Severity::debug)
         .value("info", Logger::Severity::info)
@@ -26,7 +26,8 @@ namespace ChimeraTK {
      * Since the StreamProxy is a C++ stream, we have a local wrapper
      * object that provides a log() function instead
      */
-    py::class_<PyLoggerStreamProxy>(mPythonLogger, "StreamProxy").def("log", &PyLoggerStreamProxy::log);
+    py::class_<PyLoggerStreamProxy>(mPythonLogger, "StreamProxy", py::module_local())
+        .def("log", &PyLoggerStreamProxy::log);
 
     /**
      * Global logger helper function

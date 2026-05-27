@@ -77,7 +77,7 @@ namespace ChimeraTK {
     // So we specify inheritance on Python side by constructor args.
     py::class_<PyApplicationModule, PythonApplicationModuleTrampoline, VariableGroup,
         std::unique_ptr<PyApplicationModule, py::nodelete>>
-        cam(m, "ApplicationModule", py::multiple_inheritance());
+        cam(m, "ApplicationModule", py::multiple_inheritance(), py::module_local());
 
     cam.def(py::init([](ModuleGroup& owner, const std::string& name, const std::string& description,
                          const std::unordered_set<std::string>& tags) {
