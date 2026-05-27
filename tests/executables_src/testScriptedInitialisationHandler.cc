@@ -30,8 +30,8 @@ namespace Tests::testScriptedInitialisationHandler {
     // default name for the output variable (initScriptOutput)
     ScriptedInitHandler initHandler1{this, "InitHander1", "description", "./deviceInitScript1.bash", dev1};
     // change the name of the output variable in case a second script is needed. Shorten the error grace time to 1 second
-    ScriptedInitHandler initHandler2{
-        this, "InitHander2", "description", "./deviceInitScript2.bash", dev1, "secondInitScriptOutput", 1};
+    ScriptedInitHandler initHandler2{this, "InitHander2", "description", "./deviceInitScript2.bash", dev1,
+        "secondInitScriptOutput", "secondInitScriptExitCode", 1};
   };
 
   /********************************************************************************************************************/
@@ -160,12 +160,22 @@ namespace Tests::testScriptedInitialisationHandler {
     BOOST_TEST(std::string(initMessage1).find(script1Snippet) != std::string::npos);
     BOOST_TEST(std::string(initMessage1).find(script2Snippet) == std::string::npos);
 
+    auto initExitCode1 = testFacility.getScalar<int>("/Devices/Dummy0/initScriptExitCode");
+    CHECK_TIMEOUT(initExitCode1.readNonBlocking(), 20000);
+    BOOST_TEST(!initExitCode1.readNonBlocking());
+    BOOST_TEST(initExitCode1 == 0);
+
     // same for snippets in message2.
     auto initMessage2 = testFacility.getScalar<std::string>("/Devices/Dummy0/secondInitScriptOutput");
     CHECK_TIMEOUT(
         (initMessage2.readLatest(), std::string(initMessage2).find(successSnippet) != std::string::npos), 30000);
     BOOST_TEST(std::string(initMessage2).find(script1Snippet) == std::string::npos);
     BOOST_TEST(std::string(initMessage2).find(script2Snippet) != std::string::npos);
+
+    auto initExitCode2 = testFacility.getScalar<int>("/Devices/Dummy0/secondInitScriptExitCode");
+    CHECK_TIMEOUT(initExitCode2.readNonBlocking(), 20000);
+    BOOST_TEST(!initExitCode2.readNonBlocking());
+    BOOST_TEST(initExitCode2 == 0);
   }
 
   /********************************************************************************************************************/
@@ -178,6 +188,7 @@ namespace Tests::testScriptedInitialisationHandler {
     testFacility.runApplication();
 
     auto initMessage = testFacility.getScalar<std::string>("/Devices/Dummy0/secondInitScriptOutput");
+    auto initExitCode2 = testFacility.getScalar<int>("/Devices/Dummy0/secondInitScriptExitCode");
 
     // let the script run three times, check that always the output of the last run is visible in the control system
     for(int i = 0; i < 3; ++i) {
@@ -193,11 +204,19 @@ namespace Tests::testScriptedInitialisationHandler {
       if(i == 2) {
         BOOST_TEST(std::string(initMessage).find("script: 1") == std::string::npos);
       }
+
+      CHECK_TIMEOUT(initExitCode2.readNonBlocking(), 20000);
+      BOOST_TEST(!initExitCode2.readNonBlocking());
+      BOOST_TEST(initExitCode2 == 42);
     }
 
     // recovery
     (void)std::filesystem::remove("produceDevice2InitError");
     CHECK_TIMEOUT(testFacility.readScalar<int32_t>("/Devices/Dummy0/status") == 0, 30000);
+
+    CHECK_TIMEOUT(initExitCode2.readNonBlocking(), 20000);
+    BOOST_TEST(!initExitCode2.readNonBlocking());
+    BOOST_TEST(initExitCode2 == 0);
   }
 
   /********************************************************************************************************************/

@@ -42,11 +42,18 @@ namespace ChimeraTK {
      * @param deviceModule The device module on which the initialisation handler is registered.
      * @param outputName Name of the PV with the output string. Defaults to "initScriptOutput", but can be changed in
      * case more than one script is needed for the device.
+     * @param exitCodeName Name of the PV with the exit code. Defaults to "initScriptExitCode", but can be changed in
+     * case more than one script is needed for the device.
      * @param errorGracePeriod Additional time in seconds before a retry after an error.
      */
     ScriptedInitHandler(ModuleGroup* owner, const std::string& name, const std::string& description,
         std::string command, DeviceModule& deviceModule, std::string outputName = "initScriptOutput",
-        unsigned int errorGracePeriod = 10);
+        std::string exitCodeName = "initScriptExitCode", unsigned int errorGracePeriod = 10);
+
+    // Alternative constructor signature for backwards compatibility
+    ScriptedInitHandler(ModuleGroup* owner, const std::string& name, const std::string& description,
+        std::string command, DeviceModule& deviceModule, std::string outputName, unsigned int errorGracePeriod);
+
     void mainLoop() override {
     } // no main loop needed. doInit() is called from the DeviceModule thread as initialisation handler
     void doInit();
@@ -56,11 +63,16 @@ namespace ChimeraTK {
     std::string _command;
     std::string _deviceAlias;
     std::string _outputName;
+    std::string _exitCodeName;
     unsigned int _errorGracePeriod; // additional sleep time before a retry after an error
-    //_scriptOutput must be in this file after _outputName so the latter can be used as constructor parameter
+
     ScalarOutput<std::string> _scriptOutput{this,
         RegisterPath("/Devices") / Utilities::escapeName(_deviceAlias, false) / _outputName, "",
         "stdout+stderr of init script"};
+
+    ScalarOutput<int> _scriptExitCode{this,
+        RegisterPath("/Devices") / Utilities::escapeName(_deviceAlias, false) / _exitCodeName, "",
+        "exit code of init script"};
   };
 
 } // namespace ChimeraTK

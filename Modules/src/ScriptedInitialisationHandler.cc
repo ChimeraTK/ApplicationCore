@@ -15,18 +15,25 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   ScriptedInitHandler::ScriptedInitHandler(ModuleGroup* owner, const std::string& name, const std::string& description,
-      std::string command, DeviceModule& deviceModule, std::string outputName, unsigned int errorGracePeriod)
+      std::string command, DeviceModule& deviceModule, std::string outputName, std::string exitCodeName,
+      unsigned int errorGracePeriod)
   : ApplicationModule(owner, name, description), _command(std::move(command)),
     _deviceAlias(deviceModule.getDeviceAliasOrURI()), _outputName(std::move(outputName)),
-    _errorGracePeriod(errorGracePeriod) {
+    _exitCodeName(std::move(exitCodeName)), _errorGracePeriod(errorGracePeriod) {
     deviceModule.addInitialisationHandler([this](Device&) { doInit(); });
   }
   /********************************************************************************************************************/
 
+  ScriptedInitHandler::ScriptedInitHandler(ModuleGroup* owner, const std::string& name, const std::string& description,
+      std::string command, DeviceModule& deviceModule, std::string outputName, unsigned int errorGracePeriod)
+  : ScriptedInitHandler(owner, name, description, std::move(command), deviceModule, std::move(outputName),
+        "initScriptExitCode", errorGracePeriod) {}
+
+  /********************************************************************************************************************/
+
   void ScriptedInitHandler::doInit() {
     std::string output;
-    _scriptOutput = "";
-    _scriptOutput.write();
+    _scriptOutput.setAndWrite("");
 
     try {
       bp::ipstream out;
@@ -38,15 +45,15 @@ namespace ChimeraTK {
       // you want to know what has already been printed.
       while(std::getline(out, line)) {
         output += line + "\n";
-        _scriptOutput = output;
-        _scriptOutput.write();
+        _scriptOutput.setAndWrite(output);
       }
       initScript.wait();
 
-      if(initScript.exit_code() != 0) {
+      _scriptExitCode.setAndWrite(initScript.exit_code());
+
+      if(_scriptExitCode != 0) {
         output += "!!! " + _deviceAlias + " initialisation FAILED!";
-        _scriptOutput = output;
-        _scriptOutput.write();
+        _scriptOutput.setAndWrite(output);
         if(!_lastFailed) {
           ChimeraTK::logger(Logger::Severity::error, "Device " + _deviceAlias) << output << std::endl;
         }
@@ -55,8 +62,7 @@ namespace ChimeraTK {
         throw ChimeraTK::runtime_error(_deviceAlias + " initialisation failed.");
       }
       output += _deviceAlias + " initialisation SUCCESS!";
-      _scriptOutput = output;
-      _scriptOutput.write();
+      _scriptOutput.setAndWrite(output);
       ChimeraTK::logger(Logger::Severity::info, "Device " + _deviceAlias) << output << std::endl;
       _lastFailed = false;
     }
