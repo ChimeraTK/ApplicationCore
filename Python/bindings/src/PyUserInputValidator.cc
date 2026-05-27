@@ -36,7 +36,7 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   void PyUserInputValidator::bind(py::module& m) {
-    py::class_<PyUserInputValidator>(m, "UserInputValidator")
+    py::class_<PyUserInputValidator>(m, "UserInputValidator", py::module_local())
         .def(py::init<>())
         .def("add", &PyUserInputValidator::add)
         .def("setErrorFunction", &PyUserInputValidator::setErrorFunction)

@@ -19,7 +19,7 @@ namespace ChimeraTK {
      * The actual ModuleGroup is only used as a base class, on the Python side we give out PyModuleGroups
      * as "ModuleGroup".
      */
-    py::class_<ModuleGroup>(m, "ModuleGroupBase")
+    py::class_<ModuleGroup>(m, "ModuleGroupBase", py::module_local())
         .def("getName", &ModuleGroup::getName, R"(Get the name of the module instance.)");
 
     /**
@@ -28,7 +28,7 @@ namespace ChimeraTK {
     // return_value_policy::reference is not enough in constructor factory function.
     // in order to turn off memory management by python, we also need to adapt custom holder type and remove deleter.
     py::class_<PyModuleGroup, ModuleGroup, PyOwningObject, std::unique_ptr<PyModuleGroup, py::nodelete>> mg(
-        m, "ModuleGroup", py::dynamic_attr(), py::multiple_inheritance());
+        m, "ModuleGroup", py::dynamic_attr(), py::multiple_inheritance(), py::module_local());
     mg.def(py::init([](ModuleGroup& owner, const std::string& name, const std::string& description,
                         const std::unordered_set<std::string>& tags) {
       return dynamic_cast<PyOwningObject&>(owner).make_child<PyModuleGroup>(&owner, name, description, tags);

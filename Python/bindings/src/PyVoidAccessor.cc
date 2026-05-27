@@ -46,7 +46,7 @@ namespace ChimeraTK {
     // strictly speaking, py::nodelete is not necessary since we hand out instances only via factory function,
     // but leave it here for consistentcy
     py::class_<PyVoidAccessor, PyTransferElementBase, std::unique_ptr<PyVoidAccessor, py::nodelete>> scalaracc(
-        m, "VoidAccessor", py::buffer_protocol());
+        m, "VoidAccessor", py::buffer_protocol(), py::module_local());
     scalaracc.def(py::init<>())
         .def("read", &PyVoidAccessor::read,
             "Read the data from the device.\n\nIf AccessMode::wait_for_new_data was set, this function will block "

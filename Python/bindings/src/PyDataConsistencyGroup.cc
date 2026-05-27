@@ -11,14 +11,14 @@ namespace ChimeraTK {
 
   void PyDataConsistencyGroup::bind(py::module& mod) {
     // DataConsistencyGroup::MatchingMode
-    py::enum_<DataConsistencyGroup::MatchingMode>(mod, "MatchingMode")
+    py::enum_<DataConsistencyGroup::MatchingMode>(mod, "MatchingMode", py::module_local())
         .value("none", DataConsistencyGroup::MatchingMode::none)
         .value("exact", DataConsistencyGroup::MatchingMode::exact)
         .value("historized", DataConsistencyGroup::MatchingMode::historized)
         .export_values();
 
     // DataConsistencyGroup
-    py::class_<PyDataConsistencyGroup>(mod, "DataConsistencyGroup")
+    py::class_<PyDataConsistencyGroup>(mod, "DataConsistencyGroup", py::module_local())
         .def(py::init<py::args, DataConsistencyGroup::MatchingMode, unsigned>(),
             "Construct DataConsistencyGroup with given list of accessors", py::kw_only(),
             py::arg("mode") = DataConsistencyGroup::MatchingMode::exact,

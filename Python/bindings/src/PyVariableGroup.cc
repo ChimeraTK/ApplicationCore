@@ -18,7 +18,7 @@ namespace ChimeraTK {
      * The actual VariableGroup is only used as a base class, on the Python side we give out PyVariableGroups
      * as "VariableGroup".
      */
-    py::class_<VariableGroup>(m, "VariableGroupBase")
+    py::class_<VariableGroup>(m, "VariableGroupBase", py::module_local())
         .def("getName", &VariableGroup::getName, "Get the name of the module instance.")
         .def(
             "readAnyGroup", [](VariableGroup& self) { return PyReadAnyGroup(self.readAnyGroup()); },
@@ -78,7 +78,7 @@ namespace ChimeraTK {
     // return_value_policy::reference is not enough in constructor factory function.
     // in order to turn off memory management by python, we also need to adapt custom holder type and remove deleter.
     py::class_<PyVariableGroup, VariableGroup, PyOwningObject, std::unique_ptr<PyVariableGroup, py::nodelete>> vg(
-        m, "VariableGroup", py::dynamic_attr(), py::multiple_inheritance());
+        m, "VariableGroup", py::dynamic_attr(), py::multiple_inheritance(), py::module_local());
 
     vg.def(py::init([](VariableGroup& owner, const std::string& name, const std::string& description,
                         const std::unordered_set<std::string>& tags) {
