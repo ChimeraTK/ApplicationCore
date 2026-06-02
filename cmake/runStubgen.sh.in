@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # A helper script to have fallback in case stubgen is too old to know the docstrings option.
 # The output is not particularly useful, but it allows the build process to run through.
@@ -7,3 +7,14 @@ if [ $? -ne 0 ]; then
     echo WARNING: Running stubgen without docstrings!
     ${STUBGEN} -m PyApplicationCore -o .
 fi
+
+# Add the 'app' attribute which is set dynamically at runtime and thus not visible to stubgen.
+{
+    echo ""
+    echo "# 'app' is set dynamically at runtime by the Application instance."
+    echo "app: ModuleGroup"
+} >> PyApplicationCore.pyi
+
+# ModuleGroup accepts arbitrary dynamic child-module attributes (set by user application code).
+# Inject __getattr__/__setattr__ so type checkers accept any attribute access on ModuleGroup instances.
+sed -i PyApplicationCore.pyi -e 's/class ModuleGroup(ModuleGroupBase, PyOwningObject):/\0\n    def __getattr__(self, name: str) -> Any: ...\n    def __setattr__(self, name: str, value: Any) -> None: .../'

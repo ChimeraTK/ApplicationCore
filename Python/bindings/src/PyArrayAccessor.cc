@@ -269,6 +269,14 @@ namespace ChimeraTK {
               AccessorTypeTag<ArrayPushInput>{}, type, &owner, name, unit, nElements, description);
         },
         py::return_value_policy::reference, "");
+    m.def(
+        "ArrayPushInput",
+        [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            size_t nElements, const std::string& description) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyArrayAccessor>(
+              AccessorTypeTag<ArrayPushInput>{}, DataType(type), &owner, name, unit, nElements, description);
+        },
+        py::return_value_policy::reference, "");
 
     /**
      *  ArrayPushInputWB
@@ -279,6 +287,14 @@ namespace ChimeraTK {
             size_t nElements, const std::string& description) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyArrayAccessor>(
               AccessorTypeTag<ArrayPushInputWB>{}, type, &owner, name, unit, nElements, description);
+        },
+        py::return_value_policy::reference, "");
+    m.def(
+        "ArrayPushInputWB",
+        [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            size_t nElements, const std::string& description) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyArrayAccessor>(
+              AccessorTypeTag<ArrayPushInputWB>{}, DataType(type), &owner, name, unit, nElements, description);
         },
         py::return_value_policy::reference, "");
 
@@ -293,6 +309,14 @@ namespace ChimeraTK {
               AccessorTypeTag<ArrayPollInput>{}, type, &owner, name, unit, nElements, description);
         },
         py::return_value_policy::reference, "");
+    m.def(
+        "ArrayPollInput",
+        [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            size_t nElements, const std::string& description) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyArrayAccessor>(
+              AccessorTypeTag<ArrayPollInput>{}, DataType(type), &owner, name, unit, nElements, description);
+        },
+        py::return_value_policy::reference, "");
 
     /**
      *  ArrayOutput
@@ -303,6 +327,14 @@ namespace ChimeraTK {
             size_t nElements, const std::string& description) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyArrayAccessor>(
               AccessorTypeTag<ArrayOutput>{}, type, &owner, name, unit, nElements, description);
+        },
+        py::return_value_policy::reference, "");
+    m.def(
+        "ArrayOutput",
+        [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            size_t nElements, const std::string& description) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyArrayAccessor>(
+              AccessorTypeTag<ArrayOutput>{}, DataType(type), &owner, name, unit, nElements, description);
         },
         py::return_value_policy::reference, "");
 
@@ -317,6 +349,14 @@ namespace ChimeraTK {
               AccessorTypeTag<ArrayOutputPushRB>{}, type, &owner, name, unit, nElements, description);
         },
         py::return_value_policy::reference, "");
+    m.def(
+        "ArrayOutputPushRB",
+        [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            size_t nElements, const std::string& description) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyArrayAccessor>(
+              AccessorTypeTag<ArrayOutputPushRB>{}, DataType(type), &owner, name, unit, nElements, description);
+        },
+        py::return_value_policy::reference, "");
 
     /**
      *  ArrayOutputReverseRecovery
@@ -327,6 +367,15 @@ namespace ChimeraTK {
             size_t nElements, const std::string& description) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyArrayAccessor>(
               AccessorTypeTag<ArrayOutputReverseRecovery>{}, type, &owner, name, unit, nElements, description);
+        },
+        py::return_value_policy::reference, "");
+    m.def(
+        "ArrayOutputReverseRecovery",
+        [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            size_t nElements, const std::string& description) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyArrayAccessor>(
+              AccessorTypeTag<ArrayOutputReverseRecovery>{}, DataType(type), &owner, name, unit, nElements,
+              description);
         },
         py::return_value_policy::reference, "");
   }
