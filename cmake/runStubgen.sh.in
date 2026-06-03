@@ -2,11 +2,13 @@
 
 # A helper script to have fallback in case stubgen is too old to know the docstrings option.
 # The output is not particularly useful, but it allows the build process to run through.
-${STUBGEN} --include-docstrings -m PyApplicationCore -o .
-if [ $? -ne 0 ]; then
+if ${STUBGEN} -h | grep -q -- '--include-docstrings'; then
+    OPTION="--include-docstrings"
+else
+    OPTION=""
     echo WARNING: Running stubgen without docstrings!
-    ${STUBGEN} -m PyApplicationCore -o .
 fi
+${STUBGEN} ${OPTION} -m PyApplicationCore -o .
 
 # Add the 'app' attribute which is set dynamically at runtime and thus not visible to stubgen.
 {
