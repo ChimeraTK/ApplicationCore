@@ -438,5 +438,54 @@ namespace Tests::testPython {
   }
 
   /********************************************************************************************************************/
+  /* Test accessor tags */
+
+  BOOST_AUTO_TEST_CASE(testAccessorTags) {
+    std::cout << "***************************************************************************************" << std::endl;
+    std::cout << "==> testAccessorTags" << std::endl;
+
+    TestApp app("testPythonAccessorTags");
+    ctk::TestFacility tf(app);
+
+    tf.runApplication();
+
+    // Helper lambda to check tags on a PV via the model API
+    auto checkTags = [&](const std::string& pvName, std::unordered_set<std::string> expectedTags) {
+      bool found = app.getModel().visitByPath(pvName, [&](auto proxy) {
+        if constexpr(ctk::Model::isVariable(proxy)) {
+          auto actualTags = proxy.getTags();
+          BOOST_TEST(actualTags == expectedTags, "PV " << pvName << ": expected tags don't match actual tags");
+        }
+        else {
+          BOOST_FAIL("Expected a variable at path " << pvName);
+        }
+      });
+      BOOST_TEST(found, "PV not found: " << pvName);
+    };
+
+    // Test scalar accessors
+    checkTags("/TagTestModule/sOut", {"scalarOutput"});
+    checkTags("/TagTestModule/sIn", {"scalarPushInput"});
+    checkTags("/TagTestModule/sInWB", {"scalarPushInputWB"});
+    checkTags("/TagTestModule/sPoll", {"scalarPollInput"});
+    checkTags("/TagTestModule/sPushRB", {"scalarOutputPushRB"});
+    checkTags("/TagTestModule/sRevRec", {"scalarRevRec", "_ChimeraTK_DeviceRegister_reverseRecovery"});
+
+    // Test array accessors
+    checkTags("/TagTestModule/aOut", {"arrayOutput"});
+    checkTags("/TagTestModule/aIn", {"arrayPushInput"});
+    checkTags("/TagTestModule/aInWB", {"arrayPushInputWB"});
+    checkTags("/TagTestModule/aPoll", {"arrayPollInput"});
+    checkTags("/TagTestModule/aPushRB", {"arrayOutputPushRB"});
+    checkTags("/TagTestModule/aRevRec", {"arrayRevRec", "_ChimeraTK_DeviceRegister_reverseRecovery"});
+
+    // Test no tags (default empty set)
+    checkTags("/TagTestModule/sNoTags", {});
+
+    // Test accessor created with DataType.TheType variant, testing two tags
+    checkTags("/TagTestModule/sTwoTags", {"tagA", "tagB"});
+  }
+
+  /********************************************************************************************************************/
 
 } // namespace Tests::testPython

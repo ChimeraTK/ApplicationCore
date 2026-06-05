@@ -211,19 +211,21 @@ namespace ChimeraTK {
     m.def(
         "ScalarPushInput",
         [](ChimeraTK::DataType type, VariableGroup& owner, const std::string& name, const std::string& unit,
-            const std::string& description) {
+            const std::string& description, const std::unordered_set<std::string>& tags) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
-              AccessorTypeTag<ScalarPushInput>{}, type, &owner, name, unit, description);
+              AccessorTypeTag<ScalarPushInput>{}, type, &owner, name, unit, description, tags);
         },
-        py::return_value_policy::reference, "");
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
     m.def(
         "ScalarPushInput",
         [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
-            const std::string& description) {
+            const std::string& description, const std::unordered_set<std::string>& tags) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
-              AccessorTypeTag<ScalarPushInput>{}, DataType(type), &owner, name, unit, description);
+              AccessorTypeTag<ScalarPushInput>{}, DataType(type), &owner, name, unit, description, tags);
         },
-        py::return_value_policy::reference, "");
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
 
     /**
      *  ScalarPushInputWB
@@ -231,19 +233,21 @@ namespace ChimeraTK {
     m.def(
         "ScalarPushInputWB",
         [](ChimeraTK::DataType type, VariableGroup& owner, const std::string& name, const std::string& unit,
-            const std::string& description) {
+            const std::string& description, const std::unordered_set<std::string>& tags) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
-              AccessorTypeTag<ScalarPushInputWB>{}, type, &owner, name, unit, description);
+              AccessorTypeTag<ScalarPushInputWB>{}, type, &owner, name, unit, description, tags);
         },
-        py::return_value_policy::reference, "");
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
     m.def(
         "ScalarPushInputWB",
         [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
-            const std::string& description) {
+            const std::string& description, const std::unordered_set<std::string>& tags) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
-              AccessorTypeTag<ScalarPushInputWB>{}, DataType(type), &owner, name, unit, description);
+              AccessorTypeTag<ScalarPushInputWB>{}, DataType(type), &owner, name, unit, description, tags);
         },
-        py::return_value_policy::reference, "");
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
 
     /**
      *  ScalarPollInput
@@ -251,19 +255,21 @@ namespace ChimeraTK {
     m.def(
         "ScalarPollInput",
         [](ChimeraTK::DataType type, VariableGroup& owner, const std::string& name, const std::string& unit,
-            const std::string& description) {
+            const std::string& description, const std::unordered_set<std::string>& tags) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
-              AccessorTypeTag<ScalarPollInput>{}, type, &owner, name, unit, description);
+              AccessorTypeTag<ScalarPollInput>{}, type, &owner, name, unit, description, tags);
         },
-        py::return_value_policy::reference, "");
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
     m.def(
         "ScalarPollInput",
         [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
-            const std::string& description) {
+            const std::string& description, const std::unordered_set<std::string>& tags) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
-              AccessorTypeTag<ScalarPollInput>{}, DataType(type), &owner, name, unit, description);
+              AccessorTypeTag<ScalarPollInput>{}, DataType(type), &owner, name, unit, description, tags);
         },
-        py::return_value_policy::reference, "");
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
 
     /**
      *  ScalarOutput
@@ -271,19 +277,21 @@ namespace ChimeraTK {
     m.def(
         "ScalarOutput",
         [](ChimeraTK::DataType type, VariableGroup& owner, const std::string& name, const std::string& unit,
-            const std::string& description) {
+            const std::string& description, const std::unordered_set<std::string>& tags) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
-              AccessorTypeTag<ScalarOutput>{}, type, &owner, name, unit, description);
+              AccessorTypeTag<ScalarOutput>{}, type, &owner, name, unit, description, tags);
         },
-        py::return_value_policy::reference, "");
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
     m.def(
         "ScalarOutput",
         [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
-            const std::string& description) {
+            const std::string& description, const std::unordered_set<std::string>& tags) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
-              AccessorTypeTag<ScalarOutput>{}, DataType(type), &owner, name, unit, description);
+              AccessorTypeTag<ScalarOutput>{}, DataType(type), &owner, name, unit, description, tags);
         },
-        py::return_value_policy::reference, "");
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
 
     /**
      *  ScalarOutputPushRB
@@ -291,19 +299,21 @@ namespace ChimeraTK {
     m.def(
         "ScalarOutputPushRB",
         [](ChimeraTK::DataType type, VariableGroup& owner, const std::string& name, const std::string& unit,
-            const std::string& description) {
+            const std::string& description, const std::unordered_set<std::string>& tags) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
-              AccessorTypeTag<ScalarOutputPushRB>{}, type, &owner, name, unit, description);
+              AccessorTypeTag<ScalarOutputPushRB>{}, type, &owner, name, unit, description, tags);
         },
-        py::return_value_policy::reference, "");
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
     m.def(
         "ScalarOutputPushRB",
         [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
-            const std::string& description) {
+            const std::string& description, const std::unordered_set<std::string>& tags) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
-              AccessorTypeTag<ScalarOutputPushRB>{}, DataType(type), &owner, name, unit, description);
+              AccessorTypeTag<ScalarOutputPushRB>{}, DataType(type), &owner, name, unit, description, tags);
         },
-        py::return_value_policy::reference, "");
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
 
     /**
      * ScalarOutputReverseRecovery
@@ -311,19 +321,21 @@ namespace ChimeraTK {
     m.def(
         "ScalarOutputReverseRecovery",
         [](ChimeraTK::DataType type, VariableGroup& owner, const std::string& name, const std::string& unit,
-            const std::string& description) {
+            const std::string& description, const std::unordered_set<std::string>& tags) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
-              AccessorTypeTag<ScalarOutputReverseRecovery>{}, type, &owner, name, unit, description);
+              AccessorTypeTag<ScalarOutputReverseRecovery>{}, type, &owner, name, unit, description, tags);
         },
-        py::return_value_policy::reference, "");
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
     m.def(
         "ScalarOutputReverseRecovery",
         [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
-            const std::string& description) {
+            const std::string& description, const std::unordered_set<std::string>& tags) {
           return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
-              AccessorTypeTag<ScalarOutputReverseRecovery>{}, DataType(type), &owner, name, unit, description);
+              AccessorTypeTag<ScalarOutputReverseRecovery>{}, DataType(type), &owner, name, unit, description, tags);
         },
-        py::return_value_policy::reference, "");
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
   }
 
   /********************************************************************************************************************/
