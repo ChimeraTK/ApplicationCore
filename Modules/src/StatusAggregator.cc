@@ -304,7 +304,7 @@ namespace ChimeraTK {
       // handle request for debug info
       if(change == _debug.getId()) {
         auto myLog = logger(Logger::Severity::info);
-        myLog << "StatusAggregtor (";
+        myLog << "StatusAggregator (";
         switch(_mode) {
           case PriorityMode::fwok:
             myLog << "fwok";
