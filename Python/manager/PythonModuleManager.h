@@ -4,6 +4,8 @@
 
 #include "PyModuleGroup.h"
 
+#include <atomic>
+#include <chrono>
 #include <functional>
 #include <memory>
 
@@ -43,10 +45,26 @@ namespace ChimeraTK {
      */
     void setOnMainGroupChange(std::function<void(const std::unique_ptr<PyModuleGroup>&)> callback);
 
+    /**
+     * Set the check interval for file monitoring. If file monitoring is enabled, the PythonModuleManager will
+     * periodically check the source files of loaded Python modules for modifications and reload them if a change
+     * is detected. Default is 1 second.
+     */
+    void setFileMonitoringCheckInterval(std::chrono::milliseconds interval);
+
    private:
     void init();
 
+    /// Thread function for file monitoring
+    void fileMonitoringThread();
+
     std::unique_ptr<detail::PythonModuleManagerImpl> _impl;
+
+    /// Flag to stop the file monitoring thread
+    std::atomic<bool> _stopFileMonitoring{false};
+
+    /// Check interval for file monitoring
+    std::chrono::milliseconds _fileMonitoringCheckInterval{1000};
   };
 
 } // namespace ChimeraTK

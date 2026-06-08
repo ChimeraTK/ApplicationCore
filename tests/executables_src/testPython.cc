@@ -3,8 +3,14 @@
 #define BOOST_TEST_MODULE testPython
 
 #include "Application.h"
+#include "ConfigReader.h"
 #include "DeviceModule.h"
 #include "TestFacility.h"
+
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <thread>
 
 // #define BOOST_NO_EXCEPTIONS
 #include <boost/test/included/unit_test.hpp>
@@ -484,6 +490,168 @@ namespace Tests::testPython {
 
     // Test accessor created with DataType.TheType variant, testing two tags
     checkTags("/TagTestModule/sTwoTags", {"tagA", "tagB"});
+  }
+
+  /********************************************************************************************************************/
+  /* Test file monitoring / automatic reload of Python modules */
+
+  BOOST_AUTO_TEST_CASE(testFileMonitoring) {
+    // Ensure the build copy of the Python source file is pristine before creating the
+    // Application (which loads it). A previous test run may have corrupted it if atexit
+    // didn't fire (e.g. on crash or when the test binary was rebuilt).
+    // The expected initial source has val + 0.5 (not val + 1.0).
+    // We hardcode the expected source to avoid depending on paths to the source tree.
+    static const std::string pristineSource = R"python(
+#!/usr/bin/python3
+
+import sys
+import os
+import os.path
+import time
+
+# fmt: off
+# Hack to insert the python path for the locally compiled module in the
+# test script
+sys.path.insert(0, os.path.abspath(os.path.join(os.curdir, "..")))
+import PyApplicationCore  # NOQA
+# fmt: on
+
+class MyMod(PyApplicationCore.ApplicationModule) :
+
+  def __init__(self, owner, name, description) :
+    super().__init__(owner, name, description)
+    self.myOutput = PyApplicationCore.ScalarOutput(PyApplicationCore.DataType.float32, self, "/Var1" ,"unit", "description")
+    self.myInput = PyApplicationCore.ScalarPushInput(PyApplicationCore.DataType.int32, self, "/Var2","unit", "description")
+
+  def mainLoop(self) :
+    val = 0
+    while True:
+      self.myOutput.setAndWrite(val + 0.5)
+      val = self.myInput.readAndGet()
+
+
+# create instance of test module
+PyApplicationCore.app.myMod = MyMod(PyApplicationCore.app, "SomeName", "Description")
+)python";
+
+    std::string pyFilePath = std::filesystem::absolute("testPythonFileMonitor.py").string();
+    {
+      std::ifstream buildFile(pyFilePath);
+      std::stringstream buildBuf;
+      buildBuf << buildFile.rdbuf();
+      buildFile.close();
+      if(buildBuf.str() != pristineSource) {
+        std::ofstream restoreFile(pyFilePath, std::ios::trunc);
+        restoreFile << pristineSource;
+        restoreFile.close();
+      }
+    }
+
+    // Use a dedicated app struct that lets us set the file monitoring interval before createModules
+    struct FileMonitorApp : public ctk::Application {
+      explicit FileMonitorApp(const std::string& name) : ctk::Application(name) {
+        getPythonModuleManager().setFileMonitoringCheckInterval(std::chrono::milliseconds(100));
+      }
+      ~FileMonitorApp() override { shutdown(); }
+    };
+
+    FileMonitorApp app("testPythonFileMonitor");
+    ctk::TestFacility tf(app);
+
+    auto var1 = tf.getScalar<float>("/Var1");
+    auto var2 = tf.getScalar<int32_t>("/Var2");
+
+    tf.runApplication();
+
+    // Confirm the pyFilePath from the config matches our pre-computed path
+    auto& config = app.getConfigReader();
+    auto modules = config.getModules("PythonModules");
+    std::string modulePath;
+    for(auto& module : modules) {
+      modulePath = config.get<std::string>("PythonModules/" + module + "/path");
+      BOOST_REQUIRE(pyFilePath == std::filesystem::absolute(modulePath + ".py").string());
+    }
+    BOOST_REQUIRE(std::filesystem::exists(pyFilePath));
+
+    // Now we know the file is pristine. Read the original source to restore later.
+    std::ifstream origFile(pyFilePath);
+    std::stringstream origBuf;
+    origBuf << origFile.rdbuf();
+    std::string originalSource = origBuf.str();
+    origFile.close();
+
+    // Verify initial behavior: Var1 = Var2 + 0.5
+    var2 = 42;
+    var2.write();
+    tf.stepApplication();
+    BOOST_TEST(var1.readNonBlocking());
+    BOOST_TEST(float(var1) == 42.5, boost::test_tools::tolerance(0.001));
+
+    // Create new module source with modified behavior: output = val + 1.0 instead of val + 0.5
+    std::string newSource = R"python(
+#!/usr/bin/python3
+
+import sys
+import os
+import os.path
+import time
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.curdir, "..")))
+import PyApplicationCore  # NOQA
+
+class MyMod(PyApplicationCore.ApplicationModule) :
+
+  def __init__(self, owner, name, description) :
+    super().__init__(owner, name, description)
+    self.myOutput = PyApplicationCore.ScalarOutput(PyApplicationCore.DataType.float32, self, "/Var1" ,"unit", "description")
+    self.myInput = PyApplicationCore.ScalarPushInput(PyApplicationCore.DataType.int32, self, "/Var2","unit", "description")
+
+  def mainLoop(self) :
+    val = 0
+    while True:
+      self.myOutput.setAndWrite(val + 1.0)
+      val = self.myInput.readAndGet()
+
+PyApplicationCore.app.myMod = MyMod(PyApplicationCore.app, "SomeName", "Description")
+)python";
+
+    // Use atexit to restore the original file even if Boost.Test calls exit()
+    // (which skips destructors of automatic objects).
+    // We store the data in static pointers accessed by a captureless lambda,
+    // which can convert to void(*)() for std::atexit.
+    static std::shared_ptr<std::string> restoreGuard;
+    static std::shared_ptr<std::string> restoreFilePath;
+    restoreGuard = std::make_shared<std::string>(originalSource);
+    restoreFilePath = std::make_shared<std::string>(pyFilePath);
+    std::atexit([]() {
+      std::ofstream pyFile(*restoreFilePath, std::ios::trunc);
+      pyFile << *restoreGuard;
+      pyFile.close();
+    });
+
+    // Write the modified source
+    {
+      std::ofstream pyFile(pyFilePath, std::ios::trunc);
+      pyFile << newSource;
+      pyFile.close();
+    }
+
+    // Wait for the file monitoring thread to detect the change.
+    // The file monitoring thread starts with the default 1000ms check interval in the Application
+    // constructor (before we can set it to 100ms in FileMonitorApp's constructor body).
+    // After the first check (at ~1000ms), subsequent checks use the configured 100ms interval.
+    // Note: The 1.5s sleep should allow at least one check at 1000ms and one at 1100ms.
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+    // Verify the module was reloaded and the new code is running: Var1 should now be Var2 + 1.0
+    var2 = 10;
+    var2.write();
+    tf.stepApplication();
+    // The first read consumes the intermediate value written before the input was read.
+    var1.readNonBlocking();
+    // The second read gets the value after the input was processed (output = input + 1.0).
+    BOOST_TEST(var1.readNonBlocking());
+    BOOST_TEST(float(var1) == 11.0, boost::test_tools::tolerance(0.001));
   }
 
   /********************************************************************************************************************/

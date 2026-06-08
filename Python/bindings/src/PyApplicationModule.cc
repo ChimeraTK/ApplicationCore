@@ -31,15 +31,18 @@ namespace ChimeraTK {
           def mainLoopWrapper2(self):
             try:
               self.mainLoopWrapper()
+              print("mainLoop terminated in module "+self.getName())
             except ThreadInterrupted as e:
+              print("ThreadInterrupted received in module "+self.getName())
               pass
             except Exception as e:
               print("Exception in module "+self.getName()+":")
               traceback.print_exception(e)
           theModule.mainLoopWrapper2 = mainLoopWrapper2.__get__(theModule)
+          theModule._chimeraTk_thread = threading.Thread(target=theModule.mainLoopWrapper2, name='AM_' + type(theModule).__name__)
         )",
           py::globals(), locals);
-      _myThread = py::eval("threading.Thread(target=theModule.mainLoopWrapper2)", py::globals(), locals);
+      _myThread = locals["theModule"].attr("_chimeraTk_thread");
       Application::getInstance().getTestableMode().unlock("releaseForPythonModuleStart");
       _myThread.attr("start")();
     }
@@ -68,6 +71,131 @@ namespace ChimeraTK {
 
       _myThread.attr("join")(0.01);
     }
+  }
+
+  /********************************************************************************************************************/
+
+  void PyApplicationModule::interruptAllAccessors() {
+    for(auto& var : getAccessorListRecursive()) {
+      auto el{var.getAppAccessorNoType().getHighLevelImplElement()};
+      el->interrupt();
+    }
+  }
+
+  void PyApplicationModule::interruptAndClearAllAccessors() {
+    for(auto& var : getAccessorListRecursive()) {
+      // Only interrupt inputs that use blocking reads (wait_for_new_data).
+      if(var.getDirection().dir == VariableDirection::consuming) {
+        auto el{var.getAppAccessorNoType().getHighLevelImplElement()};
+        if(el->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
+          el->interrupt();
+        }
+        // Poll-type inputs (without wait_for_new_data) do not block on the queue.
+        // Their doReadTransferSynchronously() uses non-blocking pop() after the first read.
+        // Pushing an exception to their queue would only cause problems since there is no
+        // way to drain it without either blocking (pop_wait) or infinite-looping
+        // (readNonBlocking always returns true for poll inputs).
+      }
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  void PyApplicationModule::drainThreadInterrupted() {
+    for(auto& var : getAccessorListRecursive()) {
+      if(var.getDirection().dir == VariableDirection::consuming) {
+        auto el{var.getAppAccessorNoType().getHighLevelImplElement()};
+
+        // Only drain push-type inputs (wait_for_new_data). Poll-type inputs never receive
+        // thread_interrupted exceptions (interruptAndClearAllAccessors() skips them), and
+        // readNonBlocking() on poll inputs always returns true which would cause an infinite
+        // loop.
+        if(!el->getAccessModeFlags().has(AccessMode::wait_for_new_data)) {
+          continue;
+        }
+
+        // Drain any stale thread_interrupted exceptions from the accessor's queue.
+        // After interrupt() wakes the old module thread, it consumes one exception and
+        // exits. But if the module has multiple consuming accessors, the interrupt() calls
+        // on the other accessors leave stale exceptions. The new module thread would throw
+        // on its first readNonBlocking()/readLatest() call on those accessors.
+        //
+        // IMPORTANT: readNonBlocking() goes through the TestableMode decorator chain.
+        // For TestableMode-decorated accessors, doPostRead calls obtainLockAndDecrementCounter()
+        // which acquires the shared testable mode lock but never releases it (releaseLock()
+        // is only called in doPreRead for TransferType::read). Since this function is called
+        // from the file monitoring thread (which should NOT hold testable mode locks), we
+        // must explicitly release any lock acquired during draining.
+        try {
+          while(el->readNonBlocking()) {
+            // Discard any stale data/exceptions
+          }
+        }
+        catch(...) {
+          // Exceptions are expected (thread_interrupted) and should be discarded
+        }
+      }
+    }
+
+    // Release any testable mode shared lock that was acquired during drain operations.
+    // drainThreadInterrupted() is called from the file monitoring thread, which should
+    // never hold testable mode locks. But readNonBlocking() through the TestableMode
+    // decorator's doPostRead acquires the shared lock and doesn't release it.
+    auto& tm = Application::getInstance().getTestableMode();
+    if(tm.isEnabled() && tm.testLock()) {
+      tm.unlock("drainThreadInterrupted");
+    }
+  }
+
+  /********************************************************************************************************************/
+
+  bool PyApplicationModule::stopAndDrainThread() {
+    if(!_myThread) {
+      return true;
+    }
+
+    py::gil_scoped_acquire gil;
+    if(!_myThread.attr("is_alive")().cast<bool>()) {
+      return true;
+    }
+
+    // Step 1: Interrupt all push-type input accessors to wake the old thread
+    interruptAndClearAllAccessors();
+
+    // Step 2: Wait for the old thread to exit with retries
+    static constexpr int maxRetries = 100; // 100 * 100ms = 10s total
+    for(int i = 0; i < maxRetries; ++i) {
+      if(!_myThread.attr("is_alive")().cast<bool>()) {
+        break; // Thread exited
+      }
+      // Re-interrupt in case the thread was blocked on a different read
+      interruptAndClearAllAccessors();
+      _myThread.attr("join")(0.1); // 100ms timeout
+    }
+
+    // Step 3: Check if the thread is still alive
+    if(_myThread.attr("is_alive")().cast<bool>()) {
+      // Thread did not exit in time
+      py::print("Warning: Module thread for '" + getName() + "' did not exit within timeout. Proceeding with drain.");
+      return false;
+    }
+
+    // Step 4: Drain any stale thread_interrupted exceptions
+    drainThreadInterrupted();
+
+    return true;
+  }
+
+  /********************************************************************************************************************/
+
+  void PyApplicationModule::_obtainTestableModeLock() {
+    Application::getInstance().getTestableMode().lock("python_reload", true);
+  }
+
+  /********************************************************************************************************************/
+
+  void PyApplicationModule::_releaseTestableModeLock() {
+    Application::getInstance().getTestableMode().unlock("python_reload");
   }
 
   /********************************************************************************************************************/
@@ -123,8 +251,25 @@ namespace ChimeraTK {
             },
             "Convenicene function to obtain a logger stream with the given Severity.\n\nThe context string will be "
             "obtained from the class name of the module.")
-        .def("disable", &PyApplicationModule::disable,
-            "Disable the module such that it is not part of the Application.");
+        .def(
+            "disable", &PyApplicationModule::disable, "Disable the module such that it is not part of the Application.")
+        .def("run", &PyApplicationModule::run, "Run the module's mainLoop in a separate thread.")
+        .def("terminate", &PyApplicationModule::terminate, "Terminate the module's execution thread.")
+        .def("interruptAllAccessors", &PyApplicationModule::interruptAllAccessors,
+            "Interrupt all accessors to wake the module from blocking reads.")
+        .def("interruptAndClearAllAccessors", &PyApplicationModule::interruptAndClearAllAccessors,
+            "Interrupt all consuming accessors to wake the module from blocking reads.")
+        .def("drainThreadInterrupted", &PyApplicationModule::drainThreadInterrupted,
+            "Drain any stale thread_interrupted exceptions from all consuming accessors. Must be called after the "
+            "old module thread has exited, before starting a new thread.")
+        .def("stopAndDrainThread", &PyApplicationModule::stopAndDrainThread,
+            "Interrupt the module thread (if alive), wait for it to exit with retries, and drain any stale "
+            "thread_interrupted exceptions. Returns True if the thread was stopped successfully, False if it "
+            "timed out.")
+        .def("_obtainTestableModeLock", &PyApplicationModule::_obtainTestableModeLock,
+            "Obtain the testable mode lock (shared) for the current thread.")
+        .def("_releaseTestableModeLock", &PyApplicationModule::_releaseTestableModeLock,
+            "Release the testable mode lock for the current thread.");
   }
 
   /********************************************************************************************************************/

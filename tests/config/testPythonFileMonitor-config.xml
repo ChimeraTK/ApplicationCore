@@ -1,0 +1,8 @@
+<configuration>
+    <module name="PythonModules">
+        <module name="AppModule">
+            <variable name="path" type="string" value="testPythonFileMonitor" />
+            <variable name="fileMonitoring" type="boolean" value="true" />
+        </module>
+    </module>
+</configuration>

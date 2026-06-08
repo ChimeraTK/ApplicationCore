@@ -24,6 +24,13 @@ namespace ChimeraTK {
     // change visibility since we need to call this from Python
     using ApplicationModule::mainLoopWrapper;
 
+    void interruptAllAccessors();
+    void interruptAndClearAllAccessors();
+    void drainThreadInterrupted();
+    bool stopAndDrainThread();
+    void _obtainTestableModeLock();
+    void _releaseTestableModeLock();
+
     static void bind(py::module& mod);
 
    private:

@@ -142,7 +142,11 @@ namespace ChimeraTK {
     /** Helper function to avoid code duplication in constructors **/
     void construct(const std::string& fileName);
 
+   public:
     /** File name */
+    const std::string& getFileName() const { return _fileName; }
+
+   protected:
     std::string _fileName;
 
     /** List to hold VariableNodes corresponding to xml modules **/

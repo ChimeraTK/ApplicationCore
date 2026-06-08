@@ -171,7 +171,13 @@ namespace ChimeraTK {
     _testableModeReached = true;
 
     // enter the main loop
-    mainLoop();
+    try {
+      mainLoop();
+    }
+    catch(...) {
+      Application::getInstance().getTestableMode().unlock("terminate");
+      throw;
+    }
     Application::getInstance().getTestableMode().unlock("terminate");
   }
 

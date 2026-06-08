@@ -33,6 +33,16 @@ namespace ChimeraTK {
       return rv;
     }
 
+    /// Remove all children from the internal list. The children will be destroyed.
+    void removeAllChildren() { _children.clear(); }
+
+    /// Remove children matching a predicate. The matching children will be destroyed.
+    /// The predicate receives a pointer to the child object and should return true to remove it.
+    template<typename Predicate>
+    void removeChildrenIf(Predicate pred) {
+      _children.remove_if([&](const std::unique_ptr<PyOwnedObject>& child) { return pred(child.get()); });
+    }
+
    private:
     // Note about ownership and deinit problem.
     // When naively mapping VariableGroup to Python, we run into a problem at the deinitialization phase:
