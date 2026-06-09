@@ -50,5 +50,5 @@ class SecondMod(ac.ApplicationModule):
         pass
 
 
-ac.app.myMod = MyMod(ac.app,"UserModule", "module for testing of VariableGroup bindings")
-ac.app.secondMod = SecondMod(ac.app,"DisabledMod", "module should be disabled")
+ac.app.myMod = MyMod(ac.app, "UserModule", "module for testing of VariableGroup bindings")
+ac.app.secondMod = SecondMod(ac.app, "DisabledMod", "module should be disabled")
