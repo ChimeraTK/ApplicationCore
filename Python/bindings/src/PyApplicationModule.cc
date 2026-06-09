@@ -154,33 +154,39 @@ namespace ChimeraTK {
       return true;
     }
 
-    py::gil_scoped_acquire gil;
-    if(!_myThread.attr("is_alive")().cast<bool>()) {
-      return true;
+    // Check if thread is alive (needs GIL for Python object access)
+    {
+      py::gil_scoped_acquire gil;
+      if(!_myThread.attr("is_alive")().cast<bool>()) {
+        return true; // Thread already dead
+      }
     }
 
-    // Step 1: Interrupt all push-type input accessors to wake the old thread
+    // Step 1: Interrupt all push-type input accessors to wake the old thread.
+    // This is pure C++ - no GIL needed.
     interruptAndClearAllAccessors();
 
-    // Step 2: Wait for the old thread to exit with retries
+    // Step 2: Wait for the old thread to exit with retries.
+    // We must NOT hold the GIL during this loop, because the old Python thread
+    // needs the GIL to process the ThreadInterrupted exception and exit.
     static constexpr int maxRetries = 100; // 100 * 100ms = 10s total
     for(int i = 0; i < maxRetries; ++i) {
-      if(!_myThread.attr("is_alive")().cast<bool>()) {
-        break; // Thread exited
+      {
+        py::gil_scoped_acquire gil;
+        if(!_myThread.attr("is_alive")().cast<bool>()) {
+          break; // Thread exited
+        }
       }
+      // GIL released here
+
       // Re-interrupt in case the thread was blocked on a different read
       interruptAndClearAllAccessors();
-      _myThread.attr("join")(0.1); // 100ms timeout
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    // Step 3: Check if the thread is still alive
-    if(_myThread.attr("is_alive")().cast<bool>()) {
-      // Thread did not exit in time
-      py::print("Warning: Module thread for '" + getName() + "' did not exit within timeout. Proceeding with drain.");
-      return false;
-    }
-
-    // Step 4: Drain any stale thread_interrupted exceptions
+    // Step 3: Drain any stale thread_interrupted exceptions.
+    // This is pure C++ - no GIL needed.
     drainThreadInterrupted();
 
     return true;
