@@ -18,10 +18,10 @@ class MyMod(ac.ApplicationModule):
     class VG2(ac.VariableGroup):
         def __init__(self, owner, name, description):
             super().__init__(owner, name, description)
-            self.out2 = ac.ArrayOutput(ac.DataType.int32, self, "out2", "unit", 2,"")
+            self.out2 = ac.ArrayOutput(ac.DataType.int32, self, "out2", "unit", 2, "")
 
             self.vg3 = ac.VariableGroup(self, "VG3", "inner VG")
-            self.vg3.out3 = ac.ArrayOutput(ac.DataType.int32, self.vg3, "out3", "unit", 2,"")
+            self.vg3.out3 = ac.ArrayOutput(ac.DataType.int32, self.vg3, "out3", "unit", 2, "")
 
     def __init__(self, owner, name, description):
         super().__init__(owner, name, description)
@@ -35,7 +35,7 @@ class MyMod(ac.ApplicationModule):
         self.testError = ac.ScalarOutput(ac.DataType.string, self, "testError", "", "")
 
     def mainLoop(self):
-        rag = self.vg.readAnyGroup() # just to test that ReadAnyGroup of VariableGroup is available
+        rag = self.vg.readAnyGroup()  # just to test that ReadAnyGroup of VariableGroup is available
 
         self.vg.out1.setAndWrite(1)
 
@@ -52,7 +52,8 @@ class MyMod(ac.ApplicationModule):
                 assert ok, "check input value"
 
                 # just check that readAll/writeAll functions exist, check with/without default args
-                # using writeAll as example, also check that these functions are available on the ApplicationModule (derives from VariableGroup)
+                # using writeAll as example, also check that these functions are available
+                # on the ApplicationModule (derives from VariableGroup)
                 self.writeAll(True)
                 self.writeAllDestructively()
                 # note, vg2.readAll ist allowed while vg.readAll is not since we already access vg's element via ReadyAnyGroup

@@ -2,7 +2,7 @@
 
 # This is a simple simulator script for an oven.
 # It is meant to run in parallel to the demo_example server.
-# 
+#
 # Both are accessing the same device using the same DMAP file. Since the device is
 # backed by the SharedMemoryDummy, it is possible to react to the setpoint provided
 # by the demo_example server and provide values back to it. The SharedMemoryDummy
@@ -26,11 +26,11 @@ da.setDMapFilePath('demo_example.dmap')
 dev = da.Device('device')
 dev.open()
 
-#cooling rate c
-c=0.001 #deg /(deg*s)
+# cooling rate c
+c = 0.001  # deg /(deg*s)
 
-#heating rate h
-h=0.0003 #deg/(A*s)
+# heating rate h
+h = 0.0003  # deg/(A*s)
 
 ovenTemp = 25.
 environment = 25.
@@ -50,9 +50,9 @@ temperatureOutside = dev.getScalarRegisterAccessor(np.double, "SENSORS.TEMPERATU
 
 while True:
     currentSetpoint.read()
-    I = currentSetpoint[0];
-    tempChange = 1 * (I*h +                  (environment-ovenTemp)*c)
-            #   1s   current*heating rate    deltaT * cooling rate
+    I = currentSetpoint[0]
+    tempChange = 1 * (I * h + (environment - ovenTemp) * c)
+    #   1s   current*heating rate    deltaT * cooling rate
 
     ovenTemp = ovenTemp + tempChange
     tempratureReadback.setAndWrite(ovenTemp)
@@ -61,7 +61,7 @@ while True:
     currentReadback.setAndWrite(I + random.gauss(0.0, 0.2))
     temperatureTop.setAndWrite(ovenTemp + random.gauss(0.0, 0.2))
     temperatureBottom.setAndWrite(ovenTemp + random.gauss(0.0, 0.2))
-    temperatureOutside.setAndWrite(environment + random.gauss(0.0,  0.2))
-    print('change ' + str(tempChange) +', new temp ' +str(ovenTemp))
+    temperatureOutside.setAndWrite(environment + random.gauss(0.0, 0.2))
+    print('change ' + str(tempChange) + ', new temp ' + str(ovenTemp))
 
     time.sleep(1)

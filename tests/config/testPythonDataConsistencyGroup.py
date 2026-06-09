@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.curdir, "..")))
 import PyApplicationCore as ac  # NOQA
 # fmt: on
 
+
 class Sender(ac.ApplicationModule):
 
     def __init__(self, owner, name, description):
@@ -59,7 +60,6 @@ class Receiver(ac.ApplicationModule):
 
         self.testError = ac.ScalarOutput(ac.DataType.string, self, "testError", "", "")
 
-
     def mainLoop(self):
 
         try:
@@ -82,7 +82,6 @@ class Receiver(ac.ApplicationModule):
             isValid = dg.update(change)
             assert isValid
 
-
             change = rag.readAny()
             isValid = dg.update(change)
             assert not isValid
@@ -95,19 +94,17 @@ class Receiver(ac.ApplicationModule):
 
             # Note, it is fine to create a DataConsistencyGroup with MatchingMode.historized after MatchingMode.exact,
             # but the other way round would not be valid.
-            dgh = ac.DataConsistencyGroup(self.in1, self.in2, mode=ac.MatchingMode.historized, histLen = 1)
+            dgh = ac.DataConsistencyGroup(self.in1, self.in2, mode=ac.MatchingMode.historized, histLen=1)
             change = rag.readAny()
             isValid = dgh.update(change)
             assert isValid
 
             self.testError.setAndWrite("ok")
 
-
         except AssertionError as e:
-            print("Exception: "+"\n".join(traceback.format_exception(e)))
+            print("Exception: " + "\n".join(traceback.format_exception(e)))
             sys.stdout.flush()
             self.testError.setAndWrite("\n".join(traceback.format_exception(e)))
-
 
 
 ac.app.sender = Sender(ac.app, "UserModule", "")

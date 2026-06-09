@@ -161,7 +161,7 @@ class MyMod(ac.ApplicationModule):
 
                 assert str(self.v7) == "2.75"
                 assert str(self.v8) == "some string"
-                assert bool(self.v7) == True
+                assert bool(self.v7)
                 assert bool(self.v0) == False
 
             except Exception as e:
