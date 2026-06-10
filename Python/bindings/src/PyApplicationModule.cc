@@ -177,17 +177,24 @@ namespace ChimeraTK {
           break; // Thread exited
         }
       }
-      // GIL released here
-
-      // Re-interrupt in case the thread was blocked on a different read
-      interruptAndClearAllAccessors();
+      // Do NOT re-interrupt here. The first interrupt pushed a thread_interrupted
+      // exception which the old thread will consume when it exits the blocking read.
+      // Re-interrupting would push more exceptions into the queue, filling it up
+      // and causing subsequent writes to report data lost (see
+      // accountForWriteOperation in TestableMode).
 
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    // Step 3: Drain any stale thread_interrupted exceptions.
-    // This is pure C++ - no GIL needed.
-    drainThreadInterrupted();
+    // Step 3: Don't call drainThreadInterrupted() here because it tries to acquire
+    // the testable mode shared lock, which would block if the test thread holds the
+    // exclusive lock (e.g. during sleep). Without re-interrupt in the retry loop, only
+    // one thread_interrupted exception was pushed, and the old thread consumed it.
+    // The queue should be empty, so no draining is needed.
+    // If the old thread didn't consume the exception (unlikely with one interrupt),
+    // the new module thread will encounter it and exit, which is safer than blocking
+    // here waiting for a lock we may never acquire.
+    //drainThreadInterrupted();
 
     return true;
   }

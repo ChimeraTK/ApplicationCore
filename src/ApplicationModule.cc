@@ -175,7 +175,10 @@ namespace ChimeraTK {
       mainLoop();
     }
     catch(...) {
-      Application::getInstance().getTestableMode().unlock("terminate");
+      auto& tm = Application::getInstance().getTestableMode();
+      if(tm.isEnabled() && tm.testLock()) {
+        tm.unlock("terminate");
+      }
       throw;
     }
     Application::getInstance().getTestableMode().unlock("terminate");

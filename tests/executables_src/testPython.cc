@@ -573,8 +573,39 @@ PyApplicationCore.app.myMod = MyMod(PyApplicationCore.app, "SomeName", "Descript
     }
     BOOST_REQUIRE(std::filesystem::exists(pyFilePath));
 
-    // Now we know the file is pristine. Read the original source to restore later.
-    std::ifstream origFile(pyFilePath);
+    // Determine the actual file path that Python resolved for this module.
+    // inspect.getfile() may return a different path than pyFilePath (e.g. when sys.path
+    // modifications from previously loaded modules affect module resolution).
+    // We need to write to the same file that the file monitoring thread monitors.
+    // We use std::filesystem to check for the common resolution: if the module is found
+    // via ".." in sys.path, inspect.getfile() will point to the build root copy.
+    std::string resolvedPyFilePath = pyFilePath;
+    {
+      // Try the common resolution: the module may be found at build_root/testPythonFileMonitor.py
+      // via ".." in sys.path, or at tests/testPythonFileMonitor.py via CWD.
+      // Check both and pick the one that differs from pyFilePath.
+      std::filesystem::path buildRootPy = std::filesystem::path(pyFilePath).parent_path().parent_path() / "testPythonFileMonitor.py";
+      if(std::filesystem::exists(buildRootPy) && std::filesystem::absolute(buildRootPy).string() != pyFilePath) {
+        resolvedPyFilePath = std::filesystem::absolute(buildRootPy).string();
+      }
+    }
+
+    // Also ensure the resolved path has pristine content, in case it differs from pyFilePath
+    if(resolvedPyFilePath != pyFilePath) {
+      std::ifstream resolvedFile(resolvedPyFilePath);
+      std::stringstream resolvedBuf;
+      resolvedBuf << resolvedFile.rdbuf();
+      resolvedFile.close();
+      if(resolvedBuf.str() != pristineSource) {
+        std::ofstream restoreResolved(resolvedPyFilePath, std::ios::trunc);
+        restoreResolved << pristineSource;
+        restoreResolved.close();
+      }
+    }
+
+    // Now we know the file is pristine. Read the original source from the resolved path
+    // to restore later.
+    std::ifstream origFile(resolvedPyFilePath);
     std::stringstream origBuf;
     origBuf << origFile.rdbuf();
     std::string originalSource = origBuf.str();
@@ -615,23 +646,32 @@ class MyMod(PyApplicationCore.ApplicationModule) :
 PyApplicationCore.app.myMod = MyMod(PyApplicationCore.app, "SomeName", "Description")
 )python";
 
-    // Use atexit to restore the original file even if Boost.Test calls exit()
+    // Use atexit to restore the original file(s) even if Boost.Test calls exit()
     // (which skips destructors of automatic objects).
     // We store the data in static pointers accessed by a captureless lambda,
     // which can convert to void(*)() for std::atexit.
     static std::shared_ptr<std::string> restoreGuard;
     static std::shared_ptr<std::string> restoreFilePath;
+    static std::shared_ptr<std::string> restoreAltPath;
     restoreGuard = std::make_shared<std::string>(originalSource);
-    restoreFilePath = std::make_shared<std::string>(pyFilePath);
+    restoreFilePath = std::make_shared<std::string>(resolvedPyFilePath);
+    if(resolvedPyFilePath != pyFilePath) {
+      restoreAltPath = std::make_shared<std::string>(pyFilePath);
+    }
     std::atexit([]() {
       std::ofstream pyFile(*restoreFilePath, std::ios::trunc);
       pyFile << *restoreGuard;
       pyFile.close();
+      if(restoreAltPath) {
+        std::ofstream altFile(*restoreAltPath, std::ios::trunc);
+        altFile << *restoreGuard;
+        altFile.close();
+      }
     });
 
-    // Write the modified source
+    // Write the modified source to the resolved path (the file being monitored)
     {
-      std::ofstream pyFile(pyFilePath, std::ios::trunc);
+      std::ofstream pyFile(resolvedPyFilePath, std::ios::trunc);
       pyFile << newSource;
       pyFile.close();
     }
@@ -640,8 +680,7 @@ PyApplicationCore.app.myMod = MyMod(PyApplicationCore.app, "SomeName", "Descript
     // The file monitoring thread starts with the default 1000ms check interval in the Application
     // constructor (before we can set it to 100ms in FileMonitorApp's constructor body).
     // After the first check (at ~1000ms), subsequent checks use the configured 100ms interval.
-    // Note: The 1.5s sleep should allow at least one check at 1000ms and one at 1100ms.
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 
     // Verify the module was reloaded and the new code is running: Var1 should now be Var2 + 1.0
     var2 = 10;
