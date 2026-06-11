@@ -194,7 +194,7 @@ namespace ChimeraTK {
     // If the old thread didn't consume the exception (unlikely with one interrupt),
     // the new module thread will encounter it and exit, which is safer than blocking
     // here waiting for a lock we may never acquire.
-    //drainThreadInterrupted();
+    // drainThreadInterrupted();
 
     return true;
   }

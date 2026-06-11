@@ -584,7 +584,8 @@ PyApplicationCore.app.myMod = MyMod(PyApplicationCore.app, "SomeName", "Descript
       // Try the common resolution: the module may be found at build_root/testPythonFileMonitor.py
       // via ".." in sys.path, or at tests/testPythonFileMonitor.py via CWD.
       // Check both and pick the one that differs from pyFilePath.
-      std::filesystem::path buildRootPy = std::filesystem::path(pyFilePath).parent_path().parent_path() / "testPythonFileMonitor.py";
+      std::filesystem::path buildRootPy =
+          std::filesystem::path(pyFilePath).parent_path().parent_path() / "testPythonFileMonitor.py";
       if(std::filesystem::exists(buildRootPy) && std::filesystem::absolute(buildRootPy).string() != pyFilePath) {
         resolvedPyFilePath = std::filesystem::absolute(buildRootPy).string();
       }
