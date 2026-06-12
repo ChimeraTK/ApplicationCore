@@ -21,9 +21,21 @@ namespace ChimeraTK {
     _recoveryHelper->notificationQueue = cppext::future_queue<void>(3);
     _recoveryHelper->recoveryDirection = RecoveryHelper::Direction::fromDevice;
 
-    // Set the read queue as continuation of the notification queue
-    this->_readQueue =
-        _recoveryHelper->notificationQueue.template then<void>([&, this]() { _target->read(); }, std::launch::deferred);
+    // The DeviceManager will trigger the initial value read by writing to this readQueue.
+    this->_readQueue = _recoveryHelper->notificationQueue.template then<void>(
+        [&, this]() {
+          try {
+            _target->read();
+          }
+          catch(const ChimeraTK::runtime_error&) {
+            // Runtime errors may occur as a race condition, if the device breaks again between start of recovery in the
+            // DeviceManager and the initial value read request being processed here.
+            // We simply skip the initial value poll in that case, since we will be triggered again by the DeviceManager
+            // once the device recovers again.
+            throw ChimeraTK::detail::DiscardValueException(); // NOLINT(hicpp-exception-baseclass)
+          }
+        },
+        std::launch::deferred);
   }
 
   /********************************************************************************************************************/
