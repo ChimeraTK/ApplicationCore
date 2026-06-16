@@ -15,6 +15,16 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  /**
+   * System tag to mark an accessor which should be excluded from the initial value read during application startup.
+   * This allows the owning ApplicationModule to enter its mainLoop even if the device is in an error state, because
+   * startup will not block waiting for an initial value for this accessor.
+   */
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+  constexpr char noInitialValueReadTag[]{"_ChimeraTK_ApplicationCore_noInitialValueRead"};
+
+  /********************************************************************************************************************/
+
   class Application;
   class ModuleGroup;
   class ConfigReader;

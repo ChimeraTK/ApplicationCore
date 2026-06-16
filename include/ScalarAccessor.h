@@ -137,6 +137,34 @@ namespace ChimeraTK {
     ScalarOutputReverseRecovery() : ScalarAccessor<UserType>() {}
     using ScalarAccessor<UserType>::operator=;
   };
+
+  /********************************************************************************************************************/
+
+  /** Convenience class for input scalar accessors with UpdateMode::push that skip initial value reading.
+   *  This allows the ApplicationModule using this input to enter its mainLoop even if the device
+   *  is in an error state, since the initial value will not be read from the device. */
+  template<typename UserType>
+  class ScalarPushInputNoInitialValue : public ScalarAccessor<UserType> {
+   public:
+    ScalarPushInputNoInitialValue(Module* owner, const std::string& name, std::string unit,
+        const std::string& description, const std::unordered_set<std::string>& tags = {});
+    ScalarPushInputNoInitialValue() : ScalarAccessor<UserType>() {}
+    using ScalarAccessor<UserType>::operator=;
+  };
+
+  /********************************************************************************************************************/
+
+  /** Convenience class for input scalar accessors with UpdateMode::poll that skip initial value reading. */
+  template<typename UserType>
+  class ScalarPollInputNoInitialValue : public ScalarAccessor<UserType> {
+   public:
+    ScalarPollInputNoInitialValue(Module* owner, const std::string& name, std::string unit,
+        const std::string& description, const std::unordered_set<std::string>& tags = {});
+    ScalarPollInputNoInitialValue() : ScalarAccessor<UserType>() {}
+    void read() { this->readLatest(); }
+    using ScalarAccessor<UserType>::operator=;
+  };
+
   /********************************************************************************************************************/
   /********************************************************************************************************************/
   /* Implementations below this point                                                                                 */
@@ -263,6 +291,26 @@ namespace ChimeraTK {
   : ScalarAccessor<UserType>(
         owner, name, {VariableDirection::feeding, true}, unit, UpdateMode::push, description, tags) {
     this->addTag(ChimeraTK::SystemTags::reverseRecovery);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  ScalarPushInputNoInitialValue<UserType>::ScalarPushInputNoInitialValue(Module* owner, const std::string& name,
+      std::string unit, const std::string& description, const std::unordered_set<std::string>& tags)
+  : ScalarAccessor<UserType>(
+        owner, name, {VariableDirection::consuming, false}, unit, UpdateMode::push, description, tags) {
+    this->addTag(ChimeraTK::noInitialValueReadTag);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  ScalarPollInputNoInitialValue<UserType>::ScalarPollInputNoInitialValue(Module* owner, const std::string& name,
+      std::string unit, const std::string& description, const std::unordered_set<std::string>& tags)
+  : ScalarAccessor<UserType>(
+        owner, name, {VariableDirection::consuming, false}, unit, UpdateMode::poll, description, tags) {
+    this->addTag(ChimeraTK::noInitialValueReadTag);
   }
 
   /********************************************************************************************************************/

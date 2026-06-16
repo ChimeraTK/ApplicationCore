@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "ExceptionHandlingDecorator.h"
 
+#include "ApplicationModule.h"
 #include "DeviceManager.h"
 #include "RecoveryHelper.h"
 
@@ -20,6 +21,7 @@ namespace ChimeraTK {
       boost::shared_ptr<RecoveryHelper> recoveryHelper)
   : ChimeraTK::NDRegisterAccessorDecorator<UserType>(accessor), _recoveryHelper(std::move(recoveryHelper)),
     _direction(networkNode.getDirection()) {
+    _skipInitialValueWait = networkNode.getTags().contains(ChimeraTK::noInitialValueReadTag);
     const auto& deviceAlias = networkNode.getDeviceAlias();
     const auto& registerName = networkNode.getRegisterName();
 
@@ -230,7 +232,7 @@ namespace ChimeraTK {
 
     _hasThrownToInhibitTransfer = false;
 
-    if(TransferElement::_versionNumber == VersionNumber(nullptr)) {
+    if(TransferElement::_versionNumber == VersionNumber(nullptr) && !_skipInitialValueWait) {
       deviceManager->waitForInitialValues();
       // we don't have to store the shared lock. Once we acquired it the deviceModule will never take it again.
     }

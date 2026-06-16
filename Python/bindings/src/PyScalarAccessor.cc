@@ -336,6 +336,50 @@ namespace ChimeraTK {
         },
         py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
         py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
+
+    /**
+     * ScalarPushInputNoInitialValue
+     */
+    m.def(
+        "ScalarPushInputNoInitialValue",
+        [](ChimeraTK::DataType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            const std::string& description, const std::unordered_set<std::string>& tags) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
+              AccessorTypeTag<ScalarPushInputNoInitialValue>{}, type, &owner, name, unit, description, tags);
+        },
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
+    m.def(
+        "ScalarPushInputNoInitialValue",
+        [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            const std::string& description, const std::unordered_set<std::string>& tags) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
+              AccessorTypeTag<ScalarPushInputNoInitialValue>{}, DataType(type), &owner, name, unit, description, tags);
+        },
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
+
+    /**
+     * ScalarPollInputNoInitialValue
+     */
+    m.def(
+        "ScalarPollInputNoInitialValue",
+        [](ChimeraTK::DataType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            const std::string& description, const std::unordered_set<std::string>& tags) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
+              AccessorTypeTag<ScalarPollInputNoInitialValue>{}, type, &owner, name, unit, description, tags);
+        },
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
+    m.def(
+        "ScalarPollInputNoInitialValue",
+        [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            const std::string& description, const std::unordered_set<std::string>& tags) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyScalarAccessor>(
+              AccessorTypeTag<ScalarPollInputNoInitialValue>{}, DataType(type), &owner, name, unit, description, tags);
+        },
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("description"),
+        py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference, "");
   }
 
   /********************************************************************************************************************/
