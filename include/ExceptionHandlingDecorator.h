@@ -25,6 +25,8 @@ namespace ChimeraTK {
     ExceptionHandlingDecorator(boost::shared_ptr<ChimeraTK::NDRegisterAccessor<UserType>> accessor,
         const VariableNetworkNode& networkNode, boost::shared_ptr<RecoveryHelper> recoveryHelper);
 
+    void setSkipInitialValueWait(bool skip) { _skipInitialValueWait = skip; }
+
     void doPreWrite(TransferType type, VersionNumber versionNumber) override;
 
     void doPostWrite(TransferType type, VersionNumber versionNumber) override;
@@ -46,6 +48,8 @@ namespace ChimeraTK {
     boost::weak_ptr<DeviceManager> _deviceManager;
 
     bool _previousReadFailed{true};
+
+    bool _skipInitialValueWait{false};
 
     boost::shared_ptr<RecoveryHelper> _recoveryHelper{nullptr};
     // store the recoveryAccessor separately. The RecoveryHelper only contains a pointer to TransferElement and can't be

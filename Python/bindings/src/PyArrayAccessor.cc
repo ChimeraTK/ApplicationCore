@@ -402,6 +402,56 @@ namespace ChimeraTK {
         py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("nElements"),
         py::arg("description"), py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference,
         "");
+
+    /**
+     * ArrayPushInputNoInitialValue
+     */
+    m.def(
+        "ArrayPushInputNoInitialValue",
+        [](ChimeraTK::DataType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            size_t nElements, const std::string& description, const std::unordered_set<std::string>& tags) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyArrayAccessor>(
+              AccessorTypeTag<ArrayPushInputNoInitialValue>{}, type, &owner, name, unit, nElements, description, tags);
+        },
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("nElements"),
+        py::arg("description"), py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference,
+        "");
+    m.def(
+        "ArrayPushInputNoInitialValue",
+        [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            size_t nElements, const std::string& description, const std::unordered_set<std::string>& tags) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyArrayAccessor>(
+              AccessorTypeTag<ArrayPushInputNoInitialValue>{}, DataType(type), &owner, name, unit, nElements,
+              description, tags);
+        },
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("nElements"),
+        py::arg("description"), py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference,
+        "");
+
+    /**
+     * ArrayPollInputNoInitialValue
+     */
+    m.def(
+        "ArrayPollInputNoInitialValue",
+        [](ChimeraTK::DataType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            size_t nElements, const std::string& description, const std::unordered_set<std::string>& tags) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyArrayAccessor>(
+              AccessorTypeTag<ArrayPollInputNoInitialValue>{}, type, &owner, name, unit, nElements, description, tags);
+        },
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("nElements"),
+        py::arg("description"), py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference,
+        "");
+    m.def(
+        "ArrayPollInputNoInitialValue",
+        [](ChimeraTK::DataType::TheType type, VariableGroup& owner, const std::string& name, const std::string& unit,
+            size_t nElements, const std::string& description, const std::unordered_set<std::string>& tags) {
+          return dynamic_cast<PyOwningObject&>(owner).make_child<PyArrayAccessor>(
+              AccessorTypeTag<ArrayPollInputNoInitialValue>{}, DataType(type), &owner, name, unit, nElements,
+              description, tags);
+        },
+        py::arg("type"), py::arg("owner"), py::arg("name"), py::arg("unit"), py::arg("nElements"),
+        py::arg("description"), py::arg("tags") = std::unordered_set<std::string>{}, py::return_value_policy::reference,
+        "");
   }
 
   /********************************************************************************************************************/

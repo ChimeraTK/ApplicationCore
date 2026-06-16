@@ -150,6 +150,32 @@ namespace ChimeraTK {
     ArrayOutputReverseRecovery() = default;
     using ArrayAccessor<UserType>::operator=;
   };
+
+  /********************************************************************************************************************/
+
+  /** Convenience class for input array accessors with UpdateMode::push that skip initial value reading. */
+  template<typename UserType>
+  class ArrayPushInputNoInitialValue : public ArrayAccessor<UserType> {
+   public:
+    ArrayPushInputNoInitialValue(Module* owner, const std::string& name, std::string unit, size_t nElements,
+        const std::string& description, const std::unordered_set<std::string>& tags = {});
+    ArrayPushInputNoInitialValue() = default;
+    using ArrayAccessor<UserType>::operator=;
+  };
+
+  /********************************************************************************************************************/
+
+  /** Convenience class for input array accessors with UpdateMode::poll that skip initial value reading. */
+  template<typename UserType>
+  class ArrayPollInputNoInitialValue : public ArrayAccessor<UserType> {
+   public:
+    ArrayPollInputNoInitialValue(Module* owner, const std::string& name, std::string unit, size_t nElements,
+        const std::string& description, const std::unordered_set<std::string>& tags = {});
+    ArrayPollInputNoInitialValue() = default;
+    void read() { this->readLatest(); }
+    using ArrayAccessor<UserType>::operator=;
+  };
+
   /********************************************************************************************************************/
   /********************************************************************************************************************/
   /* Implementations below this point                                                                                 */
@@ -287,6 +313,26 @@ namespace ChimeraTK {
   : ArrayAccessor<UserType>(
         owner, name, {VariableDirection::feeding, true}, unit, nElements, UpdateMode::push, description, tags) {
     this->addTag(ChimeraTK::SystemTags::reverseRecovery);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  ArrayPushInputNoInitialValue<UserType>::ArrayPushInputNoInitialValue(Module* owner, const std::string& name,
+      std::string unit, size_t nElements, const std::string& description, const std::unordered_set<std::string>& tags)
+  : ArrayAccessor<UserType>(
+        owner, name, {VariableDirection::consuming, false}, unit, nElements, UpdateMode::push, description, tags) {
+    this->addTag(ChimeraTK::noInitialValueReadTag);
+  }
+
+  /********************************************************************************************************************/
+
+  template<typename UserType>
+  ArrayPollInputNoInitialValue<UserType>::ArrayPollInputNoInitialValue(Module* owner, const std::string& name,
+      std::string unit, size_t nElements, const std::string& description, const std::unordered_set<std::string>& tags)
+  : ArrayAccessor<UserType>(
+        owner, name, {VariableDirection::consuming, false}, unit, nElements, UpdateMode::poll, description, tags) {
+    this->addTag(ChimeraTK::noInitialValueReadTag);
   }
 
   /********************************************************************************************************************/

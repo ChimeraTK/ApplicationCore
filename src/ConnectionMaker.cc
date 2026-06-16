@@ -612,6 +612,17 @@ namespace ChimeraTK {
         for(const auto& consumer : net.consumers) {
           if(consumer.getMode() == UpdateMode::poll) {
             consumer.setAppAccessorImplementation<UserType>(consumingFanOut);
+            // If the poll-type consumer has the noInitialValueReadTag, mark the
+            // ExceptionHandlingDecorator within feedingImpl to skip waitForInitialValues().
+            // This is the only path where the module thread reads directly through the
+            // ExceptionHandlingDecorator (via ConsumingFanOut), so blocking would affect
+            // the user's mainLoop().
+            if(consumer.getTags().contains(ChimeraTK::noInitialValueReadTag)) {
+              auto* ehd = dynamic_cast<ExceptionHandlingDecorator<UserType>*>(feedingImpl.get());
+              if(ehd) {
+                ehd->setSkipInitialValueWait(true);
+              }
+            }
             break;
           }
         }

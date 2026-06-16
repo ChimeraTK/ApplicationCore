@@ -120,6 +120,11 @@ namespace ChimeraTK {
       if(variable.getDirection().dir != VariableDirection::consuming) {
         continue;
       }
+
+      if(variable.getTags().contains(ChimeraTK::noInitialValueReadTag)) {
+        continue;
+      }
+
       if(variable.getMode() == UpdateMode::poll) {
         assert(!variable.getAppAccessorNoType().getHighLevelImplElement()->getAccessModeFlags().has(
             AccessMode::wait_for_new_data));
@@ -144,6 +149,10 @@ namespace ChimeraTK {
           variable.getDirection().withReturn && variable.getTags().contains(ChimeraTK::SystemTags::reverseRecovery);
 
       if(!doNotSkipInIvDistribution && variable.getDirection().dir != VariableDirection::consuming) {
+        continue;
+      }
+
+      if(variable.getTags().contains(ChimeraTK::noInitialValueReadTag)) {
         continue;
       }
 
