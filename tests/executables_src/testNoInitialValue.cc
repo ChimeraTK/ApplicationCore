@@ -191,3 +191,63 @@ BOOST_AUTO_TEST_CASE(TestNoInitialValueOnlyEntersWithBrokenDevice) {
 }
 
 /**********************************************************************************************************************/
+
+BOOST_AUTO_TEST_CASE(TestWithOptimiseUnmappedVariables) {
+  std::cout << "TestWithOptimiseUnmappedVariables" << std::endl;
+
+  setupDeviceMap();
+  ctk::BackendFactory::getInstance().setDMapFilePath(testDmap);
+
+  // Place backend into error state BEFORE the application starts
+  auto backend =
+      boost::dynamic_pointer_cast<ctk::ExceptionDummy>(ctk::BackendFactory::getInstance().createBackend("testDevice"));
+  BOOST_REQUIRE(backend);
+  backend->throwExceptionOpen = true;
+  struct NoInitOnlyModule : public ctk::ApplicationModule {
+    using ctk::ApplicationModule::ApplicationModule;
+
+    ctk::ScalarPollInputNoInitialValue<int32_t> noInit{this, "/Module/noInit", "", ""};
+
+    // Reverse Recovery paired with noInitialValueRead effectively disables recovery entirely. Writes only go through
+    // when the device is online during the write operation and are otherwise discarded.
+    ctk::ScalarOutputReverseRecovery<int32_t> noReco{
+        this, "/Module/noReco", "", "", {ChimeraTK::noInitialValueReadTag}};
+
+    std::atomic<bool> mainLoopEntered{false};
+
+    void mainLoop() override {
+      // Now read the NoInitialValue input — this should not block even though the device is broken and the CS
+      // connection has been optimised out (direct Device→App connection), because we skip
+      // DeviceManager::waitForInitialValues() in ExceptionHandlingDecorator::doPreRead()
+      noInit.read();
+
+      noReco.write();
+
+      mainLoopEntered = true;
+      mainLoopEntered.notify_one();
+    }
+  };
+
+  struct OnlyNoInitApp : ctk::Application {
+    OnlyNoInitApp() : ctk::Application("onlyNoInitOptApp") { ctk::Application::debugMakeConnections(); }
+    ~OnlyNoInitApp() override { shutdown(); }
+    ctk::DeviceModule devMod{this, "testDevice", "/fakeTrigger"};
+    NoInitOnlyModule mod{this, "Module", ""};
+  } app;
+
+  ctk::TestFacility test(app, false);
+
+  // Optimise out the control system connection, making it a direct Device→App connection (1:1).
+  // This exercises makeDirectConnectionForFeederWithImplementation instead of makeFanOutConnectionForFeederWithImplementation.
+  app.optimiseUnmappedVariables({"/Module/noInit", "/Module/noReco"});
+
+  test.runApplication();
+
+  // Module with only NoInitialValue inputs should enter mainLoop
+  // despite broken device, because all its inputs skip the initial read
+  // AND the ExceptionHandlingDecorator::doPreRead skips waitForInitialValues()
+  CHECK_EQUAL_TIMEOUT(app.mod.mainLoopEntered, true, 5000);
+
+  app.shutdown();
+  cleanupDeviceMap();
+}
