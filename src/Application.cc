@@ -85,9 +85,7 @@ void Application::registerThread(const std::string& name) {
 /**********************************************************************************************************************/
 
 void Application::incrementDataLossCounter(const std::string& name) {
-  if(getInstance()._debugDataLoss) {
-    logger(Logger::Severity::debug, "DataLossCounter") << "Data loss in variable " << name;
-  }
+  logger(Logger::Severity::debug, "DataLossCounter") << "Data loss in variable " << name;
   getInstance()._dataLossCounter++;
 }
 
@@ -113,7 +111,6 @@ void Application::initialise() {
     module->postConstruct();
   }
 
-  _cm.setDebugConnections(_enableDebugMakeConnections);
   _cm.finalise();
 
   _initialiseCalled = true;

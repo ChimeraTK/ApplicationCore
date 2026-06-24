@@ -77,16 +77,6 @@ namespace ChimeraTK::detail {
     void enable();
 
     /**
-     * Enable noisy debugging output for testable mode
-     */
-    void setEnableDebug(bool enable = true) { _enableDebug = enable; }
-
-    /**
-     * Enable debugging output for decorating the accessor
-     */
-    void setEnableDebugDecorating(bool enable = true) { _debugDecorating = enable; }
-
-    /**
      * Check whether testable mode has been enabled
      */
     [[nodiscard]] bool isEnabled() const { return _enabled; }
@@ -170,11 +160,6 @@ namespace ChimeraTK::detail {
     friend class ChimeraTK::DeviceManager;
     friend class ChimeraTK::TriggerFanOut;
     friend class ChimeraTK::TestFacility;
-
-    /**
-     * Flag if noisy debug output is enabled for the testable mode
-     */
-    bool _enableDebug{false};
 
     /**
      * Semaphore counter used in testable mode to check if application code is finished executing. This value may only
@@ -318,7 +303,6 @@ namespace ChimeraTK::detail {
      */
     pid_t pthreadId(const boost::thread::id& threadId = boost::this_thread::get_id());
 
-    bool _debugDecorating{false};
     friend class ChimeraTK::ConnectionMaker;
   };
 
@@ -335,11 +319,9 @@ namespace ChimeraTK::detail {
       return other;
     }
 
-    if(_debugDecorating) {
-      logger(Logger::Severity::debug, "TestableMode")
-          << "      Decorating pair " << producer.getQualifiedName() << "[" << other.first->getId() << "] -> "
-          << consumer.getQualifiedName() << "[" << other.second->getId() << "]";
-    }
+    logger(Logger::Severity::info, "TestableMode")
+        << "      Decorating pair " << producer.getQualifiedName() << "[" << other.first->getId() << "] -> "
+        << consumer.getQualifiedName() << "[" << other.second->getId() << "]";
 
     // create variable IDs
     size_t varId = detail::TestableMode::getNextVariableId();
@@ -383,11 +365,9 @@ namespace ChimeraTK::detail {
       return other;
     }
 
-    if(_debugDecorating) {
-      logger(Logger::Severity::debug, "TestableMode")
-          << "      Decorating single " << (direction == DecoratorType::READ ? "consumer " : "feeder ") << name << "["
-          << other->getId() << "]";
-    }
+    logger(Logger::Severity::info, "TestableMode")
+        << "      Decorating single " << (direction == DecoratorType::READ ? "consumer " : "feeder ") << name << "["
+        << other->getId() << "]";
 
     if(varId == 0) {
       varId = detail::TestableMode::getNextVariableId();
@@ -499,21 +479,16 @@ namespace ChimeraTK::detail {
       assert(_testableMode._counter > 0);
       --_testableMode._counter;
       --variable.counter;
-      if(_testableMode._enableDebug) {
-        logger(Logger::Severity::debug, "TestableMode")
-            << "TestableModeAccessorDecorator[name='" << this->getName() << "', id=" << _variableIdRead
-            << "]: testableMode.counter decreased, now at value " << _testableMode._counter << " / "
-            << variable.counter;
-      }
+      logger(Logger::Severity::trace, "TestableMode")
+          << "TestableModeAccessorDecorator[name='" << this->getName() << "', id=" << _variableIdRead
+          << "]: testableMode.counter decreased, now at value " << _testableMode._counter << " / " << variable.counter;
     }
     else {
-      if(_testableMode._enableDebug) {
-        logger(Logger::Severity::debug, "TestableMode")
-            << "TestableModeAccessorDecorator[name='" << this->getName() << "', id=" << _variableIdRead
-            << "]: testableMode.counter NOT decreased, was already at value " << _testableMode._counter << " / "
-            << variable.counter << "\n"
-            << variable.name;
-      }
+      logger(Logger::Severity::trace, "TestableMode")
+          << "TestableModeAccessorDecorator[name='" << this->getName() << "', id=" << _variableIdRead
+          << "]: testableMode.counter NOT decreased, was already at value " << _testableMode._counter << " / "
+          << variable.counter << "\n"
+          << variable.name;
     }
   }
 
@@ -557,17 +532,15 @@ namespace ChimeraTK::detail {
       _testableMode._counter--;
     }
 
-    if(_testableMode._enableDebug) {
-      if(!dataLost) {
-        logger(Logger::Severity::debug, "TestableMode")
-            << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
-            << "]: testableMode.counter increased, now at value " << _testableMode._counter;
-      }
-      else {
-        logger(Logger::Severity::debug, "TestableMode")
-            << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
-            << "]: testableMode.counter not increased due to lost data";
-      }
+    if(!dataLost) {
+      logger(Logger::Severity::trace, "TestableMode")
+          << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
+          << "]: testableMode.counter increased, now at value " << _testableMode._counter;
+    }
+    else {
+      logger(Logger::Severity::trace, "TestableMode")
+          << "TestableModeAccessorDecorator::write[name='" << this->getName() << "', id=" << _variableIdWrite
+          << "]: testableMode.counter not increased due to lost data";
     }
     return dataLost;
   }

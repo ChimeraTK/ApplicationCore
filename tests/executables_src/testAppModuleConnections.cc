@@ -441,7 +441,6 @@ namespace Tests::testAppModuleConnections {
     std::cout << "*** testSelfUnregisteringModule" << std::endl;
 
     TestAppSelfUnregisteringModule app;
-    app.debugMakeConnections();
 
     ctk::TestFacility tf{app};
 

@@ -119,13 +119,6 @@ namespace ChimeraTK {
      */
     static void registerThread(const std::string& name);
 
-    /**
-     * Enable debug output for the ConnectionMaker. Note, the debug output will have the logger severity "trace" and
-     * hence will not be visible by default. Enable trace output as follows:
-     *   Logger::getInstance().setMinSeverity(Logger::Severity::trace);
-     */
-    void debugMakeConnections() { _enableDebugMakeConnections = true; }
-
     ModuleType getModuleType() const override { return ModuleType::ModuleGroup; }
 
     std::string getQualifiedName() const override { return "/" + _name; }
@@ -140,13 +133,6 @@ namespace ChimeraTK {
     void enableVariableDebugging(const VariableNetworkNode& node) {
       _debugMode_variableList.insert(node.getUniqueId());
     }
-
-    /**
-     * Enable debug output for lost data. This will print to stdout every time data is lost in internal queues as it is
-     * counted with the DataLossCounter module. Do not enable in production environments. Do not call after
-     * initialisation phase of application.
-     */
-    void enableDebugDataLoss() { _debugDataLoss = true; }
 
     /**
      * Increment counter for how many write() operations have overwritten unread data. This function is normally not
@@ -227,9 +213,6 @@ namespace ChimeraTK {
     /** Flag whether run() has been called already, to make sure it doesn't get called twice. */
     bool _runCalled{false};
 
-    /** Flag if debug output is enabled for creation of the variable connections */
-    bool _enableDebugMakeConnections{false};
-
     /** Map from ProcessArray uniqueId to the variable ID for control system
      * variables. This is required for the TestFacility. */
     std::map<size_t, size_t> _pvIdMap;
@@ -244,9 +227,6 @@ namespace ChimeraTK {
 
     /** Counter for how many write() operations have overwritten unread data */
     std::atomic<size_t> _dataLossCounter{0};
-
-    /** Flag whether to debug data loss (as counted with the data loss counter). */
-    bool _debugDataLoss{false};
 
     /** Life-cycle state of the application */
     std::atomic<LifeCycleState> _lifeCycleState{LifeCycleState::initialisation};

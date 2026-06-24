@@ -77,8 +77,6 @@ namespace Tests::testControlSystemAccessors {
   BOOST_AUTO_TEST_CASE_TEMPLATE(testFeedToCS, T, test_types) {
     TestApplication<T> app;
 
-    app.debugMakeConnections();
-
     auto pvManagers = ctk::createPVManager();
     app.setPVManager(pvManagers.second);
 

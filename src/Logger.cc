@@ -2,9 +2,30 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "Logger.h"
 
+#include <cstdlib>
+#include <format>
 #include <iostream>
 
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
+
+  Logger::Severity Logger::defaultSeverityFromEnv() {
+    const auto* envValue = std::getenv("CHIMERATK_LOG_LEVEL");
+    if(envValue == nullptr) {
+      return Severity::info;
+    }
+
+    auto severity = Severity::fromString(envValue);
+
+    if(!severity.has_value()) {
+      std::cerr << std::format("Warning: CHIMERATK_LOG_LEVEL has invalid value '{}'. {}. Falling back to default.",
+                       envValue, severity.error())
+                << std::endl;
+    }
+
+    return severity.value_or(Severity::info);
+  }
 
   /********************************************************************************************************************/
 

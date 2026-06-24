@@ -4,8 +4,10 @@
 
 #include <ChimeraTK/cppext/future_queue.hpp>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/thread.hpp>
 
+#include <expected>
 #include <sstream>
 
 namespace ChimeraTK {
@@ -24,7 +26,31 @@ namespace ChimeraTK {
      * if the application is terminated immediately after sending a message to the log. Fatal errors shall be printed
      * directly to std::cerr before terminating the application.
      */
-    enum class Severity { trace, debug, info, warning, error };
+    class Severity {
+     public:
+      enum Value { trace, debug, info, warning, error };
+
+      // NOLINTNEXTLINE(google-explicit-constructor)
+      constexpr Severity(const Value& value) : _value(value) {}
+
+      // NOLINTNEXTLINE(google-explicit-constructor)
+      [[nodiscard]] constexpr operator Value() { return _value; }
+
+      /// Convert Severity into string
+      [[nodiscard]] constexpr std::string_view toString() const;
+
+      [[nodiscard]] constexpr auto operator<=>(const Severity& other) const = default;
+      [[nodiscard]] constexpr auto operator<=>(const Severity::Value& other) const { return _value <=> other; }
+
+      /**
+       * Set Severity from string. If the string does not represent a Severity, an error string explaining which values
+       * are valid is returned (meant to be passed on to humans only).
+       **/
+      constexpr static std::expected<Logger::Severity, std::string> fromString(const std::string& string);
+
+     private:
+      Value _value;
+    };
 
     /**
      * Set the minimum severity level to be passed to the logger. By default, the minimum severity is set to
@@ -106,12 +132,18 @@ namespace ChimeraTK {
 
     // Minimum severity to be sent to the queue. This allows filtering lower severity messages at sender side, even
     // before the message text has been (fully) composed.
-    std::atomic<Severity> _minSeverity{Severity::info};
+    std::atomic<Severity> _minSeverity{defaultSeverityFromEnv()};
 
     // Thread executing mainLoop().
     // Note: The thread must be started only after all other data members have been initialised, so this line must
     // come last (or the thread must be only started in the constructor body).
     boost::thread _mainLoopThread{[this] { mainLoop(); }};
+
+    /**
+     * Return the default severity based on the CHIMERATK_LOG_LEVEL environment variable.
+     * If the env var is not set or invalid, returns Severity::info.
+     */
+    static Severity defaultSeverityFromEnv();
 
     friend class Application;
   };
@@ -126,7 +158,6 @@ namespace ChimeraTK {
   }
 
   /********************************************************************************************************************/
-  /********************************************************************************************************************/
 
   inline Logger& Logger::getInstance() {
     return *getSharedPtr();
@@ -137,6 +168,47 @@ namespace ChimeraTK {
   inline std::shared_ptr<Logger>& Logger::getSharedPtr() {
     static std::shared_ptr<Logger> instance(new Logger());
     return instance;
+  }
+
+  /********************************************************************************************************************/
+  /********************************************************************************************************************/
+
+  constexpr std::string_view Logger::Severity::toString() const {
+    switch(_value) {
+      case trace:
+        return "trace";
+      case debug:
+        return "debug";
+      case info:
+        return "info";
+      case warning:
+        return "warning";
+      case error:
+        return "error";
+    }
+    std::unreachable();
+  }
+
+  /********************************************************************************************************************/
+
+  constexpr std::expected<Logger::Severity, std::string> Logger::Severity::fromString(const std::string& string) {
+    auto stringLower = boost::algorithm::to_lower_copy(std::string(string));
+    if(stringLower == "trace") {
+      return trace;
+    }
+    if(stringLower == "debug") {
+      return debug;
+    }
+    if(stringLower == "info") {
+      return info;
+    }
+    if(stringLower == "warning") {
+      return warning;
+    }
+    if(stringLower == "error") {
+      return error;
+    }
+    return std::unexpected("Valid values are: trace, debug, info, warning, error.");
   }
 
   /********************************************************************************************************************/

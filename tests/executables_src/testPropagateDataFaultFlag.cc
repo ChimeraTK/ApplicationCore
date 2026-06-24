@@ -107,7 +107,6 @@ namespace Tests::testPropagateDataFaultFlag {
   BOOST_AUTO_TEST_CASE(testDirectConnections) {
     std::cout << "testDirectConnections" << std::endl;
     TestApplication1 app;
-    app.debugMakeConnections();
     ctk::TestFacility test(app);
 
     auto i1 = test.getScalar<int>("/t1/i1");

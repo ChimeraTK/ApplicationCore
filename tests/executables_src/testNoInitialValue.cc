@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(TestNoInitialValueTagChecks) {
   };
 
   struct TagCheckApp : ctk::Application {
-    TagCheckApp() : ctk::Application("tagCheckApp") { ctk::Application::debugMakeConnections(); }
+    TagCheckApp() : ctk::Application("tagCheckApp") {}
     ~TagCheckApp() override { shutdown(); }
     TestModule mod{this, "Module", ""};
   } app;
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(TestNoInitialValueModuleEntersMainLoop) {
   };
 
   struct NoInitApp : ctk::Application {
-    NoInitApp() : ctk::Application("noInitApp") { ctk::Application::debugMakeConnections(); }
+    NoInitApp() : ctk::Application("noInitApp") {}
     ~NoInitApp() override { shutdown(); }
     TestModule mod{this, "Module", ""};
   } app;
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(TestNoInitialValueOnlyEntersWithBrokenDevice) {
   };
 
   struct OnlyNoInitApp : ctk::Application {
-    OnlyNoInitApp() : ctk::Application("onlyNoInitApp") { ctk::Application::debugMakeConnections(); }
+    OnlyNoInitApp() : ctk::Application("onlyNoInitApp") {}
     ~OnlyNoInitApp() override { shutdown(); }
     ctk::DeviceModule devMod{this, "testDevice", "/fakeTrigger"};
     NoInitOnlyModule mod{this, "Module", ""};
@@ -229,7 +229,7 @@ BOOST_AUTO_TEST_CASE(TestWithOptimiseUnmappedVariables) {
   };
 
   struct OnlyNoInitApp : ctk::Application {
-    OnlyNoInitApp() : ctk::Application("onlyNoInitOptApp") { ctk::Application::debugMakeConnections(); }
+    OnlyNoInitApp() : ctk::Application("onlyNoInitOptApp") {}
     ~OnlyNoInitApp() override { shutdown(); }
     ctk::DeviceModule devMod{this, "testDevice", "/fakeTrigger"};
     NoInitOnlyModule mod{this, "Module", ""};

@@ -114,11 +114,8 @@ namespace ChimeraTK::detail {
     }
 
     // debug output if enabled (also prevent spamming the same message)
-    if(_enableDebug) {                                                  // LCOV_EXCL_LINE (only cout)
-      logger(Logger::Severity::debug, "TestableMode")                   // LCOV_EXCL_LINE (only cout)
-          << "Application::testableModeLock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
-          << " tries to obtain lock for " << name;                      // LCOV_EXCL_LINE (only cout)
-    } // LCOV_EXCL_LINE (only cout)
+    logger(Logger::Severity::trace, "TestableMode")
+        << "Application::testableModeLock(): Thread " << threadName() << " tries to obtain lock for " << name;
 
     // obtain the lock
     boost::thread::id lastSeen_lastOwner = _lastMutexOwner;
@@ -144,11 +141,8 @@ namespace ChimeraTK::detail {
     _lastMutexOwner = boost::this_thread::get_id();
 
     // debug output if enabled
-    if(_enableDebug) {                                       // LCOV_EXCL_LINE (only cout)
-      logger(Logger::Severity::debug, "TestableMode")        // LCOV_EXCL_LINE (only cout)
-          << "TestableMode::lock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
-          << " obtained lock successfully for " << name;     // LCOV_EXCL_LINE (only cout)
-    } // LCOV_EXCL_LINE (only cout)
+    logger(Logger::Severity::trace, "TestableMode")
+        << "TestableMode::lock(): Thread " << threadName() << " obtained lock successfully for " << name;
   }
 
   /********************************************************************************************************************/
@@ -157,11 +151,8 @@ namespace ChimeraTK::detail {
     if(not _enabled) {
       return;
     }
-    if(_enableDebug) {                                         // LCOV_EXCL_LINE (only cout)
-      logger(Logger::Severity::debug, "TestableMode")          // LCOV_EXCL_LINE (only cout)
-          << "TestableMode::unlock(): Thread " << threadName() // LCOV_EXCL_LINE (only cout)
-          << " releases lock for " << name;                    // LCOV_EXCL_LINE (only cout)
-    } // LCOV_EXCL_LINE (only cout)
+    logger(Logger::Severity::trace, "TestableMode")
+        << "TestableMode::unlock(): Thread " << threadName() << " releases lock for " << name;
     getLockObject().unlock();
   }
 
@@ -180,10 +171,10 @@ namespace ChimeraTK::detail {
     size_t oldCounter = 0;
     auto t0 = std::chrono::steady_clock::now();
     while(true) {
-      if(_enableDebug && (oldCounter != _counter)) { // LCOV_EXCL_LINE (only cout)
-        logger(Logger::Severity::debug, "TestableMode")
-            << "Application::stepApplication(): testableMode.counter = " << _counter; // LCOV_EXCL_LINE (only cout)
-        oldCounter = _counter;                                                        // LCOV_EXCL_LINE (only cout)
+      if((oldCounter != _counter)) { // LCOV_EXCL_LINE (only logging)
+        logger(Logger::Severity::trace, "TestableMode")
+            << "Application::stepApplication(): testableMode.counter = " << _counter; // LCOV_EXCL_LINE (only logging)
+        oldCounter = _counter;                                                        // LCOV_EXCL_LINE (only logging)
       }
       unlock("stepApplication");
       boost::this_thread::yield();

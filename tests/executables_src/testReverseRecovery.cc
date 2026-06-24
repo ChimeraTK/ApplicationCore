@@ -37,7 +37,7 @@ struct ExternalMainLoopModule : public ctk::ApplicationModule {
   void mainLoop() final { doMainLoop(); }
 };
 struct TestApplication : ctk::Application {
-  TestApplication() : ctk::Application("tagTestApplication") { debugMakeConnections(); }
+  TestApplication() : ctk::Application("tagTestApplication") {}
   ~TestApplication() override { shutdown(); }
 
   ExternalMainLoopModule mod{this, "Module", ""};
