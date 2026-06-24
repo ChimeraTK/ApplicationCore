@@ -145,8 +145,6 @@ namespace Tests::testDeviceExceptionFlagPropagation {
 
     app.getModel().writeGraphViz("testDirectConnectRead.dot");
 
-    app.debugMakeConnections();
-
     ctk::TestFacility test(app);
     test.runApplication();
 

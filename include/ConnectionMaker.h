@@ -18,8 +18,6 @@ namespace ChimeraTK {
    public:
     explicit NetworkVisitor(Application& app) : _app(app) {}
 
-    void setDebugConnections(bool enable) { _debugConnections = enable; }
-
     /**
      * @brief Helper predicate to put ProcessVariableProxies into std::set
      */
@@ -50,7 +48,6 @@ namespace ChimeraTK {
     };
     std::set<std::string> _triggerNetworks{};
     std::map<std::string, NetworkInformation> _networks{};
-    bool _debugConnections{false};
 
     NetworkInformation checkNetwork(Model::ProcessVariableProxy& proxy);
     void finaliseNetwork(NetworkInformation& net);

@@ -295,10 +295,6 @@ namespace ChimeraTK {
 
   template<typename... Args>
   void NetworkVisitor::debug(Args&&... args) {
-    if(not _debugConnections) {
-      return;
-    }
-
     // Fold expression printer from https://en.cppreference.com/w/cpp/language/fold
     (logger(Logger::Severity::debug, "ConnectionMaker") << ... << args) << std::endl;
   }
@@ -387,8 +383,6 @@ namespace ChimeraTK {
   void ConnectionMaker::finalise() {
     debug("Calling finalise()...");
 
-    _app.getTestableMode()._debugDecorating = _debugConnections;
-
     debug("Preparing trigger networks");
     debug("Collecting triggers");
 
@@ -437,8 +431,6 @@ namespace ChimeraTK {
 
   void ConnectionMaker::connect() {
     debug("Calling connect()...");
-
-    _app.getTestableMode()._debugDecorating = _debugConnections;
 
     // Improve: Likely no need to distinguish trigger and normal networks here... Also just iterate _networks instead
     // of the model!

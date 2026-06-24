@@ -90,10 +90,7 @@ struct DummyApplication : ChimeraTK::Application {
   constexpr static const char* ExceptionDummyCDD2 = "(ExceptionDummy:2?map=test_with_push.map)";
   constexpr static const char* ExceptionDummyCDD3 = "(ExceptionDummy:3?map=test_with_push.map)";
 
-  DummyApplication() : Application("DummyApplication") {
-    // enable this for debugging:
-    // debugMakeConnections();
-  }
+  DummyApplication() : Application("DummyApplication") {}
   ~DummyApplication() override { shutdown(); }
 
   struct Group1 : ChimeraTK::ModuleGroup {

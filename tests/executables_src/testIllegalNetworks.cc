@@ -49,7 +49,6 @@ namespace Tests::testIllegalNetworks {
 
   BOOST_AUTO_TEST_CASE(testTwoScalarPollPushAccessors) {
     TestApplication1 app;
-    app.debugMakeConnections();
 
     BOOST_CHECK_THROW(
         {
@@ -64,7 +63,7 @@ namespace Tests::testIllegalNetworks {
 
   template<typename T>
   struct TestApplication3 : public ctk::Application {
-    TestApplication3() : Application("testSuite") { debugMakeConnections(); }
+    TestApplication3() : Application("testSuite") {}
     ~TestApplication3() override { shutdown(); }
 
     struct : ctk::ApplicationModule {
@@ -94,7 +93,7 @@ namespace Tests::testIllegalNetworks {
   /* test case for too many polling consumers */
 
   struct TestApplication4 : public ctk::Application {
-    TestApplication4() : Application("testSuite") { debugMakeConnections(); }
+    TestApplication4() : Application("testSuite") {}
     ~TestApplication4() override { shutdown(); }
 
     ctk::SetDMapFilePath dmap{"test.dmap"};
@@ -134,7 +133,7 @@ namespace Tests::testIllegalNetworks {
 
   template<typename T>
   struct TestApplication5 : public ctk::Application {
-    TestApplication5() : Application("testSuite") { debugMakeConnections(); }
+    TestApplication5() : Application("testSuite") {}
     ~TestApplication5() override { shutdown(); }
 
     struct : ctk::ApplicationModule {
@@ -164,7 +163,7 @@ namespace Tests::testIllegalNetworks {
 
   template<typename T>
   struct TestApplication6 : public ctk::Application {
-    TestApplication6() : Application("testSuite") { debugMakeConnections(); }
+    TestApplication6() : Application("testSuite") {}
     ~TestApplication6() override { shutdown(); }
 
     struct : ctk::ApplicationModule {

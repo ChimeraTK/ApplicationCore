@@ -738,8 +738,6 @@ namespace Tests::testTestFacilities {
     // ---------------------
     {
       TestPollingThroughFanOutsApplication app;
-      app.debugMakeConnections();
-      // app.getTestableMode().setEnableDebug();
 
       app.m2.poll1 = {&app.m2, "/m1/out1", "", ""};
       app.m2.poll2 = {&app.m2, "/m1/out1", "", ""};
