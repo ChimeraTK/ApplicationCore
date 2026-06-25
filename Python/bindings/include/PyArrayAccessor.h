@@ -5,11 +5,10 @@
 #include <pybind11/pybind11.h>
 // pybind11.h must come first
 
+#include "AccessorVariant.h"
 #include "ArrayAccessor.h"
 #include "PyOwnershipManagement.h"
 #include "PyTransferElement.h"
-
-#include <ChimeraTK/VariantUserTypes.h>
 
 #include <pybind11/numpy.h>
 
@@ -25,8 +24,8 @@ namespace ChimeraTK {
   class PyArrayAccessor : public PyTransferElement<PyArrayAccessor>, public PyOwnedObject {
     // Helper for constructor - note: we can move templates to the .cc file if we use them only in the same .cc file
     template<template<typename> class AccessorType>
-    static UserTypeTemplateVariantNoVoid<ArrayAccessor> createAccessor(ChimeraTK::DataType type, Module* owner,
-        const std::string& name, std::string unit, size_t nElements, const std::string& description,
+    static ArrayAccessorVariant createAccessor(ChimeraTK::DataType type, Module* owner, const std::string& name,
+        std::string unit, size_t nElements, const std::string& description,
         const std::unordered_set<std::string>& tags);
 
    public:
@@ -68,7 +67,7 @@ namespace ChimeraTK {
 
     static void bind(py::module& mod);
 
-    mutable UserTypeTemplateVariantNoVoid<ArrayAccessor> _accessor;
+    mutable ArrayAccessorVariant _accessor;
   };
 
   /********************************************************************************************************************/

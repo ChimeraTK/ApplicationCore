@@ -487,5 +487,37 @@ namespace Tests::testPython {
   }
 
   /********************************************************************************************************************/
+  /* Test ScalarPollInput and ArrayPollInput read() delegation (regression test for slicing bug) */
+
+  BOOST_AUTO_TEST_CASE(TestPollInputRead) {
+    std::cout << "***************************************************************************************" << std::endl;
+    std::cout << "==> testPollInputRead" << std::endl;
+
+    TestApp app("testPythonPollInputRead");
+    ctk::TestFacility tf(app);
+
+    auto error = tf.getScalar<std::string>("/TestError");
+    auto end = tf.getScalar<int32_t>("/End");
+
+    tf.runApplication();
+
+    // Trigger the Python mainLoop: it will call read() on poll inputs (ScalarPollInput,
+    // ArrayPollInput). Before the fix, read() on a poll input would block on
+    // wait_for_new_data because the variant stored the base ScalarAccessor type,
+    // losing the read() -> readLatest() override.
+    // The test succeeds if read() returns immediately (no blocking).
+    end.setAndWrite(0);
+    tf.stepApplication();
+
+    // Verify Python completed without error — if read() had blocked, the test would
+    // have timed out; if it threw, the error string would be non-empty.
+    bool hasError = error.readNonBlocking();
+    if(hasError) {
+      std::cout << "Python error: '" << std::string(error) << "'" << std::endl;
+    }
+    BOOST_TEST(std::string(error) == "");
+  }
+
+  /********************************************************************************************************************/
 
 } // namespace Tests::testPython

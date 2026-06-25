@@ -1,0 +1,7 @@
+<configuration>
+    <module name="PythonModules">
+        <module name="testPythonPollInputRead">
+            <variable name="path" type="string" value="testPythonPollInputRead" />
+        </module>
+    </module>
+</configuration>

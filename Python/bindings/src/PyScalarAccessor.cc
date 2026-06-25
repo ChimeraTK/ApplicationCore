@@ -12,14 +12,14 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<template<typename> class AccessorType>
-  UserTypeTemplateVariantNoVoid<ScalarAccessor> PyScalarAccessor::createAccessor(ChimeraTK::DataType type,
-      Module* owner, const std::string& name, const std::string& unit, const std::string& description,
+  ScalarAccessorVariant PyScalarAccessor::createAccessor(ChimeraTK::DataType type, Module* owner,
+      const std::string& name, const std::string& unit, const std::string& description,
       const std::unordered_set<std::string>& tags) {
-    std::optional<UserTypeTemplateVariantNoVoid<ScalarAccessor>> rv;
+    std::optional<ScalarAccessorVariant> rv;
     ChimeraTK::callForTypeNoVoid(type, [&](auto t) {
       using UserType = decltype(t);
       AccessorType<UserType> acc(owner, name, unit, description, tags);
-      rv.emplace(std::in_place_type<ScalarAccessor<UserType>>, std::move(acc));
+      rv.emplace(std::in_place_type<AccessorType<UserType>>, std::move(acc));
     });
     return std::move(rv.value());
   }
