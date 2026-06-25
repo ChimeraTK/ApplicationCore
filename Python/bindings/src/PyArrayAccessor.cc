@@ -12,14 +12,13 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<template<typename> class AccessorType>
-  UserTypeTemplateVariantNoVoid<ArrayAccessor> PyArrayAccessor::createAccessor(ChimeraTK::DataType type, Module* owner,
-      const std::string& name, std::string unit, size_t nElements, const std::string& description,
-      const std::unordered_set<std::string>& tags) {
-    std::optional<UserTypeTemplateVariantNoVoid<ArrayAccessor>> rv;
+  ArrayAccessorVariant PyArrayAccessor::createAccessor(ChimeraTK::DataType type, Module* owner, const std::string& name,
+      std::string unit, size_t nElements, const std::string& description, const std::unordered_set<std::string>& tags) {
+    std::optional<ArrayAccessorVariant> rv;
     ChimeraTK::callForTypeNoVoid(type, [&](auto t) {
       using UserType = decltype(t);
       AccessorType<UserType> acc(owner, name, unit, nElements, description, tags);
-      rv.emplace(std::in_place_type<ArrayAccessor<UserType>>, std::move(acc));
+      rv.emplace(std::in_place_type<AccessorType<UserType>>, std::move(acc));
     });
     return std::move(rv.value());
   }
