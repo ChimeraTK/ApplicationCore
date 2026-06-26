@@ -28,12 +28,12 @@ An application module is a class deriving from ChimeraTK::ApplicationModule, e.g
 \snippet{lineno} example/include/Controller.h Snippet: Class Definition
 
 
-In this small example, two input and one output process variable is defined. For each variable, the name, engineering unit and a short description needs to be provided. One of the two inputs is push-type, which means it can be used to trigger the computations when the variable changes. The other input is poll-type so just the curent value can be obtained. This will be explained in more details in \ref conceptualOverview_ProcessVariable "the next section".
+In this small example, two input and one output process variable is defined. For each variable, the name, engineering unit and a short description needs to be provided. One of the two inputs is push-type, which means it can be used to trigger the computations when the variable changes. The other input is poll-type so just the current value can be obtained. This will be explained in more details in \ref conceptualOverview_ProcessVariable "the next section".
 
 The code processing the data needs to go into the implementation of the ApplicationModule::mainLoop() function implementation. In our small example, we implement a simple, fixed-gain proportional controller like this:
 \snippet{lineno} example/src/Controller.cc Snippet: mainLoop implementation
 
-The ApplicationModule::mainLoop() function litteraly needs to contain a loop, which runs for the lifetime of the application. Any preparations which need to be executed once at application start should go before the start of the loop.
+The ApplicationModule::mainLoop() function literally needs to contain a loop, which runs for the lifetime of the application. Any preparations which need to be executed once at application start should go before the start of the loop.
 
 During shutdown of the application, any read/write operation on the process variables will function as an interruption point, so the programmer does not have to take care of this.
 
@@ -44,19 +44,19 @@ At the start of the mainLoop function, all inputs will already contain proper in
 
 What has been previously in this document referred to as a process variable is actually only the accessor to it. Accessors are already known from ChimeraTK DeviceAccess, where they allow reading and writing from/to device registers. In ApplicationCore the concept is extended to a higher abstraction level, since accessors cannot only target device registers.
 
-The process variable is a logical concept in ApplicationCore. Each process variable is exposed to the control system, can be accessed by an accessor of one ore more ApplicationModules and can be connected to a device.
+The process variable is a logical concept in ApplicationCore. Each process variable is exposed to the control system, can be accessed by an accessor of one or more ApplicationModules and can be connected to a device.
 
 A process variable has a data source, which is called the feeder, and one or more so-called consumers. The feeder as well as any consumer can each be either a device register, a control system variable (e.g. from an operator panel) or an output accessor of an application module. Process variables have a name, a type, a physical unit, a description and of course a value.
 
 \subsection conceptualOverview_ProcessVariable_accessMode Push and poll transfer modes
 
-Accessors can have either push or poll type transfer modes. In push mode, the feeder initiates the data tranfers, while in poll mode the consumer does. In both cases, a consuming application module still needs to execute a read operation before the value becomes visible in the application buffer of the accessor.
+Accessors can have either push or poll type transfer modes. In push mode, the feeder initiates the data transfers, while in poll mode the consumer does. In both cases, a consuming application module still needs to execute a read operation before the value becomes visible in the application buffer of the accessor.
 
 Push inputs of application modules are accessors with the ChimeraTK::AccessMode::wait_for_new_data flag (see DeviceAccess documentation) and hence have a blocking ChimeraTK::TransferElement::read() operation which waits until data is available for reading. They also support ChimeraTK::TransferElement::readNonBlocking() and ChimeraTK::TransferElement::readLatest(), and can be used inside a ChimeraTK::ReadAnyGroup.
 
 Poll inputs do not have the AccessMode::wait_for_new_data flag, and hence all read operations do not block and do not inform about changed values.
 
-Outputs of application modules are always push-type, so they can be connected to either a push-type or a poll-type input. Device registers do not neccessarily support the AccessMode::wait_for_new_data flag, in which case a direct connetion with only poll-type readers is possible. To circumvent this, a trigger can be used which determines the point in time when a new value shall be polled, see the \ref conceptualOverview_DeviceModule "Section Device modules" for more details. Control system variables are always push-type, which means device registers often cannot be connected directly to the control system without a trigger.
+Outputs of application modules are always push-type, so they can be connected to either a push-type or a poll-type input. Device registers do not necessarily support the AccessMode::wait_for_new_data flag, in which case a direct connection with only poll-type readers is possible. To circumvent this, a trigger can be used which determines the point in time when a new value shall be polled, see the \ref conceptualOverview_DeviceModule "Section Device modules" for more details. Control system variables are always considered push-type, so they can block on a read until new data becomes available.
 
 \section conceptualOverview_Application The Application
 
@@ -84,7 +84,7 @@ To add more functionality to the application, additional ApplicationModules need
 
 \snippet{lineno} example/include/AverageCurrent.h Snippet: Class Definition
 
-Note that the name of the input is the relative path to the output of the controller module: "../Controller/heatingCurrent" directs the framework to look one level up starting from the AverageCurrent module (which is in this case the ExampleApp application instance) and then decent down into a module called "Controller" to find the variable "heatingCurrent". This will cause the framework to pass on any value written by the Controller module to the AverageCurrent module (in addition of publishing the value to the control system). This way, the Controller module implementation does not depend in any way on implementation details or even the existence of the AverageCurrent module, and the AverageCurrent module merely needs to know the name and type of this one variable.
+Note that the name of the input is the relative path to the output of the controller module: "../Controller/heatingCurrent" directs the framework to look one level up starting from the AverageCurrent module (which is in this case the ExampleApp application instance) and then descend down into a module called "Controller" to find the variable "heatingCurrent". This will cause the framework to pass on any value written by the Controller module to the AverageCurrent module (in addition to publishing the value to the control system).
 
 The implementation computes the initial value for its output differently as for the later computations and hence has a different order of the operations in the infinite loop compared to the Controller module:
 
@@ -103,8 +103,9 @@ Since this ModuleGroup is in this example not used anywhere else, we can declare
 If we now take another look at the definition of the current input in the AverageCurrent module:
 \snippet{lineno} example/include/AverageCurrent.h Snippet: heatingCurrent Definition
 
-we can see that the name of the variable is specified as a relative name. The two dots at the beginning refer to the parent "directory", which in this context is the ControlUnit ModuleGroup. With such relative names, it is possible to refer to the output of the Controller module without knowing the name of the common parent ModuleGroup. This would be especially useful if we would instantiate the ControlUnit group multiple times with a different name for each instance (e.g. by placing the instances in an std::vector<ControlUnit>).
+we can see that the name of the variable is specified as a relative name. The two dots at the beginning refer to the parent "directory", which in this context is the ControlUnit ModuleGroup. With such relative names, it is possible to refer to the output of the Controller module without knowing the name of the common parent ModuleGroup. This would be especially useful if we would instantiate the ControlUnit group multiple times with a different name for each instance (e.g. by placing the instance into two different applications). The relative names would always work, while absolute names would have to be changed for each instantiation.
 
+Note that module and variable names can also use absolute paths (starting with "/") or even refer to the application root by using multiple "../" components. The variable hierarchy is completely independent of the C++ ownership hierarchy of the modules, as each variable specifies its position in the hierarchy explicitly via its name.
 
 \section conceptualOverview_DeviceModule Device modules
 
@@ -116,17 +117,17 @@ This will publish all registers from the catalogue of the specified device "oven
 
 \snippet{lineno} example/include/ExampleApp.h Snippet: SetDMapFilePath
 
-The call to getName() returns the name of the Application, which will be provided later to the Application constructor. This allows us to influence the file name for automated tests. The DMAP file in our exmaple speficies two devies:
+The call to getName() returns the name of the Application, which will be provided later to the Application constructor. This allows us to influence the file name for automated tests. The DMAP file in our example specifies two devices:
 
 \include example/config/demo_example.dmap
 
-It is a good practise to use a <a href="https://chimeratk.github.io/DeviceAccess/master/lmap.html">logical name mapping device</a> to allow more control over the representation of the device. The second device is the actual hardware device which will be used as a target for the logical name mapping device. We are using a sharedMemoryDummy backend (map file \ref example_config_demo_example_dmap "DemoDummy.map"), so we can run the application locally and interact with the dummy device through QtHardMon.
+It is a good practise to use a <a href="https://chimeratk.github.io/DeviceAccess/master/lmap.html">logical name mapping device</a> to allow more control over the representation of the device. The second device is the actual hardware device which will be used as a target for the logical name mapping device. We are using a sharedMemoryDummy backend (map file \ref example_config_demo_example_dmap "DemoDummy.map"), so we can run the application locally and interact with the dummy device through QtHarbans or the test framework.
 
 The \ref example_config_oven_xlmap "example xlmap mapping file" generates the following variable hierarchy:
 
-- /Configuration/heaterMode (redirects to to HEATER.MODE, read/write)
+- /Configuration/heaterMode (redirects to HEATER.MODE, read/write)
 - /Configuration/lightOn (redirects to BOARD.GPIO_OUT0, read/write)
-- /Controller/heatingCurrent (reditects to HEATER.CURRENT_SET, read/write)
+- /Controller/heatingCurrent (redirects to HEATER.CURRENT_SET, read/write)
 - /Controller/temperatureReadback (redirects to SENSORS.TEMPERATURE1, read only)
 - /Monitoring/heatingCurrent (redirects to HEATER.CURRENT_READBACK, read only)
 - /Monitoring/temperatureOvenTop (redirects to SENSORS.TEMPERATURE2, read only)
@@ -135,19 +136,29 @@ The \ref example_config_oven_xlmap "example xlmap mapping file" generates the fo
 
 In ApplicationCore  all device registers are treated as unidirectional, and read/write registers will be used in the write direction only. Hence, the first 3 variables will have the device as a consumer, receiving values either from an ApplicationModule or from the control system. The other variables will use the device as a feeder, so the device will provide values to the ApplicationModules and the control system.
 
-After this detour about the logical name mapping, we are now coming back to the instantiation of the DeviceModule. In case of our example, the device expects the application to poll the data (no registers support AccessMode::wait_for_new_data as the device does not support interrupts). Hence, the name of a push-type variable triggering the readout needs to be specified as a 3rd argument to the DeviceModule. This trigger variable will affect only registers which need a trigger and can even come from the device itself, in case it provides a data ready interrupt which shall be used to trigger the readout.
+After this detour about the logical name mapping, we are now coming back to the instantiation of the DeviceModule. In case of our example, the device expects the application to poll the data (no registers support AccessMode::wait_for_new_data as the device does not support interrupts). Hence, the name of a push-type variable triggering the readout needs to be specified as a 3rd argument to the DeviceModule. This trigger variable will affect only registers which need a trigger and can even come from a different hierarchy level or from nowhere (in which case the control system is the default source). The connection between device registers and the application modules is made automatically based on matching variable names and paths.
 
-For now, the only ApplicatioModule in our application is the Controller module, which connects to the /Controller/temperatureReadback as its input and to the /Controller/heatingCurrent as its output (variables/registers with identical name and path will be connected). Since /Controller/temperatureReadback is the push input of the Controller module, updates to this variable will trigger the Controller computations which will then write its result back to the /Controller/heatingCurrent register on the device.
+For now, the only ApplicationModule in our application is the Controller module, which connects to the /Controller/temperatureReadback as its input and to the /Controller/heatingCurrent as its output (variables/registers with identical name and path will be connected). Since /Controller/temperatureReadback is the push input of the Controller module, updates to this variable will trigger the Controller computations which will then write its result back to the /Controller/heatingCurrent register on the device.
 
 Because /Controller/temperatureReadback is a push-type input of the Controller module but a poll-type register of the device, a trigger is required to initiate the transfer. As specified, the variable /Timer/tick will be used for this.
 
-TODO: Device initialisation handler
+\subsection conceptualOverview_DeviceModule_InitHandler Device initialisation handler
+
+When a device is opened (both at application start and after recovery from an exception), an optional initialisation handler can be executed. This is specified through the `initialisationHandler` argument of the DeviceModule constructor, or by calling DeviceModule::addInitialisationHandler(). The handler is a `std::function<void(ChimeraTK::Device&)>` which receives the opened device reference and performs any necessary setup steps, such as writing configuration registers, enabling outputs, or setting operational modes.
+
+A ready-to-use implementation is the ChimeraTK::ScriptedInitHandler, which executes an external script (e.g. a Python script) to initialise the device. It can be instantiated in the Application after the DeviceModule called `oven` in the example). In the example application, it is used like this:
+
+\snippet{lineno} example/include/ExampleApp.h Snippet: ScriptedInitHandler
+
+The ScriptedInitHandler automatically registers itself with the DeviceModule and publishes the script's stdout/stderr output as a process variable at /Devices/oven/initScriptOutput and its exit code at /Devices/oven/initScriptExitCode.
+
+If the initialisation handler fails, the device will be closed and re-opened, and the handler will be retried. After a failed run, the handler waits for a configurable grace period before retrying, to avoid log file spamming.
 
 \section conceptualOverview_PeriodicTriggers Periodic Triggers
 
 So far, there is no source specified for the variable /Timer/tick. In this case, the control system will automatically be used as a source. Since all control system variables are considered push type, they can be used as a trigger. Any write to this variable from the control system side will now trigger the device readouts, which could be realised e.g. as a button on a control system panel. While this might be useful in some cases, we cannot run a control loop like this.
 
-To provide a trigger for periodic tasks, Application Core provides a generic ApplicationModule called ChimeraTK::PeriodicTrigger. We can instantiate it in the application like this:
+To provide a trigger for periodic tasks, ApplicationCore provides a generic ApplicationModule called ChimeraTK::PeriodicTrigger. We can instantiate it in the application like this:
 
 \snippet{lineno} example/include/ExampleApp.h Snippet: PeriodicTrigger Instance
 
@@ -162,67 +173,434 @@ Because the name for the output has been already specified as a trigger in the D
 
 \section conceptualOverview_ConfigReader Configuration constants
 
-- ChimeraTK::ConfigReader is another generic ApplicationModule
-- provides variables defined in XML config file with contant values
-- example: instantiation and config file (providing /Timer/period)
+ChimeraTK::ConfigReader is another generic application module which reads an XML configuration file and exposes the values as constant process variables. These variables are published to the control system and can also be connected to other modules, e.g. to provide configuration parameters like setpoints, limits or periods.
+
+\subsection conceptualOverview_ConfigReader_XML The XML configuration file
+
+The configuration file follows a simple structure, using `<module>` tags for hierarchy and `<variable>` tags for values. Example:
+
+\code{.xml}
+<configuration>
+  <variable name="enableSetpointRamping" type="boolean" value="true"/>
+  <module name="module1">
+    <variable name="var8" type="int8" value="-123"/>
+    <module name="submodule">
+      <variable name="intArray" type="int32">
+        <value i="0" v="10"/>
+        <value i="1" v="20"/>
+      </variable>
+    </module>
+  </module>
+</configuration>
+\endcode
+
+Supported types are: int8, uint8, int16, uint16, int32, uint32, int64, uint64, float, double, string, boolean.
+
+The configuration file is named after the application with a `-config.xml` suffix, e.g. `ExampleApp-config.xml`. Every application has a built-in ConfigReader instance which looks for this file automatically. It is accessible via Module::appConfig() or Application::getConfigReader().
+
+\subsection conceptualOverview_ConfigReader_Usage Usage
+
+The values from the config file can be accessed in two ways:
+
+1. **At application construction time** via ConfigReader::get() to make decisions (e.g. conditional module instantiation). This is done directly in the constructor of the Application or ApplicationModules:
+\code
+SetpointRamp ramp{getConfigReader().get<ChimeraTK::Boolean>("Configuration/enableSetpointRamping") ?
+        SetpointRamp(this, "SetpointRamp", "Slow ramping of temperature setpoint") :
+        SetpointRamp()};
+\endcode
+
+2. **As constant process variables** which are automatically connected to other modules. Since they are constant, their initial value is propagated once during application startup. A blocking read on such a variable will return once with the initial value and then block forever.
+
+The configuration can also be used to set the a PeriodicTrigger's period, e.g. by setting `/Timer/period` in the config XML file instead of using the default period.
 
 \section conceptualOverview_VariableGroup Variable groups
 
-- VariableGroups can organise process variables inside ApplicatioModules hierarchically
-- VariableGroup contains any number of process variable accessors and other VariableGroups
-- An ApplicationModule is also a VariableGroup
-- VariableGroup offers group operations affecting all accessors inside: VariableGroup::readAll(),  VariableGroup::writeAll() etc.
-- Note: module and variable names can contain hierarchies as well (with slashes as separators, both relative and absolute). The same hierarchy can be obtained in different ways. ModuleGroups and VariableGroups should be used to organsie the source code.
+A ChimeraTK::VariableGroup allows organising process variable accessors hierarchically within an ApplicationModule (or even inside another VariableGroup). The name of the VariableGroup will be part of the fully qualified variable name as seen by the control system, devices and other ApplicationModules. The same fully qualified variable names can be achieved with and without the use of VariableGroups by using relative variable names like "../someName" or "Subdirectory/someName", or even VariableGroup names like "." which do not change the hierarchy of the child variables. Hence VariableGroups can be considered mainly a C++ source code organisation feature.
+
+Key features:
+
+- A VariableGroup can contain any number of process variable accessors (ScalarAccessor, ArrayAccessor) and other VariableGroups.
+- An ApplicationModule is itself also a VariableGroup (since ApplicationModule derives from VariableGroup).
+- VariableGroup provides group operations that affect all accessors inside it:
+  - VariableGroup::readAll() - read all readable variables (blocks on push-type ones until all have received an update)
+  - VariableGroup::readAllNonBlocking() - non-blocking read on all
+  - VariableGroup::readAllLatest() - readLatest on all
+  - VariableGroup::writeAll() - write all writable variables
+  - VariableGroup::writeAllDestructively() - write destructively all writable variables
+  - VariableGroup::readAnyGroup() - create a ReadAnyGroup from all readable variables
+
+Usage example:
+\code
+class MyModule : public ApplicationModule {
+ public:
+  // Variable groups for better structuring
+  struct Inputs : VariableGroup {
+    using VariableGroup::VariableGroup;
+    ScalarPushInput<int32_t> setpoint{this, "setpoint", "A", "Target value"};
+    ScalarPollInput<int32_t> readback{this, "readback", "A", "Actual value"};
+  } inputs{this, "Inputs", "All input variables"};
+
+  ScalarOutput<int32_t> output{this, "output", "V", "Computed output"};
+};
+\endcode
+
+Note that the variable hierarchy as published to the control system is determined by the name parameter of each accessor, combined with the name of the VariableGroup. So in the example above, the variable names would be `Inputs/setpoint`, `Inputs/readback`, and `Inputs/output` (relative to the name of the module).
 
 \section conceptualOverview_ApplicationModel The Application model
 
-- Framework collects information about application structure
-- Used by framework to make connections
-- Advanced ApplicationModules might use it as well, e.g. to auto-connect to all modules of a certain type (needs separate tutorial)
-- Developers can use it for documentation and debugging
-- example: Show model as DOT graph
-- XML generator
+ApplicationCore maintains an internal model of the entire application structure, which is a graph representing all modules, process variables, and their relationships. This model is implemented as a Boost Graph adjacency list stored internally insinde in ChimeraTK::Model and exposed through typed proxy classes.
+
+\subsection conceptualOverview_ApplicationModel_Structure Model structure
+
+The model graph contains different types of vertices (nodes) and edges (relationships):
+
+- **Vertex types**: Root, ModuleGroup, ApplicationModule, VariableGroup, DeviceModule, ProcessVariable, Directory
+- **Edge types**:
+  - `ownership`: C++ ownership (e.g. Application owns ModuleGroup)
+  - `parenthood`: PV directory hierarchy (how variables are organised in the control system)
+  - `pvAccess`: Data flow between modules and process variables (with direction)
+  - `neighbourhood`: Relationship between a module and its PV directory
+  - `trigger`: Trigger connection from a PV to a DeviceModule
+
+\subsection conceptualOverview_ApplicationModel_Usage Usage
+
+The model is primarily used internally by the framework to make variable connections (see ConnectionMaker). However, it can also be useful for:
+
+1. **Advanced module implementations**: Modules can traverse the model to discover other modules or variables, e.g. to auto-connect to all modules of a certain type. The model is accessed through the proxy classes (ChimeraTK::Model::RootProxy, ChimeraTK::Model::ModuleGroupProxy, etc.) and the Proxy::visit() method with various filters and search strategies. For example, to find all process variables with a specific tag:
+\code
+app.getModel().visit([](auto pv) {
+  // process the process variable proxy
+  std::cout << pv.getFullyQualifiedPath() << std::endl;
+}, keepProcessVariables && keepTag("tagName"));
+\endcode
+ The ChimeraTK::StatusAggregator is an example for such a module.
+
+2. **Debugging and documentation**: The model can be exported as an XML file and a Graphviz DOT file using the XML generator executable (see \ref conceptualOverview_SettingUpAProject_CMakeLists).
 
 \section conceptualOverview_FanOuts Fanouts
 
-- Process variables often have multiple consumers: copy necessary
-- FeedingFanOut: Create copy of ApplicationModule output and distribute to multiple consumers (within thread of ApplicationModule)
-- ThreadedFanOut: Create copy of control system variable or push-type device variable and distribute, within its own thread
-- TriggerFanOut: like special ApplicationModule, waiting for trigger, reading all device variables with that trigger and distribute (one TriggerFanOut per device and trigger)
-- ConsumingFanOut: Special case: Poll-type register with exactly one poll-type consumer (ApplicationModule). Polling directly from device by ApplicationModule code (no trigger is used). Additional consumers possible but must be push type (push happens when ApplicationModule decides to poll).
+When a process variable has multiple consumers, the framework automatically creates FanOut instances to copy and distribute the data. Even though the user does not need to take care of this, knowledge of this automatism is helpful for the understanding. There are four types of FanOuts, each used in different scenarios:
+
+\subsection conceptualOverview_FanOuts_FeedingFanOut FeedingFanOut
+
+ChimeraTK::FeedingFanOut operates within the thread of the ApplicationModule that writes the output. When an ApplicationModule writes to one of its outputs, the FeedingFanOut makes copies of the data and distributes them to all connected consumers (other modules, device registers, control system variables). This is used for distributing outputs of ApplicationModules to multiple receivers like other ApplicationModules, devices and the control system.
+
+Key characteristics:
+- Executed synchronously in the writer's thread (e.g. in the ApplicationModule which writes the data)
+- Supports return channels (bidirectional variables via `withReturn` flag)
+
+\subsection conceptualOverview_FanOuts_ThreadedFanOut ThreadedFanOut
+
+ChimeraTK::ThreadedFanOut is used when data originates from a push-type source that is not an ApplicationModule, such as a control system variable or a push-type device variable. It runs in its own thread, waiting for new data, and then distributing it to all consumers.
+
+Key characteristics:
+- Has its own thread
+- Waits for new data on the feeding accessor (blocking read)
+- Immediately distributes copies to all receivers upon receiving data
+- Supports return channels
+
+\subsection conceptualOverview_FanOuts_TriggerFanOut TriggerFanOut
+
+ChimeraTK::TriggerFanOut handles poll-type device variables that need a trigger to initiate readout. It acts like a special internal module: it waits for a trigger signal, then reads a group of poll-type device variables (using a TransferGroup) and distributes all values simultaneously.
+
+Key characteristics:
+- One TriggerFanOut per device and trigger combination
+- Waits for an external trigger (push-type variable)
+- Reads all associated device variables via a TransferGroup, which makes use of DeviceAccess optimisations like transfer merging
+- Distributes each variable to its consumers via individual FeedingFanOuts
+
+\subsection conceptualOverview_FanOuts_ConsumingFanOut ConsumingFanOut
+
+ChimeraTK::ConsumingFanOut is a special case used when a poll-type device register has exactly one poll-type consumer (an ApplicationModule doing direct polling). In this case no trigger signal is needed - the ApplicationModule initiates the read operation directly.
+
+Key characteristics:
+- Executed synchronously in the reader's thread (i.e. in the ApplicationModule with the corresponding poll-type input)
+- After each read, distributes the received value to all additional consumers
+- Additional consumers beyond the first must be push-type (they receive data whenever the first ApplicationModule triggers a read)
+- If the only consumer is also poll-type, no fan-out is needed and the connection is made directly
+
+This type of FanOut may have the most visible implications on the behaviour of an Application, and hence might be a common pit fall. The presence of a single poll-type consumer of a read-only device register has an influence on other, push-type readers of the same register. If the DeviceModule has a trigger, the expectation might be that push-type readers will receive data whenever the trigger arrives. This will not be the case here, since the single poll-type consumer will decide when data is read from the device and hence also when it will be distributed to the other push-type receivers (ApplicationModules and also the control system). If this behaviour is not wanted, change all inputs into push-type and use `readLatest()` where polling behaviour is needed.
 
 \section conceptualOverview_InitialValues Initial values
 
-- Each ApplicatioModule starts its mainLoop() with initial values present in each variable
-- Initial values must be provided to all process variables in time
-- Otherwise: ApplicatioModule will not start
-- Variables which are fed by the control system get their initial value from the control sytem's persistency layer
-- Device registers will be read once after the device is opened
-- ApplicationModules: developer must take care. Write before first blocking read in mainLoop(), or write in prepare().
-- Circular dependencies possible: Two ApplicationModules might wait for each other. In this case at least one of them needs to write initial values in prepare(), so the other can enter the mainLoop() and write its initial values.
+Initial value propagation is a crucial concept in ApplicationCore. At application startup, all process variables must receive their initial values before the ApplicationModule::mainLoop() functions start executing. This ensures that modules start with consistent and meaningful data.
+
+\subsection conceptualOverview_InitialValues_Process Initial value propagation process
+
+The framework follows a well-defined sequence:
+
+1. **Before mainLoop()**: The framework reads initial values for all inputs of all ApplicationModules. This happens already in the module's thread right before the user's mainLoop() is called. The read operations blocks until the initial value has arrived.
+
+2. **Device variables**: Read-only device registers are read once after the device is opened and initialised. For push-type device variables, the backend automatically sends the first value. For poll-type variables, the framework performs a read after blocking until the device is available.
+
+3. **Control system variables**: Variables fed by the control system receive their initial value from the control system adapter's persistency layer (e.g. EPICS autosave, DOOCS config file). The control system adapter writes these values before or shortly after the application is started.
+
+4. **ApplicationModule outputs**: The developer must ensure that initial values are written for outputs. This can happen in two ways:
+   - At the start of mainLoop(): The typical pattern is "compute, write, read". The module computes its result from the initial input values (which are already present), writes the output, and then waits for new data with a blocking read.
+   - In ApplicationModule::prepare(): If the initial value does not depend on any input values. This is useful for breaking circular dependencies (see below).
+
+\subsection conceptualOverview_InitialValues_CircularDependencies Circular dependencies
+
+If two ApplicationModules mutually depend on each other's outputs as inputs, a circular dependency exists. Both modules would block waiting for initial values from each other. To break this cycle, at least one of the modules must write its initial value in ApplicationModule::prepare(), before the mainLoop() blocking reads begin.
+
+The framework detects circular dependencies and prints an error message if a deadlock occurs. The developer must resolve this by ensuring one module provides its initial value in prepare().
+
+\subsection conceptualOverview_InitialValues_DataValidity Initial data validity
+
+All receiving-end accessors start with ChimeraTK::DataValidity::faulty after construction. The initial value propagation usually sets the validity to ok. If a device is in error state at startup, the initial read will return with DataValidity::faulty. This flag is then propagated through all connected modules to the control system (and will be visible there by whatever means the control system provides, e.g. in DOOCS with a "stale data" error).
 
 \section conceptualOverview_ExceptionHandling Device exception handling
 
-- Device exceptions are handled by framework, no need to catch them
-- DeviceModule goes into error state and attempts to recover (reopen)
-- ApplicationModules and the control system are informed by marking data with ChimeraTK::DataValidity::invalid (see Section \ref conceptualOverview_DataValidity)
-- During recovery: re-execute device initialisation (initialisation handlers), restore last-written values, re-read initial values, then continue normal operation
-- In most cases, no special care required by application developers
-- If needed, actions can be triggered by reacting on the variable /Device/&lt;alias&gt;/deviceBecameFunctional or /Device/&lt;alias&gt;/status
+Device exceptions (e.g. communication timeouts, device disconnects) are handled automatically by the framework and do not require explicit catching in user code.
+
+\subsection conceptualOverview_ExceptionHandling_Mechanism Handling mechanism
+
+When a device access throws a ChimeraTK::runtime_error, the following happens (automatically, by the framework):
+
+1. The ExceptionHandlingDecorator (which wraps all device accessors) catches the exception.
+2. The exception is reported to the ChimeraTK::DeviceManager via DeviceModule::reportException().
+3. The DeviceModule updates its status variables:
+   - `/Devices/<alias>/status` is set to 1 (error)
+   - `/Devices/<alias>/message` is set to the error description
+4. All data which is read from the device from this point on will be marked with ChimeraTK::DataValidity::invalid.
+   - Only poll-type read operations will work while the device is in error state.
+   - Read operations on push-type inputs connected to device registers will block until the device is fully recovered again.
+5. All write operations will be skipped, but the written values will be internally remembered.
+6. The DeviceManager attempts to recover by re-opening the device (in its own thread).
+7. When successfuly opend again, the DeviceManager will:
+   - execute the device initialisation handlers,
+   - restore the last written values,
+   - re-read and distribute initial values, and
+   - clear the device error status.
+8. From this point on, all read and write operations will be executed normally again.
+
+\subsection conceptualOverview_ExceptionHandling_ApplicationModule Impact on ApplicationModules
+
+ApplicationModules connected to a device variable will see the DataValidity::invalid flag on their inputs. The main loop continues to run normally (it is not blocked while the device is recovering, unless waiting for a push-type input receiving data from the broken device). Once the device is back online, the data validity returns to ok and fresh data is delivered.
+
+\subsection conceptualOverview_ExceptionHandling_Reacting Reacting to device state changes
+
+If the application needs to react to device state changes explicitly, it can monitor the following automatically published variables:
+
+- `/Devices/<alias>/deviceBecameFunctional` - void process variable, triggers when device is fully recovered
+- `/Devices/<alias>/status` - status value, sent when device is going into error state and when it is fully recovered.
+
+These can be used as inputs to an ApplicationModule to trigger specific actions on device recovery.
+
+\subsection conceptualOverview_ExceptionHandling_Report Reporting exceptions from user code
+
+User code can also report exceptions by calling DeviceModule::reportException(), which triggers the same recovery mechanism. This can be used e.g. when it has been detected that a re-initialisation using the initialisation handler is necessary.
 
 \section conceptualOverview_DataValidity Data validity propagation
 
-- If any input of ApplicationModule marked as ChimeraTK::DataValidity::invalid, all written outputs will be marked as ChimeraTK::DataValidity::invalid, too.
-- Attention required: if ApplicatioModule writes not always all outputs, ChimeraTK::DataValidity::invalid flag may stay indefinitively. Make sure to propagate ChimeraTK::DataValidity::ok to all outputs even if value is still valid.
-- ChimeraTK::DataValidity::invalid can come from Device exceptions (see Section \ref conceptualOverview_ExceptionHandling) but also other reasons, e.g. DoocsBackend sees stale data
-- ApplicatioModule can set ChimeraTK::DataValidity::invalid intentionally by calling ApplicatioModule::incrementDataFaultCounter() and clear it by ApplicatioModule::decrementDataFaultCounter() (make sure to pair this properly!)
+ApplicationCore has a built-in mechanism to propagate data validity flags through the processing chain. Each process variable carries a ChimeraTK::DataValidity flag which can be either `ok` or `faulty`.
+
+\subsection conceptualOverview_DataValidity_Principle Propagation principle
+
+The propagation works as follows:
+
+1. Each ApplicationModule has a data fault counter. The counter is automatically incremented when an input receives faulty data, and decremented when it receives good data.
+
+2. When writing outputs, the decorator checks the module's data fault counter. If any input is faulty (counter > 0), all written outputs are automatically flagged as `faulty`.
+
+3. If a device is in error state, all variables read from it are flagged as `faulty`. This flag propagates through all connected modules, appearing in the control system.
+
+4. User code can increment and decrement the counter explicitly (see ChimeraTK::ApplicationModule::incrementDataFaultCounter() and ChimeraTK::ApplicationModule::decrementDataFaultCounter()), to force all outputs of an ApplicationModule to be faulty (e.g. if input signals are out of range and no sensible output values can be computed). These functions must always be called in pairs.
+
+5. Individual outputs can also be forced to be faulty explicitly (see ChimeraTK::TransferElementAbstractor::setDataValidity()). Passing DataValidity::ok to TransferElementAbstractor::setDataValidity() will resume normal validity propagation for this output.
+
+6. Individual outputs can be excempted from the normal DataValidity propagation by attaching the tag ChimeraTK::explicitDataValidityTag to them. In this case, the module data fault counter will be ignored for this output and the data validity has to be explicitly set via TransferElementAbstractor::setDataValidity().
+
+\subsection conceptualOverview_DataValidity_ImportantNotes Important notes
+
+- If a module does not always write all its outputs, the DataValidity::faulty flag may persist indefinitely on those outputs even after the module has recovered. The developer must ensure that all outputs are written with DataValidity::ok once the module has recovered, even if the value itself is unchanged.
+
+- The TriggerFanOut is special in that each poll-type input propagates its validity only to its corresponding output - the validity flags of different variables are not correlated.
+
+- The DataValidity::faulty flag can originate not only from device exceptions but also from other sources, e.g. the DOOCS backend detecting stale data.
 
 \section conceptualOverview_ControlSystemIntegration Control system integration
 
-- Control system adapter integrates application into DOOCS, EPICS, OPC UA, Tango etc.
-- Adapter-specific config file controls features like histories etc.
-- Also name mapping possible
-- cmake macro for choosing adapter at compile time
-- Example: DOOCS adapter config
+ApplicationCore applications are integrated into various control systems (DOOCS, EPICS, OPC UA, Tango, etc.) through a control system adapter. The adapter is chosen at compile time and links the application's process variables to the corresponding control system protocol.
+
+\subsection conceptualOverview_ControlSystemIntegration_Adapter The control system adapter
+
+The control system adapter is a library implementing the ChimeraTK ControlSystemAdapter interface. It connects the process variables defined in the Application to the outside world:
+
+- Writes from the operator panel are forwarded as push-type data to the application.
+- Application outputs are published and updated on every write.
+
+\subsection conceptualOverview_ControlSystemIntegration_Selection Selecting the adapter at compile time
+
+The adapter is selected using a CMake macro provided by the ApplicationCore package. For example, to use the DOOCS adapter:
+
+\code
+find_package(ChimeraTK-ControlSystemAdapter-DoocsAdapter REQUIRED)
+...
+target_link_libraries(myApp ChimeraTK::ControlSystemAdapter-DoocsAdapter)
+\endcode
+
+\subsection conceptualOverview_ControlSystemIntegration_Configuration Adapter configuration
+
+Each adapter may have its own configuration file controlling features like:
+
+- Variable histories and archiving
+- Access control
+- Persistency (restoring values after a restart)
+- Custom name mappings
+
+For example, the DOOCS adapter uses a configuration file (typically `<appname>.doocs`) to specify server names, history settings, and other DOOCS-specific parameters.
+
+\subsection conceptualOverview_ControlSystemIntegration_NameMapping Name mapping
+
+The optional name mapping feature allows mapping the internal variable hierarchy to a different external naming scheme. This is useful when the control system requires a particular naming convention that differs from the internal application structure.
+
+
+\section conceptualOverview_SettingUpAProject Setting up a new project
+
+This section explains how to structure a new ApplicationCore project and configure its CMake build system, based on the example project provided in the `example/` directory.
+
+\subsection conceptualOverview_SettingUpAProject_ProjectStructure Project structure
+
+A typical ApplicationCore project has the following directory layout:
+
+\code
+my_project/
+├── CMakeLists.txt
+├── include/
+│   ├── MyApp.h
+│   ├── MyModule.h
+│   └── ...
+├── src/
+│   ├── MyApp.cc
+│   ├── MyModule.cc
+│   └── ...
+├── src_factory/
+│   └── FactoryInstance.cc
+├── config/
+│   ├── my_project.dmap
+│   ├── my_project-config.xml
+│   └── ...
+├── cmake/
+│   ├── ...
+└── tests/
+    └── ...
+\endcode
+
+<ul>
+  <li><b>include/</b> — All public header files for the Application class and its ApplicationModules.</li>
+  <li><b>src/</b> — Implementation files (<tt>.cc</tt>) containing <tt>mainLoop()</tt> bodies and the Application destructor.</li>
+  <li><b>src_factory/</b> — A single file <tt>FactoryInstance.cc</tt> that instantiates the application factory (see below).</li>
+  <li><b>config/</b> — DMAP device mapping files, XML configuration files, logical name maps, device initialisation scripts, etc.</li>
+  <li><b>cmake/</b> — CMake helper scripts normally obtained from the ChimeraTK project-template repository.</li>
+</ul>
+
+\subsection conceptualOverview_SettingUpAProject_ApplicationFactory The application factory
+
+The entry point of every ApplicationCore server is a static instantiation of the ChimeraTK::ApplicationFactory template. This is placed in a dedicated source file under <tt>src_factory/</tt>:
+
+\snippet{lineno} example/src_factory/FactoryInstance.cc Snippet: Factory
+
+Only the factory file is compiled with the control system adapter, while all modules and the Application class are compiled into a static library linked independently. This separation allows generating the XML generator and test executables without re-compiling the whole application.
+
+\subsection conceptualOverview_SettingUpAProject_CMakeLists CMakeLists.txt walkthrough
+
+The following demonstrates a complete CMakeLists.txt for an ApplicationCore-based server. Each step is explained together with the corresponding code from the <tt>example/</tt> project.
+
+<dl>
+
+<dt><b>1. Project declaration</b></dt>
+<dd>
+The <tt>project()</tt> command sets the project name, which is then referenced throughout as <tt>${PROJECT_NAME}</tt>.
+\snippet{lineno} example/CMakeLists.txt project declaration
+</dd>
+
+<dt><b>2. Version numbers</b></dt>
+<dd>
+Set major, minor and patch version variables, then include the <tt>set_version_numbers.cmake</tt> script. This script typically generates a <tt>VersionInfo.h</tt> header from the <tt>version_info_template.h.in</tt> template and provides a <tt>${PROJECT_NAME}_VERSION</tt> variable.
+\snippet{lineno} example/CMakeLists.txt version numbers
+</dd>
+
+<dt><b>3. CMake module path</b></dt>
+<dd>
+Append the <tt>cmake/</tt> directory to <tt>CMAKE_MODULE_PATH</tt> so the helper scripts can be found. The helper scripts <tt>set_default_build_to_release.cmake</tt> and <tt>set_default_flags.cmake</tt> set sensible default build types, enable warnings, and add common compiler flags.
+\snippet{lineno} example/CMakeLists.txt cmake module path
+</dd>
+
+<dt><b>4. Finding dependencies</b></dt>
+<dd>
+Call <tt>find_package(ChimeraTK-ApplicationCore 03.00 REQUIRED)</tt>. This makes the ChimeraTK::ChimeraTK-ApplicationCore target available. It also transitively provides ChimeraTK::DeviceAccess. The version should match the minimum required ApplicationCore version.
+\snippet{lineno} example/CMakeLists.txt find dependencies
+</dd>
+
+<dt><b>5. Selecting the control system adapter</b></dt>
+<dd>
+Include <tt>cmake/set_control_system_adapter.cmake</tt>. During configuration the user passes <tt>-DADAPTER=DOOCS|OPCUA|EPICSIOC|TANGO</tt> to choose which control system protocol to build against. If no adapter is given, a fatal error message lists the valid options. The script creates an alias target <tt>ChimeraTK::SelectedAdapter</tt> that can be linked independently of the concrete choice.
+\snippet{lineno} example/CMakeLists.txt select adapter
+</dd>
+
+<dt><b>6. Collecting sources</b></dt>
+<dd>
+Use <tt>aux_source_directory()</tt> to collect all <tt>.cc</tt> files from <tt>src/</tt> (module implementations), <tt>include/</tt> (headers, to track dependencies), and <tt>src_factory/</tt> (the factory file). Alternatively, list files explicitly for finer control.
+\snippet{lineno} example/CMakeLists.txt collect sources
+</dd>
+
+<dt><b>7. Server library</b></dt>
+<dd>
+A static library <tt>${PROJECT_NAME}lib</tt> is built from all module sources. It links against <tt>ChimeraTK::ChimeraTK-ApplicationCore</tt>. This library contains all application logic but not the factory or control system adapter.
+\snippet{lineno} example/CMakeLists.txt server library
+</dd>
+
+<dt><b>8. Server executable</b></dt>
+<dd>
+The main server executable <tt>${PROJECT_NAME}</tt> is built from the factory file only. It links <tt>${PROJECT_NAME}lib</tt> (the modules) and <tt>ChimeraTK::SelectedAdapter</tt> (the chosen control system adapter). This structure ensures the adapter is only linked once, into the final executable.
+\snippet{lineno} example/CMakeLists.txt server executable
+</dd>
+
+<dt><b>9. XML generator executable</b></dt>
+<dd>
+A second executable <tt>${PROJECT_NAME}-xmlGenerator</tt> is built from the same factory file, but with the preprocessor define <tt>-DGENERATE_XML</tt>. This triggers the <tt>EnableXMLGenerator.h</tt> header to replace the server <tt>main()</tt> with one that prints the application's XML description and exits. Since it links only <tt>${PROJECT_NAME}lib</tt> (not the adapter), it does not require a control system adapter to be installed.
+\snippet{lineno} example/CMakeLists.txt xml generator
+</dd>
+
+<dt><b>10. Config files</b></dt>
+<dd>
+Use <tt>file(COPY ...)</tt> to copy configuration files to the build directory so they are available when running tests or starting the server.
+\snippet{lineno} example/CMakeLists.txt config files
+</dd>
+
+<dt><b>11. Tests</b></dt>
+<dd>
+At minimum, add a smoke test that runs the XML generator to verify the variable structure is valid. More comprehensive tests can be added using the ChimeraTK::TestFacility.
+\snippet{lineno} example/CMakeLists.txt tests
+</dd>
+
+<dt><b>12. Installation</b></dt>
+<dd>
+Install the server and XML generator executables to <tt>bin/</tt> (or to a server-named directory for DOOCS installations under <tt>/export/doocs/server</tt>). Configuration files should be installed separately, typically generated per-instance.
+\snippet{lineno} example/CMakeLists.txt install
+</dd>
+
+</dl>
+
+\subsection conceptualOverview_SettingUpAProject_ProjectTemplate The project-template repository
+
+The <tt>cmake/</tt> helper scripts (listed above) are maintained in a shared repository: <a href="https://github.com/ChimeraTK/project-template">https://github.com/ChimeraTK/project-template</a>. This repository is merged into client projects via <tt>git merge --allow-unrelated-histories</tt>, allowing updates to propagate easily. The helper scripts should never be modified inside a client project; changes should be made in the project-template repository and merged back. See <tt>HowTo_project-template.md</tt> in the example directory for detailed instructions.
+
+\subsection conceptualOverview_SettingUpAProject_Building Building the project
+
+\code
+mkdir build && cd build
+cmake .. -DADAPTER=DOOCS
+make -j$(nproc)
+\endcode
+
+Replace <tt>DOOCS</tt> with the desired adapter. The build produces:
+- <tt>my_project</tt> — The control system server executable
+- <tt>my_project-xmlGenerator</tt> — A utility executable for generating the XML application description
+
+\subsection conceptualOverview_SettingUpAProject_Testing Testing
+
+The ChimeraTK::TestFacility provides an in-process test framework that simulates devices and control system connections without requiring a live device or control system infrastructure. Tests can be integrated using CTest by adding test targets with <tt>add_test()</tt> in CMakeLists.txt.
 
 */
