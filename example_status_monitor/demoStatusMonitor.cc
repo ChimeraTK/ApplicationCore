@@ -10,6 +10,8 @@
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/EnableXMLGenerator.h>
 #include <ChimeraTK/ApplicationCore/ModuleGroup.h>
+#include <ChimeraTK/ApplicationCore/PeriodicTrigger.h>
+#include <ChimeraTK/ApplicationCore/ScalarAccessor.h>
 #include <ChimeraTK/ApplicationCore/StatusMonitor.h>
 
 namespace ctk = ChimeraTK;
@@ -21,8 +23,11 @@ struct SimulationModule : public ctk::ApplicationModule {
   /**The value to be monitored.*/
   ctk::ScalarOutput<double> temperature{this, "temperature", "degC", "simulated temperature"};
 
+  /**Create trigger for blocking mock read */
+  ctk::ScalarPushInput<uint64_t> trigger{this, "/TemperatureTimer/tick", "", ""};
+
   void mainLoop() override {
-    /**Intialize temperature.*/
+    /**Initialize temperature.*/
     temperature = 0;
     temperature.write();
     double direction = 1;
@@ -37,12 +42,12 @@ struct SimulationModule : public ctk::ApplicationModule {
         direction = 1;
       }
 
-      temperature += direction * 1; // one dregree steps
-      setCurrentVersionNumber({});  // We generate data without trigger or other input.
-                                    // So we must update the version number manually.
-                                    // This automatically updates the time stamp as well.
+      temperature += direction * 1; // one degree steps
+
       temperature.write();
-      usleep(100000);
+
+      /**Mock read temperature: wait for "/TemperatureTimer/tick" */
+      trigger.read();
     }
   }
 };
@@ -55,6 +60,9 @@ struct ExampleApp : public ctk::Application {
   // There will be a variable /Simulation/temperature from this.
   SimulationModule simulation{this, "Simulation", "temperature simulation"};
 
+  /* periodic timer to update the temperature*/
+  ctk::PeriodicTrigger temperatureTimer{this, "TemperatureTimer", "Periodic timer to update temperature"};
+
   // Now we place a monitor next to the temperature variable. First we create a module group, also with the name
   // "Simulation". Everything in it will be placed next to the variables from the simulation module.
   struct : ctk::ModuleGroup {
@@ -66,8 +74,8 @@ struct ExampleApp : public ctk::Application {
     // ctk::RangeMonitor<double> temperatureMonitor{this, "TemperatureMonitor", "monitor for the simulated temperature",
     //    "temperature", "temperatureStatus", ctk::HierarchyModifier::none, {"STATUS"}, {"CONFIG"}, {}};
 
-    ctk::RangeMonitor<double> temperatureMonitor{this, "/TemperatureMonitor/temperature",
-        "/TemperatureMonitor/temperatureStatus", "/TemperatureMonitor", "monitor for the simulated temperature",
+    ctk::RangeMonitor<double> temperatureMonitor{this, "/Simulation/temperature",
+        "/TemperatureMonitor/temperatureStatus", "/Config/TemperatureMonitor", "monitor for the simulated temperature",
         ctk::TAGS{"MON_OUTPUT"}, ctk::TAGS{"MON_PARAMS"}};
 
   } simulationGroup{this, "Simulation", ""};
