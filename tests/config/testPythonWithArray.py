@@ -34,6 +34,7 @@ class MyMod(ac.ApplicationModule):
 
         self.myInput1 = ac.ArrayPushInput(ac.DataType.int32, self, "ArrayIn1", "unit", 2, "description")
         self.myInput2 = ac.ArrayPushInput(ac.DataType.int32, self, "ArrayIn2", "unit", 5, "description")
+        self.myInput3 = ac.ArrayPushInput(ac.DataType.float32, self, "ArrayIn3", "unit", 2, "description")
         self.myInputPoll = ac.ArrayPollInput(ac.DataType.int32, self, "ArrayInPOLL", "unit", 2, "description")
         self.myInputWB = ac.ArrayPushInputWB(ac.DataType.int32, self, "ArrayInWB", "unit", 1, "description")
 
@@ -84,10 +85,51 @@ class MyMod(ac.ApplicationModule):
                 assert ((self.myInput1 == self.myInput1) == [True, True]).all()
                 assert ((self.myInput1 == self.myInputPoll) == [False, False]).all()
 
+                # input arrays: test support both for numpy arrays and python lists; implementation may differ
+                self.myInput1.set(np.array([12, 23], dtype=np.int32))
+                assert self.myInput1[0] == 12
+                assert self.myInput1[1] == 23
+                assert ((self.myInput1 == [12, 23]) == [True, True]).all()
+
                 self.myInput1.set([123, 234])
                 assert self.myInput1[0] == 123
                 assert self.myInput1[1] == 234
                 assert ((self.myInput1 == [123, 234]) == [True, True]).all()
+
+                # check that np.float32 is correctly taken over (bug regression)
+                self.myInput3.set(np.array([1.1, 6.6], dtype=np.float32))
+                assert self.myInput3[0] == np.float32(1.1)
+                assert self.myInput3[1] == np.float32(6.6)
+                self.myInput3.set([1.2, 6.7])
+                assert self.myInput3[0] == np.float32(1.2)
+                assert self.myInput3[1] == np.float32(6.7)
+                self.myInput3.set([np.float64(1.1), np.float64(6.6)])
+                assert self.myInput3[0] == np.float32(1.1)
+                assert self.myInput3[1] == np.float32(6.6)
+                self.myInput3.set([np.float32(1.1), np.float32(6.6)])
+                # note, index access returns type 'float' and not 'np.float32'
+                # TODO discuss - is this acceptable?
+                print ("input3: type,val=", type(self.myInput3.get()),
+                    type(self.myInput3.get()[0]),
+                    self.myInput3.get(), type(self.myInput3[0]))
+                assert self.myInput3[0] == np.float32(1.1)
+                assert self.myInput3[1] == np.float32(6.6)
+                # test array slicing (separate implementation)
+                self.myInput3[0:2:1] = 1.3
+                assert self.myInput3[0] == np.float32(1.3)
+                assert self.myInput3[1] == np.float32(1.3)
+                self.myInput3[0:2:1] = np.float32(1.5)  # 1.5 is precisely representable as float32
+                assert self.myInput3[0] == 1.5
+                assert self.myInput3[1] == 1.5
+                # test array index access (separate implementation)
+                self.myInput3[1] = 6.5
+                assert self.myInput3[0] == 1.5
+                assert self.myInput3[1] == 6.5
+                self.myInput3[1] = np.float32(6.75)  # 6.75 is precisely representable as float32
+                assert self.myInput3[1] == 6.75
+
+                # TODO probably it will also make sense to go over all other types, including bool...
+
 
                 # calling members of np.array is directly possible
                 assert self.myInput1.shape == (2,)
