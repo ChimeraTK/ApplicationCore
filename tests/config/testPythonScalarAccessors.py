@@ -5,6 +5,7 @@ import os
 import os.path
 import traceback
 import math
+import numpy as np
 
 # fmt: off
 # Hack to insert the python path for the locally compiled module in the
@@ -12,7 +13,6 @@ import math
 sys.path.insert(0, os.path.abspath(os.path.join(os.curdir, "..")))
 import PyApplicationCore as ac  # NOQA
 # fmt: on
-
 
 class MyMod(ac.ApplicationModule):
 
@@ -163,6 +163,16 @@ class MyMod(ac.ApplicationModule):
                 assert str(self.v8) == "some string"
                 assert bool(self.v7)
                 assert bool(self.v0) == False
+
+                # bug regression for correct handling of np.float32
+                self.v5.set(2.5)
+                assert self.v5.get() == 2.5
+                self.v5.set(np.float32(3.5))
+                assert self.v5.get() == 3.5
+                self.v5.set(np.int32(4))
+                assert self.v5.get() == 4
+                self.v5.set(5)
+                assert self.v5.get() == 5
 
             except Exception as e:
                 self.result.setAndWrite("\n".join(traceback.format_exception(e)))
