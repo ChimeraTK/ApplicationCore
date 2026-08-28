@@ -45,19 +45,19 @@ namespace ChimeraTK {
 
     py::object readAndGet();
 
-    void setAndWrite(const UserTypeTemplateVariantNoVoid<Vector>& vec);
+    void setAndWrite(const pybind11::object& input);
 
     size_t getNElements();
 
-    void set(const UserTypeTemplateVariantNoVoid<Vector>& vec);
+    void set(const pybind11::object& input);
 
     py::object get() const;
 
     py::object getitem(size_t index) const;
 
-    void setitem(size_t index, const UserTypeVariantNoVoid& val);
+    void setitem(size_t index, const pybind11::object& input);
 
-    void setslice(const py::slice& slice, const UserTypeVariantNoVoid& val);
+    void setslice(const py::slice& slice, const pybind11::object& input);
 
     static std::string repr(py::object& acc);
 
