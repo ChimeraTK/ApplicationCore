@@ -32,7 +32,7 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void PyArrayAccessor::setAndWrite(const UserTypeTemplateVariantNoVoid<Vector>& vec) {
+  void PyArrayAccessor::setAndWrite(const UserTypeArrVariantNoVoid& vec) {
     set(vec);
     write();
   }
@@ -45,16 +45,45 @@ namespace ChimeraTK {
   }
   /********************************************************************************************************************/
 
-  void PyArrayAccessor::set(const UserTypeTemplateVariantNoVoid<Vector>& vec) {
+  template<typename T>
+  struct is_std_vector : std::false_type {};
+  template<typename T, typename Alloc>
+  struct is_std_vector<std::vector<T, Alloc>> : std::true_type {};
+  template<typename T>
+  inline constexpr bool is_std_vector_v = is_std_vector<std::remove_cvref_t<T>>::value;
+
+  void PyArrayAccessor::set(const UserTypeArrVariantNoVoid& vec) {
+    /*
+    const py::array_t<float, py::array::c_style | py::array::forcecast> v(3);
+    auto proxy0 = v.unchecked<1>();
+    auto it = std::begin(proxy0);
+    it;
+    *it = 1.;
+    ++it;
+    proxy0[0] = 0.3;
+
+    std::true_type::value;
+    std::vector<float> fv;
+    auto d = fv.data();
+*/
+
     std::visit(
         [&](auto& acc) {
-          using ACC = typename std::remove_reference<decltype(acc)>::type;
-          using expectedUserType = typename ACC::value_type;
+          using ACC = std::remove_reference<decltype(acc)>::type;
+          using expectedUserType = ACC::value_type;
           std::visit(
               [&](const auto& vector) {
+                using vectorType = std::remove_reference<decltype(vector)>::type;
+                using vectorValueType = vectorType::value_type;
+                const vectorValueType* it_begin = vector.data();
+                const vectorValueType* it_end = it_begin + vector.size();
                 std::vector<expectedUserType> converted(vector.size());
-                std::transform(vector.begin(), vector.end(), converted.begin(),
+                std::transform(it_begin, it_end, converted.begin(),
                     [](auto v) { return userTypeToUserType<expectedUserType>(v); });
+                std::cout << typeid(vectorType).name() << " -> " << typeid(expectedUserType).name() << std::endl;
+                std::cout << " set. input[first] = " << it_begin[0] << std::endl;
+                std::cout << " set. input[last] = " << it_begin[vector.size() - 1] << std::endl;
+                std::cout << " set. converted[last] = " << converted[vector.size() - 1] << std::endl;
                 acc = converted;
               },
               vec);
@@ -118,9 +147,13 @@ namespace ChimeraTK {
                   throw pybind11::error_already_set();
                 }
 
+                // TODO check whether we can disable Pass 2 of python argument conversion also for setitem,setslice
                 auto value = userTypeToUserType<typename std::remove_reference<decltype(acc)>::type::value_type>(v);
                 for(size_t i = start; i < stop; i += step) {
                   acc[i] = value;
+                  std::cout << " setslice: index=" << i << ", val==" << value << " type in"
+                            << typeid(decltype(v)).name() << " type written " << typeid(decltype(value)).name()
+                            << std::endl;
                 }
               },
               val);
@@ -235,17 +268,17 @@ namespace ChimeraTK {
             "support it")
         .def("getNElements", &PyArrayAccessor::getNElements, "Return number of elements/samples in the register.")
         .def("get", &PyArrayAccessor::get, "Return an array of UserType (without a previous read).")
-        .def("set", &PyArrayAccessor::set, "Set the values of the array of UserType.", py::arg("newValue"))
+        .def("set", &PyArrayAccessor::set, "Set the values of the array of UserType.", py::arg("newValue").noconvert())
         .def("setAndWrite", &PyArrayAccessor::setAndWrite,
             "Convenience function to set and write new value.\n\nThe given version number. If versionNumber == {}, a "
             "new version number is generated.",
-            py::arg("newValue"))
+            py::arg("newValue").noconvert())
         .def(
             "readAndGet", &PyArrayAccessor::readAndGet, "Convenience function to read and return an array of UserType.")
         .def("__repr__", &PyArrayAccessor::repr)
         .def("__getitem__", &PyArrayAccessor::getitem)
-        .def("__setitem__", &PyArrayAccessor::setitem)
-        .def("__setitem__", &PyArrayAccessor::setslice)
+        .def("__setitem__", &PyArrayAccessor::setitem, "", py::arg("index"), py::arg("newValue").noconvert())
+        .def("__setitem__", &PyArrayAccessor::setslice, "", py::arg("slice"), py::arg("newValue").noconvert())
         .def("__getattr__", &PyArrayAccessor::getattr);
     for(const auto& fn : PyTransferElementBase::specialFunctionsToEmulateNumeric) {
       arrayacc.def(fn.c_str(),
