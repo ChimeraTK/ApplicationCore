@@ -3,6 +3,8 @@
 
 #include "PyArrayAccessor.h"
 
+#include <ChimeraTK/PyConvert.h>
+
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -32,8 +34,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void PyArrayAccessor::setAndWrite(const UserTypeTemplateVariantNoVoid<Vector>& vec) {
-    set(vec);
+  void PyArrayAccessor::setAndWrite(const pybind11::object& input) {
+    set(input);
     write();
   }
   /********************************************************************************************************************/
@@ -43,24 +45,20 @@ namespace ChimeraTK {
     std::visit([&](auto& acc) { rv = acc.getNElements(); }, _accessor);
     return rv;
   }
+
   /********************************************************************************************************************/
 
-  void PyArrayAccessor::set(const UserTypeTemplateVariantNoVoid<Vector>& vec) {
+  void PyArrayAccessor::set(const py::object& input) {
     std::visit(
         [&](auto& acc) {
-          using ACC = typename std::remove_reference<decltype(acc)>::type;
-          using expectedUserType = typename ACC::value_type;
-          std::visit(
-              [&](const auto& vector) {
-                std::vector<expectedUserType> converted(vector.size());
-                std::transform(vector.begin(), vector.end(), converted.begin(),
-                    [](auto v) { return userTypeToUserType<expectedUserType>(v); });
-                acc = converted;
-              },
-              vec);
+          using ACC = std::remove_reference<decltype(acc)>::type;
+          using expectedUserType = ACC::value_type;
+          std::vector<expectedUserType> converted = convertPyObject<expectedUserType>(input, false, true);
+          acc = converted;
         },
         _accessor);
   }
+
   /********************************************************************************************************************/
 
   py::object PyArrayAccessor::get() const {
@@ -88,42 +86,60 @@ namespace ChimeraTK {
 
   py::object PyArrayAccessor::getitem(size_t index) const {
     py::object rv;
-    std::visit([&](auto& acc) { rv = py::cast(acc[index]); }, _accessor);
+    // Return the element as a numpy scalar of the matching user type (e.g. np.float32)
+    // so that single-element access is consistent with get().
+    std::visit(
+        [&](auto& acc) {
+          using ACC = std::remove_reference<decltype(acc)>::type;
+          using userType = typename ACC::value_type;
+          auto ndacc = boost::dynamic_pointer_cast<NDRegisterAccessor<userType>>(acc.getHighLevelImplElement());
+          if constexpr(std::is_same<userType, std::string>::value) {
+            // String arrays are not really supported by numpy, so we return a python string
+            rv = py::cast(ndacc->accessChannel(0)[index]);
+          }
+          else {
+            // Create a 1-element numpy array of the correct dtype pointing to this element and index it,
+            // so numpy returns the matching numpy scalar type (np.float32, np.int32, ...).
+            auto ary = py::array(
+                py::dtype::of<userType>(), {1}, {sizeof(userType)}, &ndacc->accessChannel(0)[index], py::cast(this));
+            assert(!ary.owndata()); // numpy must not own our buffers
+            rv = ary.attr("__getitem__")(py::int_(0));
+          }
+        },
+        _accessor);
     return rv;
   }
 
   /********************************************************************************************************************/
 
-  void PyArrayAccessor::setitem(size_t index, const UserTypeVariantNoVoid& val) {
+  void PyArrayAccessor::setitem(size_t index, const pybind11::object& input) {
     std::visit(
         [&](auto& acc) {
-          std::visit(
-              [&](auto& v) {
-                acc[index] = userTypeToUserType<typename std::remove_reference<decltype(acc)>::type::value_type>(v);
-              },
-              val);
+          using ACC = std::remove_reference<decltype(acc)>::type;
+          using expectedUserType = ACC::value_type;
+
+          // TODO check whether we can disable Pass 2 of python argument conversion also for setitem,setslice
+          expectedUserType value = convertPyScalar<expectedUserType>(input);
+          acc[index] = value;
         },
         _accessor);
   }
 
   /********************************************************************************************************************/
 
-  void PyArrayAccessor::setslice(const py::slice& slice, const UserTypeVariantNoVoid& val) {
+  void PyArrayAccessor::setslice(const py::slice& slice, const pybind11::object& input) {
     std::visit(
         [&](auto& acc) {
-          std::visit(
-              [&](auto& v) {
-                size_t start, stop, step, length;
-                if(!slice.compute(acc.getNElements(), &start, &stop, &step, &length)) {
-                  throw pybind11::error_already_set();
-                }
-
-                auto value = userTypeToUserType<typename std::remove_reference<decltype(acc)>::type::value_type>(v);
-                for(size_t i = start; i < stop; i += step) {
-                  acc[i] = value;
-                }
-              },
-              val);
+          size_t start, stop, step, length;
+          if(!slice.compute(acc.getNElements(), &start, &stop, &step, &length)) {
+            throw pybind11::error_already_set();
+          }
+          using ACC = std::remove_reference<decltype(acc)>::type;
+          using expectedUserType = ACC::value_type;
+          expectedUserType value = convertPyScalar<expectedUserType>(input);
+          for(size_t i = start; i < stop; i += step) {
+            acc[i] = value;
+          }
         },
         _accessor);
   }
@@ -244,8 +260,8 @@ namespace ChimeraTK {
             "readAndGet", &PyArrayAccessor::readAndGet, "Convenience function to read and return an array of UserType.")
         .def("__repr__", &PyArrayAccessor::repr)
         .def("__getitem__", &PyArrayAccessor::getitem)
-        .def("__setitem__", &PyArrayAccessor::setitem)
-        .def("__setitem__", &PyArrayAccessor::setslice)
+        .def("__setitem__", &PyArrayAccessor::setitem, "", py::arg("index"), py::arg("newValue"))
+        .def("__setitem__", &PyArrayAccessor::setslice, "", py::arg("slice"), py::arg("newValue"))
         .def("__getattr__", &PyArrayAccessor::getattr);
     for(const auto& fn : PyTransferElementBase::specialFunctionsToEmulateNumeric) {
       arrayacc.def(fn.c_str(),
