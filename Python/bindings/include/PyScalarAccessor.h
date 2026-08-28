@@ -36,11 +36,11 @@ namespace ChimeraTK {
 
     UserTypeVariantNoVoid get() const;
 
-    void writeIfDifferent(UserTypeVariantNoVoid val);
+    void writeIfDifferent(const pybind11::object& val);
 
-    void setAndWrite(UserTypeVariantNoVoid val);
+    void setAndWrite(const pybind11::object& val);
 
-    void set(UserTypeVariantNoVoid val);
+    void set(const pybind11::object& val);
 
     static std::string repr(py::object& acc);
 

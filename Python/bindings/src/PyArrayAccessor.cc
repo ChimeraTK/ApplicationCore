@@ -3,6 +3,8 @@
 
 #include "PyArrayAccessor.h"
 
+#include "PyConvert.h"
+
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -32,8 +34,8 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void PyArrayAccessor::setAndWrite(const UserTypeArrVariantNoVoid& vec) {
-    set(vec);
+  void PyArrayAccessor::setAndWrite(const pybind11::object& input) {
+    set(input);
     write();
   }
   /********************************************************************************************************************/
@@ -43,53 +45,20 @@ namespace ChimeraTK {
     std::visit([&](auto& acc) { rv = acc.getNElements(); }, _accessor);
     return rv;
   }
+
   /********************************************************************************************************************/
 
-  template<typename T>
-  struct is_std_vector : std::false_type {};
-  template<typename T, typename Alloc>
-  struct is_std_vector<std::vector<T, Alloc>> : std::true_type {};
-  template<typename T>
-  inline constexpr bool is_std_vector_v = is_std_vector<std::remove_cvref_t<T>>::value;
-
-  void PyArrayAccessor::set(const UserTypeArrVariantNoVoid& vec) {
-    /*
-    const py::array_t<float, py::array::c_style | py::array::forcecast> v(3);
-    auto proxy0 = v.unchecked<1>();
-    auto it = std::begin(proxy0);
-    it;
-    *it = 1.;
-    ++it;
-    proxy0[0] = 0.3;
-
-    std::true_type::value;
-    std::vector<float> fv;
-    auto d = fv.data();
-*/
-
+  void PyArrayAccessor::set(const py::object& input) {
     std::visit(
         [&](auto& acc) {
           using ACC = std::remove_reference<decltype(acc)>::type;
           using expectedUserType = ACC::value_type;
-          std::visit(
-              [&](const auto& vector) {
-                using vectorType = std::remove_reference<decltype(vector)>::type;
-                using vectorValueType = vectorType::value_type;
-                const vectorValueType* it_begin = vector.data();
-                const vectorValueType* it_end = it_begin + vector.size();
-                std::vector<expectedUserType> converted(vector.size());
-                std::transform(it_begin, it_end, converted.begin(),
-                    [](auto v) { return userTypeToUserType<expectedUserType>(v); });
-                std::cout << typeid(vectorType).name() << " -> " << typeid(expectedUserType).name() << std::endl;
-                std::cout << " set. input[first] = " << it_begin[0] << std::endl;
-                std::cout << " set. input[last] = " << it_begin[vector.size() - 1] << std::endl;
-                std::cout << " set. converted[last] = " << converted[vector.size() - 1] << std::endl;
-                acc = converted;
-              },
-              vec);
+          std::vector<expectedUserType> converted = convertPyObject<expectedUserType>(input, false, true);
+          acc = converted;
         },
         _accessor);
   }
+
   /********************************************************************************************************************/
 
   py::object PyArrayAccessor::get() const {
@@ -117,46 +86,46 @@ namespace ChimeraTK {
 
   py::object PyArrayAccessor::getitem(size_t index) const {
     py::object rv;
+    // TODO discuss - for float this cast returns native python float, not np.float32
     std::visit([&](auto& acc) { rv = py::cast(acc[index]); }, _accessor);
     return rv;
   }
 
   /********************************************************************************************************************/
 
-  void PyArrayAccessor::setitem(size_t index, const UserTypeVariantNoVoid& val) {
+  void PyArrayAccessor::setitem(size_t index, const pybind11::object& input) {
     std::visit(
         [&](auto& acc) {
-          std::visit(
-              [&](auto& v) {
-                acc[index] = userTypeToUserType<typename std::remove_reference<decltype(acc)>::type::value_type>(v);
-              },
-              val);
+          using ACC = std::remove_reference<decltype(acc)>::type;
+          using expectedUserType = ACC::value_type;
+
+          // TODO check whether we can disable Pass 2 of python argument conversion also for setitem,setslice
+          expectedUserType value = convertPyScalar<expectedUserType>(input);
+          acc[index] = value;
         },
         _accessor);
   }
 
   /********************************************************************************************************************/
 
-  void PyArrayAccessor::setslice(const py::slice& slice, const UserTypeVariantNoVoid& val) {
+  void PyArrayAccessor::setslice(const py::slice& slice, const pybind11::object& input) {
     std::visit(
         [&](auto& acc) {
-          std::visit(
-              [&](auto& v) {
-                size_t start, stop, step, length;
-                if(!slice.compute(acc.getNElements(), &start, &stop, &step, &length)) {
-                  throw pybind11::error_already_set();
-                }
+          size_t start, stop, step, length;
+          if(!slice.compute(acc.getNElements(), &start, &stop, &step, &length)) {
+            throw pybind11::error_already_set();
+          }
+          using ACC = std::remove_reference<decltype(acc)>::type;
+          using expectedUserType = ACC::value_type;
 
-                // TODO check whether we can disable Pass 2 of python argument conversion also for setitem,setslice
-                auto value = userTypeToUserType<typename std::remove_reference<decltype(acc)>::type::value_type>(v);
-                for(size_t i = start; i < stop; i += step) {
-                  acc[i] = value;
-                  std::cout << " setslice: index=" << i << ", val==" << value << " type in"
-                            << typeid(decltype(v)).name() << " type written " << typeid(decltype(value)).name()
-                            << std::endl;
-                }
-              },
-              val);
+          // TODO check whether we can disable Pass 2 of python argument conversion also for setitem,setslice
+          // - so check whether we can leave out the .noconvert flag
+          expectedUserType value = convertPyScalar<expectedUserType>(input);
+          for(size_t i = start; i < stop; i += step) {
+            acc[i] = value;
+            std::cout << " setslice: index=" << i << ", val==" << value << " type written " << typeid(value).name()
+                      << std::endl;
+          }
         },
         _accessor);
   }
@@ -268,6 +237,7 @@ namespace ChimeraTK {
             "support it")
         .def("getNElements", &PyArrayAccessor::getNElements, "Return number of elements/samples in the register.")
         .def("get", &PyArrayAccessor::get, "Return an array of UserType (without a previous read).")
+        // note, the .noconvert() on set-values should now be optional since C++ functions simply take py::object
         .def("set", &PyArrayAccessor::set, "Set the values of the array of UserType.", py::arg("newValue").noconvert())
         .def("setAndWrite", &PyArrayAccessor::setAndWrite,
             "Convenience function to set and write new value.\n\nThe given version number. If versionNumber == {}, a "
