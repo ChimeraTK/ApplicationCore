@@ -3,6 +3,8 @@
 
 #include "PyScalarAccessor.h"
 
+#include "PyConvert.h"
+
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -67,37 +69,36 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  void PyScalarAccessor::writeIfDifferent(UserTypeVariantNoVoid val) {
+  void PyScalarAccessor::writeIfDifferent(const pybind11::object& val) {
     std::visit(
         [&](auto& acc) {
           using ACC = typename std::remove_reference<decltype(acc)>::type;
           using expectedUserType = typename ACC::value_type;
-          std::visit(
-              [&](auto value) { acc.writeIfDifferent(ChimeraTK::userTypeToUserType<expectedUserType>(value)); }, val);
+          acc.writeIfDifferent(convertPyScalar<expectedUserType>(val));
         },
         _accessor);
   }
 
   /********************************************************************************************************************/
 
-  void PyScalarAccessor::setAndWrite(UserTypeVariantNoVoid val) {
+  void PyScalarAccessor::setAndWrite(const pybind11::object& val) {
     std::visit(
         [&](auto& acc) {
           using ACC = typename std::remove_reference<decltype(acc)>::type;
           using expectedUserType = typename ACC::value_type;
-          std::visit([&](auto value) { acc.setAndWrite(ChimeraTK::userTypeToUserType<expectedUserType>(value)); }, val);
+          acc.setAndWrite(convertPyScalar<expectedUserType>(val));
         },
         _accessor);
   }
 
   /********************************************************************************************************************/
 
-  void PyScalarAccessor::set(UserTypeVariantNoVoid val) {
+  void PyScalarAccessor::set(const py::object& val) {
     std::visit(
         [&](auto& acc) {
           using ACC = typename std::remove_reference<decltype(acc)>::type;
           using expectedUserType = typename ACC::value_type;
-          std::visit([&](auto value) { acc = ChimeraTK::userTypeToUserType<expectedUserType>(value); }, val);
+          acc = convertPyObject<expectedUserType>(val, true, false)[0];
         },
         _accessor);
   }
