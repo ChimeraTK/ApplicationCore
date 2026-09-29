@@ -10,11 +10,11 @@
   <variable name="var32u" type="uint32" value="234567"/>
   <variable name="var64" type="int64" value="-2345678901234567890"/>
   <variable name="var64u" type="uint64" value="12345678901234567890"/>
-  <variable name="varFloat" type="float" value="3.1415"/>
+  <variable name="varFloat" type="float" value="3.1415" unit="MV/m" description="A scalar with unit and description"/>
   <variable name="varDouble" type="double" value="-2.8"/>
-  <variable name="varString" type="string" value="My dear mister singing club!"/>
-  <variable name="varAnotherInt" type="int32" value="666"/>
-  <variable name="intArray" type="int32">
+  <variable name="varString" type="string" value="My dear mister singing club!" description="A scalar with only description"/>
+  <variable name="varAnotherInt" type="int32" value="666" unit="V"/>
+  <variable name="intArray" type="int32" unit="mA" description="An array with unit and description">
     <!-- Values are intentionally out-of-order -->
     <value i="0" v="10"/>
     <value i="1" v="9"/>
@@ -38,7 +38,7 @@
     <value i="6" v="Hallo7"/>
     <value i="7" v="Hallo8"/>
   </variable>
-  <module name="module1">
+  <module name="module1" description="A module with a description">
     <variable name="varString" type="string" value="My dear mister singing club!"/>
     <variable name="var16" type="int16" value="-567"/>
     <variable name="var16u" type="uint16" value="678"/>

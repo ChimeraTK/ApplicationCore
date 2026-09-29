@@ -35,16 +35,16 @@
  * Configuration will be published as process variables, according to the hierarchy constructed in the configuration
  * file.
  *
- * \section xmlstructure XML file structure
- * - A valid configuration file may look like:
- *   \verbatim
+  * \section xmlstructure XML file structure
+  * - A valid configuration file may look like:
+  *   \verbatim
      <configuration>
-       <variable name="var8" type="int8" value="-123"/>
+       <variable name="var8" type="int8" value="-123" unit="MV/m" description="A scalar config value"/>
        <variable name="bool" type="boolean" value="true"/>
-       <module name="module1">
-         <variable name="var8" type="int8" value="-123"/>
+       <module name="module1" description="A configuration submodule">
+         <variable name="var8" type="int8" value="-123" unit="MV/m" description="A scalar config value"/>
          <module name="submodule">
-             <variable name="intArray" type="int32">
+             <variable name="intArray" type="int32" unit="mV" description="An array config value">
              <value i="0" v="10"/>
              <value i="1" v="9"/>
              <value i="2" v="8"/>
@@ -60,7 +60,11 @@
        </module>
      </configuration>
      \endverbatim
- *
+  *
+  * The attributes `unit` and `description` on `variable` tags and `description` on `module` tags are optional. If
+  * omitted, the defaults are used: unit `"unknown"` and description `"Configuration variable"` (scalar) or
+  * `"Configuration array"` (array) for variables, and an empty description for modules.
+  *
  * */
 
 #include "ApplicationModule.h"
@@ -85,9 +89,9 @@ namespace ChimeraTK {
    *  constant variables. The config file should look like this:
    *  \code{.xml}
   <configuration>
-  <variable name="variableName" type="int32" value="42"/>
+  <variable name="variableName" type="int32" value="42" unit="MV/m" description="A scalar config value"/>
   <variable name="anotherVariable" type="string" value="Hello world!"/>
-  <variable name="someArray" type="string">
+  <variable name="someArray" type="string" unit="" description="An array config value">
     <value i="0" v="StringEntry1" />
     <value i="1" v="StringEntry2" />
     <value i="2" v="StringEntry3" />
@@ -154,8 +158,10 @@ namespace ChimeraTK {
     /** Class holding the value and the accessor for one configuration variable */
     template<typename T>
     struct Var {
-      Var(Module* owner, const std::string& name, T theValue)
-      : accessor(owner, name, "unknown", "Configuration variable"), value(std::move(theValue)) {}
+      Var(Module* owner, const std::string& name, T theValue, std::string unit, std::string theDescription)
+      : accessor(owner, name, unit.empty() ? std::string("unknown") : std::move(unit),
+            theDescription.empty() ? std::string("Configuration variable") : std::move(theDescription)),
+        value(std::move(theValue)) {}
 
       Var() = default;
 
@@ -166,8 +172,11 @@ namespace ChimeraTK {
     /** Class holding the values and the accessor for one configuration array */
     template<typename T>
     struct Array {
-      Array(Module* owner, const std::string& name, const std::vector<T>& theValue)
-      : accessor(owner, name, "unknown", theValue.size(), "Configuration array"), value(theValue) {}
+      Array(Module* owner, const std::string& name, const std::vector<T>& theValue, std::string unit,
+          std::string theDescription)
+      : accessor(owner, name, unit.empty() ? std::string("unknown") : std::move(unit), theValue.size(),
+            theDescription.empty() ? std::string("Configuration array") : std::move(theDescription)),
+        value(theValue) {}
 
       Array() = default;
 
@@ -177,11 +186,13 @@ namespace ChimeraTK {
 
     /** Create an instance of Var<T> and place it on the variableMap */
     template<typename T>
-    void createVar(const std::string& name, const std::string& value);
+    void createVar(
+        const std::string& name, const std::string& value, const std::string& unit, const std::string& description);
 
     /** Create an instance of Array<T> and place it on the arrayMap */
     template<typename T>
-    void createArray(const std::string& name, const std::map<size_t, std::string>& values);
+    void createArray(const std::string& name, const std::map<size_t, std::string>& values, const std::string& unit,
+        const std::string& description);
 
     /** Check if variable exists in the config and if type of var name in the config file matches the given type.
      * Throws logic_errors otherwise. */

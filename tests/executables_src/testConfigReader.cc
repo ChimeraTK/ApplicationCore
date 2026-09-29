@@ -14,6 +14,9 @@ using namespace boost::unit_test_framework;
 #include "TestFacility.h"
 #include "VariableGroup.h"
 
+#include <type_traits>
+#include <utility>
+
 namespace ctk = ChimeraTK;
 
 constexpr std::string_view cdd{"(dummy?map=configReaderDevice.map)"};
@@ -205,6 +208,27 @@ namespace Tests::testConfigReader {
   };
 
   /********************************************************************************************************************/
+  /* Helper to retrieve the unit and description of a config process variable via the application model. */
+
+  static std::pair<std::string, std::string> getVariableMetadata(ctk::Application& app, const std::string& path) {
+    std::pair<std::string, std::string> result;
+    app.getModel().visitByPath(path, [&](auto proxy) {
+      using Proxy = std::decay_t<decltype(proxy)>;
+      if constexpr(std::is_same_v<Proxy, ctk::Model::ProcessVariableProxy>) {
+        for(const auto& node : proxy.getNodes()) {
+          // The unit/description originates from the feeding (producer) node of the config output accessor.
+          if(node->getDirection().dir == ChimeraTK::VariableDirection::feeding) {
+            result.first = node->getUnit();
+            result.second = node->getDescription();
+            break;
+          }
+        }
+      }
+    });
+    return result;
+  }
+
+  /********************************************************************************************************************/
   /* test trigger by app variable when connecting a polled device register to an
    * app variable */
 
@@ -259,6 +283,42 @@ namespace Tests::testConfigReader {
     for(size_t i = 0; i < 8; ++i) {
       BOOST_CHECK_EQUAL(arrayValueString[i], "Hallo" + std::to_string(i + 1));
     }
+
+    // check the unit and description metadata of the config variables via the application model
+    // (the config description is prefixed with the ConfigReader module description, so we check the suffix)
+    auto [varFloatUnit, varFloatDesc] = getVariableMetadata(app, "/varFloat");
+    BOOST_CHECK_EQUAL(varFloatUnit, "MV/m");
+    BOOST_TEST(varFloatDesc.ends_with("A scalar with unit and description"));
+
+    // unit only -> description falls back to the default
+    auto [varAnotherIntUnit, varAnotherIntDesc] = getVariableMetadata(app, "/varAnotherInt");
+    BOOST_CHECK_EQUAL(varAnotherIntUnit, "V");
+    BOOST_TEST(varAnotherIntDesc.ends_with("Configuration variable"));
+
+    // description only -> unit falls back to the default
+    auto [varStringUnit, varStringDesc] = getVariableMetadata(app, "/varString");
+    BOOST_CHECK_EQUAL(varStringUnit, "unknown");
+    BOOST_TEST(varStringDesc.ends_with("A scalar with only description"));
+
+    // no metadata given -> both default values
+    auto [var32uUnit, var32uDesc] = getVariableMetadata(app, "/var32u");
+    BOOST_CHECK_EQUAL(var32uUnit, "unknown");
+    BOOST_TEST(var32uDesc.ends_with("Configuration variable"));
+
+    // array with unit and description
+    auto [intArrayUnit, intArrayDesc] = getVariableMetadata(app, "/intArray");
+    BOOST_CHECK_EQUAL(intArrayUnit, "mA");
+    BOOST_TEST(intArrayDesc.ends_with("An array with unit and description"));
+
+    // default array metadata
+    auto [stringArrayUnit, stringArrayDesc] = getVariableMetadata(app, "/stringArray");
+    BOOST_CHECK_EQUAL(stringArrayUnit, "unknown");
+    BOOST_TEST(stringArrayDesc.ends_with("Configuration array"));
+
+    // module description (as read from the <module> tag) is prefixed into the descriptions of the variables it
+    // contains, so check a variable inside module1
+    auto module1VarDesc = getVariableMetadata(app, "/module1/var16").second;
+    BOOST_CHECK(module1VarDesc.find("A module with a description") != std::string::npos);
 
     // app.config.virtualise().dump();
     // app.config.connectTo(app.testModule);
