@@ -157,4 +157,46 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  std::string EntityOwner::composeFullDescription(const std::string& first, const std::string& second) {
+    if(first.empty()) {
+      return second;
+    }
+    if(second.empty()) {
+      return first;
+    }
+
+    // Split a part into leading priority markers ("!" / "?") plus the remaining content.
+    auto splitMarkers = [](const std::string& s) {
+      size_t i = 0;
+      while(i < s.size() && (s[i] == '!' || s[i] == '?')) {
+        ++i;
+      }
+      return std::make_pair(s.substr(0, i), s.substr(i));
+    };
+
+    auto [firstMarkers, firstContent] = splitMarkers(first);
+    auto [secondMarkers, secondContent] = splitMarkers(second);
+
+    // In the non-first part, an escaped marker at the very start of the string is a literal and must be un-escaped,
+    // because after joining it no longer sits at the start of the overall description. (An escaped marker at the start
+    // of the first part stays escaped, so the final parsing treats it as a literal. An escaped marker later in the
+    // string, or after a leading marker run, is ordinary content and is left untouched.)
+    if(second.size() >= 2 && second[0] == '\\' && (second[1] == '!' || second[1] == '?')) {
+      secondContent = second.substr(1);
+    }
+
+    // Promote the merged leading markers to the very front, then join the plain texts. If either
+    // part contributes no textual content (e.g. a marker-only description such as "!"), simply drop
+    // the separator so no dangling " - " remains.
+    if(firstContent.empty()) {
+      return firstMarkers + secondMarkers + secondContent;
+    }
+    if(secondContent.empty()) {
+      return firstMarkers + secondMarkers + firstContent;
+    }
+    return firstMarkers + secondMarkers + firstContent + " - " + secondContent;
+  }
+
+  /********************************************************************************************************************/
+
 } /* namespace ChimeraTK */

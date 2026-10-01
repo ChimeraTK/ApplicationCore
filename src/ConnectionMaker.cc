@@ -19,8 +19,37 @@
 #include <ChimeraTK/SystemTags.h>
 
 #include <algorithm>
+#include <iterator>
+#include <memory>
+#include <set>
+#include <sstream>
 
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
+
+  NetworkDescription parseNetworkDescription(const std::string& raw) {
+    NetworkDescription result;
+    size_t n = raw.size();
+
+    // An escaped marker at the very start is a literal, not a marker: it terminates
+    // the marker run, contributes no priority, and is un-escaped in the text.
+    if(n > 1 && raw[0] == '\\' && (raw[1] == '!' || raw[1] == '?')) {
+      result.text = raw.substr(1); // drop the backslash
+      return result;
+    }
+    // Count the leading unescaped priority markers.
+    size_t i = 0;
+    while(i < n && (raw[i] == '!' || raw[i] == '?')) {
+      raw[i] == '!' ? ++result.priority : --result.priority;
+      ++i;
+    }
+
+    // The remaining text may contain backslash sequences, but they are not in the
+    // leading position and are therefore ordinary content.
+    result.text = raw.substr(i);
+    return result;
+  }
 
   /********************************************************************************************************************/
 
@@ -43,6 +72,27 @@ namespace ChimeraTK {
 
     int bidirectionalDeviceNodeCount = 0;
     std::vector<std::shared_ptr<VariableNetworkNode>> unidirectionalDeviceNodes;
+
+    // Collect description and unit candidates from all nodes. The actual selection
+    // (priority based for descriptions) happens after the loop, once the feeder and
+    // all consumers are known.
+    struct DescriptionCandidate : public NetworkDescription {
+      bool isFeeder;
+    };
+    // Order candidates by descending priority, feeder-first within a priority level
+    struct DescriptionCandidateComperator {
+      bool operator()(const DescriptionCandidate& a, const DescriptionCandidate& b) const {
+        if(a.priority != b.priority) {
+          return a.priority > b.priority; // higher priority first
+        }
+        if(a.isFeeder != b.isFeeder) {
+          return a.isFeeder; // feeder first
+        }
+        return a.text < b.text; // stable tiebreak / uniqueness
+      }
+    };
+    std::set<DescriptionCandidate, DescriptionCandidateComperator> descriptionCandidates;
+    std::vector<std::string> unitCandidates;
 
     for(const auto& node : proxy.getNodes()) {
       if(node->getDirection().withReturn) {
@@ -128,13 +178,96 @@ namespace ChimeraTK {
         }
       }
 
-      // Get unit and description of network from nodes. First one wins
-      if(net.description.empty()) {
-        net.description = node->getDescription();
+      // Collect unit and description candidates. The selection happens after the loop.
+      auto parsedDescription = parseNetworkDescription(node->getDescription());
+      if(!parsedDescription.text.empty()) {
+        descriptionCandidates.insert(DescriptionCandidate{{parsedDescription.priority, parsedDescription.text},
+            node->getDirection().dir == VariableDirection::feeding});
       }
+      auto nodeUnit = node->getUnit();
+      if(nodeUnit != ChimeraTK::TransferElement::unitNotSet) {
+        if(std::ranges::find(unitCandidates, nodeUnit) == unitCandidates.end()) {
+          // on ambiguity a warning will be emitted
+          // In order to have a deterministic winner, put the feeder first
+          if(node->getDirection().dir == VariableDirection::feeding) {
+            unitCandidates.insert(unitCandidates.cbegin(), nodeUnit);
+          }
+          else {
+            unitCandidates.push_back(nodeUnit);
+          }
+        }
+      }
+    }
 
-      if(net.unit.empty()) {
-        net.unit = node->getUnit();
+    // ---------------------------------------------------------------------------
+    // Select the winning unit and description from the collected candidates.
+    // ---------------------------------------------------------------------------
+
+    // Unit: there is no priority concept for units, so pick the first
+    // non-empty unit and warn if the nodes disagree.
+    if(!unitCandidates.empty()) {
+      // unitCandidates has the feeder first (see collection above), so selecting
+      // the first non-empty entry gives a deterministic feeder-preferred winner.
+      unsigned countNonEmpty = 0;
+      for(const auto& s : unitCandidates) {
+        if(!s.empty()) {
+          countNonEmpty++;
+          if(net.unit.empty()) {
+            net.unit = s;
+          }
+        }
+      }
+      if(countNonEmpty > 1) {
+        std::ostringstream msg;
+        msg << "Variable network " << proxy.getFullyQualifiedPath()
+            << " contains nodes with different engineering units:";
+        for(const auto& u : unitCandidates) {
+          if(u.empty()) {
+            continue;
+          }
+          msg << " '" << u << "'";
+        }
+        logger(Logger::Severity::warning, "ConnectionMaker") << msg.str();
+      }
+    }
+    else {
+      // No node carries a real engineering unit
+      // Note, empty unit="" is here considered different from TransferElement::unitNotSet,
+      // empty (=constructor default) wins over not-set when nothing else is there.
+      net.unit = TransferElement::unitNotSet;
+    }
+
+    // Description: priority-based selection.
+    if(!descriptionCandidates.empty()) {
+      // The set is ordered by descending priority, so the highest priority is at the front.
+      // Sorting prefers the feeder for determinism
+      int maxPriority = descriptionCandidates.begin()->priority;
+      const std::string& winnerText = descriptionCandidates.begin()->text;
+      net.description = winnerText;
+
+      if(maxPriority >= 0 && !descriptionCandidates.begin()->isFeeder) {
+        // No feeder on the highest level: a single consumer wins; multiple distinct
+        // consumers at this level constitute an ambiguity.
+        // The candidates on the highest priority level form the contiguous range
+        // [begin(), topEnd), since the comparator orders priority first.
+        unsigned countMaxPrio = 0;
+        auto topEnd = std::ranges::find_if(descriptionCandidates, [&](const DescriptionCandidate& c) {
+          if(c.priority != maxPriority) {
+            return true;
+          }
+          countMaxPrio++;
+          return false;
+        });
+
+        if(countMaxPrio > 1) {
+          std::ostringstream msg;
+          msg << "Variable network " << proxy.getFullyQualifiedPath()
+              << " has ambiguous descriptions among consumers with the same priority:";
+          for(auto it = descriptionCandidates.begin(); it != topEnd; ++it) {
+            msg << " '" << it->text << "'";
+          }
+          logger(Logger::Severity::warning, "ConnectionMaker") << msg.str();
+        }
       }
     }
 

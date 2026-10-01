@@ -226,14 +226,7 @@ namespace ChimeraTK {
     if(_owner == nullptr) {
       return _description;
     }
-    auto ownerDescription = _owner->getFullDescription();
-    if(ownerDescription.empty()) {
-      return _description;
-    }
-    if(_description.empty()) {
-      return ownerDescription;
-    }
-    return ownerDescription + " - " + _description;
+    return composeFullDescription(_owner->getFullDescription(), _description);
   }
 
   /********************************************************************************************************************/
