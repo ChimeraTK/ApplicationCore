@@ -40,7 +40,7 @@ namespace ChimeraTK {
      *
      * @param owner The owner to register the ApplicationMoule with (ModuleGroup or Application)
      * @param name The name of the new ApplicationModule
-     * @param description A description visible to the control system
+     * @param description A description visible to the control system, as part of the module's variable descriptions
      * @param tags List of tags to be added to all child variables (default: empty)
      *
      * @exception ChimeraTK::logic_error thrown if owner is of the wrong type or name is illegal.

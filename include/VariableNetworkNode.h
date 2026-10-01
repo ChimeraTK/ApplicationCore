@@ -213,7 +213,9 @@ namespace ChimeraTK {
     const std::type_info* valueType{&typeid(AnyType)};
 
     /** Engineering unit. If equal to ChimeraTK::TransferElement::unitNotSet, no
-     * unit has been defined (and any unit is allowed). */
+     * unit has been defined (and any unit is allowed).
+     * Be careful to consistently use unitNotSet when unit is not provided, since matching units are checked.
+     */
     std::string unit{ChimeraTK::TransferElement::unitNotSet};
 
     /** Description */

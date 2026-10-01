@@ -67,10 +67,22 @@
   </xsd:complexType>
 
   <xsd:complexType name="PeerType">
+    <xsd:sequence>
+      <xsd:element name="unit" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+      <xsd:element name="description" type="PeerDescriptionType" minOccurs="0" maxOccurs="1"/>
+    </xsd:sequence>
     <xsd:attribute name="type" type="PeerTypeType" use="required"/>
     <xsd:attribute name="name" type="xsd:string" use="required"/>
     <xsd:attribute name="class" type="xsd:string" use="optional"/>
     <xsd:attribute name="direction" type="PeerDirectionType" use="required"/>
+  </xsd:complexType>
+
+  <xsd:complexType name="PeerDescriptionType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute name="priority" type="xsd:integer" use="required"/>
+      </xsd:extension>
+    </xsd:simpleContent>
   </xsd:complexType>
 
   <xsd:simpleType name="PeerTypeType">

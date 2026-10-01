@@ -11,6 +11,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <optional>
 
 namespace ChimeraTK {
 
@@ -30,12 +31,16 @@ namespace ChimeraTK {
     std::string name;
     std::string type;
     std::string value;
+    std::string unit;
+    std::string description;
   };
 
   struct Array {
     std::string name;
     std::string type;
     std::map<size_t, std::string> values;
+    std::string unit;
+    std::string description;
   };
 
   using VariableList = std::vector<Variable>;
@@ -52,6 +57,10 @@ namespace ChimeraTK {
 
     std::unique_ptr<VariableList> getVariableList();
     std::unique_ptr<ArrayList> getArrayList();
+    const std::unordered_map<std::string, std::string>& getModuleDescriptions() { return _moduleDescriptions; }
+
+    /** description of the root `<configuration>` tag. */
+    const std::string& getRootDescription() const { return _rootDescription; }
 
    private:
     std::tuple<std::unique_ptr<VariableList>, std::unique_ptr<ArrayList>> parse();
@@ -64,8 +73,18 @@ namespace ChimeraTK {
     Array parseArray(const xmlpp::Element* element);
     void parseModule(const xmlpp::Element* element, std::string parent_name);
 
+    /** Return the value of the given attribute, or an empty string if the attribute is not present. */
+    static std::string getOptionalAttribute(
+        const xmlpp::Element* element, const std::string& attributeName, const std::string& defaultVal = "");
+
     void validateValueNode(const xmlpp::Element* valueElement);
     std::map<size_t, std::string> gettArrayValues(const xmlpp::Element* element);
+
+    /** Descriptions of all modules found in the XML file, keyed by the flattened module name. */
+    std::unordered_map<std::string, std::string> _moduleDescriptions;
+
+    /** description of the root `<configuration>` tag. */
+    std::string _rootDescription;
   };
 
   class ModuleTree : public VariableGroup {
@@ -75,19 +94,42 @@ namespace ChimeraTK {
     ChimeraTK::Module* lookup(const std::string& flattened_module_name);
     std::list<std::string> getChildList() { return _childrenInOrder; }
 
+    /** Provide descriptions for modules, keyed by their flattened name. Must be called before the modules are created
+     *  (i.e. before any variable is added), because the description is fixed at module construction. */
+    void setModuleDescriptions(const std::unordered_map<std::string, std::string>& descriptions) {
+      _moduleDescriptions = descriptions;
+    }
+
     // Prevent any modification of the ModuleTree by lookup(), which otherwise will do a lazy-create
     // Will be called on the top-level module tree once the parsing is done
     void seal();
 
    private:
-    void addChildNode(const std::string& name) {
+    void addChildNode(const std::string& name, const std::string& path) {
       if(_children.find(name) == _children.end()) {
-        _children[name] = std::make_unique<ModuleTree>(this, name, "");
+        auto description = _moduleDescriptions.count(path) ? _moduleDescriptions[path] : "";
+        _children[name] = std::make_unique<ModuleTree>(this, name, description);
         _childrenInOrder.push_back(name);
       }
     }
 
-    ChimeraTK::ModuleTree* get(const std::string& flattened_name);
+    // Map of flattened module names to their description (as read from the XML file).
+    std::unordered_map<std::string, std::string> _moduleDescriptions;
+
+    /** Find the module with the given flattened name (e.g. "SubModule/SubSub"), creating it (and any missing
+     *  intermediate modules) along the way if this tree has not yet been sealed.
+     *
+     *  The lookup descends the tree top-down one path segment per recursion level. Each step splits the flattened
+     *  name into its first segment (the child to enter) and the remaining branch name (recursed into).
+     * `current_node_path` carries the fully accumulated flattened path of the current node, so that any newly created
+     * module gets its description keyed by its complete flattened path (see `_moduleDescriptions` / `addChildNode`).
+     *
+     *  @param flattened_name  Full flattened module name to look up, relative to this node (e.g. "SubModule/SubSub").
+     *  @param current_node_path     Full flattened path of the current node, used when creating child modules. Empty
+     * for the initial (top-level) call.
+     *  @returns Pointer to the found/created module, or nullptr if the module does not exist and the tree is sealed.
+     */
+    ChimeraTK::ModuleTree* get(const std::string& flattened_name, const std::string& current_node_path = {});
 
     std::unordered_map<std::string, std::unique_ptr<ModuleTree>> _children;
 
@@ -102,9 +144,8 @@ namespace ChimeraTK {
 
   /** Functor to fill variableMap */
   struct FunctorFill {
-    FunctorFill(ConfigReader* theOwner, const std::string& theType, const std::string& theName,
-        const std::string& theValue, bool& isProcessed)
-    : owner(theOwner), type(theType), name(theName), value(theValue), processed(isProcessed) {
+    FunctorFill(ConfigReader* theOwner, const Variable& theVariable, bool& isProcessed)
+    : owner(theOwner), variable(theVariable), processed(isProcessed) {
       processed = false;
     }
 
@@ -114,16 +155,16 @@ namespace ChimeraTK {
       using T = typename PAIR::first_type;
 
       // skip this type, if not matching the type string in the config file
-      if(type != boost::fusion::at_key<T>(owner->_typeMap)) {
+      if(variable.type != boost::fusion::at_key<T>(owner->_typeMap)) {
         return;
       }
 
-      owner->createVar<T>(name, value);
+      owner->createVar<T>(variable.name, variable.value, variable.unit, variable.description);
       processed = true;
     }
 
     ConfigReader* owner;
-    const std::string &type, &name, &value;
+    const Variable& variable;
     bool& processed; // must be a non-const reference, since we want to return
                      // this to the caller
   };
@@ -132,9 +173,8 @@ namespace ChimeraTK {
 
   /** Functor to fill variableMap for arrays */
   struct ArrayFunctorFill {
-    ArrayFunctorFill(ConfigReader* theOwner, const std::string& theType, const std::string& theName,
-        const std::map<size_t, std::string>& theValues, bool& isProcessed)
-    : owner(theOwner), type(theType), name(theName), values(theValues), processed(isProcessed) {
+    ArrayFunctorFill(ConfigReader* theOwner, const Array& theArray, bool& isProcessed)
+    : owner(theOwner), array(theArray), processed(isProcessed) {
       processed = false;
     }
 
@@ -144,17 +184,16 @@ namespace ChimeraTK {
       using T = typename PAIR::first_type;
 
       // skip this type, if not matching the type string in the config file
-      if(type != boost::fusion::at_key<T>(owner->_typeMap)) {
+      if(array.type != boost::fusion::at_key<T>(owner->_typeMap)) {
         return;
       }
 
-      owner->createArray<T>(name, values);
+      owner->createArray<T>(array.name, array.values, array.unit, array.description);
       processed = true;
     }
 
     ConfigReader* owner;
-    const std::string &type, &name;
-    const std::map<size_t, std::string>& values;
+    const Array& array;
     bool& processed; // must be a non-const reference, since we want to return
                      // this to the caller
   };
@@ -229,7 +268,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename T>
-  void ConfigReader::createVar(const std::string& name, const std::string& value) {
+  void ConfigReader::createVar(
+      const std::string& name, const std::string& value, const std::string& unit, const std::string& description) {
     T convertedValue = ChimeraTK::userTypeToUserType<T>(value);
 
     auto moduleName = branch(name);
@@ -238,7 +278,7 @@ namespace ChimeraTK {
 
     // place the variable onto the vector
     std::unordered_map<std::string, ConfigReader::Var<T>>& theMap = boost::fusion::at_key<T>(_variableMap.table);
-    theMap.emplace(std::make_pair(name, ConfigReader::Var<T>(varOwner, varName, convertedValue)));
+    theMap.emplace(std::make_pair(name, ConfigReader::Var<T>(varOwner, varName, convertedValue, unit, description)));
   }
 
   /********************************************************************************************************************/
@@ -246,7 +286,8 @@ namespace ChimeraTK {
   /********************************************************************************************************************/
 
   template<typename T>
-  void ConfigReader::createArray(const std::string& name, const std::map<size_t, std::string>& values) {
+  void ConfigReader::createArray(const std::string& name, const std::map<size_t, std::string>& values,
+      const std::string& unit, const std::string& description) {
     std::vector<T> Tvalues;
 
     size_t expectedIndex = 0;
@@ -272,14 +313,14 @@ namespace ChimeraTK {
 
     // place the variable onto the vector
     std::unordered_map<std::string, ConfigReader::Array<T>>& theMap = boost::fusion::at_key<T>(_arrayMap.table);
-    theMap.emplace(std::make_pair(name, ConfigReader::Array<T>(arrayOwner, arrayName, Tvalues)));
+    theMap.emplace(std::make_pair(name, ConfigReader::Array<T>(arrayOwner, arrayName, Tvalues, unit, description)));
   }
 
   /********************************************************************************************************************/
 
   ConfigReader::ConfigReader(ModuleGroup* owner, const std::string& name, const std::string& fileName,
       const std::unordered_set<std::string>& tags)
-  : ApplicationModule(owner, name, "Configuration read from file '" + fileName + "'", tags), _fileName(fileName),
+  : ApplicationModule(owner, name, "" /*will be overwritten*/, tags), _fileName(fileName),
     _moduleTree(std::make_unique<ModuleTree>(this, ".", "")) {
     auto* appConfig = Application::getInstance()._defaultConfigReader;
 
@@ -320,13 +361,14 @@ namespace ChimeraTK {
       auto value = pairPathnameValue.second;
       doDisable = false;
       std::visit(
-          [&](auto v) {
-            using UserType = decltype(v);
+          [&](auto& v) {
+            using UserType = std::remove_reference_t<decltype(v)>;
             auto moduleName = branch(pathname);
             auto varName = leaf(pathname);
             auto* varOwner = _moduleTree->lookup(moduleName);
             auto& theMap = boost::fusion::at_key<UserType>(_variableMap.table);
-            theMap[pathname] = ConfigReader::Var<UserType>(varOwner, varName, v);
+            theMap[pathname] = ConfigReader::Var<UserType>(
+                varOwner, varName, v, TransferElement::unitNotSet, "Configuration variable");
           },
           value);
     }
@@ -339,12 +381,13 @@ namespace ChimeraTK {
       doDisable = false;
       std::visit(
           [&](const auto& v) {
-            using UserType = typename std::remove_reference<decltype(v)>::type::value_type;
+            using UserType = std::remove_reference_t<decltype(v)>::value_type;
             auto moduleName = branch(pathname);
             auto arrayName = leaf(pathname);
             auto* arrayOwner = _moduleTree->lookup(moduleName);
             auto& theMap = boost::fusion::at_key<UserType>(_arrayMap.table);
-            theMap[pathname] = ConfigReader::Array<UserType>(arrayOwner, arrayName, v);
+            theMap[pathname] = ConfigReader::Array<UserType>(
+                arrayOwner, arrayName, v, TransferElement::unitNotSet, "Configuration array");
           },
           value);
     }
@@ -359,7 +402,7 @@ namespace ChimeraTK {
   void ConfigReader::construct(const std::string& fileName) {
     auto fillVariableMap = [this](const Variable& var) {
       bool processed{false};
-      boost::fusion::for_each(_variableMap.table, FunctorFill(this, var.type, var.name, var.value, processed));
+      boost::fusion::for_each(_variableMap.table, FunctorFill(this, var, processed));
       if(!processed) {
         parsingError("Incorrect value '" + var.type + "' for attribute 'type' of the 'variable' tag.");
       }
@@ -368,7 +411,7 @@ namespace ChimeraTK {
     auto fillArrayMap = [this](const ChimeraTK::Array& arr) {
       // create accessor and store array value in map using functor
       bool processed{false};
-      boost::fusion::for_each(_arrayMap.table, ArrayFunctorFill(this, arr.type, arr.name, arr.values, processed));
+      boost::fusion::for_each(_arrayMap.table, ArrayFunctorFill(this, arr, processed));
       if(!processed) {
         parsingError("Incorrect value '" + arr.type + "' for attribute 'type' of the 'variable' tag.");
       }
@@ -377,6 +420,12 @@ namespace ChimeraTK {
     auto parser = ConfigParser(fileName);
     auto v = parser.getVariableList();
     auto a = parser.getArrayList();
+
+    _description = parser.getRootDescription();
+
+    // Apply module descriptions before creating any variables, since modules are created (lazily) with a fixed
+    // description at the moment the first variable of that module is added.
+    _moduleTree->setModuleDescriptions(parser.getModuleDescriptions());
 
     for(const auto& var : *v) {
       fillVariableMap(var);
@@ -496,20 +545,21 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
-  ChimeraTK::ModuleTree* ModuleTree::get(const std::string& flattened_name) {
+  ChimeraTK::ModuleTree* ModuleTree::get(const std::string& flattened_name, const std::string& current_node_path) {
     auto root_name = root(flattened_name);
     auto remaining_branch_name = branchWithoutRoot(flattened_name);
+    auto full_path = current_node_path.empty() ? root_name : current_node_path + "/" + root_name;
 
     ModuleTree* module{nullptr};
 
     auto r = _children.find(root_name);
     if(r == _children.end() && !_sealed) {
-      addChildNode(root_name);
+      addChildNode(root_name, full_path);
     }
 
     try {
       if(!remaining_branch_name.empty()) {
-        module = _children.at(root_name)->get(remaining_branch_name);
+        module = _children.at(root_name)->get(remaining_branch_name, full_path);
       }
       else {
         module = _children.at(root_name).get();
@@ -570,6 +620,16 @@ namespace ChimeraTK {
 
     parent_name += module_name;
 
+    if(!module_name.empty()) {
+      auto flattened = parent_name.substr(0, parent_name.size() - 1);
+      _moduleDescriptions[flattened] = getOptionalAttribute(element, "description");
+    }
+    else {
+      // root <configuration description=...>  sets the ConfigReader's own module description.
+      _rootDescription =
+          getOptionalAttribute(element, "description", "Configuration read from file '" + _fileName + "'");
+    }
+
     for(const auto& child : element->get_children()) {
       element = dynamic_cast<const xmlpp::Element*>(child);
       if(!element) {
@@ -596,7 +656,9 @@ namespace ChimeraTK {
     auto name = element->get_attribute("name")->get_value();
     auto type = element->get_attribute("type")->get_value();
     auto value = element->get_attribute("value")->get_value();
-    return Variable{name, type, value};
+    auto unit = getOptionalAttribute(element, "unit", TransferElement::unitNotSet);
+    auto description = getOptionalAttribute(element, "description");
+    return Variable{name, type, value, unit, description};
   }
 
   /********************************************************************************************************************/
@@ -605,7 +667,17 @@ namespace ChimeraTK {
     auto name = element->get_attribute("name")->get_value();
     auto type = element->get_attribute("type")->get_value();
     std::map<size_t, std::string> values = gettArrayValues(element);
-    return Array{name, type, values};
+    auto unit = getOptionalAttribute(element, "unit", TransferElement::unitNotSet);
+    auto description = getOptionalAttribute(element, "description");
+    return Array{name, type, values, unit, description};
+  }
+
+  /********************************************************************************************************************/
+
+  std::string ConfigParser::getOptionalAttribute(
+      const xmlpp::Element* element, const std::string& attributeName, const std::string& defaultVal) {
+    auto* attribute = element->get_attribute(attributeName);
+    return attribute ? std::string(attribute->get_value()) : defaultVal;
   }
 
   /********************************************************************************************************************/

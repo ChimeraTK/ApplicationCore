@@ -248,6 +248,19 @@ namespace ChimeraTK {
       }
 
       peer->set_attribute("direction", feeding ? "feeding" : "consuming");
+
+      // Add the peer node's unit and (processed) description, if set.
+      const auto& peerUnit = peerNode.getUnit();
+      if(peerUnit != ChimeraTK::TransferElement::unitNotSet) {
+        xmlpp::Element* unitElement = peer->add_child("unit");
+        unitElement->set_child_text(peerUnit);
+      }
+      auto peerDescription = parseNetworkDescription(peerNode.getDescription());
+      if(!peerDescription.text.empty()) {
+        xmlpp::Element* descriptionElement = peer->add_child("description");
+        descriptionElement->set_attribute("priority", std::to_string(peerDescription.priority));
+        descriptionElement->set_child_text(peerDescription.text);
+      }
     }
   }
 } // namespace ChimeraTK

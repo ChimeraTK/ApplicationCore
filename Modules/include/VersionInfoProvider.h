@@ -57,8 +57,7 @@ namespace ChimeraTK {
     writeAll();
   }
 
-  inline VersionInfoProvider::VersionInfoProvider(Application* owner)
-  : ApplicationModule(owner, "Application", "Module to publish version information") {
+  inline VersionInfoProvider::VersionInfoProvider(Application* owner) : ApplicationModule(owner, "Application", "") {
     if(owner->getVersionInfoProvider()) {
       throw logic_error("An application can only have one VersionInfoprovider.");
     }
