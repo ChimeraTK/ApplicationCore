@@ -122,7 +122,7 @@ We should put all units/descriptions of a variable network into xmlGenerator out
 
 Keep the winning `<description>` and `<unit>` as is, but in the `<connections>` list, where tags `<peer>` are listed for the network, add in description and unit information.
 Inside every element `<peer>`, include a `<description>` and `<unit>` if they are non-empty, respectively.
-Leave the priority markers in the description string, that will help with manual inspection.
+The priority markers should be evaluated and removed before descriptions are output. Also add an attribute `priority` with evaluated priority.
 
 ## Implementation notes and alternatives considered
 
