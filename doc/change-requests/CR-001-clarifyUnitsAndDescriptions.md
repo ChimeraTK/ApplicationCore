@@ -9,8 +9,8 @@ simply picks the first non-empty description. So the selected description depend
 We need more control over which description/unit appears in the CS.
 
 We also must define how module descriptions enter CS description texts.
-Currently, all the DOOCS descriptions properties used by DoocsAdapter are of type D_string, which only supports 80 characters.
-A feature request ticket in doocs-serverlib already exists, for in the future use D_text, which supports much longer strings.
+Currently, all the DOOCS descriptions properties used by DoocsAdapter are of type `D_string`, which only supports 80 characters.
+A feature request ticket in `doocs-serverlib` already exists, requesting that in the future `D_text` should be used, which supports much longer strings.
 For now, we have to live with the limitation and see how to get reasonable information into exposed units and descriptions
 (as recently implemented in PR setDescriptions of DoocsAdapter).
 
@@ -49,35 +49,39 @@ We define a convention: The module description set in the constructor is not the
 (which would be described in source code comments),
 but a string-snippet to be placed into the description of its input and output variables.
 
-In the owner hierarchy moduleA.moduleB.outputC, the overall description should be "descriptionOfA - descriptionOfB - descriptionOfC".
+In the owner hierarchy `moduleA.moduleB.outputC`, the overall description should be "descriptionOfA - descriptionOfB - descriptionOfC".
 If any involved descriptions are empty, the number of dashes is reduced accordingly, e.g. if descriptionOfA="", we get "descriptionOfB - descriptionOfC".
 Note, the owner hierarchy does not necessarily conform with the address space hierarchy. Especially, modules consuming data from other
 modules will usually adapt the input address from another module, e.g. if `moduleA.moduleD.inputE` reads from 
-`moduleA.moduleB.outputC`, both share address `/moduleA/moduleB/outputC`, but inputE description will be "descriptionOfA - descriptionOfD - descriptionOfE".
+`moduleA.moduleB.outputC`, both share address `/moduleA/moduleB/outputC`, but `inputE` description will be "descriptionOfA - descriptionOfD - descriptionOfE".
 
 ### How should we specify the prioritization?
 
-* Idea 1: use exclamation marks at the beginning of the strings, to mark priority. The counting of leading exclamation marks defines the priority.
+* Use exclamation marks at the beginning of the description strings, to mark positive priority. The count of leading exclamation marks defines the priority.
   Leading exclamation marks in a module description also count in.
   These exclamation marks are removed before further string processing.
-* Idea 2: instead of positive priorities, use negative ones, indicated by leading question marks.
-  A question mark indicates uncertainty whether the description would fit in all use cases.
-* We could also combine exclamation marks and question marks.
+* Leading question marks are used for negative priorities, analog to exclamation marks.
+  A question mark indicates uncertainty whether the description would fit for all use cases.
+* It is allowed to combine exclamation marks and question marks.
+* For the rare case, that the actual description should begin with a exclamation mark or question mark, allow escapting by backslashes, 
+  i.e. `\!` -> `!` and `\?` -> `?`.
   
 It is important that a server consuming a generic module can overwrite variable descriptions of the generic module, without 
 changing the latter's source code. So either, the instantiation of the generic module must allow indicating uncertainty about
 its descriptions, or the server's own code must be able to prioritize its own descriptions.
 
-**Open question Q1**: should we allow prioritization of a consumer's variable description over a feeder's variable description?
+Quuestion for discussion: should we allow prioritization of a consumer's variable description over a feeder's variable description?
 The consideration of generic modules calls for allowing this, although the other feeder considerations above did not require it.
+Decision: Yes, a higher priority of a consumer overwrites the description of a feeder.
 
-**Open question Q2**: should we synchronize prioritization of unit and description texts?
-Then, the unit string would never have exclamation/question mark prefixes.
-It might be confusing if we mix units and descriptions from different sources.
+Question for discussion: should we synchronize prioritization of unit and description texts? Or do we need a different concept?
+Decision: 
+Handle units differently. They are much more tied to the values, and must match.
+If standard SI abbreviations are used, unit texts can be made to match.
+Ambiguities how to write down the physical formula still exist, but it is better to force the server developer to fix the problem than to automatically select something.
   
 ### Example
 
-(assuming Q1=Q2=yes)
 `moduleA.moduleB.outputC` with descriptionOfA="", descriptionOfB="Oscilloscope", descriptionOfC="ch1" converts into 
 description text "Oscilloscope - ch1" with priority=0.
 If this is connected to `moduleA.moduleD.inputE` with descriptionD="", descriptionOfE="!phase deviation", converts into 
@@ -89,6 +93,8 @@ CS side description text becomes "phase deviation", so here, differently from de
 ("remaining ambiguity" means, not resolved by explicit prioritization)
 For now, just implement a warning. Immediately implementing a `logic_error` would force too much work load on us.
 In the long run, we should throw a `logic_error`.
+Only warn or throw when involved candidate priorities are >= 0, pick any non-empty description if all candidates have the same negative priority.
+Since there is no priority concept for units, any mismatch or units will create a warning, or `logic_error` in the long run.
 
 ### ConfigReader
 
@@ -114,11 +120,9 @@ We define `unit` and `description` like in the example below. `description` is a
 We need debugging possibilities to find possibly non-matching candidate texts.
 We should put all units/descriptions of a variable network into xmlGenerator output.
 
-We should output a `<description>` tag for each node.
-`<description>` should have attributes `direction` ("feeding" or "consuming") and `peer` using same name as `<peer>` tag in `<connections>`.
-`<description>` tags should be listed in reverse priority, so the selected one comes first.
-
-Similarly, for units, add the same attributes, and let `<unit>` appear more than once.
+Keep the winning `<description>` and `<unit>` as is, but in the `<connections>` list, where tags `<peer>` are listed for the network, add in description and unit information.
+Inside every element `<peer>`, include a `<description>` and `<unit>` if they are non-empty, respectively.
+Leave the priority markers in the description string, that will help with manual inspection.
 
 ## Implementation notes and alternatives considered
 
