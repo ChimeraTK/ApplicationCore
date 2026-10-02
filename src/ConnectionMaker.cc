@@ -19,8 +19,37 @@
 #include <ChimeraTK/SystemTags.h>
 
 #include <algorithm>
+#include <iterator>
+#include <memory>
+#include <sstream>
 
 namespace ChimeraTK {
+
+  /********************************************************************************************************************/
+
+  NetworkDescription parseNetworkDescription(const std::string& raw) {
+    NetworkDescription result;
+    size_t i = 0;
+    size_t n = raw.size();
+
+    // An escaped marker at the very start is a literal, not a marker: it terminates
+    // the marker run, contributes no priority, and is un-escaped in the text.
+    if(i + 1 < n && raw[i] == '\\' && (raw[i + 1] == '!' || raw[i + 1] == '?')) {
+      result.text = raw.substr(i + 1); // drop the backslash
+      return result;
+    }
+
+    // Count the leading unescaped priority markers.
+    while(i < n && (raw[i] == '!' || raw[i] == '?')) {
+      raw[i] == '!' ? ++result.priority : --result.priority;
+      ++i;
+    }
+
+    // The remaining text may contain backslash sequences, but they are not in the
+    // leading position and are therefore ordinary content.
+    result.text = raw.substr(i);
+    return result;
+  }
 
   /********************************************************************************************************************/
 
@@ -43,6 +72,18 @@ namespace ChimeraTK {
 
     int bidirectionalDeviceNodeCount = 0;
     std::vector<std::shared_ptr<VariableNetworkNode>> unidirectionalDeviceNodes;
+
+    // Collect description and unit candidates from all nodes. The actual selection
+    // (priority based for descriptions) happens after the loop, once the feeder and
+    // all consumers are known.
+    struct DescriptionCandidate {
+      int priority;
+      std::string text;
+      bool isFeeder;
+    };
+    std::vector<DescriptionCandidate> descriptionCandidates;
+    std::vector<std::string> unitCandidates;
+    std::unique_ptr<std::string> firstRawUnit;
 
     for(const auto& node : proxy.getNodes()) {
       if(node->getDirection().withReturn) {
@@ -128,13 +169,106 @@ namespace ChimeraTK {
         }
       }
 
-      // Get unit and description of network from nodes. First one wins
-      if(net.description.empty()) {
-        net.description = node->getDescription();
+      // Collect unit and description candidates. The selection happens after the loop.
+      auto parsedDescription = parseNetworkDescription(node->getDescription());
+      if(!parsedDescription.text.empty()) {
+        descriptionCandidates.push_back(DescriptionCandidate{parsedDescription.priority, parsedDescription.text,
+            node->getDirection().dir == VariableDirection::feeding});
       }
+      auto nodeUnit = node->getUnit();
+      // Remember the raw unit of the first node, so that if no node carries a real
+      // unit we can fall back to the original "first node wins" behaviour (which
+      // may yield an empty unit or the "unit not set" sentinel "n./a.").
+      if(firstRawUnit == nullptr) {
+        firstRawUnit = std::make_unique<std::string>(nodeUnit);
+      }
+      if(!nodeUnit.empty() && nodeUnit != ChimeraTK::TransferElement::unitNotSet) {
+        unitCandidates.push_back(nodeUnit);
+      }
+    }
 
-      if(net.unit.empty()) {
-        net.unit = node->getUnit();
+    // ---------------------------------------------------------------------------
+    // Select the winning unit and description from the collected candidates.
+    // ---------------------------------------------------------------------------
+
+    // Unit: there is no priority concept for units, so pick the first distinct
+    // non-empty unit and warn if the nodes disagree.
+    {
+      std::vector<std::string> distinctUnits;
+      for(const auto& u : unitCandidates) {
+        if(std::find(distinctUnits.begin(), distinctUnits.end(), u) == distinctUnits.end()) {
+          distinctUnits.push_back(u);
+        }
+      }
+      if(!distinctUnits.empty()) {
+        net.unit = distinctUnits.front();
+        if(distinctUnits.size() > 1) {
+          std::ostringstream msg;
+          msg << "Variable network " << proxy.getFullyQualifiedPath()
+              << " contains nodes with different engineering units:";
+          for(const auto& u : distinctUnits) {
+            msg << " '" << u << "'";
+          }
+          logger(Logger::Severity::warning, "ConnectionMaker") << msg.str();
+        }
+      }
+      else if(firstRawUnit) {
+        // No node carries a real engineering unit. Fall back to the raw unit of the
+        // first node, preserving the original behaviour (which may yield an empty
+        // unit or the "unit not set" sentinel rendered as "n./a.").
+        net.unit = *firstRawUnit;
+      }
+    }
+
+    // Description: priority-based selection.
+    if(!descriptionCandidates.empty()) {
+      // Highest priority among all candidates.
+      int maxPriority = std::max_element(descriptionCandidates.begin(), descriptionCandidates.end(),
+          [](const DescriptionCandidate& a, const DescriptionCandidate& b) {
+            return a.priority < b.priority;
+          })->priority;
+
+      // The actual candidates which are on the highest priority level.
+      std::vector<DescriptionCandidate> winners;
+      std::copy_if(descriptionCandidates.begin(), descriptionCandidates.end(), std::back_inserter(winners),
+          [maxPriority](const DescriptionCandidate& c) { return c.priority == maxPriority; });
+
+      auto pickFeeder = [&]() -> const DescriptionCandidate* {
+        auto it =
+            std::find_if(winners.begin(), winners.end(), [](const DescriptionCandidate& c) { return c.isFeeder; });
+        return it != winners.end() ? &*it : nullptr;
+      };
+
+      if(maxPriority < 0) {
+        // All candidates have a negative priority: pick any non-empty description
+        // without warning. Prefer the feeder for determinism, then the first winner.
+        auto* feeder = pickFeeder();
+        net.description = (feeder != nullptr) ? feeder->text : winners.front().text;
+      }
+      else {
+        // Feeder wins in general, so if the feeder is on the highest priority level
+        // (possibly tied with consumers), the feeder's description wins.
+        auto* feeder = pickFeeder();
+        if(feeder != nullptr) {
+          net.description = feeder->text;
+        }
+        else {
+          // No feeder on the highest level: a single consumer wins; multiple distinct
+          // consumers at this level constitute an ambiguity.
+          const std::string& winnerText = winners.front().text;
+          bool ambiguous = std::any_of(winners.begin(), winners.end(),
+              [&winnerText](const DescriptionCandidate& c) { return c.text != winnerText; });
+          if(ambiguous) {
+            std::ostringstream msg;
+            msg << "Variable network " << proxy.getFullyQualifiedPath()
+                << " has ambiguous descriptions among consumers with the same priority:";
+            for(const auto& c : winners) {
+              msg << " '" << c.text << "'";
+            }
+            logger(Logger::Severity::warning, "ConnectionMaker") << msg.str();
+          }
+          net.description = winnerText;
+        }
       }
     }
 

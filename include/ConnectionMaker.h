@@ -14,6 +14,26 @@ namespace ChimeraTK {
 
   /********************************************************************************************************************/
 
+  /** Result of parsing a (possibly priority-marked) description string. */
+  struct NetworkDescription {
+    int priority{0};  ///< net priority: (#leading '!') - (#leading '?')
+    std::string text; ///< description with leading priority markers stripped and escapes resolved
+  };
+
+  /**
+   * Parse a description string that may carry leading priority markers.
+   *
+   * Leading '!' characters each add +1 to the priority, leading '?' characters
+   * each add -1. The markers are removed from the returned text. A backslash
+   * escaped '\!' / '\?' at the very start of the string is treated as a literal
+   * '!' / '?' (i.e. it terminates the marker run and contributes no priority);
+   * it is un-escaped in the returned text. Backslashes anywhere else in the
+   * string are left untouched.
+   */
+  NetworkDescription parseNetworkDescription(const std::string& raw);
+
+  /********************************************************************************************************************/
+
   class NetworkVisitor {
    public:
     explicit NetworkVisitor(Application& app) : _app(app) {}

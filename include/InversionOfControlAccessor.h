@@ -181,14 +181,7 @@ namespace ChimeraTK {
   template<typename Derived>
   std::string InversionOfControlAccessor<Derived>::completeDescription(
       EntityOwner* owner, const std::string& description) const {
-    auto ownerDescription = owner->getFullDescription();
-    if(ownerDescription.empty()) {
-      return description;
-    }
-    if(description.empty()) {
-      return ownerDescription;
-    }
-    return ownerDescription + " - " + description;
+    return EntityOwner::composeFullDescription(owner->getFullDescription(), description);
   }
 
   /********************************************************************************************************************/

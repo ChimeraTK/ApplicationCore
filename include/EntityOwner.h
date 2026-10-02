@@ -72,6 +72,22 @@ namespace ChimeraTK {
      */
     virtual std::string getFullDescription() const = 0;
 
+    /**
+     * Compose a full description from a prefix (owner's full description or the
+     * outer description) and a segment (the own description), promoting any
+     * leading priority markers ("!" / "?") of both parts to the very front of the
+     * result.
+     *
+     * Priority markers within each part are moved to the front of the composed
+     * string before the rest text is joined with " - ". Escaped markers (\!, \?)
+     * at the start of a part are treated as literals and therefore do not count
+     * as markers; an escaped leading marker in the non-first segment is un-escaped
+     * (since after joining it no longer sits at the very start of the string),
+     * while in the first part it is left escaped (so it remains a literal at the
+     * start of the overall description).
+     */
+    static std::string composeFullDescription(const std::string& first, const std::string& second);
+
     /** Obtain the list of accessors/variables directly associated with this
      * instance */
     std::list<VariableNetworkNode> getAccessorList() const { return _accessorList; }

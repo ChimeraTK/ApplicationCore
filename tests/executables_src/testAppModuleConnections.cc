@@ -7,10 +7,17 @@
 #include "TestFacility.h"
 
 #include <ChimeraTK/BackendFactory.h>
+#include <ChimeraTK/ControlSystemAdapter/PVManager.h>
 
+#include <libxml++/libxml++.h>
+
+#include <boost/filesystem.hpp>
 #include <boost/mpl/list.hpp>
 
+#include <functional>
 #include <future>
+#include <string>
+#include <vector>
 
 #define BOOST_NO_EXCEPTIONS
 #define BOOST_TEST_MODULE testAppModuleConnections
@@ -476,6 +483,328 @@ namespace Tests::testAppModuleConnections {
     BOOST_TEST(!aout.readNonBlocking());
     BOOST_TEST(cout.readNonBlocking());
     BOOST_TEST(cout == 121);
+  }
+
+  /********************************************************************************************************************/
+  /* Application and tests for the CR-001 description/unit priority handling.
+   *
+   * The accessor assignment operator implemented in the Scalar* classes accepts a
+   * braced initialiser {owner, name/path, unit, description}, which reconstructs
+   * the node with the given (absolute) path, unit and description (the description
+   * is composed with the owning module hierarchy). Assigning the feeder and one or
+   * more consumers to the same path forms a variable network, whose winning
+   * description/unit are then exposed on the single control-system variable.
+   */
+
+  struct FeedModule : public ctk::ApplicationModule {
+    FeedModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description)
+    : ApplicationModule(owner, name, description) {}
+    void mainLoop() override {}
+    ctk::ScalarOutput<double> feederA{this, "feederA", "", "ch1"};
+  };
+
+  struct ConsumeModule : public ctk::ApplicationModule {
+    ConsumeModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description)
+    : ApplicationModule(owner, name, description) {}
+    void mainLoop() override {}
+    ctk::ScalarPushInput<double> consumerPrio1{this, "consumerPrio1", "", ""};
+    ctk::ScalarPushInput<double> consumerPrio2{this, "consumerPrio2", "", ""};
+  };
+
+  struct PriorityTestApp : public ctk::Application {
+    PriorityTestApp() : Application("PriorityTestApp") {}
+    ~PriorityTestApp() override { shutdown(); }
+
+    // module with a non-empty description (composes to "Oscilloscope - ...")
+    FeedModule moduleB{this, "moduleB", "Oscilloscope"};
+
+    // module with empty description (variable descriptions pass through unchanged)
+    ConsumeModule moduleD{this, "moduleD", ""};
+  };
+
+  // Helper: return the <peer> elements of the given variable (found anywhere in
+  // the document), with the processed per-peer <unit>/<description> and the
+  // description priority attribute.
+  struct PeerInfo {
+    std::string name;
+    std::string direction;
+    std::string unit; // empty if no <unit> peer element
+    bool hasDescription{false};
+    std::string description;
+    int priority{0};
+  };
+
+  static std::vector<PeerInfo> getPeersForVariable(const std::string& xmlFile, const std::string& var) {
+    std::vector<PeerInfo> result;
+    xmlpp::DomParser parser;
+    parser.parse_file(xmlFile);
+    const auto* root = parser.get_document()->get_root_node();
+
+    // depth-first search for a <variable name="var"> element
+    std::function<void(const xmlpp::Node*)> walk = [&](const xmlpp::Node* n) {
+      const auto* el = dynamic_cast<const xmlpp::Element*>(n);
+      if(el == nullptr) {
+        for(const auto* c = n->get_first_child(); c != nullptr; c = c->get_next_sibling()) {
+          walk(c);
+        }
+        return;
+      }
+      if(el->get_name() == "variable") {
+        const auto* an = el->get_attribute("name");
+        if(an != nullptr && an->get_value() == var) {
+          for(const auto* c = el->get_first_child(); c != nullptr; c = c->get_next_sibling()) {
+            const auto* cc = dynamic_cast<const xmlpp::Element*>(c);
+            if(cc == nullptr || cc->get_name() != "connections") continue;
+            for(const auto* p = cc->get_first_child(); p != nullptr; p = p->get_next_sibling()) {
+              const auto* pc = dynamic_cast<const xmlpp::Element*>(p);
+              if(pc == nullptr || pc->get_name() != "peer") continue;
+              PeerInfo pi;
+              if(auto* a = pc->get_attribute("name")) pi.name = a->get_value();
+              if(auto* a = pc->get_attribute("direction")) pi.direction = a->get_value();
+              for(const auto* ch = pc->get_first_child(); ch != nullptr; ch = ch->get_next_sibling()) {
+                const auto* chc = dynamic_cast<const xmlpp::Element*>(ch);
+                if(chc == nullptr) continue;
+                if(chc->get_name() == "unit") {
+                  if(const auto* t = dynamic_cast<const xmlpp::TextNode*>(chc->get_first_child())) {
+                    pi.unit = t->get_content();
+                  }
+                }
+                else if(chc->get_name() == "description") {
+                  pi.hasDescription = true;
+                  if(auto* a = chc->get_attribute("priority")) pi.priority = std::stoi(a->get_value());
+                  if(const auto* t = dynamic_cast<const xmlpp::TextNode*>(chc->get_first_child())) {
+                    pi.description = t->get_content();
+                  }
+                }
+              }
+              result.push_back(pi);
+            }
+          }
+        }
+        return; // a variable has no variable children
+      }
+      for(const auto* c = el->get_first_child(); c != nullptr; c = c->get_next_sibling()) {
+        walk(c);
+      }
+    };
+    walk(root);
+    return result;
+  }
+
+  /********************************************************************************************************************/
+  /* A consumer with a higher priority (leading '!') overwrites the feeder
+   * description (CR-001 example). */
+
+  BOOST_AUTO_TEST_CASE(testDescriptionConsumerOverwritesFeeder) {
+    std::cout << "*** testDescriptionConsumerOverwritesFeeder" << std::endl;
+    PriorityTestApp app;
+    app.moduleB.feederA = {&app.moduleB, "/n1", "V", "ch1"};                    // "Oscilloscope - ch1", priority 0
+    app.moduleD.consumerPrio1 = {&app.moduleD, "/n1", "V", "!phase deviation"}; // "phase deviation", priority 1
+
+    auto pvManagers = ctk::createPVManager();
+    app.setPVManager(pvManagers.second);
+    app.initialise();
+
+    auto pv = pvManagers.first->getProcessArray<double>("/n1");
+    BOOST_REQUIRE(pv != nullptr);
+    BOOST_TEST(pv->getDescription() == "phase deviation");
+    BOOST_TEST(pv->getUnit() == "V");
+  }
+
+  /********************************************************************************************************************/
+  /* If the priorities tie, the feeder description wins (CR-001 default). */
+
+  BOOST_AUTO_TEST_CASE(testDescriptionFeederWinsOnTie) {
+    std::cout << "*** testDescriptionFeederWinsOnTie" << std::endl;
+    PriorityTestApp app;
+    app.moduleB.feederA = {&app.moduleB, "/n2", "V", "ch1"};
+    app.moduleD.consumerPrio1 = {&app.moduleD, "/n2", "V", "consumer description"};
+
+    auto pvManagers = ctk::createPVManager();
+    app.setPVManager(pvManagers.second);
+    app.initialise();
+
+    auto pv = pvManagers.first->getProcessArray<double>("/n2");
+    BOOST_REQUIRE(pv != nullptr);
+    BOOST_TEST(pv->getDescription() == "Oscilloscope - ch1");
+  }
+
+  /********************************************************************************************************************/
+  /* Multiple consumers: the one with the highest priority wins ("!!" beats "!"). */
+
+  BOOST_AUTO_TEST_CASE(testDescriptionHighestConsumerPriorityWins) {
+    std::cout << "*** testDescriptionHighestConsumerPriorityWins" << std::endl;
+    PriorityTestApp app;
+    app.moduleB.feederA = {&app.moduleB, "/n3", "V", "ch1"};
+    app.moduleD.consumerPrio1 = {&app.moduleD, "/n3", "V", "!first"};
+    app.moduleD.consumerPrio2 = {&app.moduleD, "/n3", "V", "!!second"};
+
+    auto pvManagers = ctk::createPVManager();
+    app.setPVManager(pvManagers.second);
+    app.initialise();
+
+    auto pv = pvManagers.first->getProcessArray<double>("/n3");
+    BOOST_REQUIRE(pv != nullptr);
+    BOOST_TEST(pv->getDescription() == "second");
+  }
+
+  /********************************************************************************************************************/
+  /* A leading '?' marks a negative (uncertain) priority: a '!!'-consumer still
+   * wins, and the '?' markers are stripped from the exposed text. */
+
+  BOOST_AUTO_TEST_CASE(testDescriptionNegativeAndPositivePriorities) {
+    std::cout << "*** testDescriptionNegativeAndPositivePriorities" << std::endl;
+    PriorityTestApp app;
+    app.moduleB.feederA = {&app.moduleB, "/n4", "V", "ch1"};
+    app.moduleD.consumerPrio1 = {&app.moduleD, "/n4", "V", "?uncertain"}; // priority -1
+    app.moduleD.consumerPrio2 = {&app.moduleD, "/n4", "V", "!!definite"}; // priority 2
+
+    auto pvManagers = ctk::createPVManager();
+    app.setPVManager(pvManagers.second);
+    app.initialise();
+
+    auto pv = pvManagers.first->getProcessArray<double>("/n4");
+    BOOST_REQUIRE(pv != nullptr);
+    // only '!!definite' has the highest (non-negative) priority
+    BOOST_TEST(pv->getDescription() == "definite");
+  }
+
+  /********************************************************************************************************************/
+  /* A '?'-marked feeder, tied with a '?'-marked consumer (both negative) picks a
+   * description without warning. */
+
+  BOOST_AUTO_TEST_CASE(testDescriptionAllNegativePicksAny) {
+    std::cout << "*** testDescriptionAllNegativePicksAny" << std::endl;
+    PriorityTestApp app;
+    app.moduleB.feederA = {&app.moduleB, "/n5", "V", "?ch1"};
+    app.moduleD.consumerPrio1 = {&app.moduleD, "/n5", "V", "?consumer"};
+
+    auto pvManagers = ctk::createPVManager();
+    app.setPVManager(pvManagers.second);
+    app.initialise();
+
+    auto pv = pvManagers.first->getProcessArray<double>("/n5");
+    BOOST_REQUIRE(pv != nullptr);
+    // both negative, feeder preferred for determinism; '?' stripped
+    BOOST_TEST(pv->getDescription() == "Oscilloscope - ch1");
+  }
+
+  /********************************************************************************************************************/
+  /* Unit mismatch: no priority concept for units, winner is deterministic (first
+   * distinct candidate) and a warning is emitted. */
+
+  BOOST_AUTO_TEST_CASE(testUnitMismatchSelectsFirstDistinct) {
+    std::cout << "*** testUnitMismatchSelectsFirstDistinct" << std::endl;
+    PriorityTestApp app;
+    app.moduleB.feederA = {&app.moduleB, "/n6", "V", "ch1"};
+    app.moduleD.consumerPrio1 = {&app.moduleD, "/n6", "mV", "phase deviation"}; // different unit -> warning
+
+    auto pvManagers = ctk::createPVManager();
+    app.setPVManager(pvManagers.second);
+    app.initialise();
+
+    auto pv = pvManagers.first->getProcessArray<double>("/n6");
+    BOOST_REQUIRE(pv != nullptr);
+    BOOST_TEST(pv->getUnit() == "V");
+    // both descriptions have priority 0, so the feeder wins on the tie-breaker
+    BOOST_TEST(pv->getDescription() == "Oscilloscope - ch1");
+  }
+
+  /********************************************************************************************************************/
+  /* Two consumers with distinct texts sharing the highest (non-negative)
+   * priority constitute an ambiguity: a warning is emitted and one of them is
+   * selected deterministically. */
+
+  BOOST_AUTO_TEST_CASE(testDescriptionAmbiguityAmongConsumers) {
+    std::cout << "*** testDescriptionAmbiguityAmongConsumers" << std::endl;
+    PriorityTestApp app;
+    app.moduleB.feederA = {&app.moduleB, "/n7", "V", "ch1"};
+    app.moduleD.consumerPrio1 = {&app.moduleD, "/n7", "V", "!first"};  // priority 1
+    app.moduleD.consumerPrio2 = {&app.moduleD, "/n7", "V", "!second"}; // priority 1
+
+    auto pvManagers = ctk::createPVManager();
+    app.setPVManager(pvManagers.second);
+    app.initialise();
+
+    auto pv = pvManagers.first->getProcessArray<double>("/n7");
+    BOOST_REQUIRE(pv != nullptr);
+    const auto& desc = pv->getDescription();
+    // an ambiguity warning is emitted; one of the two competing texts wins
+    BOOST_TEST((desc == "first" || desc == "second"));
+  }
+
+  /********************************************************************************************************************/
+  /* xmlGenerator: per-peer <unit> and <description> with processed (stripped)
+   * markers and a priority attribute. */
+
+  BOOST_AUTO_TEST_CASE(testXmlPeersCarryUnitAndProcessedDescription) {
+    std::cout << "*** testXmlPeersCarryUnitAndProcessedDescription" << std::endl;
+    const auto xmlFileName = "PriorityTestApp.xml";
+    boost::filesystem::remove(xmlFileName);
+
+    {
+      PriorityTestApp app;
+      app.moduleB.feederA = {&app.moduleB, "/shared", "V", "ch1"};
+      app.moduleD.consumerPrio1 = {&app.moduleD, "/shared", "V", "!phase deviation"};
+      app.generateXML();
+    } // shut down before parsing
+
+    auto peers = getPeersForVariable(xmlFileName, "shared");
+    BOOST_REQUIRE_EQUAL(peers.size(), 2u);
+
+    bool foundFeeder = false;
+    bool foundConsumer = false;
+    for(const auto& p : peers) {
+      if(p.direction == "feeding") {
+        foundFeeder = true;
+        // moduleB peer: raw composed description "Oscilloscope - ch1", priority 0
+        BOOST_TEST(p.description == "Oscilloscope - ch1");
+        BOOST_TEST(p.priority == 0);
+        BOOST_TEST(p.unit == "V");
+      }
+      else if(p.direction == "consuming") {
+        foundConsumer = true;
+        // moduleD peer: raw composed description "!phase deviation" -> processed "phase deviation", priority 1
+        BOOST_TEST(p.description == "phase deviation");
+        BOOST_TEST(p.priority == 1);
+        BOOST_TEST(p.unit == "V");
+      }
+    }
+    BOOST_TEST(foundFeeder);
+    BOOST_TEST(foundConsumer);
+  }
+
+  /********************************************************************************************************************/
+  /* xmlGenerator: an escaped leading marker is treated as a literal (not a
+   * marker), so the priority attribute is 0 and the text keeps the resolved '!'
+   * in the leading position. */
+
+  struct LiteralDescApp : public ctk::Application {
+    LiteralDescApp() : Application("LiteralDescApp") {}
+    ~LiteralDescApp() override { shutdown(); }
+    // module description starts with an escaped '\!' -> literal, not a marker
+    FeedModule moduleB{this, "moduleB", "\\!Important"};
+  };
+
+  BOOST_AUTO_TEST_CASE(testXmlPeerEscapedLeadingMarkerIsLiteral) {
+    std::cout << "*** testXmlPeerEscapedLeadingMarkerIsLiteral" << std::endl;
+    const auto xmlFileName = "LiteralDescApp.xml";
+    boost::filesystem::remove(xmlFileName);
+
+    {
+      LiteralDescApp app;
+      app.moduleB.feederA = {&app.moduleB, "/sharedLit", "V", "ch1"};
+      app.generateXML();
+    }
+
+    auto peers = getPeersForVariable(xmlFileName, "sharedLit");
+    BOOST_REQUIRE_EQUAL(peers.size(), 1u);
+    const auto& p = peers.front();
+    BOOST_TEST(p.direction == "feeding");
+    // the escaped '\!' is a literal, so priority is 0 and the leading '!' is kept
+    BOOST_TEST(p.priority == 0);
+    BOOST_TEST(p.description == "!Important - ch1");
+    BOOST_TEST(p.unit == "V");
   }
 
   /********************************************************************************************************************/
