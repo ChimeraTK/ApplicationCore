@@ -91,7 +91,7 @@ namespace ChimeraTK {
 
       // create node and add to list
       rv.emplace_back(reg.getRegisterName(), _deviceAliasOrCDD, reg.getRegisterName(), updateMode, direction,
-          reg.isReadable(), *valTyp, reg.getNumberOfElements());
+          reg.isReadable(), *valTyp, reg.getNumberOfElements(), reg.getUnit(), reg.getDescription());
       for(const auto& tag : reg.getTags()) {
         rv.back().addTag(tag);
       }

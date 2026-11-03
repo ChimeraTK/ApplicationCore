@@ -51,7 +51,8 @@ namespace ChimeraTK {
     /** Constructor for a Device node */
     VariableNetworkNode(const std::string& name, const std::string& devAlias, const std::string& regName,
         UpdateMode mode, VariableDirection direction, bool isReadable, const std::type_info& valTyp = typeid(AnyType),
-        size_t nElements = 0);
+        size_t nElements = 0, const std::string& unit = ChimeraTK::TransferElement::unitNotSet,
+        const std::string& description = {});
 
     /** Constructor for a ControlSystem node */
     VariableNetworkNode(const std::string& pubName, VariableDirection direction,
