@@ -3,6 +3,7 @@
 #include "Application.h"
 #include "ApplicationModule.h"
 #include "ArrayAccessor.h"
+#include "DeviceModule.h"
 #include "ScalarAccessor.h"
 #include "TestFacility.h"
 
@@ -818,6 +819,34 @@ namespace Tests::testAppModuleConnections {
     BOOST_TEST(p.priority == 0);
     BOOST_TEST(p.description == "!Important - ch1");
     BOOST_TEST(p.unit == "V");
+  }
+
+  /********************************************************************************************************************/
+  /* Device feeder: the unit and description set on a device register (via the
+   * logical name mapping setDescription plugin) must be propagated to the
+   * control-system variable. Regression test for device nodes not carrying
+   * unit/description from the register catalogue. */
+
+  struct DeviceDescApp : public ctk::Application {
+    DeviceDescApp() : Application("DeviceDescApp") {}
+    ~DeviceDescApp() override { shutdown(); }
+
+    ctk::SetDMapFilePath dmap{"test.dmap"};
+    ctk::DeviceModule dev{this, "Dummy1Mapped"};
+  };
+
+  BOOST_AUTO_TEST_CASE(testDeviceRegisterDescriptionPropagates) {
+    std::cout << "*** testDeviceRegisterDescriptionPropagates" << std::endl;
+    DeviceDescApp app;
+
+    auto pvManagers = ctk::createPVManager();
+    app.setPVManager(pvManagers.second);
+    app.initialise();
+
+    auto pv = pvManagers.first->getProcessArray<float>("/Device/signed32");
+    BOOST_REQUIRE(pv != nullptr);
+    BOOST_TEST(pv->getDescription() == "description of signed32");
+    BOOST_TEST(pv->getUnit() == "nm");
   }
 
   /********************************************************************************************************************/
