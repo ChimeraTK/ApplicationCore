@@ -28,6 +28,7 @@ class MyMod(ac.ApplicationModule):
         self.v6 = ac.ScalarOutput(ac.DataType.float32, self, "/Test/V6", "", "")
         self.v7 = ac.ScalarOutput(ac.DataType.float32, self, "/Test/V7", "", "")
         self.v8 = ac.ScalarOutput(ac.DataType.string, self, "/Test/V8", "", "")
+        self.v9 = ac.ScalarOutput(ac.DataType.Boolean, self, "/Test/V9", "", "")
         self.end = ac.ScalarPushInput(ac.DataType.int32, self, "/Test/end", "", "")
 
         self.result = ac.ScalarOutput(ac.DataType.string, self, "/Test/Result", "", "")
@@ -43,6 +44,17 @@ class MyMod(ac.ApplicationModule):
         self.v6.setAndWrite(11.7832)
         self.v7.setAndWrite(2.75)
         self.v8.setAndWrite("some string")
+
+        # pybind11-bound ChimeraTK::Boolean, must be accepted for a Boolean register
+        # without raising a RuntimeError (regression: it used to fall through to a cast<double>() fallback). Plain
+        # Python bools go through the int path and must keep working as well.
+        self.v9.setAndWrite(ac.Boolean(True))
+        assert self.v9.get() == ac.Boolean(True)
+        self.v9.setAndWrite(ac.Boolean(False))
+        assert self.v9.get() == ac.Boolean(False)
+        self.v9.setAndWrite(True)
+        assert bool(self.v9.get()) is True
+
         self.result.setAndWrite("")
 
         while True:
