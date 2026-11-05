@@ -6,6 +6,10 @@
       <targetStartIndex>0</targetStartIndex>
       <numberOfElements>1</numberOfElements>
       <plugin name="forceReadOnly"/>
+      <plugin name="setDescription">
+        <parameter name="description">description of signed32</parameter>
+        <parameter name="engineeringUnit">nm</parameter>
+      </plugin>
     </redirectedRegister>
   </module>
 </logicalNameMap>
