@@ -9,6 +9,7 @@
 #include "PyArrayAccessor.h"
 #include "PyConfigReader.h"
 #include "PyDataConsistencyGroup.h"
+#include "PyFanIn.h"
 #include "PyLogger.h"
 #include "PyModuleGroup.h"
 #include "PyOwnershipManagement.h"
@@ -195,6 +196,11 @@ namespace ChimeraTK {
      * DataConsistencyGroup and DataConsistencyGroup::MatchingMode
      */
     PyDataConsistencyGroup::bind(m);
+
+    /**
+     * FanIn
+     */
+    PyFanIn::bind(m);
 
     /**
      * Logger

@@ -30,6 +30,15 @@ namespace ChimeraTK {
 
     PyScalarAccessor(PyScalarAccessor&&) = default;
 
+    template<typename Accessor>
+    static PyScalarAccessor fromAccessor(const Accessor& accessor) {
+      PyScalarAccessor result;
+      ScalarAccessor<typename Accessor::value_type> converted;
+      converted.replace(accessor);
+      result._accessor = ScalarAccessorVariant{std::move(converted)};
+      return result;
+    }
+
     ~PyScalarAccessor();
 
     UserTypeVariantNoVoid readAndGet();
