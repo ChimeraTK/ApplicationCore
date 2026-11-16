@@ -31,6 +31,15 @@ namespace ChimeraTK {
    public:
     PyArrayAccessor() : _accessor(ArrayOutput<int>()) {}
     PyArrayAccessor(PyArrayAccessor&&) = default;
+
+    template<typename Accessor>
+    static PyArrayAccessor fromAccessor(const Accessor& accessor) {
+      PyArrayAccessor result;
+      ArrayAccessor<typename Accessor::value_type> converted;
+      converted.replace(accessor);
+      result._accessor = ArrayAccessorVariant{std::move(converted)};
+      return result;
+    }
     ~PyArrayAccessor();
 
     template<template<typename> class AccessorType>

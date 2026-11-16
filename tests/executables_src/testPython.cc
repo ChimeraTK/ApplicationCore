@@ -518,6 +518,29 @@ namespace Tests::testPython {
     BOOST_TEST(std::string(error) == "");
   }
 
+  BOOST_AUTO_TEST_CASE(testPythonFanIn) {
+    std::cout << "***************************************************************************************" << std::endl;
+    std::cout << "==> testPythonFanIn" << std::endl;
+
+    TestApp app("testPythonFanIn");
+    ctk::TestFacility tf(app);
+
+    auto scalarA = tf.getScalar<int32_t>("/FanInTest/scalarA");
+    auto scalarB = tf.getScalar<int32_t>("/FanInTest/scalarB");
+    auto result = tf.getScalar<std::string>("/FanInTest/result");
+
+    tf.setScalarDefault<int32_t>("/FanInTest/scalarA", 2);
+    tf.setScalarDefault<int32_t>("/FanInTest/scalarB", 3);
+    tf.runApplication();
+    result.readLatest();
+    BOOST_TEST(std::string(result) == "5");
+
+    scalarA.setAndWrite(7);
+    tf.stepApplication();
+    result.readLatest();
+    BOOST_TEST(std::string(result) == "10");
+  }
+
   /********************************************************************************************************************/
 
 } // namespace Tests::testPython

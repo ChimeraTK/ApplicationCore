@@ -96,6 +96,8 @@ namespace ChimeraTK {
      */
     FanIn(VariableGroup* owner, std::string name, std::initializer_list<std::string> additionalNames, std::string unit,
         const std::string& description, AggregatorType aggregator, const std::unordered_set<std::string>& tags = {});
+    FanIn(VariableGroup* owner, std::string name, const std::vector<std::string>& additionalNames, std::string unit,
+        const std::string& description, AggregatorType aggregator, const std::unordered_set<std::string>& tags = {});
 
     FanIn(FanIn&& other) noexcept { *this = std::move(other); }
     FanIn& operator=(FanIn&& other) noexcept;
@@ -232,6 +234,15 @@ namespace ChimeraTK {
 
   template<push_input AccessorType>
   FanIn<AccessorType>::FanIn(VariableGroup* owner, std::string name, std::initializer_list<std::string> additionalNames,
+      std::string unit, const std::string& description, AggregatorType aggregator,
+      const std::unordered_set<std::string>& tags)
+  : detail::FanIn::AccessorTypeHelper<AccessorType>::out_type(owner, name, unit, description, tags),
+    _inputs(owner, *this, name, additionalNames, unit, description, aggregator, tags) {}
+
+  /********************************************************************************************************************/
+
+  template<push_input AccessorType>
+  FanIn<AccessorType>::FanIn(VariableGroup* owner, std::string name, const std::vector<std::string>& additionalNames,
       std::string unit, const std::string& description, AggregatorType aggregator,
       const std::unordered_set<std::string>& tags)
   : detail::FanIn::AccessorTypeHelper<AccessorType>::out_type(owner, name, unit, description, tags),
